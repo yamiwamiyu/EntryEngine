@@ -1,0 +1,35 @@
+﻿序列化类型
+1. Xml		(通用转换类型)
+2. Json
+3. CSV
+(String)
+4. Binary
+(Binary)
+5. Database
+(Table)
+
+序列化基础类型
+enum （Enum.GetUnderlyingType获得enum继承类型，序列化时可以采用此类型）
+bool
+char
+string
+sbyte
+byte
+short
+ushort
+int
+uint
+float
+long
+ulong
+double
+DateTime(时间戳 int)
+TimeSpan(Tick  long)
+
+序列化对象设置
+Instance | Static
+AssemblyQualifiedName
+Field 必须
+Property
+Refference
+Field & Property Name

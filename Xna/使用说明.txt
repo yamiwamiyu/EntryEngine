@@ -1,0 +1,27 @@
+﻿Xna项目架构
+
+1. 建立项目：入口Entry.exe，客户端实现Client.dll
+2. 入口引用EntryEngine.dll(Dummy), Xna.dll(Dummy), Microsoft.Xna.Framework.dll, Microsoft.Xna.Framework.Game.dll, Client.dll
+	两个Dummy右键 -> 属性 -> Copy Local -> 设置为false
+3. 将Xna运行库Xna.exe拷贝至入口程序的编译目录下
+4. 右键Entry.exe -> 属性 -> Debug -> 启动外部程序(Start external program) -> 选择Xna.exe运行库
+	启动程序只需以下代码
+	static void Main(string[] args)
+	{
+		using (XnaGate gate = new XnaGate())
+		{
+			gate.OnInitialized += gate_OnInitialized;
+			gate.Run();
+		}
+	}
+	static void gate_OnInitialized(Entry entry)
+	{
+		// 显示你的第一个场景
+		// entry.ShowMainScene(new SMain() { StateShow = EntryEngine.UI.UIScene.EState.Dispose }, false);
+	}
+5. Client.dll引用EntryEngine.dll(Dummy)
+
+调试DirectX
+Visual Studio 2010 调试 -> 异常 -> Managed Debugging Assistants -> 关闭LoaderLock
+
+P.S. 若new XnaGate().Run()没能调用Initialize，请确保Xna生成为x86，引用Xna并要运行的项目也要为x86

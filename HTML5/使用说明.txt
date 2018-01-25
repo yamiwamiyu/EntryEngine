@@ -1,0 +1,38 @@
+﻿1. 非Image.src方式下载加载图片，并对图片资源形成保护
+var req = new XMLHttpRequest();
+// blob方式下载文件
+req.responseType = "blob";
+req.onreadystatechange = () =>
+{
+    if (req.readyState == 4)
+    {
+        if (req.status == 200)
+        {
+			// 此response为一个Blob类型的实例
+			var response = req.response;  
+			var data = new Image();
+			data.onload = function()
+			{
+				// 由于Image不支持同步加载完成，只能在回调事件中处理完成
+				texture = gl.createTexture();
+				gl.bindTexture(gl.TEXTURE_2D, texture);
+				gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+				gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+				gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+				gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+				gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, data);
+				gl.bindTexture(gl.TEXTURE_2D, null);
+				// texture: 创建WebGLTexture实例完成
+			}
+			// 使用此方法创建src
+			data.src = window.URL.createObjectURL(response);
+		}
+        else
+        {
+            console.log("error:" + req.status);
+        }
+    }
+};
+// 非图片后缀格式任然能加载出图片，并且在F12->Sources中不会存在图像信息
+req.open("GET", "altina.z", true);
+req.send();

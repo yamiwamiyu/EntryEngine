@@ -1,0 +1,13 @@
+﻿若方法体中注释或字符串包含{符号，一定也要有相应的}符号，保证在生成代码时不出错
+public void Method()
+{
+	// {	注释包含 {
+	// }	一定要有 }
+}
+
+普通类，结构名字首字母大写 People Game
+静态类_开头，其它字母全大写，不应该有两个单词 _UTILITY _RANDOM
+深度调用的静态类__开头，其它同静态类规范 __INPUT __GRAPHICS
+跨平台类型名应全大写 VECTOR2 RECTANGLE COLOR
+生成的代码的成员名用___开头 ___async=>a.Texture=___async ___Generate(){}
+public,internal字段首字母大写，protected,protected internal,private小写

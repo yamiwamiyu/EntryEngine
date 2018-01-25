@@ -1,0 +1,606 @@
+﻿#if CLIENT
+
+using System;
+using System.Collections.Generic;
+
+namespace EntryEngine.UI
+{
+	public enum EScrollOrientation
+	{
+		None = 0x00,
+		Horizontal = 0x01,
+		HorizontalAuto = 0x02,
+		Vertical = 0x04,
+		VerticalAuto = 0x08,
+	}
+	public enum EDragMode
+	{
+		None,
+		Drag,
+		//DragInertia,
+		Move
+	}
+	public class Panel : UIElement
+	{
+		private EScrollOrientation scrollOrientation = EScrollOrientation.VerticalAuto | EScrollOrientation.HorizontalAuto;
+		private ScrollBarBase scrollBarHorizontal;
+		private ScrollBarBase scrollBarVertical;
+		private VECTOR2 offset;
+		private VECTOR2 offsetScope;
+		private VECTOR2 contentScope;
+		private bool scrollBarSizeFixed;
+		private bool needUpdateScrollBar;
+		private bool needBeginEnd;
+		public TEXTURE Background;
+        public TEXTURE BackgroundFull;
+		public EDragMode DragMode;
+		public event DUpdate<Panel> Scroll;
+		public event DUpdate<Panel> ScrollBarChanged;
+
+		public EScrollOrientation ScrollOrientation
+		{
+			get { return scrollOrientation; }
+			set
+			{
+				if (scrollOrientation != value)
+				{
+					scrollOrientation = value;
+					UpdateScrollBar();
+				}
+			}
+		}
+		public ScrollBarBase ScrollBarHorizontal
+		{
+			get { return scrollBarHorizontal; }
+			set
+			{
+				if (scrollBarHorizontal != null)
+				{
+					scrollBarHorizontal.ValueChanged -= DoScrollX;
+                    scrollBarHorizontal.Panel = null;
+				}
+				if (value != null)
+				{
+					value.ValueChanged += DoScrollX;
+                    value.Panel = this;
+				}
+				scrollBarHorizontal = value;
+				UpdateScrollBar();
+			}
+		}
+		public ScrollBarBase ScrollBarVertical
+		{
+			get { return scrollBarVertical; }
+			set
+			{
+				if (scrollBarVertical != null)
+				{
+					scrollBarVertical.ValueChanged -= DoScrollY;
+                    scrollBarVertical.Panel = null;
+				}
+				if (value != null)
+				{
+					value.ValueChanged += DoScrollY;
+                    value.Panel = this;
+				}
+				scrollBarVertical = value;
+				UpdateScrollBar();
+			}
+		}
+		public bool ScrollBarSizeFixed
+		{
+			get { return scrollBarSizeFixed; }
+			set
+			{
+				if (scrollBarSizeFixed != value)
+				{
+					scrollBarSizeFixed = value;
+					UpdateScrollBar();
+				}
+			}
+		}
+		public float OffsetX
+		{
+			get { return offset.X; }
+			set
+			{
+				float x = offset.X;
+				offset.X = _MATH.Clamp(value, 0, offsetScope.X);
+				if (x != offset.X)
+				{
+					OnScroll();
+				}
+			}
+		}
+		public float OffsetY
+		{
+			get { return offset.Y; }
+			set
+			{
+				float y = offset.Y;
+				offset.Y = _MATH.Clamp(value, 0, offsetScope.Y);
+				if (y != offset.Y)
+				{
+					OnScroll();
+				}
+			}
+		}
+		public VECTOR2 Offset
+		{
+			get { return offset; }
+			set
+			{
+				VECTOR2 temp = offset;
+				offset.X = _MATH.Clamp(value.X, 0, offsetScope.X);
+				offset.Y = _MATH.Clamp(value.Y, 0, offsetScope.Y);
+				if (!temp.Equals(ref offset))
+				{
+					OnScroll();
+				}
+			}
+		}
+		public VECTOR2 OffsetScope
+		{
+			get { return offsetScope; }
+		}
+		public VECTOR2 ContentScope
+		{
+			get
+			{
+				return contentScope;
+			}
+			set
+			{
+				if (contentScope.Equals(ref value))
+					return;
+				contentScope = value;
+                UpdateScrollScope(true);
+			}
+		}
+		public bool CanScrollHorizontal
+		{
+			get { return offsetScope.X > 0; }
+		}
+		public bool CanScrollVertical
+		{
+			get { return offsetScope.Y > 0; }
+		}
+		public bool ShowScrollHorizontal
+		{
+			get
+			{
+				return scrollBarHorizontal != null &&
+					(Utility.EnumContains((int)scrollOrientation, (int)EScrollOrientation.Horizontal) ||
+					(Utility.EnumContains((int)scrollOrientation, (int)EScrollOrientation.HorizontalAuto) && CanScrollHorizontal));
+			}
+		}
+		public bool ShowScrollVertical
+		{
+			get
+			{
+				return scrollBarVertical != null &&
+				(Utility.EnumContains((int)scrollOrientation, (int)EScrollOrientation.Vertical) ||
+				(Utility.EnumContains((int)scrollOrientation, (int)EScrollOrientation.VerticalAuto) && CanScrollVertical));
+			}
+		}
+		public override float Width
+		{
+			get
+			{
+				return base.Width;
+			}
+			set
+			{
+				base.Width = value;
+                UpdateScrollScope(true);
+			}
+		}
+		public override float Height
+		{
+			get
+			{
+				return base.Height;
+			}
+			set
+			{
+				base.Height = value;
+				UpdateScrollScope(true);
+			}
+		}
+		public override VECTOR2 ContentSize
+		{
+			get
+			{
+				if (contentScope.X != 0 && contentScope.Y != 0)
+					return contentScope;
+				VECTOR2 size = base.ContentSize;
+				if (contentScope.X != 0)
+					size.X = contentScope.X;
+				if (contentScope.Y != 0)
+					size.Y = contentScope.Y;
+				return size;
+			}
+		}
+        //public override RECT ViewClip
+        //{
+        //    get { return GetOffsetView(base.ViewClip); }
+        //}
+        public RECT FullViewClip
+        {
+            get { return GetOffsetView(base.ViewClip); }
+        }
+		protected virtual bool NeedBeginEnd
+		{
+			get
+			{
+				if (CanScrollHorizontal || CanScrollVertical)
+					return true;
+
+				RECT clip = ChildClip;
+				return clip.X < 0 || clip.Y < 0;
+			}
+		}
+
+		public Panel()
+		{
+			ContentSizeChanged += InternalContentSizeChanged;
+			Drag += DoDrag;
+            //IsClip = true;
+		}
+
+		public RECT GetOffsetView(RECT baseView)
+		{
+			baseView.X -= offset.X;
+			baseView.Y -= offset.Y;
+			baseView.Width += offsetScope.X;
+			baseView.Height += offsetScope.Y;
+			return baseView;
+		}
+		protected override bool IsNeedUpdateContent()
+		{
+			return contentScope.X == 0 && contentScope.Y == 0;
+		}
+		protected virtual void InternalContentSizeChanged(VECTOR2 size)
+		{
+			this.UpdateScrollScope(false);
+			this.InternalUpdateScrollBar();
+		}
+		public void UpdateScrollBar()
+		{
+			if (needUpdateScrollBar)
+				return;
+
+			needUpdateScrollBar = true;
+			NeedUpdateLocalToWorld = true;
+		}
+		protected void InternalUpdateScrollBar()
+		{
+			if (!needUpdateScrollBar)
+				return;
+
+			if (scrollBarHorizontal != null)
+			{
+				scrollBarHorizontal.Visible = false;
+			}
+			if (scrollBarVertical != null)
+			{
+				scrollBarVertical.Visible = false;
+			}
+
+			bool fixedH = ShowScrollHorizontal;
+			bool fixedV = ShowScrollVertical;
+
+			if (fixedH)
+			{
+				scrollBarHorizontal.Visible = true;
+				scrollBarHorizontal.MinValue = 0;
+				scrollBarHorizontal.MaxValue = offsetScope.X;
+				if (!scrollBarSizeFixed)
+				{
+					float percent = Width / (offsetScope.X + Width);
+					scrollBarHorizontal.Body.Width = scrollBarHorizontal.BarViewClip.Width * percent;
+				}
+				scrollBarHorizontal.Value = OffsetX;
+				scrollBarHorizontal.IsClip = false;
+				scrollBarHorizontal.ValueChanged -= DoScrollX;
+				scrollBarHorizontal.ValueChanged += DoScrollX;
+				scrollBarHorizontal.Body.Visible = CanScrollHorizontal;
+				scrollBarHorizontal.NeedUpdateLocalToWorld = true;
+			}
+
+			if (fixedV)
+			{
+				scrollBarVertical.Visible = true;
+				scrollBarVertical.MinValue = 0;
+				scrollBarVertical.MaxValue = offsetScope.Y;
+				if (!scrollBarSizeFixed)
+				{
+					float percent = Height / (offsetScope.Y + Height);
+					scrollBarVertical.Body.Height = scrollBarVertical.BarViewClip.Height * percent;
+				}
+				scrollBarVertical.Value = OffsetY;
+				scrollBarVertical.IsClip = false;
+				scrollBarVertical.ValueChanged -= DoScrollY;
+				scrollBarVertical.ValueChanged += DoScrollY;
+				scrollBarVertical.Body.Visible = CanScrollVertical;
+				scrollBarVertical.NeedUpdateLocalToWorld = true;
+			}
+
+			if (ScrollBarChanged != null)
+			{
+				ScrollBarChanged(this, Entry.Instance);
+			}
+
+			needUpdateScrollBar = false;
+		}
+		private void UpdateScrollScope(bool stayValue)
+		{
+            VECTOR2 content = ContentSize;
+			VECTOR2 temp = offsetScope;
+			offsetScope.X = _MATH.Max(content.X - Width, 0);
+			offsetScope.Y = _MATH.Max(content.Y - Height, 0);
+			if (offsetScope.X > 0 && ShowScrollVertical)
+				offsetScope.X += scrollBarVertical.Width;
+			if (offsetScope.Y > 0 && ShowScrollHorizontal)
+				offsetScope.Y += scrollBarHorizontal.Height;
+			UpdateScrollBar();
+            if (!offsetScope.Equals(ref temp))
+            {
+                if (stayValue)
+                    Offset = VECTOR2.Multiply(new VECTOR2(
+                        temp.X == 0 ? 0 : offset.X / temp.X,
+                        temp.Y == 0 ? 0 : offset.Y / temp.Y)
+                        , offsetScope);
+                else
+                    Offset = offset;
+            }
+		}
+		private void OnScroll()
+		{
+			NeedUpdateLocalToWorld = true;
+			if (scrollBarHorizontal != null && CanScrollHorizontal)
+			{
+				scrollBarHorizontal.Percent = OffsetX / offsetScope.X;
+			}
+			if (scrollBarVertical != null && CanScrollVertical)
+			{
+				scrollBarVertical.Percent = OffsetY / offsetScope.Y;
+			}
+			if (Scroll != null)
+			{
+				Scroll(this, Entry.Instance);
+			}
+		}
+		public virtual void DoDrag(UIElement sender, Entry e)
+		{
+			if (DragMode != EDragMode.None)
+			{
+                VECTOR2 delta = e.INPUT.Pointer.DeltaPosition;
+                if (!delta.IsNaN())
+                {
+                    switch (DragMode)
+                    {
+                        case EDragMode.Drag:
+                            if ((offsetScope.X == 0 || delta.X == 0) &&
+                                (offsetScope.Y == 0 || delta.Y == 0))
+                                return;
+                            Offset = VECTOR2.Subtract(Offset, delta);
+                            break;
+
+                        case EDragMode.Move:
+                            if (delta.X != 0 || delta.Y != 0)
+                                Location = VECTOR2.Add(Location, delta);
+                            break;
+                    }
+                }
+                Handled = true;
+			}
+		}
+		//protected override void UpdateChilds(IEnumerable<UIElement> childs)
+		//{
+		//	UpdateScrollScope();
+		//}
+		private void DoScrollX(Slider sender, Entry e)
+		{
+			OffsetX = offsetScope.X * sender.Percent;
+		}
+		private void DoScrollY(Slider sender, Entry e)
+		{
+			OffsetY = offsetScope.Y * sender.Percent;
+		}
+		protected override void UpdateClip(ref RECT finalClip, ref RECT finalViewClip, ref MATRIX2x3 transform, ref MATRIX2x3 localToWorld)
+		{
+			base.UpdateClip(ref finalClip, ref finalViewClip, ref transform, ref localToWorld);
+			localToWorld.M31 -= OffsetX;
+			localToWorld.M32 -= OffsetY;
+		}
+		protected override void InternalEvent(Entry e)
+		{
+			InternalUpdateScrollBar();
+		}
+		protected override void DrawBegin(GRAPHICS spriteBatch, ref MATRIX2x3 transform, ref RECT view, SHADER shader)
+		{
+			needBeginEnd = NeedBeginEnd;
+			if (needBeginEnd)
+			{
+				spriteBatch.Begin(view);
+			}
+			base.DrawBegin(spriteBatch, ref transform, ref view, shader);
+		}
+		protected override void DrawEnd(GRAPHICS spriteBatch, ref MATRIX2x3 transform, ref RECT view, SHADER shader)
+		{
+			base.DrawEnd(spriteBatch, ref transform, ref view, shader);
+			if (needBeginEnd)
+			{
+				spriteBatch.End();
+			}
+		}
+		protected override void InternalDraw(GRAPHICS spriteBatch, Entry e)
+		{
+            if (Background != null)
+            {
+                spriteBatch.Draw(Background, ViewClip, Color);
+            }
+            if (BackgroundFull != null)
+            {
+                spriteBatch.Draw(BackgroundFull, FullViewClip, Color);
+            }
+		}
+		public override void Dispose()
+		{
+			base.Dispose();
+            Background = null;
+            BackgroundFull = null;
+		}
+        public override IEnumerator<UIElement> GetEnumerator()
+        {
+            foreach (var item in Childs.ToArray())
+                if (item != scrollBarHorizontal && item != scrollBarVertical)
+                    yield return item;
+        }
+
+        //protected static RECT PanelChildClip(UIElement child)
+        //{
+        //    if (!child.Visible)
+        //        return RECT.Empty;
+        //    if (child.IsAutoClip)
+        //        return child.ClipInParent;
+        //    return RECT.Union(child.ClipInParent, child.ChildClip);
+        //}
+	}
+
+    public class ListView<T> : IDisposable
+    {
+        private Panel panel;
+        private Pool<UIElement> pools = new Pool<UIElement>();
+        public event Func<UIElement> OnCreateElement;
+        public event Action<UIElement, int, T> OnSetData;
+        public event Action<UIElement> OnCloseElement;
+        public float ScrollWheelSpeed = 100;
+
+        public IList<T> Datas
+        {
+            get;
+            private set;
+        }
+        public Panel Panel
+        {
+            get { return panel; }
+            set
+            {
+                if (value == null)
+                    throw new ArgumentNullException("panel");
+
+                if (value == panel)
+                    return;
+
+                if (panel != null)
+                {
+                    panel.Scroll -= Scroll;
+                    panel.Hover -= HoverScroll;
+                    Dispose();
+                }
+
+                this.panel = value;
+
+                panel.Scroll += Scroll;
+                panel.Hover += HoverScroll;
+                var datas = Datas;
+                Datas = null;
+                SetDataSource(datas);
+            }
+        }
+
+        public ListView(Panel panel)
+        {
+            this.Panel = panel;
+        }
+
+        private void HoverScroll(UIElement sender, Entry e)
+        {
+            if (e.INPUT.Mouse != null)
+            {
+                float value = e.INPUT.Mouse.ScrollWheelValue;
+                if (value != 0)
+                {
+                    Panel.OffsetY += value * ScrollWheelSpeed;
+                }
+            }
+        }
+        private void Scroll(Panel sender, Entry e)
+        {
+            float offset = Panel.OffsetY;
+            float y = 0;
+            int count = Panel.ChildCount;
+            int i;
+            for (i = 0; i < count; i++)
+            {
+                y += Panel[i].Height;
+                if (y > offset)
+                {
+                    y -= Panel[i].Height;
+                    break;
+                }
+                Panel[i].Visible = false;
+            }
+            offset += Panel.Height;
+            for (; i < count; i++)
+            {
+                Panel[i].Visible = y < offset;
+                y += Panel[i].Height;
+            }
+        }
+        public void SetDataSource(IList<T> value)
+        {
+            if (Datas == value)
+                return;
+
+            Datas = value;
+            Close();
+
+            Panel.Offset = VECTOR2.Zero;
+            Panel.ContentScope = VECTOR2.Zero;
+
+            if (Datas == null)
+                return;
+
+            if (OnCreateElement == null)
+                return;
+
+            float y = 0;
+            int count = Datas.Count;
+            for (int i = 0; i < count; i++)
+            {
+                UIElement element = pools.Allot();
+                if (element == null)
+                {
+                    element = OnCreateElement();
+                    if (element == null)
+                        throw new ArgumentNullException("element");
+                }
+                element.Y = y;
+                if (OnSetData != null)
+                    OnSetData(element, i, Datas[i]);
+                Panel.Add(element);
+                y += element.Height;
+            }
+            Panel.ContentScope = new VECTOR2(0, y);
+        }
+        public void Close()
+        {
+            if (OnCloseElement != null)
+                foreach (var item in pools)
+                    OnCloseElement(item);
+            pools.ClearToFree();
+            if (panel != null)
+                Panel.Clear();
+        }
+        public void Dispose()
+        {
+            Close();
+            pools.Clear();
+        }
+    }
+}
+
+#endif

@@ -1,0 +1,312 @@
+﻿1. 分类 C/S
+(1). 客户端
+(2). 服务端（跨服服务端的客户端，客户端的服务端）
+(3). 跨服服务端
+
+2. 交互必须数据
+(1). 客户端 <-> 服务端 : 不需要特殊数据，短连接需要客户端标识ID
+(2). 服务端 <-> 跨服服务端 : 需要客户端标识ID
+
+3. 模块分类
+(1). Link : 网络通信交互的连接
+	总体可分为“长连接”和“短连接”，具体类型有Tcp, Udp, Http......
+	连接也确定了数据包的读写规则，数据包真实内容由Agent组织和解析
+
+(2). Agent : 接收数据的代理人
+	以一个连接和处理器作为参数来初始化，接着将自动或手动接收并处理数据
+	(2.5). Processor : 处理器
+	直接（客户端 -> 服务器） / 带中转（客户端 -> 跨服服务器）
+
+(3). Proxy : 服务器代理
+	针对于一个客户端将有一个Agent，服务器自身也将是一个Agent
+
+(4). Server : 服务器
+	服务器将配备多个/多种服务器代理
+
+短连接注意问题:
+(超时机制)*1. 如果GetResponse后，服务端不回应数据，则程序将会阻断
+(队列处理，包ID唯一)*2. 掉包，若是服务端回调客户端掉包，包就需要有唯一标识ID，保证不重复处理包数据
+
+客户端 & 服务端
+1. Read & Process(已有Link) -> Logic Update(新Link) -> Flush(新Link)
+2. Read & Process(已有Link) -> Logic Update(已有Link) -> Flush(已有Link)
+完整流程:
+Request[Identifier PackageID Body] -> Check Identifier to find agent ->
+Check PackageID to find process result -> Process or resend process result
+
+Dispatcher: 短连接服务端 & 长连接跨服服务端
+1. Accept分发  -> 分发依据Link(新) -> 分发到Client
+2. Receive分发 -> 分发依据Link(旧) -> Client / 带Client参数的Server
+
+异步请求模式：
+(目前参考：一个异步请求，生成一个带有委托标识，Reply方法的类型，服务端处理接口方法增加此类型的参数)
+例：Test(int a, Action<string> callback);
+Test_Callback(int id, Link link) callback;
+Test(int a, Test_Callback callback);(不生成新接口的情况下，接口没有此参数)
+服务端处理 ...
+callback.Callback("callback string");(Reply的生成和Proxy基本对应)
+or callback.Error(sbyte ret(Callback时，此ret=0), "error message!");
+
+Test_Callback callback = new Test_Callback(id, link);
+try
+{
+	agent.Test(a, callback);
+}
+catch (Exception ex)
+{
+	Log.Error("Test_Callback error! msg={0} stack={1}", ex.Message, ex.StackTrace);
+	if (!callback.IsCallback)
+	{
+		callback.Error(-1, ex.Message);
+	}
+}
+finally
+{
+	if (!callback.IsCallback)
+	{
+		callback.Error(1, "no callback");
+	}
+}
+
+internal class Test_Callback
+{
+	private byte id;
+	private Link link;
+
+	public bool IsCallback { get; private set; }
+
+	public Test_Callback(byte id, Link link)
+	{
+		this.id = id;
+		this.link = link;
+	}
+
+	public void Callback(string arg1)
+	{
+		if (IsCallback)
+			return;
+		BinaryWriter writer = new BinaryWriter();
+		writer.Write(id);
+		writer.Write((sbyte)0);
+		writer.Write(arg1);
+		link.Write(writer.Buffer, 0, writer.Position);
+		IsCallback = true;
+	}
+	public void Error(sbyte ret, string msg)
+	{
+		if (IsCallback)
+			return;
+		BinaryWriter writer = new BinaryWriter();
+		writer.Write(id);
+		writer.Write(ret);
+		writer.Write(msg);
+		link.Write(writer.Buffer, 0, writer.Position);
+		IsCallback = true;
+	}
+}
+
+1. 接口方法定义：TestMethod([int param, ...,] [Delegate] callback);
+2. 客户端调用：Push委托，标识唯一ID
+3. 服务端解析：回调委托的参数生成类方法，通过对象的回调方法返回结果
+4. 客户端接收回调：读取唯一标识，Pop委托，调用委托
+
+数据优化:
+1. 数据长度改用short，短连接不需要数据长度
+2. 空数据包不需要crc验证
+3. 标识客户端的ID可用ushort，作为跨服服务器客户端的服务器ID也用ushort
+   << / >> 16位可得到65535，表示每个服务器只能最大接受65535个用户在线，实际也是端口上限
+
+网络交互使用说明
+
+服务端使用方法，/**/的注释为使用说明
+partial class ServiceLauncher :
+	/* 这里方便使用#if预编译切换长连接和短连接 */
+    ProxyTcp
+    //ProxyHttpAsync
+	/* 实现带有ProtocolStub特性的接口生成的名字前缀带下划线的接口，这是实现客户端发来请求数据时的处理 */
+    , _ILauncherService
+{
+    protected override IEnumerator<LoginResult> Login(Link link)
+    {
+        LoginResult result = new LoginResult();
+
+        while (true)
+        {
+            byte[] data = link.Read();
+            if (data == null)
+            {
+                yield return result;
+                continue;
+            }
+
+			/* 不使用Agent，而要与客户端协定登录时的交互协议手动解析 */
+            ByteReader reader = new ByteReader(data);
+            string ip, sign;
+            reader.Read(out ip);
+            reader.Read(out sign);
+
+            string remote = link.EndPoint.Address.ToString();
+            if (ip != remote
+                && !(remote.StartsWith("192.168") && ip == "127.0.0.1")
+                && !(remote == "127.0.0.1" && ip.StartsWith("192.168")))
+            {
+                _LOG.Error("异常的IP:{0}尝试连接管理器", link.EndPoint);
+                result.Result = EAcceptPermit.Block;
+                break;
+            }
+
+            if (_NETWORK.ValidMD5toBase64(ip + _C.PublicKey) != sign)
+            {
+                _LOG.Error("IP:{0}连接管理器PublicKey:{1}异常", link.EndPoint, sign);
+                result.Result = EAcceptPermit.Block;
+                break;
+            }
+
+			/* 回调协议也需要与客户端协定 */
+            ByteWriter writer = new ByteWriter();
+            // 写入分配给服务器的唯一ID
+            //writer.Write(
+
+			/* 最终构建Agent按照定义的接口进行交互 */
+            AgentProtocolStub agent = new AgentProtocolStub(link, new ILauncherServiceStub(this));
+            result.Agent = agent;
+            result.Result = EAcceptPermit.Permit;
+        }
+
+        yield return result;
+    }
+}
+
+
+客户端使用方法，/**/的注释为使用说明
+/* 实现带有ProtocolStub特性的接口指定的类型的接口，这是实现服务端端发来请求数据时的处理 */
+class ServiceLauncher : EntryService, ILauncherManager
+{
+    private int id;
+
+	/* Link可以用于检测断线重连 */
+    public LinkTcp Link
+    {
+        get;
+        private set;
+    }
+	/* Proxy用于客户端按照协议向服务端发起请求 */
+    public ILauncherServiceProxy Proxy
+    {
+        get;
+        private set;
+    }
+	/* Agent用于处理服务端回应的数据 */
+    public Agent Agent
+    {
+        get;
+        private set;
+    }
+
+    public ServiceLauncher()
+    {
+        SetCoroutine(Initialize());
+    }
+
+    #region initialize process
+
+
+    IEnumerable<ICoroutine> Initialize()
+    {
+        _LOG._Logger = new Logger();
+
+        _C.Load(_IO.ReadText("_C.xml"));
+
+        this.SetCoroutine(ConnectManager());
+
+        yield break;
+    }
+    IEnumerable<ICoroutine> ConnectManager()
+    {
+        Link = new LinkTcp();
+
+        while (true)
+        {
+            if (!Link.IsConnected)
+            {
+				Agent = null;
+                Proxy = null;
+
+				/* 可以使用异步方式连接服务器 */
+                var async = Link.ConnectAsync(_C.IP, _C.Port); ;
+                yield return async;
+
+                if (async.IsFaulted)
+                {
+                    _LOG.Error(async.FaultedReason);
+                }
+                else
+                {
+                    string endpoint = Link.EndPoint.ToString();
+
+                    _LOG.Info("成功连接管理服务器{0}", async.Socket.RemoteEndPoint);
+					/* 不使用Proxy，而要与服务端协定登录时的交互协议手动写入 */
+                    ByteWriter writer = new ByteWriter();
+                    writer.Write(_NETWORK.HostIP);
+                    writer.Write(_NETWORK.ValidMD5toBase64(_NETWORK.HostIP + _C.LauncherPublicKey));
+                    Link.Write(writer.Buffer, 0, writer.Position);
+					/* 写完了记得立刻发出去 */
+                    Link.Flush();
+
+                    TIME wait = new TIME();
+                    while (Link.IsConnected)
+                    {
+						/* 回调协议也需要与服务端端协定 */
+                        byte[] callback = Link.Read();
+                        if (callback == null)
+                        {
+                            wait.Interval += 100;
+                            // 100, 200....1000 总计等待6000ms
+                            if (wait.Interval > 1000)
+                            {
+                                _LOG.Error("未能在时间内收到服务器的相应，关闭本次连接{0}", endpoint);
+                                Link.Close();
+                                break;
+                            }
+                            yield return wait;
+                            continue;
+                        }
+
+                        ByteReader reader = new ByteReader(callback);
+                        ushort id;
+                        reader.Read(out id);
+
+                        _LOG.Debug("成功连接服务器 ID={0}", id);
+                        this.id = id;
+
+						/* 最终构建Proxy和相应的Agent */
+                        Proxy = new ILauncherServiceProxy(this);
+                        Agent = new AgentProtocolStub(Link, Proxy);
+						break;
+                    }
+                }
+            }
+            // 等待下一次检查与服务器的连接
+            yield return new TIME(5000);
+        }
+    }
+
+
+    #endregion
+
+    protected override void InternalUpdate()
+    {
+        base.InternalUpdate();
+
+		/* Agent接收相应服务端毁掉需要客户端手动更新 */
+        if (Link != null && Link.IsConnected && Agent != null)
+        {
+			/* 每帧需要手动发出客户端的请求数据 */
+			Link.Flush();
+            foreach (var item in Agent.Receive())
+            {
+                Agent.OnProtocol(item);
+            }
+        }
+    }
+}

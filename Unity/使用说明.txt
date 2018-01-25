@@ -1,0 +1,429 @@
+﻿Unity注意事项
+1. 不能使用unsafe
+2. WWW的同步加载在Web将死循环
+3. 若序列化出现问题，一定是文件写入权限不明不白用不了了，删掉应用重装即可解决
+4. 导出Android时，Development Build或者Write Access设置External(SDCard)可以在Android/data/com.xxx.xxx/files/找到写入的存档
+   否则会在data/data/com.xxx.xxx/files/里面
+
+Unity项目架构
+
+1. 将EntryEngine, Unity, 游戏程序用到的其它dll加壳，生成.bytes文件
+2. 将加壳后的程序放入Unity的Resources目录
+3. 新建Unity脚本写以下代码加载解析dll启动游戏
+P.S. 当客户端程序需要引用其它Dll时，应将客户端，引用的Dll和运行时环境共同打包成UnityRuntime
+
+using System;
+using System.Collections;
+using System.Linq;
+using System.Reflection;
+using UnityEngine;
+
+public class Main : MonoBehaviour
+{
+    public string GameDll;
+    public string GameScene;
+
+    // Use this for initialization
+    void Start()
+    {
+        try
+        {
+            // 读取dll二进制流，或许还能通过可写文件夹动态加载
+            var load = Resources.Load("UnityRuntime") as TextAsset;
+
+            // 加载EntryEngine
+            Assembly assembly = AppDomain.CurrentDomain.Load(load.bytes, null);
+
+            // 调用dll自解析
+            Type type = assembly.GetType("Program");
+            MethodInfo method = type.GetMethod("Main", BindingFlags.Public | BindingFlags.Static);
+            method.Invoke(null, new object[1] { null });
+            Debug.Log("Load 成功");
+
+            // 若加载EntryEngine时没加载游戏dll，在此单独加载游戏dll
+            if (!string.IsNullOrEmpty(GameDll))
+            {
+                load = Resources.Load(GameDll) as TextAsset;
+                assembly = AppDomain.CurrentDomain.Load(load.bytes, null);
+            }
+        }
+        catch (Exception ex)
+        {
+            Debug.Log(string.Format("加载解析dll异常:{0}", ex.Message));
+        }
+
+        // 初始化游戏开始过程
+        StartCoroutine_Auto(StartCoroutine());
+    }
+
+    IEnumerator StartCoroutine()
+    {
+        // 创建Unity入口
+        Assembly unity = AppDomain.CurrentDomain.GetAssemblies().FirstOrDefault(a => a.GetName().Name == "Unity");
+        Type gateType = unity.GetType("EntryEngine.Unity.UnityGate");
+        var gate = gameObject.AddComponent(gateType);
+
+        // 等待帧结束，让入口Start调用完毕
+        yield return new WaitForEndOfFrame();
+
+        try
+        {
+            // 加载游戏入口场景
+            Assembly client = AppDomain.CurrentDomain.GetAssemblies().FirstOrDefault(a => a.GetName().Name == GameDll);
+            // 使用入口展示场景实例 entry.ShowMainScene<T>();
+            PropertyInfo entry = gateType.GetProperty("Entry");
+            entry.PropertyType.GetMethod("ShowMainScene", Type.EmptyTypes).
+                MakeGenericMethod(client.GetType(GameScene)).
+                Invoke(entry.GetValue(gate, new object[0]),
+                new object[] { });
+        }
+        catch (Exception ex)
+        {
+            Debug.Log(ex.Message + "\r\n" + ex.StackTrace);
+        }
+
+        // 移除加载程序
+        DestroyImmediate(this);
+    }
+}
+
+
+Unity发布环境2，使用EntryBuilder.PublishToUnity将Xna程序发布到Unity可以使用以下方式在Unity运行程序
+using System;
+using System.Collections;
+using System.Linq;
+using System.Reflection;
+using UnityEngine;
+
+public class Main : MonoBehaviour
+{
+    void LoadResources(string resource, Action<TextAsset> load)
+    {
+        var asset = Resources.Load<TextAsset>(resource);
+        try
+        {
+            load(asset);
+        }
+        catch (Exception ex)
+        {
+            Debug.Log(string.Format("Load resources[{0}] error! ex={1}", resource, ex.Message));
+        }
+        finally
+        {
+            Resources.UnloadAsset(asset);
+        }
+    }
+    // Use this for initialization
+    void Start()
+    {
+        try
+        {
+            // 读取dll二进制流，或许还能通过可写文件夹动态加载
+            LoadResources("UnityRuntime",
+                asset =>
+                {
+                    // 加载EntryEngine
+                    Assembly assembly = AppDomain.CurrentDomain.Load(asset.bytes, null);
+                    // 调用dll自解析
+                    Type type = assembly.GetType("Program");
+                    MethodInfo method = type.GetMethod("Main", BindingFlags.Public | BindingFlags.Static);
+                    method.Invoke(null, new object[1] { null });
+                    Debug.Log("Load 成功");
+                });
+
+            LoadResources("__filelist.txt",
+                asset =>
+                {
+                    string[] list = asset.text.Split(new string[] { "\r\n" }, StringSplitOptions.RemoveEmptyEntries);
+                    for (int i = 0; i < list.Length; i++)
+                    {
+                        LoadResources(list[i], dll => AppDomain.CurrentDomain.Load(dll.bytes, null));
+                    }
+                });
+        }
+        catch (Exception ex)
+        {
+            Debug.Log(string.Format("加载解析dll异常:{0}", ex.Message));
+        }
+
+        // 初始化游戏开始过程
+        StartCoroutine_Auto(StartCoroutine());
+    }
+
+    IEnumerator StartCoroutine()
+    {
+        // 创建Unity入口
+        Assembly unity = AppDomain.CurrentDomain.GetAssemblies().FirstOrDefault(a => a.GetName().Name == "Unity");
+        Type gateType = unity.GetType("EntryEngine.Unity.UnityGate");
+        var gate = gameObject.AddComponent(gateType);
+
+        // 等待帧结束，让入口Start调用完毕
+        yield return new WaitForEndOfFrame();
+
+        try
+        {
+            // 加载游戏入口场景
+            Assembly client = AppDomain.CurrentDomain.GetAssemblies().FirstOrDefault(a => a.GetName().Name == "Client");
+            // 使用入口展示场景实例 entry.ShowMainScene<T>();
+            PropertyInfo entry = gateType.GetProperty("Entry");
+            entry.PropertyType.GetMethod("ShowMainScene", Type.EmptyTypes).
+                MakeGenericMethod(client.GetType("EntryScene")).
+                Invoke(entry.GetValue(gate, new object[0]),
+                new object[] { });
+        }
+        catch (Exception ex)
+        {
+            Debug.Log(ex.Message + "\r\n" + ex.StackTrace);
+        }
+
+        // 移除加载程序
+        DestroyImmediate(this);
+    }
+}
+
+
+Android环境搭建
+1. 下载安装JDK http://www.oracle.com/technetwork/java/javase/downloads/index.html
+2. 下载安装Eclipse http://www.eclipse.org/downloads/ 安装时选择Eclipse IDE for Java EE Developers
+3. 打开Eclipse安装ADT Help -> Install New Software -> 选择下载好的本地zip
+4. 指定SDK路径
+
+Android广告植入
+
+1. 新建java项目，Package Name要与最终发布的名字相同，在AndroidManifest.xml可修改
+Theme: None -> Create custom launcher icon: False -> Create Activity: Empty Activity
+
+2. 将广告.jar和Unity的classes.jar拖入libs目录下
+3. 使用java编写以下Activity
+package ...;
+
+import ...;
+
+public class MainActivity extends UnityPlayerActivity
+{
+	private class Banner
+	{
+		public String PosId;
+		public RelativeLayout Container;
+		// 使用相应的广告平台AD类型
+		public BannerView AD;
+	}
+
+	private Activity mContext = null;
+	private Banner[] banners = new Banner[2];
+	private int bannerCount = 0;
+	
+	public String APP_ID = "";
+	public String APP_KEY = "";
+
+	@Override
+	protected void onCreate(Bundle savedInstanceState)
+	{
+		super.onCreate(savedInstanceState);
+		// 这里不清除会一运行就退出
+		//setContentView(R.layout.activity_main);
+		
+		mContext = this;
+	}
+
+	public boolean GetBannerState(String posId)
+    {
+        for (int i = 0; i < bannerCount; i++)
+        {
+            if (banners[i].PosId == posId)
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+	public void ShowBanner(final String posId)
+	{
+		Banner banner = null;
+		for (int i = 0; i < bannerCount; i++)
+		{
+			if (banners[i] != null && banners[i].PosId == posId)
+			{
+				banner = banners[i];
+				break;
+			}
+		}
+		
+		if (banner != null)
+		{
+			// 刷新广告
+			banner.AD.loadAD();
+		}
+		else
+		{
+			((Activity) mContext).runOnUiThread(new Runnable()
+			{
+				@Override
+				public void run()
+				{
+					final RelativeLayout bannerContainer = new RelativeLayout(mContext);
+					
+					Banner banner = new Banner();
+					if (bannerCount == banners.length)
+					{
+						// 最低需要API 9
+						banners = Arrays.copyOf(banners, bannerCount * 2);
+						banners[bannerCount] = banner;
+						bannerCount++;
+					}
+					
+					addContentView(bannerContainer, new ViewGroup.LayoutParams(
+							ViewGroup.LayoutParams.WRAP_CONTENT,
+							ViewGroup.LayoutParams.WRAP_CONTENT));
+
+					// 构建广告，设置参数
+					final BannerView ad = new BannerView(mContext, ADSize.BANNER, APP_ID, posId);
+					ad.setRefresh(30);
+					ad.setShowClose(false);
+					
+					ad.setADListener(new AbstractBannerADListener()
+					{
+					      @Override
+					      public void onNoAD(int arg0)
+					      {
+					        Log.i("AD_DEMO", "BannerNoAD，eCode=" + arg0);
+					        
+					        bannerContainer.removeAllViews();
+					        ad.destroy();
+					        
+					        bannerCount--;
+					        banners[bannerCount] = null;
+					      }
+
+					      @Override
+					      public void onADReceiv()
+					      {
+					        Log.i("AD_DEMO", "ONBannerReceive");
+					      }
+					    });
+
+					RelativeLayout.LayoutParams mLayoutParams = new RelativeLayout.LayoutParams(
+					LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT);
+					mLayoutParams.addRule(RelativeLayout.CENTER_HORIZONTAL);
+					mLayoutParams.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM);
+					bannerContainer.addView(ad, mLayoutParams);
+
+					// 展示广告
+					ad.loadAD();
+					
+					banner.Container = bannerContainer;
+					banner.AD = ad;
+					banner.PosId = posId;
+				}
+			});
+		}
+	}
+	public void CloseBanner(String posId)
+	{
+		for (int i = 0; i < bannerCount; i++)
+		{
+			if (banners[i] != null && banners[i].PosId == posId)
+			{
+				CloseBanner(banners[i]);
+				int end = banners.length - 1;
+				for (int j = i; j < end; j++)
+				{
+					banners[j] = banners[j + 1];
+				}
+				banners[end] = null;
+				break;
+			}
+		}
+	}
+	// 清除关闭广告
+	private void CloseBanner(Banner banner)
+	{
+		banner.Container.removeAllViews();
+		banner.AD.destroy();
+	}
+}
+
+4. 将[java项目输出的.jar包]、[java引用的广告或其它SDK的.jar包]和[Manifest.xml]放入Unity项目Assets\Plugins\Android\里，Manifest案例如下
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.example.testandroid"
+    android:versionCode="1"
+    android:versionName="1.0" >
+
+    <uses-sdk
+        android:minSdkVersion="8"
+        android:targetSdkVersion="21" />
+
+	<!-- 使用Unity默认的ICON android:icon="@drawable/app_icon" -->
+    <application
+        android:allowBackup="true"
+        android:icon="@drawable/app_icon"
+        android:label="@string/app_name" >
+        <activity
+            android:name=".MainActivity"
+            android:label="@string/app_name"
+			android:screenOrientation="landscape" >
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+
+			<!-- Unity -->
+            <meta-data android:name="unityplayer.ForwardNativeEventsToDalvik" android:value="true" />
+        </activity>
+        
+		<!-- Unity Activity: orientation屏幕方向不对可能会造成闪退 -->
+		<!-- 横屏显示 android:screenOrientation="landscape" -->
+        <activity
+            android:name="com.unity3d.player.UnityPlayerActivity"
+			android:configChanges="keyboard|keyboardHidden|orientation|screenSize">
+        </activity>
+    </application>
+
+</manifest>
+
+
+5. 在合适的地方构建以下广告实例调用广告
+public class AD
+{
+    protected AndroidJavaObject java { get; private set; }
+
+    public void Initialize(string APP_ID, string APP_KEY)
+    {
+        AndroidJavaClass javaClass = new AndroidJavaClass("com.unity3d.player.UnityPlayer");
+        java = javaClass.GetStatic<AndroidJavaObject>("currentActivity");
+        java.Set<string>("APP_ID", APP_ID);
+        java.Set<string>("APP_KEY", APP_KEY);
+    }
+    public bool GetBannerState(string posId)
+    {
+        return java.Call<bool>("GetBannerState", posId);
+    }
+    public void ShowBanner(string posId)
+    {
+        java.Call("ShowBanner", posId);
+    }
+    public void CloseBanner(string posId)
+    {
+        java.Call("CloseBanner", posId);
+    }
+}
+
+P.S.
+1. Unity5.x java里的Boolean类型不可用，获取不到值且直接不抛异常打断程序运行
+2. Android APK的调试可以下载Android Studio
+
+
+Release版本导出
+1. Unity创建user.keystore: Publishing Settings -> Create New keystore -> 选择路径 -> 密码 -> Alias -> Create a new key
+2. Unity导出Andriod项目: 勾上Google Android Project
+3. Eclipse准备导出:
+	(1). Manifest.xml删除android:debuggable="false"
+	(2). BuildPath -> Order and Export -> Android Private Libraries去掉打钩
+4. 发布: 右键项目 -> Android Tools -> Export Signed Application Package -> 选择Unity导出的user.keystore -> 输入密码 -> 导出
+导出的APK不能运行
+
+Release APK导出
+1. 同上创建keystore
+2. Publishing Settings -> Use Existing Keystore -> 选择路径 -> 输入密码 -> 选择Alias -> 输入密码 -> 导出

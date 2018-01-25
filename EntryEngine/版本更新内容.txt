@@ -1,0 +1,45 @@
+﻿previous
+1. EntryBuilder.BuildDatabaseMysql在合服时，未被外键引用的Identity键字段自动合并
+
+1. Unity重新实现GRAPHICS顶点渲染
+2. fixed: EntryBuilder.CSharpCodeProvider解析被注释的属性访问器死循环
+3. 绝对坐标的粒子系统
+
+1. 完善Http服务，但未测试
+
+1. 完善StubClientAsync
+2. 网络协议整合，EntryBuilder.BuildProtocolAgentBinary采用新方式生成协议代码
+
+1. EntryBuilder.BuildCSVFromExcel对于"_"或"#"开头的文件不处理
+2. fixed: GRAPHICS.InputVertexToOutputVertex的uv错误
+3. fixed: Pointer.ClickPosition对左键以外的按键也有效
+4. 完成整理EditorParticle属性编辑器
+5. fixed: 粒子系统编辑器的EditorObject展不开
+
+“.”开头为没做的，越下面优先级越高
+“#”开头为可能已经解决了或者已经不重要了的
+"!"开头为记录的重要事项
+
+current
+! 运维工具账号密码 YamiwaStudio yamiwamiyu0
+# 序列化增加自定义类型的序列化方法
+# Parent的Height<自己的Height时，FinalClip是原始大小，FinalViewClip较小，Enter事件会有不触发的BUG
+# fixed: 切换场景时，默认都没有动画，先出现了新场景，旧场景还在
+# 面板容器，文字有一部分超出面板也绘制并覆盖到容器外，不好重现
+! 心之呐喊三部曲：[序章]到达（たどり着け），传达（届け），响彻（響け），轰动（轟け）
+! 学习型会编程人工智能：知世
+! 飞行摩托：翼
+. 触屏模拟右键：长按屏幕/一手指触屏，第二个手指视为右键（推荐）
+. fixed: EntryBuilder.TexClearColor不能清除黑色以外底色BUG
+. Platform新增DirectX取代Xna
+. UI.EState增加Cover和CoverAll状态
+. 平台特有配置文件，例如Unity打开Phone的输入键盘时，可以指定输入框没有字符时显示默认文字
+. fixed: EntryEditor的预设面板展开过长不会出现滚动条，需要修改整个UIElement.ChildClip
+. 优化完成Spine的集成，解决Spine图像倒转问题
+. Platform新增自定义网页平台：目标可以导出H5代码，包括可以编写前后端代码
+. Panel的EDragMode增加DragInertia平滑移动
+. CodeDom生成其它语言代码并可改名混淆代码，删除没有引用的代码
+. 场景中显示子场景时会闪烁
+. 服务器开启新线程自检测是否卡死，若卡死则调用保存函数
+. 提供脚本注入功能（需MD5检测），可以操作服务器内存里的数据
+. 整理重构SetViewport部分，将View设置成ref参数允许SetViewport中直接修改

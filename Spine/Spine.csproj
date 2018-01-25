@@ -1,0 +1,96 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProductVersion>8.0.30703</ProductVersion>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>{20947282-9AAF-4023-BC1E-325D89415391}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>Spine</RootNamespace>
+    <AssemblyName>Spine</AssemblyName>
+    <TargetFrameworkVersion>v3.5</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="System" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Data" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Spine.cs" />
+    <Compile Include="src\Animation.cs" />
+    <Compile Include="src\AnimationState.cs" />
+    <Compile Include="src\AnimationStateData.cs" />
+    <Compile Include="src\Atlas.cs" />
+    <Compile Include="src\Attachments\AtlasAttachmentLoader.cs" />
+    <Compile Include="src\Attachments\Attachment.cs" />
+    <Compile Include="src\Attachments\AttachmentLoader.cs" />
+    <Compile Include="src\Attachments\AttachmentType.cs" />
+    <Compile Include="src\Attachments\BoundingBoxAttachment.cs" />
+    <Compile Include="src\Attachments\MeshAttachment.cs" />
+    <Compile Include="src\Attachments\PathAttachment.cs" />
+    <Compile Include="src\Attachments\RegionAttachment.cs" />
+    <Compile Include="src\Attachments\VertexAttachment.cs" />
+    <Compile Include="src\BlendMode.cs" />
+    <Compile Include="src\Bone.cs" />
+    <Compile Include="src\BoneData.cs" />
+    <Compile Include="src\Event.cs" />
+    <Compile Include="src\EventData.cs" />
+    <Compile Include="src\ExposedList.cs" />
+    <Compile Include="src\IConstraint.cs" />
+    <Compile Include="src\IkConstraint.cs" />
+    <Compile Include="src\IkConstraintData.cs" />
+    <Compile Include="src\IUpdatable.cs" />
+    <Compile Include="src\Json.cs" />
+    <Compile Include="src\MathUtils.cs" />
+    <Compile Include="src\PathConstraint.cs" />
+    <Compile Include="src\PathConstraintData.cs" />
+    <Compile Include="src\Skeleton.cs" />
+    <Compile Include="src\SkeletonBinary.cs" />
+    <Compile Include="src\SkeletonBounds.cs" />
+    <Compile Include="src\SkeletonData.cs" />
+    <Compile Include="src\SkeletonJson.cs" />
+    <Compile Include="src\Skin.cs" />
+    <Compile Include="src\Slot.cs" />
+    <Compile Include="src\SlotData.cs" />
+    <Compile Include="src\TransformConstraint.cs" />
+    <Compile Include="src\TransformConstraintData.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\EntryEngine\EntryEngine.csproj">
+      <Project>{424D14E4-1661-42E9-A192-B1C60D4669FF}</Project>
+      <Name>EntryEngine</Name>
+    </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="自定义修订.txt" />
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+       Other similar extension points exist, see Microsoft.Common.targets.
+  <Target Name="BeforeBuild">
+  </Target>
+  <Target Name="AfterBuild">
+  </Target>
+  -->
+</Project>
