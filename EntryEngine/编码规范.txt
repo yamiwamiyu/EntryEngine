@@ -11,3 +11,4 @@ public void Method()
 跨平台类型名应全大写 VECTOR2 RECTANGLE COLOR
 生成的代码的成员名用___开头 ___async=>a.Texture=___async ___Generate(){}
 public,internal字段首字母大写，protected,protected internal,private小写
+对于反射调用的类型，需要在反射该类型的类型静态函数中显示调用一下反射类型的构造函数，防止类型被优化掉

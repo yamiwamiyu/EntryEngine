@@ -288,10 +288,7 @@ namespace EntryEngine.Network
                 var async = new AsyncThread();
                 async.Queue(() =>
                     {
-                        lock (this)
-                        {
-                            action(this);
-                        }
+                        action(this);
                         return 1;
                     });
                 return async;
@@ -339,7 +336,8 @@ namespace EntryEngine.Network
                 if (property != null)
                 {
                     if (!(value is DBNull))
-                        property.SetValue(instance, Convert.ChangeType(value, property.PropertyType), null);
+                        //property.SetValue(instance, Convert.ChangeType(value, property.PropertyType), null);
+                        property.SetValue(instance, value, null);
                     continue;
                 }
 
@@ -347,9 +345,18 @@ namespace EntryEngine.Network
                 if (field == null)
                     continue;
                 if (!(value is DBNull))
-                    field.SetValue(instance, Convert.ChangeType(value, field.FieldType));
+                    //field.SetValue(instance, Convert.ChangeType(value, field.FieldType));
+                    field.SetValue(instance, value);
             }
         }
+        //private static object ChangeType(object value, Type type)
+        //{
+        //    if (type.IsEnum)
+        //    {
+        //        var underlying = type.UnderlyingSystemType;
+
+        //    }
+        //}
     }
     public abstract class Database_Link : EntryEngine.Network._DATABASE.Database
     {
@@ -419,13 +426,17 @@ namespace EntryEngine.Network
         {
             this.OnTestConnection += TestConnecttion_UpdatePool;
         }
+        public ConnectionPool(_DATABASE.Database _base) : this()
+        {
+            this.Base = _base;
+        }
 
         private void TestConnecttion_UpdatePool(IDbConnection connection, _DATABASE.Database database)
         {
             if (EntryService.Instance != null)
                 clearPool = EntryService.Instance.SetTimer(1000, ClearPool);
         }
-        private void ClearPool()
+        public void ClearPool()
         {
             var now = DateTime.Now;
             CONNECTION[] array;
@@ -598,6 +609,17 @@ namespace EntryEngine.Network
         public abstract void Dispose();
     }
 
+    public class MYSQL_TABLE_COLUMN
+    {
+        public string COLUMN_NAME;
+        public string COLUMN_KEY;
+        public string EXTRA;
+        public bool IsPrimary { get { return COLUMN_KEY == "PRI"; } }
+        public bool IsIndex { get { return COLUMN_KEY == "MUL"; } }
+        public bool IsUnique { get { return COLUMN_KEY == "UNI"; } }
+        public bool IsIdentity { get { return EXTRA == "auto_increment"; } }
+    }
+
     public enum EIndex : byte
     {
         /// <summary>
@@ -660,6 +682,10 @@ namespace EntryEngine.Network
             this.ForeignTable = type;
         }
     }
+    /// <summary>数据库不生成标记此特性的字段</summary>
+    [AttributeUsage(AttributeTargets.Field)]
+    [Code(ECode.ToBeContinue)]
+    public class IgnoreAttribute : Attribute { }
     [AttributeUsage(AttributeTargets.Class | AttributeTargets.Struct)]
     public class MemoryTableAttribute : Attribute
     {

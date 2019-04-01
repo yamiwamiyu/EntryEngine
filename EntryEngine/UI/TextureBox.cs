@@ -7,6 +7,7 @@ namespace EntryEngine.UI
 		private TEXTURE texture;
         public EViewport DisplayMode = EViewport.Strength;
         public event DUpdate<TextureBox> TextureChanged;
+        public EFlip Flip;
 
         public TEXTURE Texture
         {
@@ -84,7 +85,7 @@ namespace EntryEngine.UI
                 }
                 else
                     source.Height = size.Y;
-                spriteBatch.Draw(Texture, view, source, Color);
+                spriteBatch.Draw(Texture, view, source, Color, 0, 0, 0, Flip);
             }
             else if (mode == EViewport.Adapt)
             {
@@ -97,12 +98,12 @@ namespace EntryEngine.UI
                 view.X += offset.X;
                 view.Y += offset.Y;
 
-                spriteBatch.Draw(Texture, view, Color);
+                spriteBatch.Draw(Texture, view, Color, 0, 0, 0, Flip);
             }
             else
             {
                 // strength
-                spriteBatch.Draw(Texture, view, Color);
+                spriteBatch.Draw(Texture, view, Color, 0, 0, 0, Flip);
             }
         }
         public override void Dispose()
@@ -121,10 +122,6 @@ namespace EntryEngine.UI
 			}
 			set
 			{
-				if (value != null)
-				{
-					value.AutoPlay = false;
-				}
 				Texture = value;
 			}
 		}
@@ -136,12 +133,12 @@ namespace EntryEngine.UI
 			ANIMATION animation = Animation;
 			if (animation != null)
 			{
-				animation.AutoPlay = false;
 				if (FrameChanged != null && animation.IsFrameOver)
 				{
 					FrameChanged(this, e);
 				}
-				if (animation.Update(e.GameTime.Elapsed))
+                animation.Update(e.GameTime);
+				if (animation.IsSequenceOver)
 				{
 					if (SequenceOver != null)
 					{

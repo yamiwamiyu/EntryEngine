@@ -102,6 +102,20 @@ namespace EntryEngine
             MATRIX2x3.Multiply(ref rotate, ref mirror, out result);
             MATRIX2x3.Multiply(ref result, ref translation, out result);
         }
+        /// <summary>
+        /// if need begin with the result matrix, you should set the rect's location to 0,0
+        /// </summary>
+        public static void DrawMatrixWithoutMirror(ref RECT rect, ref RECT source, float rotation, ref VECTOR2 origin, out MATRIX2x3 result)
+        {
+            MATRIX2x3 rotate = MATRIX2x3.CreateRotation(rotation, origin.X / source.Width * rect.Width, origin.Y / source.Height * rect.Height);
+            MATRIX2x3 translation = MATRIX2x3.CreateTranslation(rect.X, rect.Y);
+            MATRIX2x3.Multiply(ref rotate, ref translation, out result);
+        }
+        /// <summary>通过像素差计算锚点</summary>
+        public static float CalcOrigin(float position, float size, float originPosition)
+        {
+            return (originPosition - position) / size;
+        }
 	}
 }
 

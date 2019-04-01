@@ -30,6 +30,8 @@ namespace EntryEngine
         private LinkedList<UIScene> scenes = new LinkedList<UIScene>();
         public event Action<GRAPHICS, INPUT> OnDrawMouse;
         public event Action<UIScene, EState, bool> OnShowScene;
+        /// <summary>每帧经过的时间：true:Platform.FrameRate/false:实际经过时间</summary>
+        public bool IsFixedTimeStep;
 
         public IEnumerable<UIScene> Dialogs
         {
@@ -55,6 +57,7 @@ namespace EntryEngine
                     return scenes.First.Value;
             }
         }
+        public UIScene PrevMainScene { get; private set; }
 
         public Entry()
         {
@@ -68,8 +71,23 @@ namespace EntryEngine
             INPUT.Update(this);
             INPUT.Update(this);
         }
+        protected void SetPIXEL(TEXTURE texture)
+        {
+            if (TEXTURE._pixel != null)
+                throw new InvalidOperationException();
+            if (texture != null)
+                TEXTURE._pixel = new TEXTURE_SYSTEM(texture);
+        }
+        protected void SetPATCH(TEXTURE texture)
+        {
+            if (PATCH._patch != null)
+                throw new InvalidOperationException();
+            if (texture != null)
+                PATCH._patch = new TEXTURE_SYSTEM(texture);
+        }
         public void ReleaseUnusableScene()
         {
+            PrevMainScene = null;
             Dictionary<Type, UIScene> cache = new Dictionary<Type, UIScene>();
             foreach (var item in scenes)
             {
@@ -99,6 +117,17 @@ namespace EntryEngine
             cachedScenes.TryGetValue(typeof(T), out scene);
             return (T)scene;
         }
+        public T GetSceneOrCreate<T>() where T : UIScene, new()
+        {
+            Type type = typeof(T);
+            UIScene scene;
+            if (!cachedScenes.TryGetValue(type, out scene))
+            {
+                scene = new T();
+                cachedScenes.Add(type, scene);
+            }
+            return (T)scene;
+        }
         private T CacheScene<T>() where T : UIScene, new()
         {
             Type type = typeof(T);
@@ -114,24 +143,16 @@ namespace EntryEngine
         }
         public T ShowMainScene<T>() where T : UIScene, new()
         {
-            return ShowMainScene<T>(null);
-        }
-        public T ShowMainScene<T>(UIScene parent) where T : UIScene, new()
-        {
             T scene = CacheScene<T>();
-            ShowMainScene(scene, parent);
+            ShowMainScene(scene);
             return scene;
         }
         public void ShowMainScene(UIScene scene)
         {
-            ShowMainScene(scene, null);
-        }
-        public void ShowMainScene(UIScene scene, UIScene parent)
-        {
             if (scenes.Count > 0)
-                scenes.ForFirstToLast((item) => item.OnPhaseEnding(scene));
-            InternalShowScene(scene, parent, EState.None, true);
-            phase = EPhase.Ending;
+                scenes.ForFirstToLast((item) => item.OnPhaseEnding());
+            InternalShowScene(scene, EState.None, true);
+            //phase = EPhase.Ending;
         }
         /// <summary>
         /// 使用过场场景切换场景
@@ -153,31 +174,25 @@ namespace EntryEngine
         }
         public T ShowDialogScene<T>(EState dialogState) where T : UIScene, new()
         {
-            return ShowDialogScene<T>(null, dialogState);
-        }
-        public T ShowDialogScene<T>(UIScene dialogParent, EState dialogState) where T : UIScene, new()
-        {
             T scene = CacheScene<T>();
             // new scene loading
-            ShowDialogScene(scene, dialogParent, dialogState);
+            ShowDialogScene(scene, dialogState);
             return (T)scene;
         }
         public void ShowDialogScene(UIScene scene)
         {
-            InternalShowScene(scene, null, EState.None, false);
+            InternalShowScene(scene, EState.None, false);
         }
         public void ShowDialogScene(UIScene scene, EState state)
         {
-            InternalShowScene(scene, null, state, false);
+            InternalShowScene(scene, state, false);
         }
-        public void ShowDialogScene(UIScene scene, UIScene dialogParent, EState dialogState)
-        {
-            InternalShowScene(scene, dialogParent, dialogState, false);
-        }
-        private void InternalShowScene(UIScene scene, UIScene dialogParent, EState dialogState, bool isMain)
+        private void InternalShowScene(UIScene scene, EState dialogState, bool isMain)
         {
             if (scene == null)
                 throw new ArgumentNullException("scene");
+
+            //scene.Entry = this;
 
             if (OnShowScene != null)
                 OnShowScene(scene, dialogState, isMain);
@@ -186,7 +201,8 @@ namespace EntryEngine
             if (scenes.Contains(scene))
             {
                 scene.State = dialogState;
-                scene.OnPhaseShowing(Scene);
+                scene.Show(this);
+                scene.OnPhaseShowing();
                 if (phase == EPhase.Running)
                     phase = EPhase.Showing;
                 ToFront(scene);
@@ -195,36 +211,42 @@ namespace EntryEngine
 
             // new scene loading
             if (isMain)
+            {
+                // 缓存前一个主场景
+                PrevMainScene = this.Scene;
                 scenes.AddFirst(scene);
+                phase = EPhase.Ending;
+            }
             else
+            {
                 scenes.AddLast(scene);
-            scene.Show(this, dialogParent);
+                if (phase > EPhase.Loading)
+                    phase = EPhase.Loading;
+            }
+            scene.Show(this);
             scene.OnPhaseLoading();
             scene.State = dialogState;
-            //if (phase == EPhase.Running)
-                //phase = EPhase.Loading;
-                phase = EPhase.Ending;
+            UIElement.Handled = true;
         }
-        public void ShowDesktop(UIScene next, bool dispose)
-        {
-            foreach (var item in Dialogs)
-                item.OnPhaseEnding(next);
-            phase = EPhase.Ending;
-        }
-        public void ShowDesktopImmediately(EState state)
+        public void ShowDesktop(EState state)
         {
             foreach (var scene in Dialogs)
                 Close(scene, state);
         }
+        public void ShowDesktopImmediately(EState state)
+        {
+            foreach (var scene in Dialogs)
+                CloseImmediately(scene, state);
+        }
         internal void Close(UIScene scene, EState state)
         {
             scene.State = state;
-            scene.OnPhaseEnding(null);
+            scene.OnPhaseEnding();
             // 关闭子场景
             foreach (var dialog in GetChildScene(scene))
             {
                 dialog.State = state;
-                dialog.OnPhaseEnding(null);
+                dialog.OnPhaseEnding();
             }
             phase = EPhase.Ending;
         }
@@ -235,8 +257,8 @@ namespace EntryEngine
                 // 关闭子场景
                 foreach (var dialog in GetChildScene(scene))
                     CloseImmediately(dialog, state);
-                scene.OnPhaseEnding(null);
-                scene.OnPhaseEnded(null);
+                scene.OnPhaseEnding();
+                scene.OnPhaseEnded();
                 InternalCloseScene(scene, ref state);
             }
         }
@@ -279,6 +301,9 @@ namespace EntryEngine
         }
         private bool NeedUpdateScene(UIScene scene)
         {
+            if (!scene.IsEnable)
+                return false;
+
             if (scene.Phase != EPhase.Loading
                 && scene.Phase != EPhase.Preparing
                 && scene.Phase != EPhase.Prepared)
@@ -322,6 +347,9 @@ namespace EntryEngine
                 //_LOG.Debug("Entry.Phase is Running, UIScene.Phase is not Running.");
                 return false;
             }
+
+            if (!scene.IsEventable)
+                return false;
 
             if (scene.Parent == null)
             {
@@ -374,7 +402,7 @@ namespace EntryEngine
                 // 没有准备且处在准备阶段的菜单不绘制
                 && ((scene.Phase != EPhase.Preparing && scene.Phase != EPhase.Prepared) || scene.Phasing != null);
 
-            if (scene.IsDrawable && scene.DrawState)
+            if (scene.IsDrawable && scene.DrawState && scene.IsVisible)
             {
                 if (scene.Parent == null)
                 {
@@ -416,12 +444,39 @@ namespace EntryEngine
         private void PhaseEnding()
         {
             bool end = true;
-            foreach (var item in scenes.Where(s => s.Phase == EPhase.Ending))
-                if (item.Phasing != null && !item.Phasing.IsEnd)
-                    end = false;
+
+            scenes.ForFirstToLast(item =>
+            {
+                if (item.Phase == EPhase.Ending)
+                {
+                    if (item.Phasing == null || item.Phasing.IsEnd)
+                    {
+                        scenes.Remove(item);
+                        item.OnPhaseEnded();
+                        InternalCloseScene(item, ref item.State);
+                    }
+                    else
+                        end = false;
+                }
+            });
+
+            //foreach (var item in scenes.Where(s => s.Phase == EPhase.Ending))
+            //    if (item.Phasing != null && !item.Phasing.IsEnd)
+            //        end = false;
 
             if (end)
+            {
                 phase = EPhase.Loading;
+                //scenes.ForFirstToLast(item =>
+                //{
+                //    if (item.Phase == EPhase.Ending)
+                //    {
+                //        scenes.Remove(item);
+                //        item.OnPhaseEnded();
+                //        InternalCloseScene(item, ref item.State);
+                //    }
+                //});
+            }
 
             PhaseLoading();
         }
@@ -436,7 +491,18 @@ namespace EntryEngine
 
             // 等待Ending结束，等待所有Loading结束
             if (end && phase == EPhase.Loading)
+            {
                 phase = EPhase.Preparing;
+                //scenes.ForFirstToLast(item =>
+                //{
+                //    if (item.Phase == EPhase.Ending)
+                //    {
+                //        scenes.Remove(item);
+                //        item.OnPhaseEnded();
+                //        InternalCloseScene(item, ref item.State);
+                //    }
+                //});
+            }
 
             // 等待Ending结束
             if (phase != EPhase.Ending)
@@ -455,28 +521,11 @@ namespace EntryEngine
             if (end && phase == EPhase.Preparing)
             {
                 phase = EPhase.Showing;
-
-                var previous = Scene;
-                UIScene next = null;
-                foreach (var item in scenes)
-                {
-                    if (item.Phase > EPhase.Ending)
-                    {
-                        next = item;
-                        break;
-                    }
-                }
                 scenes.ForFirstToLast(item =>
                 {
-                    if (item.Phase == EPhase.Ending)
+                    if (item.Phase == EPhase.Prepared)
                     {
-                        scenes.Remove(item);
-                        item.OnPhaseEnded(next);
-                        InternalCloseScene(item, ref item.State);
-                    }
-                    else if (item.Phase == EPhase.Prepared)
-                    {
-                        item.OnPhaseShowing(previous);
+                        item.OnPhaseShowing();
                     }
                 });
 
@@ -572,9 +621,11 @@ namespace EntryEngine
                     switch (scene.State)
                     {
                         case EState.Dialog:
+                        case EState.Cover:
                             _event = false;
                             break;
 
+                        case EState.CoverAll:
                         case EState.Block: return;
 
                         case EState.Break:
@@ -595,10 +646,13 @@ namespace EntryEngine
         }
         protected override void Elapsed(GameTime gameTime)
         {
-            TimeSpan time = IPlatform.FrameRate;
-            gameTime.ElapsedTime = time;
-            gameTime.Elapsed = (float)time.TotalMilliseconds;
-            gameTime.ElapsedSecond = (float)time.TotalSeconds;
+            if (IsFixedTimeStep)
+            {
+                TimeSpan time = IPlatform.FrameRate;
+                gameTime.ElapsedTime = time;
+                gameTime.Elapsed = (float)time.TotalMilliseconds;
+                gameTime.ElapsedSecond = (float)time.TotalSeconds;
+            }
         }
         public void Draw()
         {
@@ -606,13 +660,57 @@ namespace EntryEngine
 
             GRAPHICS.Begin(MATRIX2x3.Identity, GRAPHICS.FullGraphicsArea);
 
-            var node = scenes.First;
+            var node = scenes.Last;
+            // Cover和CoverAll将对绘制其它场景造成遮挡
+            UIScene coverScene = null;
+            UIScene coverAll = null;
             while (node != null)
             {
-                var scene = node.Value;
-                if (NeedDrawScene(scene))
-                    scene.Draw(GRAPHICS, this);
-                node = node.Next;
+                UIScene scene = node.Value;
+                if (scene.State == EState.Cover)
+                {
+                    coverScene = scene;
+                    break;
+                }
+                else if (scene.State == EState.CoverAll)
+                {
+                    coverAll = scene;
+                    break;
+                }
+                node = node.Previous;
+            }
+            if (coverAll != null)
+            {
+                // CoverAll绘制和Cover场景[及其后面的对话框场景]
+                //if (NeedDrawScene(coverAll))
+                //    coverAll.Draw(GRAPHICS, this);
+                node = scenes.First;
+                bool cover = false;
+                // Cover绘制主场景和Cover场景[及其后面的对话框场景]
+                while (node != null)
+                {
+                    var scene = node.Value;
+                    if (scene == coverAll)
+                        cover = true;
+                    if (cover && NeedDrawScene(scene))
+                        scene.Draw(GRAPHICS, this);
+                    node = node.Next;
+                }
+            }
+            else
+            {
+                node = scenes.First;
+                bool cover = coverScene != null;
+                // Cover绘制主场景和Cover场景[及其后面的对话框场景]
+                while (node != null)
+                {
+                    var scene = node.Value;
+                    if (coverScene != null && cover && scene == coverScene)
+                        cover = false;
+                    if ((!cover || node == scenes.First) && NeedDrawScene(scene))
+                        scene.Draw(GRAPHICS, this);
+                    node = node.Next;
+                }
             }
 
             if (OnDrawMouse != null && IPlatform.IsMouseVisible)
@@ -624,6 +722,7 @@ namespace EntryEngine
         }
         public override void Dispose()
         {
+            PrevMainScene = null;
             foreach (var item in cachedScenes)
                 item.Value.Dispose();
             cachedScenes.Clear();
@@ -1455,6 +1554,7 @@ namespace EntryEngine
         {
             get { return size == 0 ? 0 : size - 1; }
         }
+        public Pointer<ITouchState> this[int index] { get { return GetTouch(index); } }
 
         #region 手势
 
@@ -1538,6 +1638,12 @@ namespace EntryEngine
                 inputs[i] = new SingleTouch<ITouchState>();
         }
 
+        public Pointer<ITouchState> GetTouch(int index)
+        {
+            if (index < 0 || index >= size)
+                return null;
+            return inputs[index];
+        }
         public sealed override bool IsClick(int key)
         {
             return size > psize;
@@ -2254,7 +2360,7 @@ namespace EntryEngine
                 Copy(copied);
             }
         }
-        protected virtual void Copy(string copy)
+        public virtual void Copy(string copy)
         {
         }
         public void Cut()
@@ -3954,7 +4060,7 @@ namespace EntryEngine
 		};
         private const string KEY_PIXEL = "*PIXEL";
 
-        private static TEXTURE _pixel;
+        internal static TEXTURE _pixel;
         public static TEXTURE Pixel
         {
             get
@@ -4021,12 +4127,21 @@ namespace EntryEngine
 
         public static TEXTURE GetDrawableTexture(TEXTURE texture)
         {
-            if (texture == null)
-                return null;
-            if (texture.IsLinked)
-                return GetDrawableTexture(((TEXTURE_Link)texture).Base);
-            else
-                return texture;
+            //if (texture == null)
+            //    return null;
+            //if (texture.IsLinked)
+            //    return GetDrawableTexture(((TEXTURE_Link)texture).Base);
+            //else
+            //    return texture;
+
+            while (true)
+            {
+                if (texture == null) return null;
+                if (texture.IsLinked)
+                    texture = ((TEXTURE_Link)texture).Base;
+                else
+                    return texture;
+            }
         }
         public static new bool Serializer(ByteRefWriter writer, object value, Type type)
         {
@@ -4112,8 +4227,9 @@ namespace EntryEngine
                             {
                                 // 异步加载
                                 TEXTURE_DELAY delay = new TEXTURE_DELAY();
-                                delay.Async = content.LoadAsync<TEXTURE>(key, (t) => delay.Base = t);
-                                list.Add(delay.Async);
+                                var async = content.LoadAsync<TEXTURE>(key, (t) => delay.Base = t);
+                                delay.Async = async;
+                                list.Add(async);
                                 return delay;
                             }
                         }
@@ -4190,9 +4306,9 @@ namespace EntryEngine
         }
     }
     /// <summary>可延迟加载的图片</summary>
-    internal sealed class TEXTURE_DELAY : TEXTURE_Link
+    public sealed class TEXTURE_DELAY : TEXTURE_Link
     {
-        public AsyncLoadContent Async;
+        public Async Async;
 
         protected internal override void InternalDispose()
         {
@@ -4205,7 +4321,9 @@ namespace EntryEngine
 
     public sealed class PIECE : TEXTURE_Link
     {
+        /// <summary>宽高就是图像的尺寸</summary>
         public RECT SourceRectangle;
+        /// <summary>宽高分别是右边和下边的尺寸</summary>
         public RECT Padding;
 
         public override int Width
@@ -4237,23 +4355,75 @@ namespace EntryEngine
             if (Base == null)
                 return true;
 
-            if (vertex.Source.Width > Width ||
-                vertex.Source.Height > Height)
+            float width = Width;
+            float height = Height;
+            if (vertex.Source.Width > width || vertex.Source.Height > height)
                 throw new InvalidOperationException("Piece texture can't tile. SourceRectangle must be contained in piece's SourceRectangle.");
 
             if (!Padding.IsEmpty)
             {
-                float whiteW = Padding.X + Padding.Width;
-                float whiteH = Padding.Y + Padding.Height;
+                float width2 = vertex.Destination.Width;
+                float height2 = vertex.Destination.Height;
+                float scaleX = width2 / vertex.Source.Width;
+                float scaleY = height2 / vertex.Source.Height;
+                float whiteX1 = 0, whiteX2;
+                float whiteY1 = 0, whiteY2;
+                bool oxFlag = false, oyFlag = false;
+                whiteX1 = Padding.X - vertex.Source.X;
+                if (whiteX1 >= 0)
+                {
+                    vertex.Source.Width -= whiteX1;
+                    whiteX1 *= scaleX;
+                    vertex.Destination.Width -= whiteX1;
+                    vertex.Source.X = 0;
+                    oxFlag = true;
+                }
+                else
+                {
+                    vertex.Source.X -= Padding.X;
+                    whiteX1 = 0;
+                }
+                whiteX2 = vertex.Source.X + vertex.Source.Width;
+                if (whiteX2 > SourceRectangle.Width)
+                {
+                    whiteX2 -= SourceRectangle.Width;
+                    vertex.Source.Width -= whiteX2;
+                    whiteX2 *= scaleX;
+                    vertex.Destination.Width -= whiteX2;
+                    oxFlag = true;
+                }
+                if (oxFlag)
+                {
+                    vertex.Origin.X = (vertex.Origin.X * width2 - whiteX1) / vertex.Destination.Width;
+                }
 
-                vertex.Destination.Width *= SourceRectangle.Width / (SourceRectangle.Width + whiteW);
-                vertex.Destination.Height *= SourceRectangle.Height / (SourceRectangle.Height + whiteH);
-
-                vertex.Origin.X -= Padding.X;
-                vertex.Origin.Y -= Padding.Y;
-
-                vertex.Source.Width -= whiteW;
-                vertex.Source.Height -= whiteH;
+                whiteY1 = Padding.Y - vertex.Source.Y;
+                if (whiteY1 >= 0)
+                {
+                    vertex.Source.Height -= whiteY1;
+                    whiteY1 *= scaleY;
+                    vertex.Destination.Height -= whiteY1;
+                    vertex.Source.Y = 0;
+                    oyFlag = true;
+                }
+                else
+                {
+                    vertex.Source.Y -= Padding.Y;
+                    whiteY1 = 0;
+                }
+                whiteY2 = vertex.Source.Y + vertex.Source.Height;
+                if (whiteY2 > SourceRectangle.Height)
+                {
+                    whiteY2 -= SourceRectangle.Height;
+                    vertex.Source.Height -= whiteY2;
+                    whiteY2 *= scaleY;
+                    vertex.Destination.Height -= whiteY2;
+                    oyFlag = true;
+                }
+                if (oyFlag)
+                {
+                    vertex.Origin.Y = (vertex.Origin.Y * height2 - whiteY1) / vertex.Destination.Height;
+                }
             }
             vertex.Source.X += SourceRectangle.X;
             vertex.Source.Y += SourceRectangle.Y;
@@ -4286,6 +4456,12 @@ namespace EntryEngine
             public string Map;
             public RECT Source;
             public RECT Padding;
+        }
+
+        static PipelinePiece()
+        {
+            // HACK: 防止构造函数被优化掉
+            new Piece();
         }
 
         private Dictionary<string, Piece> Pieces;
@@ -4415,19 +4591,27 @@ namespace EntryEngine
     {
         internal const string KEY_PATCH = "*PATCH";
         internal const string COLOR_NULL = "255,255,255,0";
-        private static float[][] _position = new float[4][];
-        private static float[][] _size = new float[4][];
-        private static TEXTURE _patch;
+        struct PatchPiece
+        {
+            public float X;
+            public float Y;
+            public float W;
+            public float H;
+            public float SX;
+            public float SY;
+            public float SW;
+            public float SH;
+        }
+        private static PatchPiece[][] _grid = new PatchPiece[3][];
         public static COLOR NullColor = new COLOR(255, 255, 255, 0);
 
         static PATCH()
         {
-            for (int i = 0, n = _position.Length; i < n; i++)
-                _position[i] = new float[3];
-            for (int i = 0, n = _size.Length; i < n; i++)
-                _size[i] = new float[3];
+            for (int i = 0; i < _grid.Length; i++)
+                _grid[i] = new PatchPiece[3];
         }
 
+        internal static TEXTURE _patch;
         public static TEXTURE _PATCH
         {
             get
@@ -4461,6 +4645,7 @@ namespace EntryEngine
             return patch;
         }
 
+        /// <summary>左上 Body宽高[不是右下]</summary>
         public RECT Anchor;
         public COLOR ColorBody;
         public COLOR ColorBorder;
@@ -4485,6 +4670,8 @@ namespace EntryEngine
             get { return Anchor.Bottom; }
             set { Anchor.Height = value - Anchor.Y; }
         }
+        public float RightWidth { get { return Base.Width - Anchor.X - Anchor.Width; } }
+        public float BottomHeight { get { return Base.Height - Anchor.Y - Anchor.Height; } }
         public bool IsDefaultPatch
         {
             get { return Key != null && Key.StartsWith(KEY_PATCH); }
@@ -4516,102 +4703,181 @@ namespace EntryEngine
                 (int)vertex.Source.Height != Base.Height)
                 throw new ArgumentException("Patch's source must be all of the base texture.");
 
-            VECTOR2 scale;
-            scale.X = 1;
-            scale.Y = 1;
-            //if (source.Width < Base.Width)
-            //    scale.X = Base.Width / source.Width;
-            //else
-            //    scale.X = 1;
-            //if (source.Height < Base.Height)
-            //    scale.Y = Base.Height / source.Height;
-            //else
-            //    scale.Y = 1;
+            float bwidth = Base.Width;
+            float bheight = Base.Height;
+            float width = vertex.Destination.Width;
+            float height = vertex.Destination.Height;
+            float right_sx = Anchor.X + Anchor.Width;
+            float bottom_sy = Anchor.Y + Anchor.Height;
+            float center_width = width - (bwidth - Anchor.Width);
+            float middle_height = height - (bheight - Anchor.Height);
+            float right_width = bwidth - Anchor.X - Anchor.Width;
+            float bottom_height = bheight - Anchor.Y - Anchor.Height;
+            float right_x = width - right_width;
+            float bottom_y = height - bottom_height;
+            vertex.Origin.X *= width;
+            vertex.Origin.Y *= height;
+            VECTOR2 origin = vertex.Origin;
 
-            _position[0][1] = Anchor.X;
-            _position[0][2] = Anchor.Right;
-            _position[1][1] = Anchor.Y;
-            _position[1][2] = Anchor.Bottom;
+            // 上左
+            //Draw(graphics, vertex, 0, 0, Anchor.X, Anchor.Y, Anchor.X, Anchor.Y);
+            _grid[0][0].X = 0;
+            _grid[0][0].Y = 0;
+            _grid[0][0].SX = 0;
+            _grid[0][0].SY = 0;
+            _grid[0][0].W = Anchor.X;
+            _grid[0][0].H = Anchor.Y;
+            _grid[0][0].SW = Anchor.X;
+            _grid[0][0].SH = Anchor.Y;
+            // 上中
+            //Draw(graphics, vertex, Anchor.X, 0, center_width, Anchor.Y, Anchor.Width, Anchor.Y);
+            _grid[0][1].X = Anchor.X;
+            _grid[0][1].Y = 0;
+            _grid[0][1].SX = Anchor.X;
+            _grid[0][1].SY = 0;
+            _grid[0][1].W = center_width;
+            _grid[0][1].H = Anchor.Y;
+            _grid[0][1].SW = Anchor.Width;
+            _grid[0][1].SH = Anchor.Y;
+            // 上右
+            //Draw(graphics, vertex, right_x, 0, right_width, Anchor.Y, right_width, Anchor.Y);
+            _grid[0][2].X = right_x;
+            _grid[0][2].Y = 0;
+            _grid[0][2].SX = right_sx;
+            _grid[0][2].SY = 0;
+            _grid[0][2].W = right_width;
+            _grid[0][2].H = Anchor.Y;
+            _grid[0][2].SW = right_width;
+            _grid[0][2].SH = Anchor.Y;
+            // 中左
+            //Draw(graphics, vertex, 0, Anchor.Y, Anchor.X, middle_height, Anchor.X, Anchor.Height);
+            _grid[1][0].X = 0;
+            _grid[1][0].Y = Anchor.Y;
+            _grid[1][0].SX = 0;
+            _grid[1][0].SY = Anchor.Y;
+            _grid[1][0].W = Anchor.X;
+            _grid[1][0].H = middle_height;
+            _grid[1][0].SW = Anchor.X;
+            _grid[1][0].SH = Anchor.Height;
+            // 中中
+            //Draw(graphics, vertex, Anchor.X, Anchor.Y, center_width, middle_height, Anchor.Width, Anchor.Height);
+            _grid[1][1].X = Anchor.X;
+            _grid[1][1].Y = Anchor.Y;
+            _grid[1][1].SX = Anchor.X;
+            _grid[1][1].SY = Anchor.Y;
+            _grid[1][1].W = center_width;
+            _grid[1][1].H = middle_height;
+            _grid[1][1].SW = Anchor.Width;
+            _grid[1][1].SH = Anchor.Height;
+            // 中右
+            //Draw(graphics, vertex, right_x, Anchor.Y, right_width, middle_height, right_width, Anchor.Height);
+            _grid[1][2].X = right_x;
+            _grid[1][2].Y = Anchor.Y;
+            _grid[1][2].SX = right_sx;
+            _grid[1][2].SY = Anchor.Y;
+            _grid[1][2].W = right_width;
+            _grid[1][2].H = middle_height;
+            _grid[1][2].SW = right_width;
+            _grid[1][2].SH = Anchor.Height;
+            // 下左
+            //Draw(graphics, vertex, 0, bottom_y, Anchor.X, bottom_height, Anchor.X, bottom_height);
+            _grid[2][0].X = 0;
+            _grid[2][0].Y = bottom_y;
+            _grid[2][0].SX = 0;
+            _grid[2][0].SY = bottom_sy;
+            _grid[2][0].W = Anchor.X;
+            _grid[2][0].H = bottom_height;
+            _grid[2][0].SW = Anchor.X;
+            _grid[2][0].SH = bottom_height;
+            // 下中
+            //Draw(graphics, vertex, Anchor.X, bottom_y, center_width, bottom_height, Anchor.Width, bottom_height);
+            _grid[2][1].X = Anchor.X;
+            _grid[2][1].Y = bottom_y;
+            _grid[2][1].SX = Anchor.X;
+            _grid[2][1].SY = bottom_sy;
+            _grid[2][1].W = center_width;
+            _grid[2][1].H = bottom_height;
+            _grid[2][1].SW = Anchor.Width;
+            _grid[2][1].SH = bottom_height;
+            // 下右
+            //Draw(graphics, vertex, right_x, bottom_y, right_width, bottom_height, right_width, bottom_height);
+            _grid[2][2].X = right_x;
+            _grid[2][2].Y = bottom_y;
+            _grid[2][2].SX = right_sx;
+            _grid[2][2].SY = bottom_sy;
+            _grid[2][2].W = right_width;
+            _grid[2][2].H = bottom_height;
+            _grid[2][2].SW = right_width;
+            _grid[2][2].SH = bottom_height;
 
-            _size[0][0] = Anchor.X;
-            _size[0][1] = Anchor.Width;
-            _size[0][2] = Base.Width - _position[0][2];
-            _size[1][0] = Anchor.Y;
-            _size[1][1] = Anchor.Height;
-            _size[1][2] = Base.Height - _position[1][2];
-
-            _size[2][0] = _size[0][0];
-            _size[2][1] = vertex.Destination.Width - _size[0][2] - Anchor.X;
-            _size[2][2] = _size[0][2];
-            _size[3][0] = _size[1][0];
-            _size[3][1] = vertex.Destination.Height - _size[1][2] - Anchor.Y;
-            _size[3][2] = _size[1][2];
-
-            _position[2][1] = Anchor.X;
-            _position[2][2] = _position[2][1] + _size[2][1];
-            _position[3][1] = Anchor.Y;
-            _position[3][2] = _position[3][1] + _size[3][1];
-
-            MATRIX2x3 matrix;
-            __GRAPHICS.DrawMatrix(ref vertex.Destination, ref vertex.Source, vertex.Rotation, ref vertex.Origin, vertex.Flip, out matrix);
-            graphics.BeginFromPrevious(matrix);
-            vertex.Rotation = 0;
-            vertex.Origin.X = 0;
-            vertex.Origin.Y = 0;
-
-            COLOR cborder = ColorBorder.A == 0 && ColorBorder.R == 255 && ColorBorder.G == 255 && ColorBorder.B == 255 ? vertex.Color : ColorBorder;
-            COLOR cbody = ColorBody.A == 0 && ColorBody.R == 255 && ColorBody.G == 255 && ColorBody.B == 255 ? vertex.Color : ColorBody;
-            int y, x;
-            for (int i = 0; i < 3; i++)
+            // 镜像
+            if ((vertex.Flip & EFlip.FlipHorizontally) != EFlip.None)
             {
-                if ((vertex.Flip & EFlip.FlipHorizontally) != EFlip.None)
-                    x = 2 - i;
-                else
-                    x = i;
-
-                vertex.Source.X = _position[0][x];
-                vertex.Source.Width = _size[0][x];
-
-                vertex.Destination.X = _position[2][i];
-                vertex.Destination.Width = _size[2][i];
-
-                for (int j = 0; j < 3; j++)
+                for (int i = 0; i < 3; i++)
                 {
-                    if ((vertex.Flip & EFlip.FlipVertically) != EFlip.None)
-                        y = 2 - j;
-                    else
-                        y = j;
-
-                    vertex.Source.Y = _position[1][y];
-                    vertex.Source.Height = _size[1][y];
-
-                    vertex.Destination.Y = _position[3][j];
-                    vertex.Destination.Height = _size[3][j];
-
-                    // Unity使用了__GRAPHICS.DrawMatrix将view.X和view.Y赋值为0
-                    if (x == 1 && y == 1)
-                    {
-                        //graphics._InternalDraw(Base, ref temp, ref patch, ref content, 0, ref zero, flip);
-                        vertex.Color.R = cbody.R;
-                        vertex.Color.G = cbody.G;
-                        vertex.Color.B = cbody.B;
-                        vertex.Color.A = cbody.A;
-                        graphics.Draw(Base, ref vertex);
-                    }
-                    else
-                    {
-                        //graphics._InternalDraw(Base, ref temp, ref patch, ref c, 0, ref zero, flip);
-                        vertex.Color.R = cborder.R;
-                        vertex.Color.G = cborder.G;
-                        vertex.Color.B = cborder.B;
-                        vertex.Color.A = cborder.A;
-                        graphics.Draw(Base, ref vertex);
-                    }
+                    _grid[i][2].X = 0;
+                    _grid[i][1].X = _grid[i][2].W;
+                    _grid[i][0].X = _grid[i][1].X + _grid[i][1].W;
                 }
             }
+            if ((vertex.Flip & EFlip.FlipVertically) != EFlip.None)
+            {
+                for (int i = 0; i < 3; i++)
+                {
+                    _grid[2][i].Y = 0;
+                    _grid[1][i].Y = _grid[2][i].H;
+                    _grid[0][i].Y = _grid[1][i].Y + _grid[1][i].H;
+                }
+            }
+            
+            // 先画Body
+            if (!(ColorBody.A == 0 && ColorBody.R == 255 && ColorBody.G == 255 && ColorBody.B == 255))
+            {
+                COLOR color = vertex.Color;
+                vertex.Color.R = ColorBody.R;
+                vertex.Color.G = ColorBody.G;
+                vertex.Color.B = ColorBody.B;
+                vertex.Color.A = ColorBody.A;
+                Draw(graphics, ref vertex, ref _grid[1][1]);
+                // 还原颜色，防止边框比改变颜色时，边框也和Body颜色一样
+                vertex.Color = color;
+            }
+            else
+                Draw(graphics, ref vertex, ref _grid[1][1]);
 
-            graphics.End();
+            // 统一画border
+            if (!(ColorBorder.A == 0 && ColorBorder.R == 255 && ColorBorder.G == 255 && ColorBorder.B == 255))
+            {
+                vertex.Color.R = ColorBorder.R;
+                vertex.Color.G = ColorBorder.G;
+                vertex.Color.B = ColorBorder.B;
+                vertex.Color.A = ColorBorder.A;
+            }
+            for (int i = 0; i < 3; i++)
+            {
+                for (int j = 0; j < 3; j++)
+                {
+                    if (i == 1 && j == 1) continue;
+                    // Origin会被修改
+                    vertex.Origin.X = origin.X;
+                    vertex.Origin.Y = origin.Y;
+                    Draw(graphics, ref vertex, ref _grid[i][j]);
+                }
+            }
             return true;
+        }
+        void Draw(GRAPHICS graphics, ref SpriteVertex vertex, ref PatchPiece param)
+        {
+            vertex.Destination.Width = param.W;
+            vertex.Destination.Height = param.H;
+            vertex.Source.X = param.SX;
+            vertex.Source.Y = param.SY;
+            vertex.Source.Width = param.SW;
+            vertex.Source.Height = param.SH;
+            // vertex.Origin.X * width在外面已经乘过了，这里直接用
+            vertex.Origin.X = __GRAPHICS.CalcOrigin(param.X, param.W, vertex.Origin.X);
+            vertex.Origin.Y = __GRAPHICS.CalcOrigin(param.Y, param.H, vertex.Origin.Y);
+            graphics.Draw(Base, ref vertex);
         }
         protected internal override Content Cache()
         {
@@ -4632,6 +4898,12 @@ namespace EntryEngine
             public COLOR ColorBody;
             public COLOR ColorBorder;
             public string Source;
+        }
+
+        static PipelinePatch()
+        {
+            // HACK: 防止构造函数被优化掉
+            new PATCH();
         }
 
         public override IEnumerable<string> SuffixProcessable
@@ -4700,8 +4972,7 @@ namespace EntryEngine
         private float elapsedTime;
         private int currentFrame;
         private int loop;
-        public bool AutoPlay = true;
-        private bool updated;
+        private int updated;
 
         public float FrameElapsedTime
         {
@@ -4985,46 +5256,37 @@ namespace EntryEngine
         /// <returns>动画播放完毕</returns>
         public bool Update(float elapsed)
         {
-            if (updated)
-                return IsSequenceOver;
-
             bool over = false;
             var frame = Frame;
-            if (elapsedTime >= frame.Interval)
+            while (elapsedTime >= frame.Interval)
             {
-                float result = elapsedTime - frame.Interval;
-                // 这里不一定只换一帧，但只做1帧解决
                 over = NextFrame();
                 //this.elapsedTime = 0;
-                this.elapsedTime = result;
+                this.elapsedTime = elapsedTime - frame.Interval;
+                frame = Frame;
             }
             this.elapsedTime += elapsed;
 
-            this.updated = true;
             return over;
         }
         public override void Update(GameTime time)
         {
-            Update(time.Elapsed);
+            updated = GameTime.Time.FrameID;
+            Update(time.ElapsedSecond);
         }
         protected internal override bool Draw(GRAPHICS graphics, ref SpriteVertex vertex)
         {
-            float elapsed = EntryService.Instance.GameTime.Elapsed;
-            if (AutoPlay)
+            if (updated != GameTime.Time.FrameID)
             {
-                Update(elapsed);
+                updated = GameTime.Time.FrameID;
+                Update(GameTime.Time);
             }
-            updated = false;
             var frame = Frame;
             if (frame != null)
             {
                 vertex.Origin.X += frame.PivotX;
                 vertex.Origin.Y += frame.PivotY;
                 base.Draw(graphics, ref vertex);
-            }
-            if (AutoPlay)
-            {
-                Update(elapsed);
             }
             return true;
         }
@@ -5098,12 +5360,20 @@ namespace EntryEngine
     [AReflexible]public class Frame
     {
         public string Texture;
+        /// <summary>秒</summary>
         public float Interval;
         public float PivotX;
         public float PivotY;
     }
     public class PipelineAnimation : ContentPipeline
     {
+        static PipelineAnimation()
+        {
+            // HACK: 防止构造函数被优化掉
+            new Sequence();
+            new Frame();
+        }
+
         public override IEnumerable<string> SuffixProcessable
         {
             get { yield break; }
@@ -5188,6 +5458,7 @@ namespace EntryEngine
         public abstract float FontSize { get; set; }
         public abstract float LineHeight { get; }
         public bool IsDefault { get { return _Key == KEY_DEFAULT; } }
+        public virtual bool IsDynamic { get { return false; } }
 
         protected FONT()
         {
@@ -5219,7 +5490,7 @@ namespace EntryEngine
             return CursorIndex(CharWidth, LineHeight, text, mouse);
         }
         protected internal abstract float CharWidth(char c);
-        protected internal abstract void Draw(GRAPHICS spriteBatch, string text, VECTOR2 location, COLOR color);
+        protected internal abstract void Draw(GRAPHICS spriteBatch, string text, VECTOR2 location, COLOR color, float scale);
 
         public static Func<Type, Func<ByteRefReader, object>> Deserializer(ContentManager content, List<AsyncLoadContent> list)
         {
@@ -5725,9 +5996,9 @@ namespace EntryEngine
         {
             return Base.CharWidth(c);
         }
-        protected internal override void Draw(EntryEngine.GRAPHICS spriteBatch, string text, EntryEngine.VECTOR2 location, EntryEngine.COLOR color)
+        protected internal override void Draw(EntryEngine.GRAPHICS spriteBatch, string text, EntryEngine.VECTOR2 location, EntryEngine.COLOR color, float scale)
         {
-            Base.Draw(spriteBatch, text, location, color);
+            Base.Draw(spriteBatch, text, location, color, scale);
         }
         protected internal override void InternalDispose()
         {
@@ -5750,17 +6021,67 @@ namespace EntryEngine
             Async = null;
         }
     }
+    public class TextShader
+    {
+        public VECTOR2 Offset;
+        public COLOR Color;
+        public TextShader() { this.Color.A = 128; }
+        public TextShader(float offsetX, float offsetY, COLOR color)
+        {
+            this.Offset.X = offsetX;
+            this.Offset.Y = offsetY;
+            this.Color = color;
+        }
+        public TextShader(TextShader copy)
+        {
+            if (copy == null)
+                throw new ArgumentNullException("copy");
+            this.Offset = copy.Offset;
+            this.Color = copy.Color;
+        }
+        public bool IsStroke { get { return Offset.X == 0 && Offset.Y == 0; } }
+        public bool IsShader { get { return Offset.X != 0 || Offset.Y != 0; } }
+        public static TextShader CreateStroke(COLOR color)
+        {
+            return new TextShader(0, 0, color);
+        }
+        public static TextShader CreateShader()
+        {
+            return new TextShader(2, 2, new COLOR(128, 128, 128, 128));
+        }
+        public static TextShader CreateShader(COLOR color)
+        {
+            return new TextShader(2, 2, color);
+        }
+        internal static float _Stroke = 2;
+        internal static float _Stroke2 = _Stroke * 2;
+        public static float Stroke
+        {
+            get { return _Stroke; }
+            set
+            {
+                if (value < 1 || value > 4)
+                    throw new ArgumentException("Stroke must be 1~4.");
+                _Stroke = value;
+                _Stroke2 = value * 2;
+            }
+        }
+    }
     public abstract class FontTexture : FONT
     {
-        public const ushort BUFFER_SIZE = 256;
+        public const ushort BUFFER_SIZE = 1024;
 
         public class Buffer
         {
             public byte Index;
-            public ushort X;
-            public ushort Y;
+            internal ushort x;
+            public ushort X { get { return x; } }
+            internal ushort y;
+            public ushort Y { get { return y; } }
             public byte W;
             public byte H;
+            /// <summary>字的间隔，默认等于W</summary>
+            public byte Space;
         }
         protected class CacheInfo
         {
@@ -5772,6 +6093,7 @@ namespace EntryEngine
         protected float lineHeight;
         protected CacheInfo cache;
         public VECTOR2 Spacing;
+        public TextShader Effect;
 
         public override float FontSize
         {
@@ -5791,13 +6113,32 @@ namespace EntryEngine
         {
             return cache.Maps[c].W + Spacing.X;
         }
+        public bool GetTextTexture(char c, out TEXTURE texture, out RECT source)
+        {
+            var buffer = GetBuffer(c);
+            if (buffer == null)
+            {
+                texture = null;
+                source.X = source.Y = source.Width = source.Height = 0;
+                return false;
+            }
+            else
+            {
+                texture = cache.Textures[buffer.Index];
+                source.X = buffer.x;
+                source.Y = buffer.y;
+                source.Width = buffer.W;
+                source.Height = buffer.H;
+                return true;
+            }
+        }
         protected virtual Buffer GetBuffer(char c)
         {
             Buffer buffer;
             cache.Maps.TryGetValue(c, out buffer);
             return buffer;
         }
-        protected internal override void Draw(GRAPHICS spriteBatch, string text, VECTOR2 location, COLOR color)
+        protected internal override void Draw(GRAPHICS spriteBatch, string text, VECTOR2 location, COLOR color, float scale)
         {
             RECT area;
             area.X = location.X;
@@ -5812,7 +6153,7 @@ namespace EntryEngine
                 if (c == LINE_BREAK)
                 {
                     area.X = location.X;
-                    area.Y += height + Spacing.Y;
+                    area.Y += height + Spacing.Y * scale;
                     y = area.Y;
                 }
                 else
@@ -5824,11 +6165,24 @@ namespace EntryEngine
                     area.Y = y;
                     //area.Y = y + (height - uv.Height) / 2;
                     //area.Y = y + height - uv.Height;
-                    area.Width = buffer.W;
-                    area.Height = buffer.H;
-                    spriteBatch.BaseDraw(cache.Textures[buffer.Index], area.X, area.Y, area.Width, area.Height, false, buffer.X, buffer.Y, buffer.W, buffer.H, true, color.R, color.G, color.B, color.A, 0, 0, 0, EFlip.None);
+                    area.Width = buffer.W * scale;
+                    area.Height = buffer.H * scale;
+                    if (Effect != null)
+                    {
+                        if (Effect.IsStroke)
+                        {
+                            // 假描边，字的尺寸不大的话效果还可以
+                            spriteBatch.BaseDraw(cache.Textures[buffer.Index], area.X - TextShader.Stroke, area.Y - TextShader.Stroke, area.Width + TextShader._Stroke2, area.Height + TextShader._Stroke2, false, buffer.x, buffer.y, buffer.W, buffer.H, true, Effect.Color.R, Effect.Color.G, Effect.Color.B, Effect.Color.A, 0, 0, 0, EFlip.None);
+                        }
+                        else
+                        {
+                            // 阴影
+                            spriteBatch.BaseDraw(cache.Textures[buffer.Index], area.X + Effect.Offset.X, area.Y + Effect.Offset.Y, area.Width, area.Height, false, buffer.x, buffer.y, buffer.W, buffer.H, true, Effect.Color.R, Effect.Color.G, Effect.Color.B, Effect.Color.A, 0, 0, 0, EFlip.None);
+                        }
+                    }
+                    spriteBatch.BaseDraw(cache.Textures[buffer.Index], area.X, area.Y, area.Width, area.Height, false, buffer.x, buffer.y, buffer.W, buffer.H, true, color.R, color.G, color.B, color.A, 0, 0, 0, EFlip.None);
                     //spriteBatch.Draw(texture, area, uv, color);
-                    area.X += buffer.W + Spacing.X;
+                    area.X += buffer.Space * scale + Spacing.X;
                 }
             }
         }
@@ -5849,6 +6203,10 @@ namespace EntryEngine
             target.lineHeight = this.lineHeight;
             target.Spacing = this.Spacing;
             target.cache = this.cache;
+            if (this.Effect != null)
+                target.Effect = new TextShader(this.Effect);
+            else
+                target.Effect = null;
         }
     }
     public class FontStatic : FontTexture
@@ -5900,21 +6258,21 @@ namespace EntryEngine
         {
             return base.CharWidth(c) * scale;
         }
-        protected internal override void Draw(GRAPHICS spriteBatch, string text, VECTOR2 location, COLOR color)
-        {
-            bool scaled = scale != 1;
-            if (scaled)
-            {
-                spriteBatch.BeginFromPrevious(MATRIX2x3.CreateScale(scale, scale) * MATRIX2x3.CreateTranslation(location.X, location.Y));
-                location.X = 0;
-                location.Y = 0;
-            }
+        //protected internal override void Draw(GRAPHICS spriteBatch, string text, VECTOR2 location, COLOR color, float scale)
+        //{
+        //    //bool scaled = scale != 1;
+        //    //if (scaled)
+        //    //{
+        //    //    spriteBatch.BeginFromPrevious(MATRIX2x3.CreateScale(scale, scale) * MATRIX2x3.CreateTranslation(location.X, location.Y));
+        //    //    location.X = 0;
+        //    //    location.Y = 0;
+        //    //}
 
-            base.Draw(spriteBatch, text, location, color);
+        //    base.Draw(spriteBatch, text, location, color, scale * this.scale);
 
-            if (scaled)
-                spriteBatch.End();
-        }
+        //    //if (scaled)
+        //    //    spriteBatch.End();
+        //}
         protected override void CopyTo(FontTexture target)
         {
             base.CopyTo(target);
@@ -5963,8 +6321,8 @@ namespace EntryEngine
                 reader.Read(out c);
                 FontStatic.Buffer buffer = new FontStatic.Buffer();
                 reader.Read(out buffer.Index);
-                reader.Read(out buffer.X);
-                reader.Read(out buffer.Y);
+                reader.Read(out buffer.x);
+                reader.Read(out buffer.y);
                 reader.Read(out buffer.W);
                 reader.Read(out buffer.H);
                 maps.Add(c, buffer);
@@ -6005,8 +6363,8 @@ namespace EntryEngine
                         reader.Read(out c);
                         FontStatic.Buffer buffer = new FontStatic.Buffer();
                         reader.Read(out buffer.Index);
-                        reader.Read(out buffer.X);
-                        reader.Read(out buffer.Y);
+                        reader.Read(out buffer.x);
+                        reader.Read(out buffer.y);
                         reader.Read(out buffer.W);
                         reader.Read(out buffer.H);
                         maps.Add(c, buffer);
@@ -6065,11 +6423,21 @@ namespace EntryEngine
         //    return textures;
         //}
     }
+    public class AsyncDrawDynamicChar : AsyncData<COLOR[]>
+    {
+        internal TEXTURE texture;
+        internal FontTexture.Buffer buffer;
+        protected override void OnSetData(ref COLOR[] data)
+        {
+            texture.SetData(data, new RECT(buffer.x, buffer.y, buffer.W, buffer.H));
+        }
+    }
     public abstract class FontDynamic : FontStatic
     {
         /// <summary>字体大小相差不大时，采用静态字体缩放</summary>
         public static byte StaticStep = 8;
         private static Dictionary<int, FontDynamic> fonts = new Dictionary<int, FontDynamic>();
+        private static AsyncDrawDynamicChar async1 = new AsyncDrawDynamicChar();
 
         protected class CacheInfo2 : FontTexture.CacheInfo
         {
@@ -6109,6 +6477,7 @@ namespace EntryEngine
                 }
             }
         }
+        public sealed override bool IsDynamic { get { return true; } }
 
         protected FontDynamic(int id)
         {
@@ -6146,12 +6515,12 @@ namespace EntryEngine
             RequestString(text);
             return base.MeasureString(text);
         }
-        protected override Buffer GetBuffer(char c)
+        protected sealed override Buffer GetBuffer(char c)
         {
             Buffer buffer = base.GetBuffer(c);
             if (buffer != null)
                 return buffer;
-            if (c == LINE_BREAK)
+            if (c == LINE_BREAK || c == LINE_BREAK_2)
                 return null;
 
             var cache = this.cacheP;
@@ -6177,7 +6546,7 @@ namespace EntryEngine
                 if (u + width > texture.Width)
                 {
                     u = 0;
-                    v += (byte)lineHeight;
+                    v += (ushort)_MATH.Ceiling(lineHeight);
                     if (v + lineHeight > texture.Height)
                         newFlag = true;
                 }
@@ -6199,20 +6568,29 @@ namespace EntryEngine
 
             buffer = new Buffer();
             buffer.Index = index;
-            buffer.X = u;
-            buffer.Y = v;
+            buffer.x = u;
+            buffer.y = v;
             buffer.W = width;
             buffer.H = height;
+            
             cache.Maps.Add(c, buffer);
 
-            RECT uv = new RECT(u, v, width, height);
-
-            u += width;
-
-            var colors = DrawChar(c, ref uv);
-            if (colors != null)
-                texture.SetData(colors, uv);
-
+            AsyncDrawDynamicChar async;
+            if (async1.IsEnd)
+            {
+                async = async1;
+                async1.Run();
+            }
+            else
+                async = new AsyncDrawDynamicChar();
+            async.texture = texture;
+            async.buffer = buffer;
+            DrawChar(async, c, buffer);
+            u += buffer.W;
+            //u++;
+            if (buffer.Space == 0)
+                buffer.Space = buffer.W;
+            
             cache.index = index;
             cache.u = u;
             cache.v = v;
@@ -6231,7 +6609,9 @@ namespace EntryEngine
         {
             return Entry.Instance.NewTEXTURE(BUFFER_SIZE, BUFFER_SIZE);
         }
-        protected abstract COLOR[] DrawChar(char c, ref RECT uv);
+        //protected abstract AsyncData<COLOR[]> DrawChar(char c, Buffer uv);
+        //protected abstract COLOR[] DrawChar(char c, Buffer uv);
+        protected abstract void DrawChar(AsyncDrawDynamicChar result, char c, Buffer uv);
         public void Clear()
         {
             InternalDispose();
@@ -6331,12 +6711,17 @@ namespace EntryEngine
     //}
 
 
-    [Flags]
-    public enum EFlip : byte
+    [Flags]public enum EFlip : byte
     {
         None = 0,
         FlipHorizontally = 1,
         FlipVertically = 2,
+    }
+    public enum EPrimitiveType : byte
+    {
+        Point,
+        Line,
+        Triangle,
     }
     public struct SpriteVertex
     {
@@ -6353,28 +6738,40 @@ namespace EntryEngine
         public COLOR Color;
         public VECTOR2 TextureCoordinate;
     }
-    /// <summary>
-    /// 屏幕适配
-    /// </summary>
+    /// <summary>屏幕适配</summary>
     public enum EViewport
     {
-        /// <summary>
-        /// 画布尺寸保持与屏幕尺寸一样
-        /// </summary>
+        /// <summary>画布尺寸保持与屏幕尺寸一样</summary>
         None,
-        /// <summary>
-        /// 保持画布分辨率比例拉升自动适配屏幕
-        /// </summary>
+        /// <summary>保持画布分辨率比例拉升自动适配屏幕</summary>
         Adapt,
-        /// <summary>
-        /// 拉伸画布分辨率到屏幕分辨率
-        /// </summary>
+        /// <summary>拉伸画布分辨率到屏幕分辨率</summary>
         Strength,
-        /// <summary>
-        /// 画布尺寸始终保持不变，当屏幕尺寸大于画布尺寸时，画布居中
-        /// </summary>
+        /// <summary>画布尺寸始终保持不变，当屏幕尺寸大于画布尺寸时，画布居中</summary>
         Keep
     }
+    public struct BoundingBox
+    {
+        public float Left;
+        public float Top;
+        public float Right;
+        public float Bottom;
+
+        public bool Intersects(ref BoundingBox other)
+        {
+            return other.Left < this.Right && this.Left < other.Right && other.Top < this.Bottom && this.Top < other.Bottom;
+        }
+    }
+    internal class RenderBuffer
+    {
+        internal int TextureIndex;
+        internal SpriteVertex[] spriteQueue = new SpriteVertex[128];
+        internal BoundingBox[] spriteBoundingBox = new BoundingBox[128];
+        internal int spriteQueueCount;
+    }
+    /// <summary>
+    /// OriginX, OriginY是相对于SourceRectangle的百分比数字，例如0.5,0.5就是图像居中绘制
+    /// </summary>
     [ADevice]
     public abstract class GRAPHICS
     {
@@ -6383,18 +6780,10 @@ namespace EntryEngine
 
         protected class RenderState
         {
-            public MATRIX2x3 Transform;
+            public MATRIX Transform;
+            public bool ThreeD;
             public RECT Graphics;
             public SHADER Shader;
-
-            public RenderState()
-            {
-            }
-            public RenderState(MATRIX2x3 transform, RECT graphics)
-            {
-                this.Transform = transform;
-                this.Graphics = graphics;
-            }
         }
 
         private EViewport viewportMode = EViewport.Adapt;
@@ -6408,10 +6797,12 @@ namespace EntryEngine
         public readonly float[] XCornerOffsets = { 0, 1, 1, 0 };
         public readonly float[] YCornerOffsets = { 0, 0, 1, 1 };
         private TEXTURE currentTexture;
-        private SpriteVertex[] spriteQueue = new SpriteVertex[128];
-        private int spriteQueueCount;
+        private TEXTURE[] textures = new TEXTURE[8];
+        private int textureCount;
+        private RenderBuffer[] buffers = new RenderBuffer[16];
+        private int bufferCount;
         private TextureVertex[] outputVertices = new TextureVertex[MAX_BATCH_COUNT * 4];
-        protected short[] indices;
+        private short[] indices;
         /// <summary>绘制前检测对象是否在视口内，不在视口内则跳过绘制，若绘制性能高则不建议开启此检测</summary>
         public bool Culling;
 
@@ -6491,7 +6882,7 @@ namespace EntryEngine
         }
         public MATRIX2x3 CurrentTransform
         {
-            get { return CurrentRenderState.Transform; }
+            get { return (MATRIX2x3)CurrentRenderState.Transform; }
         }
         public RECT CurrentGraphics
         {
@@ -6510,11 +6901,14 @@ namespace EntryEngine
         {
             get { return renderStates.Count > 0; }
         }
+        protected TEXTURE Texture { get { return currentTexture; } }
 
         protected GRAPHICS()
         {
-            nullRenderState = new RenderState(MATRIX2x3.Identity, graphicsViewport);
-            indices = CreateIndexData();
+            nullRenderState = new RenderState();
+            nullRenderState.Transform = MATRIX.Identity;
+            nullRenderState.Graphics = graphicsViewport;
+            indices = CreateTriangleIndexData(MAX_BATCH_COUNT << 2);
         }
 
         internal void GraphicsAdaptScreen()
@@ -6627,12 +7021,18 @@ namespace EntryEngine
         }
         private void Begin(ref MATRIX2x3 matrix, ref RECT graphics, SHADER shader)
         {
+            MATRIX matrix4x4 = (MATRIX)matrix;
+            Begin(false, ref matrix4x4, ref graphics, shader);
+        }
+        private void Begin(bool threeD, ref MATRIX matrix, ref RECT graphics, SHADER shader)
+        {
             RenderState renderState;
             if (!renderStates.Allot(out renderState))
             {
                 renderState = new RenderState();
                 renderStates.Push(renderState);
             }
+            renderState.ThreeD = threeD;
             renderState.Transform = matrix;
             renderState.Graphics = graphics;
             renderState.Shader = shader;
@@ -6641,17 +7041,23 @@ namespace EntryEngine
         private void Begin(RenderState state)
         {
             Flush();
-            MATRIX2x3 result = state.Transform * view;
+            MATRIX result = state.Transform;
+            if (!state.ThreeD)
+                result *= (MATRIX)view;
             RECT scissor = state.Graphics;
             //scissor.Offset(graphicsViewport.X, graphicsViewport.Y);
             //RECT.Intersect(ref scissor, ref graphicsViewport, out scissor);
-            InternalBegin(ref result, ref scissor, state.Shader);
+            InternalBegin(state.ThreeD, ref result, ref scissor, state.Shader);
         }
-        protected abstract void InternalBegin(ref MATRIX2x3 matrix, ref RECT graphics, SHADER shader);
+        protected abstract void InternalBegin(bool threeD, ref MATRIX matrix, ref RECT graphics, SHADER shader);
+        public void Begin(MATRIX transform, RECT graphics, SHADER shader)
+        {
+            Begin(true, ref transform, ref graphics, shader);
+        }
         public void Begin()
         {
             RenderState rs = CurrentRenderState;
-            Begin(ref rs.Transform, ref rs.Graphics, null);
+            Begin(rs.ThreeD, ref rs.Transform, ref rs.Graphics, null);
         }
         public void Begin(MATRIX2x3 transform)
         {
@@ -6659,7 +7065,8 @@ namespace EntryEngine
         }
         public void Begin(RECT graphics)
         {
-            Begin(ref CurrentRenderState.Transform, ref graphics, null);
+            RenderState rs = CurrentRenderState;
+            Begin(rs.ThreeD, ref rs.Transform, ref graphics, null);
         }
         public void Begin(MATRIX2x3 transform, RECT graphics)
         {
@@ -6672,27 +7079,29 @@ namespace EntryEngine
         public void Begin(SHADER shader)
         {
             RenderState rs = CurrentRenderState;
-            Begin(ref rs.Transform, ref rs.Graphics, shader);
+            Begin(rs.ThreeD, ref rs.Transform, ref rs.Graphics, shader);
         }
         public void BeginFromPrevious(MATRIX2x3 matrix)
         {
-            matrix *= CurrentRenderState.Transform;
-            Begin(ref matrix, ref CurrentRenderState.Graphics, null);
+            RenderState rs = CurrentRenderState;
+            matrix *= (MATRIX2x3)rs.Transform;
+            Begin(ref matrix, ref rs.Graphics, null);
         }
         public void BeginFromPrevious(RECT rect)
         {
-            RECT _preRect = CurrentRenderState.Graphics;
+            RenderState rs = CurrentRenderState;
+            RECT _preRect = rs.Graphics;
             rect.X += _preRect.X;
             rect.Y += _preRect.Y;
             RECT.Intersect(ref rect, ref _preRect, out rect);
             rect.X -= _preRect.X;
             rect.Y -= _preRect.Y;
-            Begin(ref CurrentRenderState.Transform, ref rect, null);
+            Begin(rs.ThreeD, ref rs.Transform, ref rect, null);
         }
         /// <summary>在之前的矩阵的基础上开始绘制</summary>
         public void BeginFromPrevious(MATRIX2x3 matrix, RECT rect)
         {
-            matrix *= CurrentRenderState.Transform;
+            matrix *= (MATRIX2x3)CurrentRenderState.Transform;
             RECT _preRect = CurrentRenderState.Graphics;
             rect.X += _preRect.X;
             rect.Y += _preRect.Y;
@@ -6711,8 +7120,8 @@ namespace EntryEngine
 
             Flush();
             RenderState state = renderStates.Peek();
-            Ending(state);
             renderStates.Pop();
+            Ending(state);
 
             if (HasRenderTarget)
                 Begin(CurrentRenderState);
@@ -6752,10 +7161,6 @@ namespace EntryEngine
         {
             BaseDraw(texture, rect.X, rect.Y, rect.Width, rect.Height, false, float.NaN, 0, 0, 0, true, color.R, color.G, color.B, color.A, 0, 0, 0, EFlip.None);
         }
-        public void Draw(TEXTURE texture, RECT rect, RECT source)
-        {
-            BaseDraw(texture, rect.X, rect.Y, rect.Width, rect.Height, false, source.X, source.Y, source.Width, source.Height, false, 0, 0, 0, 0, 0, 0, 0, EFlip.None);
-        }
         public void Draw(TEXTURE texture, RECT rect, RECT source, COLOR color)
         {
             BaseDraw(texture, rect.X, rect.Y, rect.Width, rect.Height, false, source.X, source.Y, source.Width, source.Height, true, color.R, color.G, color.B, color.A, 0, 0, 0, EFlip.None);
@@ -6764,9 +7169,13 @@ namespace EntryEngine
         {
             BaseDraw(texture, rect.X, rect.Y, rect.Width, rect.Height, false, float.NaN, 0, 0, 0, false, 0, 0, 0, 0, rotation, originX, originY, EFlip.None);
         }
-        public void Draw(TEXTURE texture, RECT rect, float rotation, VECTOR2 origin, EFlip flip)
+        public void Draw(TEXTURE texture, RECT rect, float rotation, float originX, float originY, EFlip flip)
         {
-            BaseDraw(texture, rect.X, rect.Y, rect.Width, rect.Height, false, float.NaN, 0, 0, 0, false, 0, 0, 0, 0, rotation, origin.X, origin.Y, flip);
+            BaseDraw(texture, rect.X, rect.Y, rect.Width, rect.Height, false, float.NaN, 0, 0, 0, false, 0, 0, 0, 0, rotation, originX, originY, flip);
+        }
+        public void Draw(TEXTURE texture, RECT rect, COLOR color, float rotation, float originX, float originY, EFlip flip)
+        {
+            BaseDraw(texture, rect.X, rect.Y, rect.Width, rect.Height, false, float.NaN, 0, 0, 0, true, color.R, color.G, color.B, color.A, rotation, originX, originY, flip);
         }
         public void Draw(TEXTURE texture, RECT rect, RECT source, COLOR color, float rotation, float originX, float originY, EFlip flip)
         {
@@ -6775,10 +7184,6 @@ namespace EntryEngine
         public void Draw(TEXTURE texture, VECTOR2 location)
         {
             BaseDraw(texture, location.X, location.Y, 1, 1, true, float.NaN, 0, 0, 0, false, 0, 0, 0, 0, 0, 0, 0, EFlip.None);
-        }
-        public void Draw(TEXTURE texture, VECTOR2 location, float scaleX, float scaleY)
-        {
-            BaseDraw(texture, location.X, location.Y, scaleX, scaleY, true, float.NaN, 0, 0, 0, false, 0, 0, 0, 0, 0, 0, 0, EFlip.None);
         }
         public void Draw(TEXTURE texture, VECTOR2 location, COLOR color)
         {
@@ -6792,19 +7197,23 @@ namespace EntryEngine
         {
             BaseDraw(texture, location.X, location.Y, scaleX, scaleY, true, float.NaN, 0, 0, 0, false, 0, 0, 0, 0, rotation, originX, originY, EFlip.None);
         }
-        public void Draw(TEXTURE texture, VECTOR2 location, float rotation, VECTOR2 origin, float scaleX, float scaleY)
+        public void Draw(TEXTURE texture, VECTOR2 location, float rotation, float originX, float originY, float scaleX, float scaleY, EFlip flip)
         {
-            BaseDraw(texture, location.X, location.Y, scaleX, scaleY, true, float.NaN, 0, 0, 0, false, 0, 0, 0, 0, rotation, origin.X, origin.Y, EFlip.None);
+            BaseDraw(texture, location.X, location.Y, scaleX, scaleY, true, float.NaN, 0, 0, 0, false, 0, 0, 0, 0, rotation, originX, originY, flip);
         }
         public void Draw(TEXTURE texture, VECTOR2 location, COLOR color, float rotation, float originX, float originY, float scaleX, float scaleY)
         {
             BaseDraw(texture, location.X, location.Y, scaleX, scaleY, true, float.NaN, 0, 0, 0, true, color.R, color.G, color.B, color.A, rotation, originX, originY, EFlip.None);
         }
+        public void Draw(TEXTURE texture, VECTOR2 location, COLOR color, float rotation, float originX, float originY, float scaleX, float scaleY, EFlip flip)
+        {
+            BaseDraw(texture, location.X, location.Y, scaleX, scaleY, true, float.NaN, 0, 0, 0, true, color.R, color.G, color.B, color.A, rotation, originX, originY, flip);
+        }
         public void Draw(TEXTURE texture, VECTOR2 location, RECT source, COLOR color, float rotation, VECTOR2 origin, VECTOR2 scale, EFlip flip)
         {
             BaseDraw(texture, location.X, location.Y, scale.X, scale.Y, true, source.X, source.Y, source.Width, source.Height, true, color.R, color.G, color.B, color.A, rotation, origin.X, origin.Y, flip);
         }
-        public virtual void BaseDraw(TEXTURE texture,
+        public void BaseDraw(TEXTURE texture,
             float x, float y, float w, float h, bool scale, 
             float sx, float sy, float sw, float sh,
             bool color, byte r, byte g, byte b, byte a, 
@@ -6841,12 +7250,6 @@ namespace EntryEngine
                 g = DefaultColor.G;
                 b = DefaultColor.B;
                 a = DefaultColor.A;
-            }
-
-            if (this.spriteQueueCount >= this.spriteQueue.Length)
-            {
-                Array.Resize<SpriteVertex>(ref this.spriteQueue, this.spriteQueue.Length * 2);
-                indices = CreateIndexData();
             }
 
             //spriteQueue[spriteQueueCount].Destination.X = x;
@@ -6891,149 +7294,364 @@ namespace EntryEngine
             if (texture.Draw(this, ref vertex))
                 return;
 
-            if (Culling)
+            if (vertex.Source.Width <= 0f || vertex.Source.Height <= 0f)
+                return;
+
+            // 计算BoundingBox，一方面用于Culling，一方面用于合批时的遮挡判断
+            BoundingBox box;
+
+            MATRIX2x3 matrix = CurrentTransform;
+            if (vertex.Rotation == 0 && vertex.Flip == EFlip.None)
             {
-                MATRIX2x3 matrix = CurrentTransform;
-                RECT viewport = CurrentGraphics;
-
-                if (vertex.Rotation == 0 && vertex.Flip == EFlip.None)
+                RECT desc = vertex.Destination;
+                if (vertex.Origin.X != 0)
                 {
-                    if (vertex.Origin.X != 0)
-                    {
-                        vertex.Destination.X -= vertex.Destination.Width * (vertex.Origin.X / vertex.Source.Width);
-                        vertex.Origin.X = 0;
-                    }
-                    if (vertex.Origin.Y != 0)
-                    {
-                        vertex.Destination.Y -= vertex.Destination.Height * (vertex.Origin.Y / vertex.Source.Height);
-                        vertex.Origin.Y = 0;
-                    }
+                    desc.X -= desc.Width * (vertex.Origin.X / vertex.Source.Width);
+                    //vertex.Origin.X = 0;
+                }
+                if (vertex.Origin.Y != 0)
+                {
+                    desc.Y -= desc.Height * (vertex.Origin.Y / vertex.Source.Height);
+                    //vertex.Origin.Y = 0;
+                }
 
-                    bool draw = true;
-                    if (matrix.IsIdentity())
-                    {
-                        draw = viewport.Intersects(vertex.Destination);
-                    }
-                    else
-                    {
-                        RECT result;
-                        RECT.CreateBoundingBox(ref vertex.Destination, ref matrix, out result);
-                        draw = viewport.Intersects(result);
-                    }
-                    if (draw)
-                    {
-                        InternalDraw(texture, ref vertex);
-                        //InternalDrawFast(texture, ref vertex.Destination, ref vertex.Source, ref vertex.Color);
-                    }
+                if (matrix.IsIdentity())
+                {
+                    box.Left = desc.X;
+                    box.Top = desc.Y;
+                    box.Right = desc.Right;
+                    box.Bottom = desc.Bottom;
                 }
                 else
                 {
-                    // 超出视口部分不绘制
-                    MATRIX2x3 current;
-                    __GRAPHICS.DrawMatrix(ref vertex.Destination, ref vertex.Source, vertex.Rotation, ref vertex.Origin, vertex.Flip, out current);
-
-                    if (!matrix.IsIdentity())
-                        current = current * matrix;
-
-                    RECT result = vertex.Destination;
-                    result.X = 0;
-                    result.Y = 0;
-                    RECT.CreateBoundingBox(ref result, ref current, out result);
-
-                    if (viewport.Intersects(result))
-                    {
-                        InternalDraw(texture, ref vertex);
-                    }
+                    RECT result;
+                    RECT.CreateBoundingBox(ref desc, ref matrix, out result);
+                    box.Left = result.X;
+                    box.Top = result.Y;
+                    box.Right = result.Right;
+                    box.Bottom = result.Bottom;
                 }
             }
             else
             {
-                InternalDraw(texture, ref vertex);
+                // 超出视口部分不绘制
+                MATRIX2x3 current;
+                __GRAPHICS.DrawMatrix(ref vertex.Destination, ref vertex.Source, vertex.Rotation, ref vertex.Origin, vertex.Flip, out current);
+
+                if (!matrix.IsIdentity())
+                    current = current * matrix;
+
+                RECT result = vertex.Destination;
+                result.X = 0;
+                result.Y = 0;
+                RECT.CreateBoundingBox(ref result, ref current, out result);
+
+                box.Left = result.X;
+                box.Top = result.Y;
+                box.Right = result.Right;
+                box.Bottom = result.Bottom;
             }
+            
+            RECT scissor = CurrentGraphics;
+            BoundingBox graphics;
+            graphics.Left = scissor.X;
+            graphics.Top = scissor.Y;
+            graphics.Right = scissor.Right;
+            graphics.Bottom = scissor.Bottom;
+            if (!Culling || box.Intersects(ref graphics))
+                InternalDraw(texture, ref vertex, ref box);
         }
-        protected virtual void InternalDraw(TEXTURE texture, ref SpriteVertex vertex)
-        {
-            if (vertex.Source.Width == 0f || vertex.Source.Height == 0f)
-                return;
+        //protected bool CheckCulling(ref SpriteVertex vertex)
+        //{
+        //    MATRIX2x3 matrix = CurrentTransform;
+        //    RECT viewport = CurrentGraphics;
 
-            if (texture != currentTexture)
+        //    if (vertex.Rotation == 0 && vertex.Flip == EFlip.None)
+        //    {
+        //        if (vertex.Origin.X != 0)
+        //        {
+        //            vertex.Destination.X -= vertex.Destination.Width * (vertex.Origin.X / vertex.Source.Width);
+        //            vertex.Origin.X = 0;
+        //        }
+        //        if (vertex.Origin.Y != 0)
+        //        {
+        //            vertex.Destination.Y -= vertex.Destination.Height * (vertex.Origin.Y / vertex.Source.Height);
+        //            vertex.Origin.Y = 0;
+        //        }
+
+        //        bool draw = true;
+        //        if (matrix.IsIdentity())
+        //        {
+        //            draw = viewport.Intersects(vertex.Destination);
+        //        }
+        //        else
+        //        {
+        //            RECT result;
+        //            RECT.CreateBoundingBox(ref vertex.Destination, ref matrix, out result);
+        //            draw = viewport.Intersects(result);
+        //        }
+
+        //        return draw;
+        //    }
+        //    else
+        //    {
+        //        // 超出视口部分不绘制
+        //        MATRIX2x3 current;
+        //        __GRAPHICS.DrawMatrix(ref vertex.Destination, ref vertex.Source, vertex.Rotation, ref vertex.Origin, vertex.Flip, out current);
+
+        //        if (!matrix.IsIdentity())
+        //            current = current * matrix;
+
+        //        RECT result = vertex.Destination;
+        //        result.X = 0;
+        //        result.Y = 0;
+        //        RECT.CreateBoundingBox(ref result, ref current, out result);
+
+        //        return viewport.Intersects(result);
+        //    }
+        //}
+        protected virtual void InternalDraw(TEXTURE texture, ref SpriteVertex vertex, ref BoundingBox box)
+        {
+            //if (texture != currentTexture)
+            //{
+            //    if (texture != null && currentTexture != null)
+            //    {
+            //        this.Flush();
+            //    }
+            //    this.currentTexture = texture;
+            //}
+
+            //if (this.spriteQueueCount >= this.spriteQueue.Length)
+            //    Array.Resize<SpriteVertex>(ref this.spriteQueue, this.spriteQueue.Length * 2);
+
+            ////spriteQueue[spriteQueueCount++] = vertex;
+            //int index = spriteQueueCount;
+            //spriteQueue[index].Destination.X = vertex.Destination.X;
+            //spriteQueue[index].Destination.Y = vertex.Destination.Y;
+            //spriteQueue[index].Destination.Width = vertex.Destination.Width;
+            //spriteQueue[index].Destination.Height = vertex.Destination.Height;
+            //spriteQueue[index].Source.X = vertex.Source.X;
+            //spriteQueue[index].Source.Y = vertex.Source.Y;
+            //spriteQueue[index].Source.Width = vertex.Source.Width;
+            //spriteQueue[index].Source.Height = vertex.Source.Height;
+            //spriteQueue[index].Color.R = vertex.Color.R;
+            //spriteQueue[index].Color.G = vertex.Color.G;
+            //spriteQueue[index].Color.B = vertex.Color.B;
+            //spriteQueue[index].Color.A = vertex.Color.A;
+            //spriteQueue[index].Rotation = vertex.Rotation;
+            //spriteQueue[index].Origin.X = vertex.Origin.X;
+            //spriteQueue[index].Origin.Y = vertex.Origin.Y;
+            //spriteQueue[index].Flip = vertex.Flip;
+            //spriteQueueCount++;
+
+            RenderBuffer buffer = null;
+            TEXTURE drawable = TEXTURE.GetDrawableTexture(texture);
+            if (drawable == currentTexture)
             {
-                if (texture != null && currentTexture != null)
+                // 不更换图片和原来一样缓存参数
+                buffer = buffers[bufferCount - 1];
+            }
+            else
+            {
+                //Flush();
+                //if (buffers[0] == null) buffers[0] = new RenderBuffer();
+                //buffer = buffers[0];
+                //bufferCount = 1;
+                //textures[textureCount] = drawable;
+                //currentTexture = drawable;
+                int drawableIndex = -1;
+                for (int i = 0; i < textureCount; i++)
                 {
-                    this.Flush();
+                    if (textures[i] == drawable)
+                    {
+                        drawableIndex = i;
+                        break;
+                    }
                 }
-                this.currentTexture = texture;
+
+                bool newBuffer = false;
+                if (drawableIndex == -1)
+                {
+                    // 新图片，新缓存
+                    if (textureCount == textures.Length)
+                        Array.Resize(ref textures, textureCount << 1);
+                    textures[textureCount] = drawable;
+                    drawableIndex = textureCount;
+                    textureCount++;
+                    newBuffer = true;
+                }
+                else
+                {
+                    for (int i = bufferCount - 1; i >= 0; i--)
+                    {
+                        if (buffers[i].TextureIndex == drawableIndex)
+                        {
+                            // 检查缓存图片之后的所有缓存中的渲染包围盒是否会被此次渲染遮挡
+                            // 只要渲染之间没有遮挡关系，渲染顺序现后就无所谓
+                            // 此时将本次渲染提到之前相同图片的渲染位置，减少更换图片的批次
+                            for (int j = bufferCount - 1; j > i; j--)
+                            {
+                                for (int s = buffers[j].spriteQueueCount - 1; s >= 0; s--)
+                                {
+                                    // 遮挡了其它对象，不能提前合批渲染
+                                    if (buffers[j].spriteBoundingBox[s].Intersects(ref box))
+                                    {
+                                        newBuffer = true;
+                                        break;
+                                    }
+                                }
+                                // 已经存在了遮挡关系，需要新建Buffer
+                                if (newBuffer)
+                                    break;
+                            }
+                            // 采用之前的Buffer
+                            if (!newBuffer)
+                            {
+                                buffer = buffers[i];
+                            }
+                            break;
+                        }
+                    }
+                }
+
+                // 新图片或者本次渲染遮挡了之前的其它渲染才导致需要新建Buffer
+                if (newBuffer)
+                {
+                    if (bufferCount == buffers.Length)
+                        Array.Resize(ref buffers, bufferCount << 1);
+
+                    if (buffers[bufferCount] == null)
+                        buffers[bufferCount] = new RenderBuffer();
+
+                    buffer = buffers[bufferCount];
+                    buffer.TextureIndex = drawableIndex;
+                    bufferCount++;
+
+                    currentTexture = drawable;
+                }
             }
 
-            //spriteQueue[spriteQueueCount++] = vertex;
-            int index = spriteQueueCount;
-            spriteQueue[index].Destination.X = vertex.Destination.X;
-            spriteQueue[index].Destination.Y = vertex.Destination.Y;
-            spriteQueue[index].Destination.Width = vertex.Destination.Width;
-            spriteQueue[index].Destination.Height = vertex.Destination.Height;
-            spriteQueue[index].Source.X = vertex.Source.X;
-            spriteQueue[index].Source.Y = vertex.Source.Y;
-            spriteQueue[index].Source.Width = vertex.Source.Width;
-            spriteQueue[index].Source.Height = vertex.Source.Height;
-            spriteQueue[index].Color.R = vertex.Color.R;
-            spriteQueue[index].Color.G = vertex.Color.G;
-            spriteQueue[index].Color.B = vertex.Color.B;
-            spriteQueue[index].Color.A = vertex.Color.A;
-            spriteQueue[index].Rotation = vertex.Rotation;
-            spriteQueue[index].Origin.X = vertex.Origin.X;
-            spriteQueue[index].Origin.Y = vertex.Origin.Y;
-            spriteQueue[index].Flip = vertex.Flip;
-            spriteQueueCount++;
+            // 像缓存后面追加渲染顶点
+            int index = buffer.spriteQueueCount;
+            if (index >= buffer.spriteQueue.Length)
+            {
+                int newSize = index << 1;
+                Array.Resize(ref buffer.spriteQueue, newSize);
+                Array.Resize(ref buffer.spriteBoundingBox, newSize);
+            }
+            buffer.spriteQueue[index].Destination.X = vertex.Destination.X;
+            buffer.spriteQueue[index].Destination.Y = vertex.Destination.Y;
+            buffer.spriteQueue[index].Destination.Width = vertex.Destination.Width;
+            buffer.spriteQueue[index].Destination.Height = vertex.Destination.Height;
+            buffer.spriteQueue[index].Source.X = vertex.Source.X;
+            buffer.spriteQueue[index].Source.Y = vertex.Source.Y;
+            buffer.spriteQueue[index].Source.Width = vertex.Source.Width;
+            buffer.spriteQueue[index].Source.Height = vertex.Source.Height;
+            buffer.spriteQueue[index].Color.R = vertex.Color.R;
+            buffer.spriteQueue[index].Color.G = vertex.Color.G;
+            buffer.spriteQueue[index].Color.B = vertex.Color.B;
+            buffer.spriteQueue[index].Color.A = vertex.Color.A;
+            buffer.spriteQueue[index].Rotation = vertex.Rotation;
+            buffer.spriteQueue[index].Origin.X = vertex.Origin.X;
+            buffer.spriteQueue[index].Origin.Y = vertex.Origin.Y;
+            buffer.spriteQueue[index].Flip = vertex.Flip;
+
+            buffer.spriteBoundingBox[index] = box;
+
+            buffer.spriteQueueCount++;
         }
         public void Draw(FONT font, string text, VECTOR2 location, COLOR color)
         {
-            Draw(font, text, ref location, ref color);
+            Draw(font, text, location, color, 1);
+        }
+        public void Draw(FONT font, string text, VECTOR2 location, COLOR color, float scale)
+        {
+            if (Culling)
+            {
+                VECTOR2 size = font.MeasureString(text);
+                RECT desc;
+                desc.X = location.X;
+                desc.Y = location.Y;
+                desc.Width = size.X * scale;
+                desc.Height = size.Y * scale;
+
+                // 超出视口部分不绘制
+                MATRIX2x3 matrix = CurrentTransform;
+                RECT viewport = CurrentGraphics;
+                if (!matrix.IsIdentity())
+                    RECT.CreateBoundingBox(ref desc, ref matrix, out desc);
+                if (viewport.Intersects(desc))
+                {
+                    BaseDrawFont(font, text, location, color, scale);
+                }
+            }
+            else
+            {
+                BaseDrawFont(font, text, location, color, scale);
+            }
         }
         public void Draw(FONT font, string text, RECT bound, COLOR color, UI.EPivot alignment)
         {
             VECTOR2 location = UI.UIElement.TextAlign(bound, font.MeasureString(text), alignment);
-            Draw(font, text, ref location, ref color);
+            Draw(font, text, location, color, 1);
         }
-        protected virtual void Draw(FONT font, string text, ref VECTOR2 location, ref COLOR color)
+        public void Draw(FONT font, string text, RECT bound, COLOR color, UI.EPivot alignment, float scale)
         {
-            font.Draw(this, text, location, color);
+            VECTOR2 location = UI.UIElement.TextAlign(bound, font.MeasureString(text) * scale, alignment);
+            Draw(font, text, location, color, scale);
+        }
+        protected virtual void BaseDrawFont(FONT font, string text, VECTOR2 location, COLOR color, float scale)
+        {
+            font.Draw(this, text, location, color, scale);
         }
         protected internal virtual void Render()
         {
+            if (renderStates.Count > 0)
+                throw new InvalidOperationException("Has render state not End.");
+            //_LOG.Debug("Render Count: {0}", TestFlushCount);
+            //TestFlushCount = 0;
         }
 
-        private void Flush()
+        //int TestFlushCount;
+        protected void Flush()
         {
-            if (currentTexture == null)
+            if (bufferCount == 0)
                 return;
 
-            if (spriteQueueCount == 0)
+            //_LOG.Debug("buffer count: {0} stack: {1}", bufferCount, Environment.StackTrace);
+            for (int r = 0; r < bufferCount; r++)
             {
-                currentTexture = null;
-                return;
+                RenderBuffer buffer = buffers[r];
+
+                currentTexture = textures[buffer.TextureIndex];
+                DrawPrimitivesBegin(currentTexture, EPrimitiveType.Triangle);
+
+                int offset = 0;
+                int count = buffer.spriteQueueCount;
+                //_LOG.Debug("{0}: tname:{1} count:{2}", TestFlushCount, currentTexture.Key, count);
+                buffer.spriteQueueCount = 0;
+                while (count > 0)
+                {
+                    // 批绘制顶点缓存最多只有8192个，所以最多一次处理2048个Sprite
+                    int num = count;
+                    if (num > MAX_BATCH_COUNT)
+                        num = MAX_BATCH_COUNT;
+
+                    for (int i = 0; i < num; i++)
+                        InputVertexToOutputVertex(ref buffer.spriteQueue[offset + i], i * 4);
+
+                    DrawPrimitives(EPrimitiveType.Triangle, outputVertices, 0, num * 4, indices, 0, num * 2);
+                    offset += num;
+                    count -= num;
+                }
+
+                DrawPrimitivesEnd();
+
+                //TestFlushCount++;
             }
 
-            DrawPrimitivesBegin(currentTexture);
-
-            int offset = 0;
-            int count = spriteQueueCount;
-            while (count > 0)
-            {
-                // 批绘制顶点缓存最多只有8192个，所以最多一次处理2048个Sprite
-                int num = count;
-                if (num > MAX_BATCH_COUNT)
-                    num = MAX_BATCH_COUNT;
-
-                for (int i = 0; i < num; i++)
-                    InputVertexToOutputVertex(ref spriteQueue[offset + i], i * 4);
-
-                DrawPrimitives(outputVertices, 0, num * 4, indices, 0, num * 2);
-                offset += num;
-                count -= num;
-            }
-
-            DrawPrimitivesEnd();
-            spriteQueueCount = 0;
+            textureCount = 0;
+            bufferCount = 0;
             currentTexture = null;
         }
         private void InputVertexToOutputVertex(ref SpriteVertex vertex, int outputIndex)
@@ -7051,80 +7669,57 @@ namespace EntryEngine
                 sin = 0f;
             }
 
-            float u;
-            //if (vertex.Source.Width == 0f)
-            //    u = vertex.Origin.X * 2E+32f;
-            //else
-            u = vertex.Origin.X / vertex.Source.Width;
-            float v;
-            //if (vertex.Source.Height == 0f)
-            //    v = vertex.Origin.Y * 2E+32f;
-            //else
-            v = vertex.Origin.Y / vertex.Source.Height;
-
             for (int i = 0; i < 4; i++)
             {
                 float xc = XCornerOffsets[i];
                 float yc = YCornerOffsets[i];
-                float xOffset = (xc - u) * vertex.Destination.Width;
-                float yOffset = (yc - v) * vertex.Destination.Height;
-                float x = vertex.Destination.X + xOffset * cos - yOffset * sin;
-                float y = vertex.Destination.Y + xOffset * sin + yOffset * cos;
+                float xOffset = (xc - vertex.Origin.X) * vertex.Destination.Width;
+                float yOffset = (yc - vertex.Origin.Y) * vertex.Destination.Height;
+                //float x = vertex.Destination.X + xOffset * cos - yOffset * sin;
+                //float y = vertex.Destination.Y + xOffset * sin + yOffset * cos;
                 if ((vertex.Flip & EFlip.FlipHorizontally) != EFlip.None)
                     xc = 1f - xc;
                 if ((vertex.Flip & EFlip.FlipVertically) != EFlip.None)
                     yc = 1f - yc;
 
                 int index = outputIndex + i;
-                outputVertices[index].Position.X = x;
-                outputVertices[index].Position.Y = y;
+                outputVertices[index].Position.X = vertex.Destination.X + xOffset * cos - yOffset * sin;
+                outputVertices[index].Position.Y = vertex.Destination.Y + xOffset * sin + yOffset * cos;
                 outputVertices[index].TextureCoordinate.X = vertex.Source.X + xc * vertex.Source.Width;
                 outputVertices[index].TextureCoordinate.Y = vertex.Source.Y + yc * vertex.Source.Height;
                 outputVertices[index].Color.R = vertex.Color.R;
                 outputVertices[index].Color.G = vertex.Color.G;
                 outputVertices[index].Color.B = vertex.Color.B;
                 outputVertices[index].Color.A = vertex.Color.A;
-                OutputVertex(ref outputVertices[index]);
             }
         }
         /// <summary>三角形绘制</summary>
         public void DrawPrimitives(TEXTURE texture, TextureVertex[] vertices, int offset, int count, short[] indexes, int indexOffset, int primitiveCount)
         {
-            bool changeTex = currentTexture != texture;
-            Flush();
-            DrawPrimitivesBegin(changeTex ? texture : null);
-            DrawPrimitives(vertices, offset, count, indexes, indexOffset, primitiveCount);
-            DrawPrimitivesEnd();
-            currentTexture = texture;
+            DrawPrimitives(texture, EPrimitiveType.Triangle, vertices, offset, count, indexes, indexOffset, primitiveCount);
         }
-        protected abstract void DrawPrimitives(TextureVertex[] vertices, int offset, int count, short[] indexes, int indexOffset, int primitiveCount);
-        protected abstract void DrawPrimitivesBegin(TEXTURE texture);
+        public void DrawPrimitives(TEXTURE texture, EPrimitiveType ptype, TextureVertex[] vertices, int offset, int count, short[] indexes, int indexOffset, int primitiveCount)
+        {
+            //var drawable = TEXTURE.GetDrawableTexture(texture);
+            //bool changeTex = currentTexture != drawable;
+            Flush();
+            currentTexture = texture;
+            //DrawPrimitivesBegin(changeTex ? drawable : null, ptype);
+            DrawPrimitivesBegin(texture, ptype);
+            DrawPrimitives(ptype, vertices, offset, count, indexes, indexOffset, primitiveCount);
+            DrawPrimitivesEnd();
+        }
+        protected abstract void DrawPrimitives(EPrimitiveType ptype, TextureVertex[] vertices, int offset, int count, short[] indexes, int indexOffset, int primitiveCount);
+        protected abstract void DrawPrimitivesBegin(TEXTURE texture, EPrimitiveType ptype);
         protected virtual void DrawPrimitivesEnd()
         {
         }
-        protected virtual void OutputVertex(ref TextureVertex output)
-        {
-        }
 
-        protected virtual short[] CreateIndexData()
-        {
-            short[] array = new short[MAX_BATCH_COUNT * 6];
-            for (int i = 0, m = MAX_BATCH_COUNT; i < m; i++)
-            {
-                array[i * 6] = (short)(i * 4);
-                array[i * 6 + 1] = (short)(i * 4 + 1);
-                array[i * 6 + 2] = (short)(i * 4 + 2);
-                array[i * 6 + 3] = (short)(i * 4);
-                array[i * 6 + 4] = (short)(i * 4 + 2);
-                array[i * 6 + 5] = (short)(i * 4 + 3);
-            }
-            return array;
-        }
         /// <summary>每6个为一组按的索引0,1,2,0,2,3</summary>
-        public static short[] CreateIndexData(int vertexCount)
+        public static short[] CreateTriangleIndexData(int vertexCount)
         {
-            short[] array = new short[vertexCount / 4 * 6];
-            for (int i = 0, m = vertexCount / 4; i < m; i++)
+            short[] array = new short[(vertexCount >> 2) * 6];
+            for (int i = 0, m = vertexCount >> 2; i < m; i++)
             {
                 array[i * 6] = (short)(i * 4);
                 array[i * 6 + 1] = (short)(i * 4 + 1);
@@ -7216,645 +7811,537 @@ namespace EntryEngine
     }
 
 
-    // cpu render
-    //public class TextureCPU : TEXTURE
-    //{
-    //    private int width;
-    //    private int height;
-    //    private COLOR[] datas;
+    #region cpu render
 
-    //    public override int Width
-    //    {
-    //        get { return width; }
-    //    }
-    //    public override int Height
-    //    {
-    //        get { return height; }
-    //    }
+    public class TextureCPU : TEXTURE
+    {
+        internal int width;
+        private int height;
+        internal COLOR[] datas;
 
-    //    public TextureCPU(TEXTURE texture)
-    //    {
-    //        this.width = texture.Width;
-    //        this.height = texture.Height;
-    //        this.datas = texture.GetData();
-    //    }
+        public override int Width
+        {
+            get { return width; }
+        }
+        public override int Height
+        {
+            get { return height; }
+        }
+        public override bool IsDisposed
+        {
+            get { return datas == null; }
+        }
 
-    //    public override COLOR[] GetData(RECT area)
-    //    {
-    //        if (area.X == 0 && area.Y == 0 && area.Width == width && area.Height == height)
-    //            return datas;
-    //        return Utility.GetArray(datas, area, Width);
-    //    }
-    //    public override void SetData(COLOR[] buffer, RECT area)
-    //    {
-    //        Utility.SetArray(buffer, datas, area, width, 0);
-    //    }
-    //    protected internal override void InternalDispose()
-    //    {
-    //        this.datas = null;
-    //    }
-    //}
-    //public struct VertexInput
-    //{
-    //    public VECTOR2 Position;
-    //    public COLOR Color;
-    //    public VECTOR2 TextureCoordinate;
-    //}
-    //public struct VertexOutput
-    //{
-    //    public short X;
-    //    public short Y;
-    //    public COLOR Color;
-    //    public ushort U;
-    //    public ushort V;
-    //}
-    //public abstract class ShaderBase : IDisposable
-    //{
-    //    public bool Enable = true;
-    //    public virtual void Dispose()
-    //    {
-    //    }
-    //}
-    //public abstract class ShaderVertex : ShaderBase
-    //{
-    //    protected internal abstract unsafe void VS(ref VertexInput[] vertex);
-    //}
-    //public abstract class ShaderPixel : ShaderBase
-    //{
-    //    protected internal static TEXTURE Sampler
-    //    {
-    //        get;
-    //        internal set;
-    //    }
+        public TextureCPU(COLOR[] color, int width)
+        {
+            if (color.Length % width != 0)
+                throw new ArgumentException();
+            this.datas = color;
+            this.width = width;
+            this.height = color.Length / width;
+        }
+        public TextureCPU(TEXTURE texture)
+        {
+            this.width = texture.Width;
+            this.height = texture.Height;
+            this.datas = texture.GetData();
+        }
 
-    //    protected internal abstract unsafe void PS(ref VertexOutput* vertex);
-    //}
-    ///// <summary>
-    ///// Error
-    ///// warning 1. Flip数组越界
-    ///// tick 2. 旋转是索引越界
-    ///// 应该是float精度问题：左端点x=0.9，右端点x=10.1，目标光栅化应该是1-10，直接(int)则为0-10；若改为(int)+0.5，那么0.1和9.6期望为0-9，可是变为0-10，导致越界
-    ///// 2.5. 旋转不越界，不过两个三角形接缝处在特定情况会出现裂缝
-    ///// </summary>
-    //[Code(ECode.ToBeContinue)]
-    //public sealed class GraphicsDeviceCPU : GRAPHICS
-    //{
-    //    private enum EColorFlag
-    //    {
-    //        /// <summary>
-    //        /// 线性计算每个像素点的值
-    //        /// </summary>
-    //        Linear,
-    //        /// <summary>
-    //        /// 固定计算像素点的值
-    //        /// </summary>
-    //        Fixed,
-    //        /// <summary>
-    //        /// 不计算颜色的值
-    //        /// </summary>
-    //        Ignore,
-    //    }
+        public COLOR GetColor(ushort x, ushort y)
+        {
+            return datas[y * width + x];
+        }
+        public override COLOR[] GetData(RECT area)
+        {
+            if (area.X == 0 && area.Y == 0 && area.Width == width && area.Height == height)
+                return datas;
+            return Utility.GetArray(datas, (int)area.X, (int)area.Y, (int)area.Width, (int)area.Height, width);
+        }
+        public override void SetData(COLOR[] buffer, RECT area)
+        {
+            Utility.SetArray(buffer, datas, (int)area.X, (int)area.Y, (int)area.Width, (int)area.Height, width, (int)area.Width, 0);
+        }
+        protected internal override void InternalDispose()
+        {
+            this.datas = null;
+        }
+    }
+    public abstract class CPUShaderBase : IDisposable
+    {
+        public bool Enable = true;
+        protected internal abstract void main();
+        public virtual void Dispose() { }
+    }
+    public abstract class CPUShaderVertex : CPUShaderBase
+    {
+        protected internal static VECTOR3 Position;
+    }
+    public class VSDefault : CPUShaderVertex
+    {
+        public static VSDefault Default { get; private set; }
+        static VSDefault()
+        {
+            Default = new VSDefault();
+        }
+        private VSDefault() { }
+        internal MATRIX view;
+        internal VECTOR3 vpos;
+        internal COLOR vcolor;
+        internal VECTOR2 vcoord;
+        protected internal override void main()
+        {
+            VECTOR3.Transform(ref vpos, ref view, out Position);
+        }
+    }
+    public abstract class CPUShaderPixel : CPUShaderBase
+    {
+        public const float R255 = 1f / 255f;
+        protected internal static COLOR Color;
+        protected internal static TextureCPU Sampler
+        {
+            get;
+            internal set;
+        }
+    }
+    public class PSDefault : CPUShaderPixel
+    {
+        public static PSDefault Default { get; private set; }
+        static PSDefault()
+        {
+            Default = new PSDefault();
+        }
+        private PSDefault() { }
+        internal COLOR color;
+        internal VECTOR2 coord;
+        protected internal override void main()
+        {
+            if (coord.Y >= Sampler.Height) coord.Y %= Sampler.Height;
+            if (coord.X >= Sampler.width) coord.X %= Sampler.width;
+            COLOR scolor = Sampler.datas[(ushort)coord.Y * Sampler.width + (ushort)coord.X];
+            Color.R = (byte)(color.R * scolor.R * R255);
+            Color.G = (byte)(color.G * scolor.G * R255);
+            Color.B = (byte)(color.B * scolor.B * R255);
+            Color.A = (byte)(color.A * scolor.A * R255);
+        }
+    }
+    public sealed class GraphicsDeviceCPU : GRAPHICS
+    {
+        private enum EColorFlag
+        {
+            /// <summary>
+            /// 线性计算每个像素点的值
+            /// </summary>
+            Linear,
+            /// <summary>
+            /// 固定计算像素点的值
+            /// </summary>
+            Fixed,
+            /// <summary>
+            /// 不计算颜色的值
+            /// </summary>
+            Ignore,
+        }
 
-    //    private static int[] xCornerOffsets = { 0, 1, 0, 1 };
-    //    private static int[] yCornerOffsets = { 0, 0, 1, 1 };
-    //    private static ShaderVertex[] currentVS = new ShaderVertex[4];
-    //    private static ShaderPixel[] currentPS = new ShaderPixel[4];
-    //    private static int vsIndex;
-    //    private static int psIndex;
-    //    private static COLOR[] datas;
-    //    private static int textureWidth;
+        private CPUShaderVertex[] currentVS = new CPUShaderVertex[4];
+        private CPUShaderPixel[] currentPS = new CPUShaderPixel[4];
+        private int vsIndex;
+        private int psIndex;
+        private VECTOR3[] triangleVertex = new VECTOR3[3];
+        private byte[] triangleVertexIndex = new byte[3];
+        private TextureVertex _four;
+        private VECTOR3[] lineVertex = new VECTOR3[2];
+        private Dictionary<TEXTURE, TextureCPU> textureDataCache = new Dictionary<TEXTURE, TextureCPU>();
 
-    //    private GRAPHICS baseDevice;
-    //    private SpriteVertex[] sprites = new SpriteVertex[4];
-    //    private TEXTURE[] textures = new TEXTURE[4];
-    //    private Stack<int> spriteCount = new Stack<int>();
-    //    private int spriteQueue;
-    //    private COLOR[] buffers;
-    //    private ushort bufferWidth;
-    //    private ushort bufferHeight;
-    //    private TEXTURE screenGraphics;
-    //    private VertexInput[] vertices = new VertexInput[4];
-    //    private VertexOutput[] outputs = new VertexOutput[1280 * 720];
-    //    private MATRIX2x3 transform;
-    //    private RECT scissor;
+        private COLOR[] buffers;
+        private ushort bufferWidth;
+        private ushort bufferHeight;
+        private TEXTURE screenGraphics;
+        private BoundingBox scissor;
+        private GRAPHICS baseDevice;
 
-    //    public override bool IsFullScreen
-    //    {
-    //        get { return baseDevice.IsFullScreen; }
-    //        set { baseDevice.IsFullScreen = value; }
-    //    }
-    //    protected override VECTOR2 InternalScreenSize
-    //    {
-    //        get { return baseDevice.ScreenSize; }
-    //        set { baseDevice.ScreenSize = value; }
-    //    }
+        public override bool IsFullScreen
+        {
+            get { return baseDevice.IsFullScreen; }
+            set { baseDevice.IsFullScreen = value; }
+        }
+        protected override VECTOR2 InternalScreenSize
+        {
+            get { return baseDevice.ScreenSize; }
+            set { baseDevice.ScreenSize = value; }
+        }
 
-    //    public GraphicsDeviceCPU(GRAPHICS device)
-    //    {
-    //        if (device == null)
-    //            throw new ArgumentNullException("GraphicsDevice");
-    //        this.baseDevice = device;
-    //        this.GraphicsSize = device.GraphicsSize;
-    //    }
+        public GraphicsDeviceCPU(GRAPHICS device)
+        {
+            if (device == null)
+                throw new ArgumentNullException("GraphicsDevice");
+            this.baseDevice = device;
+            this.GraphicsSize = device.GraphicsSize;
+        }
 
-    //    private void SetVS()
-    //    {
-    //        vsIndex = 0;
-    //        foreach (var shader in Shaders)
-    //        {
-    //            foreach (var vs in shader.VS)
-    //            {
-    //                if (vs.Enable)
-    //                {
-    //                    if (currentVS.Length == vsIndex)
-    //                    {
-    //                        Array.Resize(ref currentVS, vsIndex * 2);
-    //                    }
-    //                    currentVS[vsIndex++] = vs;
-    //                }
-    //            }
-    //        }
-    //    }
-    //    private void SetPS()
-    //    {
-    //        psIndex = 0;
-    //        foreach (var shader in Shaders)
-    //        {
-    //            foreach (var ps in shader.PS)
-    //            {
-    //                if (ps.Enable)
-    //                {
-    //                    if (currentPS.Length == vsIndex)
-    //                    {
-    //                        Array.Resize(ref currentPS, psIndex * 2);
-    //                    }
-    //                    currentPS[psIndex++] = ps;
-    //                }
-    //            }
-    //        }
-    //    }
-    //    protected override void SetViewport(MATRIX2x3 view, RECT viewport)
-    //    {
-    //        if (baseDevice.ViewportMode != this.ViewportMode)
-    //            baseDevice.ViewportMode = this.ViewportMode;
-    //        if (baseDevice.GraphicsSize != this.GraphicsSize)
-    //            baseDevice.GraphicsSize = this.GraphicsSize;
-    //        if (baseDevice.ScreenSize != this.ScreenSize)
-    //            baseDevice.ScreenSize = this.ScreenSize;
-    //        viewport = AreaToScreen(viewport);
-    //        bufferWidth = (ushort)viewport.Width;
-    //        bufferHeight = (ushort)viewport.Height;
-    //        buffers = new COLOR[bufferHeight * bufferWidth];
-    //        screenGraphics = Entry.Instance.NewTEXTURE(bufferWidth, bufferHeight);
-    //        view.M31 = 0;
-    //        view.M32 = 0;
-    //    }
-    //    protected override void InternalDrawFast(TEXTURE texture, ref RECT rect, ref RECT source, ref COLOR color)
-    //    {
-    //        InternalDraw(texture, ref rect, ref source, ref color, 0, ref nullPivot, EFlip.None);
-    //    }
-    //    protected unsafe override void InternalDraw(TEXTURE texture, ref RECT rect, ref RECT source, ref COLOR color, float rotation, ref VECTOR2 origin, EFlip flip)
-    //    {
-    //        if (texture == null)
-    //            throw new ArgumentNullException("texture");
-    //        if (!HasRenderTarget)
-    //            throw new InvalidOperationException("Begin must be called before draw.");
+        private void SetVS()
+        {
+            vsIndex = 0;
+            //foreach (var shader in Shaders)
+            //{
+            //    foreach (var vs in shader.VS)
+            //    {
+            //        if (vs.Enable)
+            //        {
+            //            if (currentVS.Length == vsIndex)
+            //            {
+            //                Array.Resize(ref currentVS, vsIndex * 2);
+            //            }
+            //            currentVS[vsIndex++] = vs;
+            //        }
+            //    }
+            //}
+        }
+        private void SetPS()
+        {
+            psIndex = 0;
+            //foreach (var shader in Shaders)
+            //{
+            //    foreach (var ps in shader.PS)
+            //    {
+            //        if (ps.Enable)
+            //        {
+            //            if (currentPS.Length == vsIndex)
+            //            {
+            //                Array.Resize(ref currentPS, psIndex * 2);
+            //            }
+            //            currentPS[psIndex++] = ps;
+            //        }
+            //    }
+            //}
+        }
+        protected override void SetViewport(MATRIX2x3 view, RECT viewport)
+        {
+            if (baseDevice.ViewportMode != this.ViewportMode)
+                baseDevice.ViewportMode = this.ViewportMode;
+            if (baseDevice.GraphicsSize != this.GraphicsSize)
+                baseDevice.GraphicsSize = this.GraphicsSize;
+            if (baseDevice.ScreenSize != this.ScreenSize)
+                baseDevice.ScreenSize = this.ScreenSize;
+            viewport = AreaToScreen(viewport);
+            bufferWidth = (ushort)viewport.Width;
+            bufferHeight = (ushort)viewport.Height;
+            buffers = new COLOR[bufferHeight * bufferWidth];
+            screenGraphics = Entry.Instance.NewTEXTURE(bufferWidth, bufferHeight);
+            view.M31 = 0;
+            view.M32 = 0;
+        }
+        protected override void InternalBegin(bool threeD, ref MATRIX matrix, ref RECT graphics, SHADER shader)
+        {
+            VSDefault.Default.view = matrix;
+            this.scissor.Left = graphics.X;
+            this.scissor.Top = graphics.Y;
+            this.scissor.Right = graphics.Right;
+            this.scissor.Bottom = graphics.Bottom;
+        }
+        protected override void DrawPrimitivesBegin(TEXTURE texture, EPrimitiveType ptype)
+        {
+            TEXTURE drawable = TEXTURE.GetDrawableTexture(texture);
+            TextureCPU cpu;
+            if (!textureDataCache.TryGetValue(drawable, out cpu))
+            {
+                cpu = new TextureCPU(drawable);
+                textureDataCache.Add(drawable, cpu);
+            }
+            PSDefault.Sampler = cpu;
+        }
+        protected override void DrawPrimitives(EPrimitiveType ptype, TextureVertex[] vertices, int offset, int count, short[] indexes, int indexOffset, int primitiveCount)
+        {
+            TIMER timer = TIMER.StartNew();
 
-    //        if (spriteQueue == sprites.Length)
-    //            Array.Resize(ref sprites, spriteQueue * 2);
+            SetVS();
+            SetPS();
 
-    //        fixed (SpriteVertex* ptr = &sprites[spriteQueue])
-    //        {
-    //            ptr->Destination.X = rect.X;
-    //            ptr->Destination.Y = rect.Y;
-    //            ptr->Destination.Width = rect.Width;
-    //            ptr->Destination.Height = rect.Height;
-    //            ptr->Source.X = source.X;
-    //            ptr->Source.Y = source.Y;
-    //            ptr->Source.Width = source.Width;
-    //            ptr->Source.Height = source.Height;
-    //            ptr->Color.R = color.R;
-    //            ptr->Color.G = color.G;
-    //            ptr->Color.B = color.B;
-    //            ptr->Color.A = color.A;
-    //            ptr->Rotation = rotation;
-    //            ptr->Origin.X = origin.X;
-    //            ptr->Origin.Y = origin.Y;
-    //            ptr->Flip = flip;
-    //        }
+            switch (ptype)
+            {
+                case EPrimitiveType.Point:
+                    #region Point
+                    for (int i = 0; i < primitiveCount; i++)
+                    {
+                        int index = offset + indexes[indexOffset + i];
+                        // vertex shader
+                        VSDefault.Default.vpos = vertices[index].Position;
+                        //VSDefault.Default.vcolor = vertices[index].Color;
+                        //VSDefault.Default.vcoord = vertices[index].TextureCoordinate;
+                        VSDefault.Default.main();
+                        for (int s = 0; s < vsIndex; s++)
+                            currentVS[s].main();
+                        // pixel shader
+                        PSDefault.Default.color = VSDefault.Default.vcolor;
+                        PSDefault.Default.coord = VSDefault.Default.vcoord;
+                        PSDefault.Default.main();
+                        for (int s = 0; s < psIndex; s++)
+                            currentPS[s].main();
+                        // scissor
+                        if (CPUShaderVertex.Position.X >= scissor.Left &&
+                            CPUShaderVertex.Position.X < scissor.Right &&
+                            CPUShaderVertex.Position.Y >= scissor.Top &&
+                            CPUShaderVertex.Position.Y <= scissor.Bottom)
+                        {
+                            // render
+                            buffers[(int)CPUShaderVertex.Position.Y * bufferWidth + (int)CPUShaderVertex.Position.X] = CPUShaderPixel.Color;
+                        }
+                    }
+                    #endregion
+                    break;
 
-    //        if (textures.Length != sprites.Length)
-    //            Array.Resize(ref textures, sprites.Length);
+                case EPrimitiveType.Line:
+                    #region Line
 
-    //        textures[spriteQueue] = texture;
-    //        spriteQueue++;
-    //    }
-    //    protected override void InternalBegin(ref MATRIX2x3 matrix, ref RECT graphics, SHADER shader)
-    //    {
-    //        spriteCount.Push(spriteQueue);
-    //        this.transform = matrix;
-    //        this.scissor = graphics;
-    //    }
-    //    protected override unsafe void Ending(GRAPHICS.RenderState render)
-    //    {
-    //        TIMER timer = TIMER.StartNew();
-    //        int start = spriteCount.Pop();
+                    #endregion
+                    break;
 
-    //        RECT scissor = this.scissor.ToLocation();
-    //        SetVS();
-    //        SetPS();
-    //        bool isIdentity = transform.IsIdentity();
+                case EPrimitiveType.Triangle:
+                    //vertices[0].Color = COLOR.Red;
+                    //vertices[1].Color = COLOR.Lime;
+                    //vertices[2].Color = COLOR.Blue;
+                    //vertices[3].Color = COLOR.White;
+                    //primitiveCount = 1;
+                    #region Triangle
+                    for (int i = 0; i < primitiveCount; i++)
+                    {
+                        int index = indexOffset + i * 3;
+                        for (int p = 0; p < 3; p++)
+                        {
+                            // vertex shader
+                            VSDefault.Default.vpos = vertices[offset + indexes[index + p]].Position;
+                            //VSDefault.Default.vcolor = vertices[index].Color;
+                            //VSDefault.Default.vcoord = vertices[index].TextureCoordinate;
+                            VSDefault.Default.main();
+                            for (int s = 0; s < vsIndex; s++)
+                                currentVS[s].main();
+                            triangleVertex[p] = CPUShaderVertex.Position;
+                        }
 
-    //        fixed (SpriteVertex* ptrsv = &sprites[start])
-    //        {
-    //            SpriteVertex* ptr = ptrsv;
-    //            // draw the sprites
-    //            for (int i = start; i < spriteQueue; i++)
-    //            {
-    //                TEXTURE texture = textures[i];
-    //                datas = texture.GetData();
-    //                textureWidth = texture.Width;
-    //                ShaderPixel.Sampler = textures[i];
+                        // sort triangle vertex
+                        triangleVertexIndex[0] = 0;
+                        triangleVertexIndex[1] = 1;
+                        triangleVertexIndex[2] = 2;
+                        SortVertex(0, 1);
+                        SortVertex(1, 2);
+                        SortVertex(0, 1);
 
-    //                #region calc vertex infomation
-    //                fixed (VertexInput* vertexptr = &vertices[0])
-    //                {
-    //                    float rotationX;
-    //                    float rotationY;
-    //                    if (ptr->Rotation != 0f)
-    //                    {
-    //                        rotationX = (float)_MATH.Cos(ptr->Rotation);
-    //                        rotationY = (float)_MATH.Sin(ptr->Rotation);
-    //                    }
-    //                    else
-    //                    {
-    //                        rotationX = 1f;
-    //                        rotationY = 0f;
-    //                    }
-    //                    float pivotOffsetX;
-    //                    float pivotOffsetY;
-    //                    if (ptr->Origin.X == ptr->Source.Width)
-    //                        pivotOffsetX = 1;
-    //                    else
-    //                        pivotOffsetX = ptr->Origin.X / ptr->Source.Width;
-    //                    if (ptr->Origin.Y == ptr->Source.Height)
-    //                        pivotOffsetY = 1;
-    //                    else
-    //                        pivotOffsetY = ptr->Origin.Y / ptr->Source.Height;
-    //                    VertexInput* ptr2 = vertexptr;
-    //                    for (int j = 0; j < 4; j++)
-    //                    {
-    //                        float x = xCornerOffsets[j];
-    //                        float y = yCornerOffsets[j];
-    //                        float offsetX = (x - pivotOffsetX) * ptr->Destination.Width;
-    //                        float offsetY = (y - pivotOffsetY) * ptr->Destination.Height;
-    //                        ptr2->Position.X = ptr->Destination.X + offsetX * rotationX - offsetY * rotationY;
-    //                        ptr2->Position.Y = ptr->Destination.Y + offsetX * rotationY + offsetY * rotationX;
-    //                        if ((ptr->Flip & EFlip.FlipHorizontally) != EFlip.None)
-    //                            x = 1 - x;
-    //                        if ((ptr->Flip & EFlip.FlipVertically) != EFlip.None)
-    //                            y = 1 - y;
-    //                        // fixed: 数组越界 width - 1, height - 1
-    //                        ptr2->TextureCoordinate.X = ptr->Source.X + x * (ptr->Source.Width - 1);
-    //                        ptr2->TextureCoordinate.Y = ptr->Source.Y + y * (ptr->Source.Height - 1);
-    //                        ptr2->Color = ptr->Color;
-    //                        ptr2++;
-    //                    }
-    //                }
-    //                #endregion
+                        // render
+                        int index1 = offset + indexes[index + triangleVertexIndex[0]];
+                        int index2 = offset + indexes[index + triangleVertexIndex[1]];
+                        int index3 = offset + indexes[index + triangleVertexIndex[2]];
+                        if (triangleVertex[triangleVertexIndex[0]].Y == triangleVertex[triangleVertexIndex[1]].Y)
+                        {
+                            // 上底三角形
+                            DrawTriangle(
+                                ref vertices[index3], ref vertices[index1], ref vertices[index2],
+                                ref triangleVertex[triangleVertexIndex[2]], ref triangleVertex[triangleVertexIndex[0]], ref triangleVertex[triangleVertexIndex[1]]);
+                        }
+                        else if (triangleVertex[triangleVertexIndex[1]].Y == triangleVertex[triangleVertexIndex[2]].Y)
+                        {
+                            // 下底三角形
+                            DrawTriangle(
+                                ref vertices[index1], ref vertices[index2], ref vertices[index3],
+                                ref triangleVertex[triangleVertexIndex[0]], ref triangleVertex[triangleVertexIndex[1]], ref triangleVertex[triangleVertexIndex[2]]);
+                        }
+                        else
+                        {
+                            // 拆分成上底和下底的两个三角形
+                            VECTOR3 four;
+                            four.Y = triangleVertex[triangleVertexIndex[1]].Y;
+                            four.Z = 0;
 
-    //                #region vertex infomation
-    //                // vertex shader
-    //                if (vsIndex > 0)
-    //                {
-    //                    for (int j = 0; j < vsIndex; j++)
-    //                    {
-    //                        currentVS[j].VS(ref vertices);
-    //                    }
-    //                }
-    //                int count = vertices.Length;
-    //                if (isIdentity)
-    //                {
-    //                    // transform the vertex
-    //                    fixed (VertexInput* vertexptr = &vertices[0])
-    //                    {
-    //                        VertexInput* ptr2 = vertexptr;
-    //                        for (int j = 0; j < count; j++)
-    //                        {
-    //                            VECTOR2.Transform(ref ptr2->Position, ref transform);
-    //                            ptr2++;
-    //                        }
-    //                    }
-    //                }
-    //                #endregion
+                            float v = (triangleVertex[triangleVertexIndex[1]].Y - triangleVertex[triangleVertexIndex[0]].Y) / (triangleVertex[triangleVertexIndex[2]].Y - triangleVertex[triangleVertexIndex[0]].Y);
+                            float w = 1 - v;
 
-    //                #region rasterize, clip, pixel shader and render to buffer
-    //                // rasterize
-    //                const int COUNT = 3;
+                            four.X = triangleVertex[triangleVertexIndex[0]].X + v * (triangleVertex[triangleVertexIndex[2]].X - triangleVertex[triangleVertexIndex[0]].X);
 
-    //                if (vertices.Length < COUNT)
-    //                    throw new ArgumentOutOfRangeException("Trangle rasterizer need the vertex count bigger than 3.");
+                            // color差值
+                            _four.Color.R = (byte)(vertices[index1].Color.R * w + vertices[index3].Color.R * v);
+                            _four.Color.G = (byte)(vertices[index1].Color.G * w + vertices[index3].Color.G * v);
+                            _four.Color.B = (byte)(vertices[index1].Color.B * w + vertices[index3].Color.B * v);
+                            _four.Color.A = (byte)(vertices[index1].Color.A * w + vertices[index3].Color.A * v);
 
-    //                int index = 0;
-    //                int end = vertices.Length - COUNT;
-    //                count = 0;
-    //                while (index <= end)
-    //                {
-    //                    fixed (VertexInput* temp = &vertices[index++])
-    //                    {
-    //                        VertexInput* ptr1 = temp;
-    //                        VertexInput* ptr2 = temp + 1;
-    //                        VertexInput* ptr3 = temp + 2;
+                            // uv差值
+                            _four.TextureCoordinate.X = vertices[index1].TextureCoordinate.X * w + vertices[index3].TextureCoordinate.X * v;
+                            _four.TextureCoordinate.Y = vertices[index1].TextureCoordinate.Y * w + vertices[index3].TextureCoordinate.Y * v;
 
-    //                        EColorFlag flag;
-    //                        if (psIndex != 0)
-    //                        {
-    //                            flag = EColorFlag.Ignore;
-    //                        }
-    //                        else
-    //                        {
-    //                            if (ptr1->Color.Equals(ref ptr2->Color) & ptr1->Color.Equals(ref ptr3->Color))
-    //                            {
-    //                                if (ptr1->Color.A == 0)
-    //                                    continue;
-    //                                if (ptr1->Color.R == byte.MaxValue
-    //                                    && ptr1->Color.G == byte.MaxValue
-    //                                    && ptr1->Color.B == byte.MaxValue
-    //                                    && ptr1->Color.A == byte.MaxValue)
-    //                                {
-    //                                    flag = EColorFlag.Ignore;
-    //                                }
-    //                                else
-    //                                {
-    //                                    flag = EColorFlag.Fixed;
-    //                                }
-    //                            }
-    //                            else
-    //                            {
-    //                                flag = EColorFlag.Linear;
-    //                            }
-    //                        }
+                            if (four.X > triangleVertex[triangleVertexIndex[1]].X)
+                            {
+                                // 上底三角形
+                                DrawTriangle(
+                                    ref vertices[index1], ref vertices[index2], ref _four,
+                                    ref triangleVertex[triangleVertexIndex[0]], ref triangleVertex[triangleVertexIndex[1]], ref four);
+                                // 下底三角形
+                                DrawTriangle(
+                                    ref vertices[index3], ref vertices[index2], ref _four,
+                                    ref triangleVertex[triangleVertexIndex[2]], ref triangleVertex[triangleVertexIndex[1]], ref four);
+                            }
+                            else
+                            {
+                                // 上底三角形
+                                DrawTriangle(
+                                    ref vertices[index1], ref _four, ref vertices[index2],
+                                    ref triangleVertex[triangleVertexIndex[0]], ref four, ref triangleVertex[triangleVertexIndex[1]]);
+                                // 下底三角形
+                                DrawTriangle(
+                                    ref vertices[index3], ref _four, ref vertices[index2],
+                                    ref triangleVertex[triangleVertexIndex[2]], ref four, ref triangleVertex[triangleVertexIndex[1]]);
+                            }
+                        }
+                    }
+                    #endregion
+                    break;
 
-    //                        TriangleVerticesSort(ref ptr1, ref ptr2);
-    //                        TriangleVerticesSort(ref ptr2, ref ptr3);
-    //                        TriangleVerticesSort(ref ptr1, ref ptr2);
+                default: throw new NotImplementedException();
+            }
+        }
+        private void SortVertex(byte index1, byte index2)
+        {
+            bool swap = false;
+            // 从上到下，从左到右排列顶点
+            float y = triangleVertex[triangleVertexIndex[index1]].Y - triangleVertex[triangleVertexIndex[index2]].Y;
+            if (y > 0)
+                swap = true;
+            else if (y == 0)
+                swap = triangleVertex[triangleVertexIndex[index1]].X > triangleVertex[triangleVertexIndex[index2]].X;
+            if (swap)
+            {
+                byte index = triangleVertexIndex[index1];
+                triangleVertexIndex[index1] = triangleVertexIndex[index2];
+                triangleVertexIndex[index2] = index;
+            }
+        }
+        private void DrawTriangle(
+            ref TextureVertex _pos, ref TextureVertex _lef, ref TextureVertex _rig,
+            ref VECTOR3 pos, ref VECTOR3 lef, ref VECTOR3 rig)
+        {
+            bool downBottom = lef.Y > pos.Y;
+            short ytop;
+            short ybot;
+            if (downBottom)
+            {
+                ytop = (short)pos.Y;
+                ybot = (short)lef.Y;
+            }
+            else
+            {
+                ytop = (short)lef.Y;
+                ybot = (short)pos.Y;
+            }
 
-    //                        /*
-    //                         * 优化
-    //                         * 1. u,v不要每个点都计算，计算x起始和x结束两点的u,v，中间的点按步增长
-    //                         * tick 2. 三个顶点颜色值一样时，不计算uv，直接对颜色进行赋值；当Alpha=0时，直接跳过整个光栅化
-    //                         * tick 3. 裁切时，ybottom < scissor.y && ytop >= scissor.height && xlef < scissor.x && xright >= scissor.width时直接跳过
-    //                         * 4. 裁切时，ytop < scissor.y时，ytop = scissor.y；ybottom > scissor.height时，break；x同样
-    //                         */
-    //                        if (ptr1->Position.Y == ptr2->Position.Y)
-    //                        {
-    //                            DrawTriangle(ptr3, ptr1, ptr2, flag, ref scissor);
-    //                        }
-    //                        else if (ptr2->Position.Y == ptr3->Position.Y)
-    //                        {
-    //                            DrawTriangle(ptr1, ptr2, ptr3, flag, ref scissor);
-    //                        }
-    //                        else
-    //                        {
-    //                            VertexInput mid;
-    //                            VertexInput* ptr4 = &mid;
-    //                            // 计算1->3直线y=2.y的x值
-    //                            ptr4->Position.Y = ptr2->Position.Y;
-    //                            ptr4->Position.X = (ptr2->Position.Y - ptr1->Position.Y) * (ptr3->Position.X - ptr1->Position.X) / (ptr3->Position.Y - ptr1->Position.Y) + ptr1->Position.X;
-    //                            //ptr4->Position.ToRoundInt();
+            // scissor
+            if (ybot < scissor.Top || ytop >= scissor.Bottom)
+                return;
 
-    //                            // 计算uvw
-    //                            float u, v, w;
-    //                            VECTOR2.Barycentric(ref ptr4->Position,
-    //                                ref ptr1->Position,
-    //                                ref ptr2->Position,
-    //                                ref ptr3->Position,
-    //                                out u, out v);
-    //                            w = 1 - u - v;
+            // 颜色差值类型
+            EColorFlag colorFlag;
+            if ((_pos.Color.R != _lef.Color.R || _pos.Color.G != _lef.Color.G || _pos.Color.B != _lef.Color.B || _pos.Color.A != _lef.Color.A) ||
+                (_pos.Color.R != _rig.Color.R || _pos.Color.G != _rig.Color.G || _pos.Color.B != _rig.Color.B || _pos.Color.A != _rig.Color.A) ||
+                (_rig.Color.R != _lef.Color.R || _rig.Color.G != _lef.Color.G || _rig.Color.B != _lef.Color.B || _rig.Color.A != _lef.Color.A))
+            {
+                colorFlag = EColorFlag.Linear;
+            }
+            else
+            {
+                colorFlag = EColorFlag.Fixed;
+                PSDefault.Default.color = _pos.Color;
+            }
 
-    //                            // 根据uv计算Color
-    //                            if (flag != EColorFlag.Linear)
-    //                            {
-    //                                ptr4->Color = ptr1->Color;
-    //                            }
-    //                            else
-    //                            {
-    //                                ptr4->Color.R = (byte)(ptr1->Color.R * w + ptr2->Color.R * u + ptr3->Color.R * v);
-    //                                ptr4->Color.G = (byte)(ptr1->Color.G * w + ptr2->Color.G * u + ptr3->Color.G * v);
-    //                                ptr4->Color.B = (byte)(ptr1->Color.B * w + ptr2->Color.B * u + ptr3->Color.B * v);
-    //                                ptr4->Color.A = (byte)(ptr1->Color.A * w + ptr2->Color.A * u + ptr3->Color.A * v);
-    //                            }
-    //                            // 根据uv计算TextureCoordinate
-    //                            ptr4->TextureCoordinate.X = ptr1->TextureCoordinate.X * w + ptr2->TextureCoordinate.X * u + ptr3->TextureCoordinate.X * v;
-    //                            ptr4->TextureCoordinate.Y = ptr1->TextureCoordinate.Y * w + ptr2->TextureCoordinate.Y * u + ptr3->TextureCoordinate.Y * v;
-    //                            ptr4->TextureCoordinate.X = (int)ptr4->TextureCoordinate.X;
-    //                            ptr4->TextureCoordinate.Y = (int)ptr4->TextureCoordinate.Y;
+            // 三角形两条边的反斜率
+            float bottomY = lef.Y;
+            float yxlef = (pos.X - lef.X) / (pos.Y - bottomY);
+            float yxrig = (pos.X - rig.X) / (pos.Y - bottomY);
+            // uv差值
+            float v;
+            float _v = 1f / (ybot - ytop);
+            if (downBottom)
+            {
+                v = 1;
+                _v = -_v;
+            }
+            else
+            {
+                v = 0;
+            }
+            float u;
+            float _u = 1f / (rig.X - lef.X);
+            for (short y = ytop; y < ybot; y++, v += _v)
+            {
+                // scissor
+                if (y < scissor.Top)
+                    continue;
+                if (y >= scissor.Bottom)
+                    break;
 
-    //                            // 将左右点排序后分别绘制上三角和下三角
-    //                            if (ptr4->Position.X > ptr2->Position.X)
-    //                            {
-    //                                VertexInput* swap = ptr2;
-    //                                ptr2 = ptr4;
-    //                                ptr4 = swap;
-    //                            }
-    //                            DrawTriangle(ptr1, ptr4, ptr2, flag, ref scissor);
-    //                            DrawTriangle(ptr3, ptr4, ptr2, flag, ref scissor);
-    //                        }
-    //                    }
-    //                }
-    //                #endregion
-    //                // next sprite
-    //                ptr++;
-    //            }
-    //        }
+                short xlef = (short)((y - bottomY) * yxlef + lef.X);
+                short xrig = (short)((y - bottomY) * yxrig + rig.X);
+                if (xlef == xrig)
+                    continue;
+                // scissor
+                if (xrig < scissor.Left || xlef >= scissor.Right)
+                    continue;
 
-    //        spriteQueue = start;
-    //    }
-    //    /// <summary>
-    //    /// 三角形 平顶 / 平底 光栅化
-    //    /// </summary>
-    //    /// <param name="vertex">v = 1</param>
-    //    /// <param name="lef">w = 1</param>
-    //    /// <param name="rig">u = 1</param>
-    //    private unsafe void DrawTriangle(VertexInput* vertex, VertexInput* lef, VertexInput* rig, EColorFlag colorFlag,
-    //        ref RECT scissor)
-    //    {
-    //        bool bottomFixed = lef->Position.Y > vertex->Position.Y;
+                u = 0;
+                for (short x = xlef; x < xrig; x++, u += _u)
+                {
+                    // scissor
+                    if (x < scissor.Left)
+                        continue;
+                    if (x >= scissor.Right)
+                        break;
 
-    //        int result1, result2;
-    //        short ytop;
-    //        short ybot;
-    //        if (bottomFixed)
-    //        {
-    //            _MATH.Floor(ref vertex->Position.Y, ref lef->Position.Y);
-    //            rig->Position.Y = lef->Position.Y;
-    //            ytop = (short)vertex->Position.Y;
-    //            ybot = (short)lef->Position.Y;
-    //        }
-    //        else
-    //        {
-    //            _MATH.Floor(ref lef->Position.Y, ref vertex->Position.Y);
-    //            rig->Position.Y = lef->Position.Y;
-    //            ytop = (short)lef->Position.Y;
-    //            ybot = (short)vertex->Position.Y;
-    //        }
-    //        _MATH.Floor(ref lef->Position.X, ref rig->Position.X);
-    //        //vertex->Position.X = _MATH.Round(vertex->Position.X);
+                    float w = 1 - u - v;
 
-    //        if (ybot < scissor.Y || ytop >= scissor.Height)
-    //            return;
+                    // 颜色线性差值
+                    if (colorFlag == EColorFlag.Linear)
+                    {
+                        PSDefault.Default.color.R = (byte)(_lef.Color.R * w + _rig.Color.R * u + _pos.Color.R * v);
+                        PSDefault.Default.color.G = (byte)(_lef.Color.G * w + _rig.Color.G * u + _pos.Color.G * v);
+                        PSDefault.Default.color.B = (byte)(_lef.Color.B * w + _rig.Color.B * u + _pos.Color.B * v);
+                        PSDefault.Default.color.A = (byte)(_lef.Color.A * w + _rig.Color.A * u + _pos.Color.A * v);
+                    }
+                    // uv线性差值
+                    PSDefault.Default.coord.X = _lef.TextureCoordinate.X * w + _rig.TextureCoordinate.X * u + _pos.TextureCoordinate.X * v;
+                    PSDefault.Default.coord.Y = _lef.TextureCoordinate.Y * w + _rig.TextureCoordinate.Y * u + _pos.TextureCoordinate.Y * v;
+                    PSDefault.Default.main();
+                    for (int s = 0; s < psIndex; s++)
+                        currentPS[s].main();
 
-    //        float k12 = (vertex->Position.X - lef->Position.X) / (vertex->Position.Y - lef->Position.Y);
-    //        float k13 = (vertex->Position.X - rig->Position.X) / (vertex->Position.Y - rig->Position.Y);
+                    int index = y * bufferWidth + x;
+                    if (buffers[index].A == 0)
+                    {
+                        buffers[index].R = (byte)(PSDefault.Color.R * PSDefault.Color.A * PSDefault.R255);
+                        buffers[index].G = (byte)(PSDefault.Color.G * PSDefault.Color.A * PSDefault.R255);
+                        buffers[index].B = (byte)(PSDefault.Color.B * PSDefault.Color.A * PSDefault.R255);
+                        buffers[index].A = 255;
+                    }
+                    else
+                    {
+                        // 根据混合模式混合画布上已有的颜色和当前像素的颜色
+                        buffers[index].R = (byte)(PSDefault.Color.R * PSDefault.Color.A * PSDefault.R255 + buffers[index].R - buffers[index].R * PSDefault.Color.A * PSDefault.R255);
+                        buffers[index].G = (byte)(PSDefault.Color.G * PSDefault.Color.A * PSDefault.R255 + buffers[index].G - buffers[index].G * PSDefault.Color.A * PSDefault.R255);
+                        buffers[index].B = (byte)(PSDefault.Color.B * PSDefault.Color.A * PSDefault.R255 + buffers[index].B - buffers[index].B * PSDefault.Color.A * PSDefault.R255);
+                    }
+                    //buffers[y * bufferWidth + x] = PSDefault.Color;
+                }
+            }
+        }
+        protected internal override void Render()
+        {
+            screenGraphics.SetData(buffers);
+            baseDevice.Begin();
+            baseDevice.Draw(screenGraphics, FullGraphicsArea);
+            baseDevice.End();
+            baseDevice.Render();
+        }
+        public override void Clear()
+        {
+            for (int i = 0, len = buffers.Length; i < len; i++)
+                buffers[i].A = 0;
+        }
+    }
 
-    //        float dividerV;
-    //        float _v;
-    //        float vadd;
-    //        if (bottomFixed)
-    //        {
-    //            int height = ybot - ytop;
-    //            dividerV = _MATH.DIVIDE_BY_2048[height];
-    //            _v = _MATH.DIVIDE_2048 * height;
-    //            vadd = -_MATH.DIVIDE_2048;
-    //        }
-    //        else
-    //        {
-    //            dividerV = _MATH.DIVIDE_BY_2048[ybot - ytop];
-    //            _v = 0;
-    //            vadd = _MATH.DIVIDE_2048;
-    //        }
-
-    //        float dividerU = _MATH.DIVIDE_BY_2048[(int)(rig->Position.X - lef->Position.X + 0.5f)];
-    //        float _u = 0;
-
-    //        float u, v, w;
-    //        VertexOutput ptroutput;
-    //        VertexOutput* output = &ptroutput;
-    //        VECTOR4 color = VECTOR4.Zero;
-    //        float divide255 = _MATH.DIVIDE_BY_1[255];
-    //        if (colorFlag == EColorFlag.Fixed)
-    //        {
-    //            color.X = vertex->Color.R * divide255;
-    //            color.Y = vertex->Color.G * divide255;
-    //            color.W = vertex->Color.B * divide255;
-    //            color.Z = vertex->Color.A * divide255;
-    //        }
-
-    //        for (short y = ytop; y < ybot; y++, _v += vadd)
-    //        {
-    //            if (y < scissor.Y)
-    //                continue;
-    //            if (y >= scissor.Height)
-    //                break;
-
-    //            _MATH.Floor(
-    //                (y - lef->Position.Y) * k12 + lef->Position.X,
-    //                (y - rig->Position.Y) * k13 + rig->Position.X,
-    //                out result1, out result2);
-    //            short xlef = (short)result1;
-    //            short xrig = (short)result2;
-    //            if (xlef == xrig)
-    //                continue;
-    //            if (xrig < scissor.X || xlef >= scissor.Width)
-    //                continue;
-
-    //            v = _v * dividerV;
-    //            _u = 0;
-
-    //            for (short x = xlef; x <= xrig; x++, _u += _MATH.DIVIDE_2048)
-    //            {
-    //                if (x < scissor.X)
-    //                    continue;
-    //                if (x >= scissor.Width)
-    //                    break;
-
-    //                u = _u * dividerU;
-    //                w = 1 - u - v;
-
-    //                #region Vertex Output
-
-    //                output->Y = y;
-    //                output->X = x;
-
-    //                output->U = (ushort)(lef->TextureCoordinate.X * w + rig->TextureCoordinate.X * u + vertex->TextureCoordinate.X * v);
-    //                output->V = (ushort)(lef->TextureCoordinate.Y * w + rig->TextureCoordinate.Y * u + vertex->TextureCoordinate.Y * v);
-
-    //                if (psIndex == 0)
-    //                {
-    //                    output->Color = datas[output->V * textureWidth + output->U];
-    //                }
-    //                else
-    //                {
-    //                    // pixel shader
-    //                    for (int i = 0; i < psIndex; i++)
-    //                    {
-    //                        currentPS[i].PS(ref output);
-    //                    }
-    //                }
-
-    //                // calc color
-    //                if (colorFlag != EColorFlag.Ignore)
-    //                {
-    //                    if (colorFlag == EColorFlag.Linear)
-    //                    {
-    //                        color.X = (lef->Color.R * w + rig->Color.R * u + vertex->Color.R * v) * divide255;
-    //                        color.Y = (lef->Color.G * w + rig->Color.G * u + vertex->Color.G * v) * divide255;
-    //                        color.Z = (lef->Color.B * w + rig->Color.B * u + vertex->Color.B * v) * divide255;
-    //                        color.W = (lef->Color.A * w + rig->Color.A * u + vertex->Color.A * v) * divide255;
-    //                    }
-    //                    output->Color.R = (byte)(output->Color.R * color.X);
-    //                    output->Color.G = (byte)(output->Color.G * color.Y);
-    //                    output->Color.B = (byte)(output->Color.B * color.Z);
-    //                    output->Color.A = (byte)(output->Color.A * color.W);
-    //                }
-
-    //                // draw to buffer
-    //                buffers[output->Y * bufferWidth + output->X] = output->Color;
-
-    //                #endregion
-    //            }
-    //        }
-    //    }
-    //    protected internal override void Render()
-    //    {
-    //        screenGraphics.SetData(buffers);
-    //        baseDevice.Begin();
-    //        baseDevice.Draw(screenGraphics, FullGraphicsArea);
-    //        baseDevice.End();
-    //        baseDevice.Render();
-    //    }
-    //    public unsafe override void Clear()
-    //    {
-    //        fixed (COLOR* ptr = buffers)
-    //        {
-    //            COLOR* color = ptr;
-    //            int count = buffers.Length;
-    //            for (int i = 0; i < count; i++)
-    //            {
-    //                color->A = 0;
-    //                color++;
-    //            }
-    //        }
-    //    }
-
-    //    private static unsafe void TriangleVerticesSort(ref VertexInput* ptr1, ref VertexInput* ptr2)
-    //    {
-    //        bool swap = false;
-    //        float y = ptr1->Position.Y - ptr2->Position.Y;
-    //        if (y > 0)
-    //            swap = true;
-    //        else if (y == 0)
-    //            swap = ptr1->Position.X > ptr2->Position.X;
-
-    //        if (swap)
-    //        {
-    //            VertexInput* temp = ptr1;
-    //            ptr1 = ptr2;
-    //            ptr2 = temp;
-    //        }
-    //    }
-    //}
-
+    #endregion
 
     #endregion
 }

@@ -4,6 +4,8 @@
 3. 若序列化出现问题，一定是文件写入权限不明不白用不了了，删掉应用重装即可解决
 4. 导出Android时，Development Build或者Write Access设置External(SDCard)可以在Android/data/com.xxx.xxx/files/找到写入的存档
    否则会在data/data/com.xxx.xxx/files/里面
+5. Unity导出的IOS项目，仅被反射调用的代码将被优化掉，主要反映在数据表生成类型的构造函数和带翻译的Set属性
+6. Unity导出的IOS项目，GameObject.FindWithTag用不了，请改用GameObject.Find
 
 Unity项目架构
 
@@ -185,8 +187,13 @@ public class Main : MonoBehaviour
 Android环境搭建
 1. 下载安装JDK http://www.oracle.com/technetwork/java/javase/downloads/index.html
 2. 下载安装Eclipse http://www.eclipse.org/downloads/ 安装时选择Eclipse IDE for Java EE Developers
-3. 打开Eclipse安装ADT Help -> Install New Software -> 选择下载好的本地zip
+3. 打开Eclipse安装ADT Help -> Install New Software -> Add -> Archive -> 选择下载好的本地zip（有VPN时可以使用网址https://dl-ssl.google.com/android/eclipse/）
 4. 指定SDK路径
+
+Android环境搭建2
+1. 下载安装JDK http://www.oracle.com/technetwork/java/javase/downloads/index.html
+2. 下载ADT，解压后自带Eclipse，SDK和SDK Manager
+3. 指定SDK路径
 
 Android广告植入
 
@@ -420,7 +427,7 @@ Release版本导出
 2. Unity导出Andriod项目: 勾上Google Android Project
 3. Eclipse准备导出:
 	(1). Manifest.xml删除android:debuggable="false"
-	(2). BuildPath -> Order and Export -> Android Private Libraries去掉打钩
+	(2). 右键项目 -> BuildPath -> Order and Export -> Android Private Libraries去掉打钩
 4. 发布: 右键项目 -> Android Tools -> Export Signed Application Package -> 选择Unity导出的user.keystore -> 输入密码 -> 导出
 导出的APK不能运行
 

@@ -209,6 +209,8 @@ namespace EntryEngine.UI
                     size = new VECTOR2(0, uitext.Font.LineHeight);
                 else
                     size = uitext.Font.MeasureString(text);
+            size.X += uitext.Padding.X;
+            size.Y += uitext.Padding.Y;
             return size;
             //return VECTOR2.Add(ref size, ref uitext.Padding);
         }

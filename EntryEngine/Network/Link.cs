@@ -13,7 +13,228 @@ namespace EntryEngine.Network
     public interface IConnector
     {
         //void Connect(string host, ushort port);
-        Async Connect(string host, ushort port);
+        AsyncData<Link> Connect(string host, ushort port);
+    }
+    public class Connector
+    {
+        private int connectCount;
+        /// <summary>重连间隔，单位ms</summary>
+        public ushort ReconnectInterval = 2000;
+        /// <summary>等待服务器回应登录数据的时间，单位ms</summary>
+        public ushort WaitResponse = 5000;
+        /// <summary>写入连接数据；是否断线重连；返回null则断开连接</summary>
+        public event Func<bool, byte[]> OnConnectData;
+        /// <summary>连接成功，通过返回的数据构建Agent；是否断线重连</summary>
+        public event Func<bool, byte[], Agent> OnConnectSuccess;
+        /// <summary>连接失败；是否断线重连，重连次数，返回是否继续重连</summary>
+        public event Func<bool, int, bool> OnConnectFault;
+        public bool Running { get; private set; }
+        public bool IsConnected
+        {
+            get { return Agent != null && Agent.Link != null && Agent.Link.IsConnected; }
+        }
+        public Agent Agent { get; private set; }
+        public string Host { get; private set; }
+        public ushort Port { get; private set; }
+        public COROUTINE Coroutine { get; private set; }
+        public IConnector NetConnector { get; private set; }
+        public IEnumerable<ICoroutine> Connect(EntryService entry, bool setCoroutine, IConnector connector, string host, ushort port)
+        {
+            if (entry == null)
+            {
+                entry = EntryService.Instance;
+                if (entry == null)
+                {
+                    throw new ArgumentNullException("entry");
+                }
+            }
+            if (string.IsNullOrEmpty(host))
+                throw new ArgumentNullException("ip");
+            if (connector == null)
+                throw new ArgumentNullException("connector");
+
+            if (Running)
+                Close();
+            this.Running = true;
+            this.Host = host;
+            this.Port = port;
+            this.NetConnector = connector;
+
+            IEnumerable<ICoroutine> coroutine = Connect(entry);
+            if (setCoroutine)
+            {
+                Coroutine = entry.SetCoroutine(coroutine);
+            }
+            else
+            {
+                Coroutine = null;
+            }
+            return coroutine;
+        }
+        private IEnumerable<ICoroutine> Connect(EntryService entry)
+        {
+            while (Running)
+            {
+                if (!IsConnected)
+                {
+                    bool reconnect = Agent != null;
+                    if (reconnect)
+                    {
+                        _LOG.Info("正在尝试断线重连");
+                    }
+                    connectCount++;
+
+                    #region 连接网络
+
+                    // 连接网络
+                    AsyncData<Link> async;
+                    try
+                    {
+                        async = NetConnector.Connect(Host, Port);
+                    }
+                    catch (Exception ex)
+                    {
+                        _LOG.Error(ex, "创建网络连接失败 Connector={0} IP={1} Port={2}", NetConnector.GetType().FullName, Host, Port);
+                        async = null;
+                    }
+                    if (async == null)
+                    {
+                        // 等待后重连
+                        yield return new TIME(ReconnectInterval);
+                        continue;
+                    }
+                    if (!async.IsEnd) yield return async;
+                    if (async.IsSuccess)
+                    {
+                        Link link = async.Data;
+                        if (OnConnectData != null)
+                        {
+                            try
+                            {
+                                byte[] data = OnConnectData(reconnect);
+                                if (data != null)
+                                {
+                                    link.Write(data);
+                                    link.Flush();
+                                }
+                            }
+                            catch (Exception ex)
+                            {
+                                _LOG.Error(ex, "写入连接数据异常");
+                                link.Close();
+                            }
+                            if (!link.IsConnected)
+                            {
+                                // 等待后重连
+                                yield return new TIME(ReconnectInterval);
+                                continue;
+                            }
+                        }
+                        TIME over = new TIME(WaitResponse);
+                        while (link.IsConnected)
+                        {
+                            byte[] buffer = link.Read();
+                            if (buffer == null)
+                            {
+                                over.Update(entry.GameTime);
+                                if (over.IsEnd)
+                                {
+                                    _LOG.Error("未能在时间内收到服务器的响应，关闭本次连接");
+                                    link.Close();
+                                    break;
+                                }
+                                else
+                                {
+                                    yield return null;
+                                }
+                            }
+                            else
+                            {
+                                // 接收登录数据成功登录
+                                if (OnConnectSuccess != null)
+                                {
+                                    Agent = OnConnectSuccess(reconnect, buffer);
+                                    if (Agent == null)
+                                    {
+                                        //throw new ArgumentNullException("Agent");
+                                        Close();
+                                    }
+                                    else
+                                    {
+                                        Agent.Link = link;
+                                    }
+                                }
+                                else
+                                    throw new ArgumentNullException("OnConnectSuccess");
+                                break;
+                            }
+                        }
+                    }
+                    else
+                    {
+                        // 连接异常
+                        if (async.IsFaulted)
+                            _LOG.Error(async.FaultedReason, "连接网络失败");
+                        else
+                            _LOG.Warning("连接网络失败");
+                    }
+
+                    if (IsConnected)
+                    {
+                        // 连接成功
+                        _LOG.Info("连接服务器成功 IP={0} Port={1}", Host, Port);
+                    }
+                    else
+                    {
+                        // 连接失败
+                        if (OnConnectFault != null && !OnConnectFault(reconnect, connectCount))
+                        {
+                            _LOG.Info("停止重连服务器");
+                            Close();
+                        }
+                        else
+                        {
+                            if (ReconnectInterval == 0)
+                                yield return null;
+                            else
+                                yield return new TIME(ReconnectInterval);
+                        }
+                    }
+
+                    #endregion
+                }
+                else
+                {
+                    connectCount = 0;
+                    // 网络交互处理
+                    try
+                    {
+                        Agent.Bridge();
+                    }
+                    catch (Exception ex)
+                    {
+                        _LOG.Error(ex, "网络交互异常");
+                    }
+                    yield return null;
+                }
+            }
+        }
+        public void Close()
+        {
+            _LOG.Info("断开网络连接");
+            connectCount = 0;
+            if (Agent != null && Agent.Link != null)
+            {
+                Agent.Link.Close();
+                Agent = null;
+            }
+            if (Coroutine != null)
+            {
+                Coroutine.Dispose();
+                Coroutine = null;
+            }
+            Running = false;
+        }
     }
 	public abstract class Link : IDisposable
 	{
@@ -37,13 +258,6 @@ namespace EntryEngine.Network
         {
             Close();
         }
-
-        
-        static Link()
-        {
-            
-        }
-        
     }
 	public class LinkMultiple : Link
 	{
@@ -190,11 +404,33 @@ namespace EntryEngine.Network
 			BaseLink.Close();
 		}
 	}
+    public class ExceptionCRC : Exception
+    {
+        public uint Get { get; private set; }
+        public uint Calc { get; private set; }
+        public ExceptionCRC(uint get, uint calc)
+            : base("crc invalid!")
+        {
+            this.Get = get;
+            this.Calc = calc;
+        }
+    }
+    public class ExceptionHeartbeatStop : Exception { }
 	public abstract class LinkBinary : Link
 	{
+        private static byte[] HeartbeatProtocol = new byte[0];
 		protected byte[] buffer = new byte[MaxBuffer];
 		protected ByteWriter writer = new ByteWriter(MaxBuffer);
         private int bigData = -1;
+        /// <summary>
+        /// <para>大于0. 到时间会发送心跳包，包发不出去将结束心跳</para>
+        /// <para>等于0. 不关心心跳</para>
+        /// <para>小于0. 到时间(绝对值)会直接视为断线（抛出ExceptionHeartbeatStop异常）</para>
+        /// </summary>
+        public TimeSpan Heartbeat;
+        // 读取到数据后重置心跳时间
+        private bool beat = true;
+        private DateTime lastBeat;
 
 		protected abstract int DataLength { get; }
         public bool HasBigData
@@ -203,6 +439,10 @@ namespace EntryEngine.Network
         }
         protected virtual bool CanFlush { get { return writer.Position > 0; } }
 
+        public void Beat()
+        {
+            beat = true;
+        }
 		public sealed override void Write(byte[] buffer, int offset, int size)
 		{
 			int count = size + MAX_BUFFER_SIZE;
@@ -231,39 +471,15 @@ namespace EntryEngine.Network
 		{
 			writer.WriteBytes(buffer, offset, size);
 		}
-		public sealed override byte[] Read()
+		public override byte[] Read()
 		{
 			int available = DataLength;
 			if (available >= MAX_BUFFER_SIZE)
 			{
-            BIG_DATA:
+                beat = true;
+
                 if (HasBigData)
-                {
-                    // 读取大数据
-                    if (bigData < buffer.Length)
-                    {
-                        int canReceive = _MATH.Min(buffer.Length - bigData, available);
-                        InternalRead(buffer, bigData, canReceive);
-                        bigData += canReceive;
-                        available -= canReceive;
-                    }
-                    // 读取包尾crc验证
-                    if (bigData == buffer.Length && available >= 4)
-                    {
-                        byte[] crc = new byte[4];
-                        InternalRead(crc, 0, 4);
-                        uint getCrc = BitConverter.ToUInt32(crc, 0);
-                        uint calcCrc = _IO.Crc32(buffer, 0, buffer.Length);
-                        if (getCrc != calcCrc)
-                            throw new ArgumentException(string.Format("crc invalid! get={0} calc={1}", getCrc, calcCrc));
-                        bigData = -1;
-                        byte[] bigPackage = buffer;
-                        buffer = new byte[MaxBuffer];
-                        return bigPackage;
-                    }
-                    // stream has not received all data.
-                    return null;
-                }
+                    return ReadBigData(ref available);
 
 				int peek;
 				int receive = PeekSize(buffer, out peek);
@@ -283,7 +499,11 @@ namespace EntryEngine.Network
                     {
                         InternalRead(buffer, peek, receive);
                     }
-                    return AgentHeartbeat.HeartbeatProtocol;
+                    // 心跳包：忽略心跳包，读取下一个包
+                    // 不主动发心跳包的需要回应心跳包
+                    if (Heartbeat.Ticks <= 0)
+                        Write(HeartbeatProtocol);
+                    return Read();
 				}
                 if (size > buffer.Length)
                 {
@@ -294,7 +514,7 @@ namespace EntryEngine.Network
                     if (peek < receive)
                         InternalRead(buffer, peek, receive);
                     available -= receive;
-                    goto BIG_DATA;
+                    return ReadBigData(ref available);
                 }
                 if (size <= available)
                 {
@@ -309,7 +529,7 @@ namespace EntryEngine.Network
                     uint calcCrc = _IO.Crc32(buffer, MAX_BUFFER_SIZE, packageSize);
                     if (getCrc != calcCrc)
                     {
-                        throw new ArgumentException(string.Format("crc invalid! get={0} calc={1}", getCrc, calcCrc));
+                        throw new ExceptionCRC(getCrc, calcCrc);
                     }
                     else
                     {
@@ -322,13 +542,74 @@ namespace EntryEngine.Network
 			}
 			return null;
 		}
+        private byte[] ReadBigData(ref int available)
+        {
+            // 读取大数据
+            if (bigData < buffer.Length)
+            {
+                int canReceive = _MATH.Min(buffer.Length - bigData, available);
+                InternalRead(buffer, bigData, canReceive);
+                bigData += canReceive;
+                available -= canReceive;
+            }
+            // 读取包尾crc验证
+            if (bigData == buffer.Length && available >= 4)
+            {
+                byte[] crc = new byte[4];
+                InternalRead(crc, 0, 4);
+                uint getCrc = BitConverter.ToUInt32(crc, 0);
+                uint calcCrc = _IO.Crc32(buffer, 0, buffer.Length);
+                if (getCrc != calcCrc)
+                    throw new ExceptionCRC(getCrc, calcCrc);
+                bigData = -1;
+                byte[] bigPackage = buffer;
+                buffer = new byte[MaxBuffer];
+                return bigPackage;
+            }
+            // stream has not received all data.
+            return null;
+        }
         public sealed override byte[] Flush()
         {
+            long tick = Heartbeat.Ticks;
+            if (tick != 0)
+            {
+                // 定时发送心跳包
+                if (beat)
+                {
+                    // 重置心跳时间
+                    lastBeat = DateTime.Now;
+                    beat = false;
+                }
+                else
+                {
+                    if (tick > 0)
+                    {
+                        // 检查是否该心跳了
+                        var now = DateTime.Now;
+                        if (now - lastBeat > Heartbeat)
+                        {
+                            lastBeat = now;
+                            Write(HeartbeatProtocol);
+                        }
+                    }
+                    else
+                    {
+                        // 心跳到时关闭连接
+                        var now = DateTime.Now;
+                        if ((now - lastBeat).Ticks > -tick)
+                        {
+                            throw new ExceptionHeartbeatStop();
+                        }
+                    }
+                }
+            }
             if (!CanFlush)
                 return null;
             byte[] buffer = writer.GetBuffer();
-            InternalFlush(buffer);
             writer.Reset();
+            if (IsConnected)
+                InternalFlush(buffer);
             return buffer;
         }
 		protected virtual int PeekSize(byte[] buffer, out int peek)
@@ -550,17 +831,18 @@ namespace EntryEngine.Network
             BuildConnection();
             Socket.Connect(host, port);
         }
-        public Async Connect(string host, ushort port)
+        public virtual AsyncData<Link> Connect(string host, ushort port)
         {
             BuildConnection();
-            AsyncData<Socket> async = new AsyncData<Socket>();
+            AsyncData<Link> async = new AsyncData<Link>();
+            async.Run();
             Socket.BeginConnect(host, port, ar =>
             {
-                Socket.EndConnect(ar);
                 try
                 {
+                    Socket.EndConnect(ar);
                     if (Socket.Connected)
-                        async.SetData(Socket);
+                        async.SetData(this);
                     else
                         async.Cancel();
                 }
@@ -569,7 +851,6 @@ namespace EntryEngine.Network
                     async.Error(ex);
                 }
             }, Socket);
-            async.Run();
             return async;
         }
     }
@@ -621,24 +902,31 @@ namespace EntryEngine.Network
     public class LinkUdp : LinkSocket
     {
         private IPEndPoint endPoint;
-
+       
         public override IPEndPoint EndPoint
         {
             get { return endPoint == null ? base.EndPoint : endPoint; }
+        }
+        public override bool IsConnected
+        {
+            get
+            {
+                return endPoint != null || base.IsConnected;
+            }
         }
 
         public LinkUdp()
 		{
 		}
-        public LinkUdp(Socket socket) : base(socket)
-		{
-		}
+        //public LinkUdp(Socket socket) : base(socket)
+        //{
+        //}
         public LinkUdp(Socket socket, IPEndPoint endPoint) : base(socket)
         {
             if (endPoint == null)
                 throw new ArgumentNullException("endPoint");
             this.endPoint = endPoint;
-            Connect(endPoint.Address.ToString(), (ushort)endPoint.Port);
+            //Connect(endPoint.Address.ToString(), (ushort)endPoint.Port);
         }
 
         public void Bind(string ip, ushort port)
@@ -649,126 +937,354 @@ namespace EntryEngine.Network
         {
             if (ep == null)
                 throw new ArgumentNullException("ep");
-            if (Socket == null)
-                BuildConnection();
+            if (Socket != null)
+                throw new InvalidOperationException("can't bind because socket is not null");
+            BuildConnection();
+            Socket.Bind(ep);
+        }
+        protected override int InternalRead(byte[] buffer, int offset, int size)
+        {
+            EndPoint ep = new IPEndPoint(0, 0);
+            int read = Socket.ReceiveFrom(buffer, SocketFlags.None, ref ep);
+            return read;
+        }
+        protected override int PeekSize(byte[] buffer, out int peek)
+        {
+            EndPoint ep = new IPEndPoint(0, 0);
+            peek = 0;
+            peek = Socket.ReceiveFrom(buffer, SocketFlags.Peek, ref ep);
+            return peek;
         }
         protected override Socket BuildSocket()
         {
             return new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
         }
+        public override AsyncData<Link> Connect(string host, ushort port)
+        {
+            BuildConnection();
+            endPoint = new IPEndPoint(IPAddress.Parse(host), port);
+            var sync = new AsyncData<Link>();
+            sync.Run();
+            sync.SetData(this);
+            return sync;
+        }
+        protected override void InternalFlush(byte[] buffer)
+        {
+            if (endPoint == null)
+                base.InternalFlush(buffer);
+            else
+                Socket.BeginSendTo(buffer, 0, buffer.Length, SocketFlags.None, endPoint, null, null);
+        }
     }
 
     // http
-	public class LinkHttpRequest : LinkBinary
-	{
-        /// <summary>超时时间(ms)，小于0则不超时</summary>
-		public int Timeout = 5000;
-        /// <summary>重连次数，小于0则无限重连</summary>
-		public int ReconnectCount = 3;
-		private int reconnect;
-		private int length;
-        public HttpRequestPost Http
+    public class LinkHttpRequest : LinkBinary, IConnector
+    {
+        private static byte[] REQUEST_ID = { 255, 255 };
+
+        private byte[] idBuffer;
+        public TimeSpan Timeout = TimeSpan.FromSeconds(5);
+        public int ReconnectCount = 3;
+        /// <summary>保持一个给服务端用于推送消息的长连接时间，小于等于0则不保持长连接</summary>
+        public TimeSpan KeepAlive = TimeSpan.FromMinutes(60);
+        private LinkedList<HttpRequestPost> requests = new LinkedList<HttpRequestPost>();
+        private int dataLength = -1;
+
+        public ushort ID
         {
             get;
             private set;
         }
-		protected override int DataLength
-		{
-			get { return length; }
-		}
-		public override bool IsConnected
-		{
-            get { return Http.IsConnected; }
-		}
-		public override bool CanRead
-		{
-			get
-			{
-                //if (request == null && Ex != null)
-                //{
-                //    throw Ex;
-                //}
-				return Http.HasResponse && length > 0;
-			}
-		}
-		public WebException Ex
-		{
-			get;
-			private set;
-		}
-
-        public LinkHttpRequest()
+        public string Uri
         {
-            Http = new HttpRequestPost();
-            Http.OnConnect += Http_OnConnect;
-            Http.OnError += Http_OnError;
-            Http.OnReceived += Http_OnReceived;
+            get;
+            private set;
+        }
+        public override bool IsConnected
+        {
+            get { return idBuffer != null; }
         }
 
-        void Http_OnReceived(HttpWebResponse obj)
+        private HttpRequestPost Peek
         {
-            length = (int)obj.ContentLength;
+            get { return requests.First.Value; }
         }
-        void Http_OnError(WebException ex, byte[] buffer)
+        private HttpRequestPost Dequeue
         {
-            Ex = ex;
-            if (ex.Status == WebExceptionStatus.Timeout)
+            get
             {
-                _LOG.Debug("请求超时:byte[{0}], Timeout:{1}ms", buffer.Length, Timeout);
-                reconnect++;
-                if (ReconnectCount < 0 || reconnect <= ReconnectCount)
+                var link = requests.First.Value;
+                dataLength = -1;
+                requests.RemoveFirst();
+                return link;
+            }
+        }
+        public override bool CanRead
+        {
+            get
+            {
+                if (dataLength <= 0)
                 {
-                    Http.Reconnect();
-                    InternalFlush(buffer);
+                    if (requests.Count > 0 && Peek.HasResponse)
+                    {
+                        dataLength = (int)Peek.Response.ContentLength;
+                    }
                 }
+                return dataLength > 0;
             }
-            else if (ex.Status == WebExceptionStatus.RequestCanceled)
+        }
+        protected override int DataLength
+        {
+            get { return dataLength; }
+        }
+        
+        public override byte[] Read()
+        {
+            byte[] data = base.Read();
+            // 保持一个长连接
+            if (requests.Count == 0 && KeepAlive.Ticks > 0)
+                GetRequestLink(true).Send(null);
+            return data;
+        }
+        protected override int InternalRead(byte[] buffer, int offset, int size)
+        {
+            try
             {
-                _LOG.Debug("request canceled");
+                int read = Peek.Response.GetResponseStream().Read(buffer, offset, size);
+                dataLength -= read;
+                if (dataLength == 0)
+                    requests.RemoveFirst();
+                return read;
             }
-            else if (ex.Status == WebExceptionStatus.NameResolutionFailure)
+            catch (WebException ex)
             {
-                _LOG.Debug("服务器不存在");
+                _LOG.Error(ex, "Read http data error. ErrorCode: {0}", ex.Status);
+                throw ex;
+            }
+            catch (Exception)
+            {
+                throw;
+            }
+        }
+        protected override void InternalFlush(byte[] buffer)
+        {
+            GetRequestLink(false).Send(buffer);
+        }
+        private HttpRequestPost GetRequestLink(bool keepAlive)
+        {
+            HttpRequestPost request = new HttpRequestPost();
+            if (keepAlive)
+            {
+                request.OnSend += FlushWithID;
+                request.OnConnect += KeepAliveOnConnect;
+                requests.AddLast(request);
             }
             else
             {
-                _LOG.Debug("request error! msg={0} code={1}", ex.Message, ex.Status);
+                request.OnSend += FlushWithPID;
+                request.OnConnect += RequestOnConnect;
+                requests.AddFirst(request);
             }
+            int reconnect = 0;
+            request.OnError += (r, ex, buffer) =>
+            {
+                if (ex.Status == WebExceptionStatus.Timeout)
+                {
+                    _LOG.Debug("请求超时:byte[{0}], Timeout:{1}ms", buffer.Length, Timeout);
+                    reconnect++;
+                    if (ReconnectCount < 0 || reconnect <= ReconnectCount)
+                    {
+                        request.Reconnect();
+                        request.Send(buffer);
+                        return;
+                    }
+                    else
+                    {
+                        _LOG.Debug("放弃重连");
+                    }
+                }
+                else if (ex.Status == WebExceptionStatus.RequestCanceled)
+                {
+                    _LOG.Debug("request canceled");
+                }
+                else if (ex.Status == WebExceptionStatus.NameResolutionFailure)
+                {
+                    _LOG.Debug("服务器不存在");
+                }
+                else
+                {
+                    _LOG.Debug("request error! msg={0} code={1}", ex.Message, ex.Status);
+                }
+                Dequeue.Dispose();
+            };
+            request.Connect(Uri);
+            return request;
         }
-        void Http_OnConnect(HttpWebRequest obj)
+        private void KeepAliveOnConnect(HttpWebRequest obj)
         {
-            obj.Timeout = Timeout;
+            obj.Timeout = (int)KeepAlive.TotalMilliseconds;
         }
+        private void RequestOnConnect(HttpWebRequest obj)
+        {
+            obj.Timeout = (int)Timeout.TotalMilliseconds;
+        }
+        private void FlushWithID(HttpWebRequest request, Stream obj)
+        {
+            // 客户端ID
+            obj.Write(idBuffer, 0, 2);
+        }
+        private void FlushWithPID(HttpWebRequest request, Stream obj)
+        {
+            // 客户端ID
+            obj.Write(idBuffer, 0, 2);
+            // 数据包ID
+            idBuffer[2]++;
+            obj.Write(idBuffer, 2, 1);
+        }
+        public AsyncData<Link> Connect(string host, ushort port)
+        {
+            if (!string.IsNullOrEmpty(Uri))
+                throw new InvalidOperationException("Http has connected.");
 
-        protected override void InternalFlush(byte[] buffer)
-        {
-            Http.Send(buffer);
+            AsyncData<Link> async = new AsyncData<Link>();
+
+            HttpRequestPost request = new HttpRequestPost();
+            //request.OnSend += RequestID;
+            request.OnReceived += (response) =>
+            {
+                byte[] buffer = new byte[3];
+                using (var stream = response.GetResponseStream())
+                    stream.Read(buffer, 0, 2);
+                request.Dispose();
+
+                this.Uri = host;
+                this.ID = BitConverter.ToUInt16(buffer, 0);
+                this.idBuffer = buffer;
+                async.SetData(this);
+            };
+            request.Connect(host);
+            request.Send(REQUEST_ID);
+
+            return async;
         }
-		protected override int InternalRead(byte[] buffer, int offset, int size)
-		{
-			try
-			{
-				int read = Http.Response.GetResponseStream().Read(buffer, offset, size);
-				length -= read;
-				return read;
-			}
-			catch (WebException ex)
-			{
-				Ex = ex;
-				_LOG.Error(ex, "Read error!");
-				throw ex;
-			}
-		}
-		public void Connect(string uri)
-		{
-            Http.Connect(uri);
-		}
-		public override void Close()
-		{
-			base.Close();
-            Http.Dispose();
-		}
-	}
+        public override void Close()
+        {
+            base.Close();
+            dataLength = -1;
+            while (requests.Count > 0)
+                Dequeue.Dispose();
+        }
+    }
+    //public class LinkHttpRequest : LinkBinary
+    //{
+    //    /// <summary>超时时间(ms)，小于0则不超时</summary>
+    //    public int Timeout = 5000;
+    //    /// <summary>重连次数，小于0则无限重连</summary>
+    //    public int ReconnectCount = 3;
+    //    private int reconnect;
+    //    private int length;
+    //    public HttpRequestPost Http
+    //    {
+    //        get;
+    //        private set;
+    //    }
+    //    protected override int DataLength
+    //    {
+    //        get { return length; }
+    //    }
+    //    public override bool IsConnected
+    //    {
+    //        get { return Http.IsConnected; }
+    //    }
+    //    public override bool CanRead
+    //    {
+    //        get
+    //        {
+    //            //if (request == null && Ex != null)
+    //            //{
+    //            //    throw Ex;
+    //            //}
+    //            return Http.HasResponse && length > 0;
+    //        }
+    //    }
+    //    public WebException Ex
+    //    {
+    //        get;
+    //        private set;
+    //    }
+
+    //    public LinkHttpRequest()
+    //    {
+    //        Http = new HttpRequestPost();
+    //        Http.OnConnect += Http_OnConnect;
+    //        Http.OnError += Http_OnError;
+    //        Http.OnReceived += Http_OnReceived;
+    //    }
+
+    //    void Http_OnReceived(HttpWebResponse obj)
+    //    {
+    //        length = (int)obj.ContentLength;
+    //    }
+    //    void Http_OnError(HttpRequestPost request, WebException ex, byte[] buffer)
+    //    {
+    //        Ex = ex;
+    //        if (ex.Status == WebExceptionStatus.Timeout)
+    //        {
+    //            _LOG.Debug("请求超时:byte[{0}], Timeout:{1}ms", buffer.Length, Timeout);
+    //            reconnect++;
+    //            if (ReconnectCount < 0 || reconnect <= ReconnectCount)
+    //            {
+    //                Http.Reconnect();
+    //                InternalFlush(buffer);
+    //            }
+    //        }
+    //        else if (ex.Status == WebExceptionStatus.RequestCanceled)
+    //        {
+    //            _LOG.Debug("request canceled");
+    //        }
+    //        else if (ex.Status == WebExceptionStatus.NameResolutionFailure)
+    //        {
+    //            _LOG.Debug("服务器不存在");
+    //        }
+    //        else
+    //        {
+    //            _LOG.Debug("request error! msg={0} code={1}", ex.Message, ex.Status);
+    //        }
+    //    }
+    //    void Http_OnConnect(HttpWebRequest obj)
+    //    {
+    //        obj.Timeout = Timeout;
+    //    }
+
+    //    protected override void InternalFlush(byte[] buffer)
+    //    {
+    //        Http.Send(buffer);
+    //    }
+    //    protected override int InternalRead(byte[] buffer, int offset, int size)
+    //    {
+    //        try
+    //        {
+    //            int read = Http.Response.GetResponseStream().Read(buffer, offset, size);
+    //            length -= read;
+    //            return read;
+    //        }
+    //        catch (WebException ex)
+    //        {
+    //            Ex = ex;
+    //            _LOG.Error(ex, "Read error!");
+    //            throw ex;
+    //        }
+    //    }
+    //    public void Connect(string uri)
+    //    {
+    //        Http.Connect(uri);
+    //    }
+    //    public override void Close()
+    //    {
+    //        base.Close();
+    //        Http.Dispose();
+    //    }
+    //}
     public class HttpRequestPost : IDisposable
     {
         public event Action<HttpWebRequest> OnConnect;
@@ -779,14 +1295,14 @@ namespace EntryEngine.Network
         /// <summary>异步</summary>
         public event Action<HttpWebResponse> OnReceived;
         /// <summary>异步</summary>
-        public event Action<WebException, byte[]> OnError;
+        public event Action<HttpRequestPost, WebException, byte[]> OnError;
         private Uri uri;
 
         public bool IsConnected
         {
             get { return Request != null; }
         }
-        protected HttpWebRequest Request
+        internal HttpWebRequest Request
         {
             get;
             private set;
@@ -848,7 +1364,7 @@ namespace EntryEngine.Network
                     {
                         Dispose();
                         if (OnError != null)
-                            OnError(ex, buffer);
+                            OnError(this, ex, buffer);
                     }
                     catch (Exception ex)
                     {
@@ -873,7 +1389,7 @@ namespace EntryEngine.Network
                         {
                             Dispose();
                             if (OnError != null)
-                                OnError(ex, buffer);
+                                OnError(this, ex, buffer);
                         }
                         catch (Exception ex)
                         {
@@ -898,195 +1414,195 @@ namespace EntryEngine.Network
             }
         }
     }
-    public abstract class LinkQueue<T> : LinkLink where T : Link
-    {
-        protected LinkedList<T> queue
-        {
-            get;
-            private set;
-        }
-        public sealed override bool CanRead
-        {
-            get
-            {
-                if (BaseLink != null)
-                    return base.CanRead;
-                if (queue.Count == 0)
-                    return false;
-                var link = queue.First.Value;
-                if (!link.IsConnected)
-                    //throw new WebException("Can't receive any data.", WebExceptionStatus.Timeout);
-                    return true;
-                return link.CanRead;
-            }
-        }
-        public virtual bool CanFlush
-        {
-            get { return BaseLink != null && !BaseLink.CanRead; }
-        }
+    //public abstract class LinkQueue<T> : LinkLink where T : Link
+    //{
+    //    protected LinkedList<T> queue
+    //    {
+    //        get;
+    //        private set;
+    //    }
+    //    public sealed override bool CanRead
+    //    {
+    //        get
+    //        {
+    //            if (BaseLink != null)
+    //                return base.CanRead;
+    //            if (queue.Count == 0)
+    //                return false;
+    //            var link = queue.First.Value;
+    //            if (!link.IsConnected)
+    //                //throw new WebException("Can't receive any data.", WebExceptionStatus.Timeout);
+    //                return true;
+    //            return link.CanRead;
+    //        }
+    //    }
+    //    public virtual bool CanFlush
+    //    {
+    //        get { return BaseLink != null && !BaseLink.CanRead; }
+    //    }
 
-        public LinkQueue()
-        {
-            queue = new LinkedList<T>();
-        }
+    //    public LinkQueue()
+    //    {
+    //        queue = new LinkedList<T>();
+    //    }
 
-        protected T Dequeue()
-        {
-            var link = queue.First.Value;
-            queue.RemoveFirst();
-            return link;
-        }
-        public sealed override byte[] Flush()
-        {
-            if (!CanFlush)
-                return null;
-            byte[] flush = base.Flush();
-            if (flush == null)
-                return flush;
-            FlushOver(flush);
-            BaseLink = null;
-            return flush;
-        }
-        protected abstract void FlushOver(byte[] flush);
-        public override void Close()
-        {
-            if (BaseLink != null)
-                base.Close();
-            if (queue == null)
-                return;
-            while (queue.Count > 0)
-                Dequeue().Close();
-            queue = null;
-        }
-    }
-    public class LinkLongHttpRequest : LinkQueue<LinkHttpRequest>, IConnector
-    {
-        private static byte[] REQUEST_ID;
+    //    protected T Dequeue()
+    //    {
+    //        var link = queue.First.Value;
+    //        queue.RemoveFirst();
+    //        return link;
+    //    }
+    //    public sealed override byte[] Flush()
+    //    {
+    //        if (!CanFlush)
+    //            return null;
+    //        byte[] flush = base.Flush();
+    //        if (flush == null)
+    //            return flush;
+    //        FlushOver(flush);
+    //        BaseLink = null;
+    //        return flush;
+    //    }
+    //    protected abstract void FlushOver(byte[] flush);
+    //    public override void Close()
+    //    {
+    //        if (BaseLink != null)
+    //            base.Close();
+    //        if (queue == null)
+    //            return;
+    //        while (queue.Count > 0)
+    //            Dequeue().Close();
+    //        queue = null;
+    //    }
+    //}
+    //public class LinkLongHttpRequest : LinkQueue<LinkHttpRequest>, IConnector
+    //{
+    //    private static byte[] REQUEST_ID;
 
-        private byte[] idBuffer;
-        public TimeSpan Timeout = TimeSpan.FromSeconds(5);
-        public int ReconnectCount = 3;
-        public TimeSpan KeepAlive = TimeSpan.FromMinutes(5);
+    //    private byte[] idBuffer;
+    //    public TimeSpan Timeout = TimeSpan.FromSeconds(5);
+    //    public int ReconnectCount = 3;
+    //    public TimeSpan KeepAlive = TimeSpan.FromMinutes(60);
 
-        public ushort ID
-        {
-            get;
-            private set;
-        }
-        public string Uri
-        {
-            get;
-            private set;
-        }
-        public override bool IsConnected
-        {
-            get { return idBuffer != null; }
-        }
+    //    public ushort ID
+    //    {
+    //        get;
+    //        private set;
+    //    }
+    //    public string Uri
+    //    {
+    //        get;
+    //        private set;
+    //    }
+    //    public override bool IsConnected
+    //    {
+    //        get { return idBuffer != null; }
+    //    }
 
-        private LinkHttpRequest GetRequestLink(bool keepAlive)
-        {
-            LinkHttpRequest request = new LinkHttpRequest();
-            if (keepAlive)
-            {
-                request.Http.OnSend += FlushWithID;
-                request.Timeout = (int)KeepAlive.TotalMilliseconds;
-                request.ReconnectCount = -1;
-            }
-            else
-            {
-                request.Http.OnSend += FlushWithPID;
-                request.Timeout = (int)Timeout.TotalMilliseconds;
-                request.ReconnectCount = ReconnectCount;
-            }
-            request.Connect(Uri);
-            return request;
-        }
-        private void FlushWithID(HttpWebRequest request, Stream obj)
-        {
-            // 客户端ID
-            obj.Write(idBuffer, 0, 2);
-        }
-        private void FlushWithPID(HttpWebRequest request, Stream obj)
-        {
-            // 客户端ID
-            obj.Write(idBuffer, 0, 2);
-            // 数据包ID
-            idBuffer[2]++;
-            obj.Write(idBuffer, 2, 1);
-        }
-        public Async Connect(string host, ushort port)
-        {
-            if (!string.IsNullOrEmpty(Uri))
-                throw new InvalidOperationException("Http has connected.");
+    //    private LinkHttpRequest GetRequestLink(bool keepAlive)
+    //    {
+    //        LinkHttpRequest request = new LinkHttpRequest();
+    //        if (keepAlive)
+    //        {
+    //            request.Http.OnSend += FlushWithID;
+    //            request.Timeout = (int)KeepAlive.TotalMilliseconds;
+    //            request.ReconnectCount = -1;
+    //        }
+    //        else
+    //        {
+    //            request.Http.OnSend += FlushWithPID;
+    //            request.Timeout = (int)Timeout.TotalMilliseconds;
+    //            request.ReconnectCount = ReconnectCount;
+    //        }
+    //        request.Connect(Uri);
+    //        return request;
+    //    }
+    //    private void FlushWithID(HttpWebRequest request, Stream obj)
+    //    {
+    //        // 客户端ID
+    //        obj.Write(idBuffer, 0, 2);
+    //    }
+    //    private void FlushWithPID(HttpWebRequest request, Stream obj)
+    //    {
+    //        // 客户端ID
+    //        obj.Write(idBuffer, 0, 2);
+    //        // 数据包ID
+    //        idBuffer[2]++;
+    //        obj.Write(idBuffer, 2, 1);
+    //    }
+    //    public Async Connect(string host, ushort port)
+    //    {
+    //        if (!string.IsNullOrEmpty(Uri))
+    //            throw new InvalidOperationException("Http has connected.");
 
-            AsyncData<LinkLongHttpRequest> async = new AsyncData<LinkLongHttpRequest>();
+    //        AsyncData<LinkLongHttpRequest> async = new AsyncData<LinkLongHttpRequest>();
 
-            HttpRequestPost request = new HttpRequestPost();
-            request.OnSend += RequestID;
-            request.OnReceived += (response) =>
-            {
-                byte[] buffer = new byte[3];
-                using (var stream = response.GetResponseStream())
-                    stream.Read(buffer, 0, 2);
-                request.Dispose();
+    //        HttpRequestPost request = new HttpRequestPost();
+    //        //request.OnSend += RequestID;
+    //        request.OnReceived += (response) =>
+    //        {
+    //            byte[] buffer = new byte[3];
+    //            using (var stream = response.GetResponseStream())
+    //                stream.Read(buffer, 0, 2);
+    //            request.Dispose();
 
-                this.Uri = host;
-                this.ID = BitConverter.ToUInt16(buffer, 0);
-                this.idBuffer = buffer;
-                async.SetData(this);
-            };
-            request.Connect(host);
-            request.Send(null);
+    //            this.Uri = host;
+    //            this.ID = BitConverter.ToUInt16(buffer, 0);
+    //            this.idBuffer = buffer;
+    //            async.SetData(this);
+    //        };
+    //        request.Connect(host);
+    //        request.Send(REQUEST_ID);
 
-            return async;
-        }
-        public override void Write(byte[] buffer, int offset, int size)
-        {
-            if (BaseLink == null)
-                BaseLink = GetRequestLink(false);
-            base.Write(buffer, offset, size);
-        }
-        protected override void FlushOver(byte[] flush)
-        {
-            queue.AddFirst((LinkHttpRequest)BaseLink);
-        }
-        public override byte[] Read()
-        {
-            byte[] data;
-            var link = queue.First.Value;
-            if (link.IsConnected)
-            {
-                data = link.Read();
-                if (data == null)
-                    return null;
-                // 已经读取完所有数据
-                if (!link.CanRead)
-                    Dequeue().Close();
-            }
-            else
-            {
-                Dequeue();
-                data = null;
-            }
-            // 保持一个长连接
-            if (queue.Count == 0)
-            {
-                LinkHttpRequest _keep = GetRequestLink(true);
-                _keep.Http.Send(null);
-                queue.AddLast(_keep);
-            }
-            return data;
-        }
+    //        return async;
+    //    }
+    //    public override void Write(byte[] buffer, int offset, int size)
+    //    {
+    //        if (BaseLink == null)
+    //            BaseLink = GetRequestLink(false);
+    //        base.Write(buffer, offset, size);
+    //    }
+    //    protected override void FlushOver(byte[] flush)
+    //    {
+    //        queue.AddFirst((LinkHttpRequest)BaseLink);
+    //    }
+    //    public override byte[] Read()
+    //    {
+    //        byte[] data;
+    //        var link = queue.First.Value;
+    //        if (link.IsConnected)
+    //        {
+    //            data = link.Read();
+    //            if (data == null)
+    //                return null;
+    //            // 已经读取完所有数据
+    //            if (!link.CanRead)
+    //                Dequeue().Close();
+    //        }
+    //        else
+    //        {
+    //            Dequeue();
+    //            data = null;
+    //        }
+    //        // 保持一个长连接
+    //        if (queue.Count == 0)
+    //        {
+    //            LinkHttpRequest _keep = GetRequestLink(true);
+    //            _keep.Http.Send(null);
+    //            queue.AddLast(_keep);
+    //        }
+    //        return data;
+    //    }
 
-        static LinkLongHttpRequest()
-        {
-            REQUEST_ID = BitConverter.GetBytes(ushort.MaxValue);
-        }
-        static void RequestID(HttpWebRequest request, Stream obj)
-        {
-            obj.Write(REQUEST_ID, 0, 2);
-        }
-    }
+    //    static LinkLongHttpRequest()
+    //    {
+    //        REQUEST_ID = BitConverter.GetBytes(ushort.MaxValue);
+    //    }
+    //    //static void RequestID(HttpWebRequest request, Stream obj)
+    //    //{
+    //    //    obj.Write(REQUEST_ID, 0, 2);
+    //    //}
+    //}
     public class HttpException : Exception
     {
         public HttpStatusCode StatusCode
@@ -1116,6 +1632,24 @@ namespace EntryEngine.Network
             }
         }
         public abstract void OnProtocol(byte[] package);
+        public virtual void Bridge()
+        {
+            /*
+             * Link是包协议
+             * 由Link发送和读取的内容是数据协议
+             * 数据的写入格式自定义
+             * Agent的OnProtocol则是对数据的读取和自定义处理
+             */
+            if (Link != null && Link.IsConnected)
+            {
+                /* 每帧需要手动发出客户端的请求数据 */
+                Link.Flush();
+                foreach (var item in Receive())
+                {
+                    OnProtocol(item);
+                }
+            }
+        }
     }
 	public abstract class Agent_Link : Agent
 	{
@@ -1137,74 +1671,10 @@ namespace EntryEngine.Network
         {
             Base.OnProtocol(package);
         }
-	}
-	public class AgentHeartbeat : Agent_Link
-	{
-		internal static byte[] HeartbeatProtocol = new byte[0];
-        /// <summary>超出时间发出心跳包</summary>
-		public TimeSpan Heartbeat = TimeSpan.FromSeconds(60);
-        /// <summary>超出时间视为已断开</summary>
-		public TimeSpan HeartbeatOvertime = TimeSpan.FromSeconds(90);
-
-		private bool beat;
-		private TIMER heartbeat;
-
-        public AgentHeartbeat(Agent baseAgent) : base(baseAgent)
-		{
-		}
-        public AgentHeartbeat(Agent baseAgent, bool ping) : base(baseAgent)
-		{
-			if (ping)
-			{
-				heartbeat.Start();
-			}
-		}
-        public AgentHeartbeat(Agent baseAgent, TimeSpan heartbeat, TimeSpan overtime) : this(baseAgent, true)
+        public override void Bridge()
         {
-            this.Heartbeat = heartbeat;
-            this.HeartbeatOvertime = overtime;
+            Base.Bridge();
         }
-
-		private void Beat()
-		{
-			Link.Write(HeartbeatProtocol);
-		}
-		public override IEnumerable<byte[]> Receive()
-		{
-			bool flag = false;
-			foreach (byte[] item in base.Receive())
-			{
-				if (!flag)
-				{
-					heartbeat.StopAndStart();
-					beat = false;
-					flag = true;
-				}
-				if (item.Length == 0)
-				{
-					Beat();
-					continue;
-				}
-				yield return item;
-			}
-			if (!flag)
-			{
-				if (heartbeat.Running)
-				{
-					TimeSpan elapsed = heartbeat.ElapsedNow;
-					if (elapsed >= HeartbeatOvertime)
-					{
-						_LOG.Info("{0} heartbeat stop", Link.EndPoint);
-						Link.Close();
-					}
-					else if (elapsed >= Heartbeat && !beat)
-					{
-						Beat();
-						beat = true;
-					}
-				}
-			}
-		}
 	}
 	public class AgentProtocolStub : Agent
 	{

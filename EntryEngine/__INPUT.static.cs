@@ -405,6 +405,10 @@ namespace EntryEngine
         {
             __instance.InputDevice.Copy();
         }
+        public static void InputDeviceCopy(string copy)
+        {
+            __instance.InputDevice.Copy(copy);
+        }
         public static void InputDeviceCut()
         {
             __instance.InputDevice.Cut();

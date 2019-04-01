@@ -240,6 +240,7 @@ namespace EntryEngine.Serialize
 		}
 		public bool SkipProperty(PropertyInfo property)
 		{
+            // todo: Unity导出的IOS项目，property.CanWrite一直返回false
 			// get set
 			if (!(property.CanRead && property.CanWrite))
 				return true;
@@ -1495,18 +1496,85 @@ namespace EntryEngine.Serialize
         }
         public static Type LoadSimpleAQName(string name)
         {
-            Type type = Type.GetType(name);
+            Type type = null;
+            try { type = Type.GetType(name); }
+            catch { }
+            //Type type = Type.GetType(name);
 #if DEBUG
             if (type == null)
             {
-                string[] names = name.Split(',');
-                names[1] = names[1].Trim();
-                var assemblies = AppDomain.CurrentDomain.GetAssemblies();
-                var ass = assemblies.FirstOrDefault(a => a.GetName().Name == names[1]);
-                if (ass == null)
-                    return null;
-                // mono: 若没有类型则肯定抛出TypeLoadException
-                type = ass.GetType(names[0]);
+                // 缓存
+                int index = name.IndexOf('[', 0);
+                if (index == -1)
+                {
+                    string[] names = name.Split(',');
+                    names[1] = names[1].Trim();
+                    var assemblies = AppDomain.CurrentDomain.GetAssemblies();
+                    var ass = assemblies.FirstOrDefault(a => a.GetName().Name == names[1]);
+                    if (ass == null)
+                        return null;
+                    // mono: 若没有类型则肯定抛出TypeLoadException
+                    type = ass.GetType(names[0]);
+                }
+                else
+                {
+                    string typeName = name.Substring(0, index);
+                    // 追加最后的程序集信息
+                    int lastIndex = name.LastIndexOf(',');
+                    typeName += name.Substring(lastIndex);
+                    type = LoadSimpleAQName(typeName);
+                    int index2 = typeName.IndexOf('`', 0);
+                    if (index2 != -1)
+                    {
+                        int typeParameterCount = int.Parse(name.Substring(index2 + 1, index - index2 - 1));
+                        Type[] typeArguments = new Type[typeParameterCount];
+                        int gcount = 1;
+                        index += 2;
+                        index2 = index;
+                        int tai = 0;
+                        while (true)
+                        {
+                            int end = name.IndexOf(']', index2);
+                            int start = name.IndexOf('[', index2);
+                            if (start != -1 && start < end)
+                            {
+                                // 有其它的泛型类型
+                                gcount++;
+                                index2 = start + 1;
+                                continue;
+                            }
+                            if (gcount > 0)
+                            {
+                                // 其它泛型类型的结束
+                                gcount--;
+                                if (gcount > 0)
+                                {
+                                    index2 = end + 1;
+                                    continue;
+                                }
+                            }
+                            typeName = name.Substring(index, end - index);
+                            typeArguments[tai++] = LoadSimpleAQName(typeName);
+                            if (tai == typeArguments.Length)
+                            {
+                                // 跳过字符]]
+                                index = end + 2;
+                                break;
+                            }
+                            // 跳过字符：],[
+                            index = end + 3;
+                            index2 = index;
+                            gcount = 1;
+                        }
+                        type = type.MakeGenericType(typeArguments);
+                    }
+                    // name[index] == '[' 用于处理 System.Int32[], mscorlib
+                    while (index < name.Length && name[index] == '[')
+                    {
+                        type = type.MakeArrayType();
+                        index += 2;
+                    }
+                }
             }
 #endif
             return type;

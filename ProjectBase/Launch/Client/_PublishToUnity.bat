@@ -1,0 +1,1 @@
+..\..\EntryBuilder PublishToUnity "" ..\..\Publish\Project\Assets\

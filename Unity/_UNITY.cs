@@ -253,7 +253,7 @@ namespace EntryEngine.Unity
             result.M32 = matrix.m13;
             return result;
         }
-        public static Texture2D GetTexture(this TEXTURE texture)
+        public static Texture GetTexture(this TEXTURE texture)
         {
             if (texture == null)
                 //throw new System.ArgumentNullException("texture");
@@ -268,7 +268,7 @@ namespace EntryEngine.Unity
                 return GetTexture(tl.Base);
             }
             else
-                return t.Texture2D;
+                return t.Texture;
         }
         public static Material GetMaterial(this SHADER shader)
         {
@@ -312,7 +312,7 @@ namespace EntryEngine.Unity
         }
         public static void Remove(this Component component)
         {
-            GameObject.DestroyObject(component);
+            GameObject.Destroy(component);
         }
         public static void Unload(this Object obj)
         {
@@ -320,7 +320,7 @@ namespace EntryEngine.Unity
         }
         public static void Destroy(this Object obj)
         {
-            Object.DestroyObject(obj);
+            Object.Destroy(obj);
         }
         public static void Dispose(this Object obj)
         {

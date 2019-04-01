@@ -1,0 +1,27 @@
+﻿using System.Collections.Generic;
+using EntryEngine;
+using EntryEngine.UI;
+
+public partial class {0}
+{{
+	{1}
+
+	private void Initialize()
+	{{
+		{2}
+		this.PhaseShowing += Show;
+	}}
+	protected override IEnumerable<ICoroutine> Loading()
+	{{
+		ICoroutine async;
+		{3}
+        var __loading = MyLoading();
+        if (__loading != null)
+            foreach (var item in __loading)
+                yield return item;
+	}}
+	private void Show(EntryEngine.UI.UIScene __scene)
+	{{
+		{4}
+	}}
+}}

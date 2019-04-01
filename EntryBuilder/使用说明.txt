@@ -1,0 +1,97 @@
+﻿若方法体中注释或字符串包含{符号，一定也要有相应的}符号
+public void Method()
+{
+	// {	注释包含 {
+	// }	一定要有 }
+}
+
+相同代码的部分应该写注释 // :标记 标识两处代码一样，改一个地方需要有同样标记的地方都修改
+如下，当要修改第一处a的值或增删代码时，需要在第二处一并修改
+// :INSERT1
+int a = 5;
+......
+......
+// :INSERT1
+int a = 5;
+
+生成EntryEngine
+copy "$(ProjectDir)bin\Debug\EntryBuilder.exe" "$(ProjectDir)..\EntryEngine\bin\Debug\EntryBuilder.exe"
+copy "$(ProjectDir)bin\Debug\CodeBuilder.dll" "$(ProjectDir)..\EntryEngine\bin\Debug\CodeBuilder.dll"
+$(ProjectDir)..\EntryEngine\bin\Debug\EntryBuilder.exe 0 ..\..\..\EntryEngine\
+
+VS编译条件批处理
+IF NOT $(ConfigurationName) == EntryBuilder GOTO end
+// do your work
+:end
+
+策划表批处理
+EntryBuilder.exe BuildCSVFromExcel "xlsx数据表目录" "csv输出目录" "翻译表csv" 12.0 "程序读表代码文件.cs" true
+
+翻译
+1. Language.csv: 自动生成管理UI及策划表的翻译内容
+	(1). 策划表表头类型String则该列需要翻译
+	(2). UI的文字非数字或非#开头的内容都需要翻译
+2. 新建Excel.xlsx，复制Language.csv的CHS列到Excel第一列，新增需要增加的国家语言列（例如ENG）并对照中文列进行翻译
+3. 翻译完成后执行 EntryBuilder.exe BuildTranslate Language.csv Excel.xlsx ENG 则将翻译写入Language.csv
+4. 最终输出的Language.csv包含所有的翻译内容，若只想要单个语言（例如ENG）
+	(1). 新建Language.xlsx
+	(2). 复制Language.csv的ID和ENG列到Language.xlsx
+	(3). 执行 EntryBuilder.exe BuildCSVFromExcel "Language.xlsx" "csv输出目录" "" 12.0 "" false 重新输出Language.csv
+
+数据表类型
+* ushort[[]] 生成Dictionary<ushort, List<类型>>的字典
+* ushort[] 生成Dictionary<ushort, 类型>的字典
+* string#Item[ID(ushort),Count(uint)][|] '#'后需要生成Item类型
+* string:COLOR[R(byte),G(byte),B(byte),A(byte)] ':'后不需要生成类型
+* string:Range<float>[Min(float)~Max(float)] 可用于泛型
+* ushort[,] 解析成用','分割的ushort[]
+* string[Min(float)~Max(float)] 生成字段名的类型
+* ushort[,][#] 生成ushort[][]
+* string:COLOR[R(byte),G(byte),B(byte),A(byte)][#] 生成特殊类型的数组
+* string#Item[ID(ushort),Count(uint)][|][#] 特殊类型的数组最多支持二维数组，且不会重复生成Item类型
+* 以上均可复合使用
+* 生成的字典字段名为"_表明By字段名"
+* 生成的特殊字段名为"_源字段名"
+
+生成交互协议接口
+EntryBuilder.exe BuildProtocolAgentBinary "客户端输出路径" "服务端输出路径" "path\*.dll\Namespace.InterfaceName"
+在使用Dummy的Protocol中，EntryEngine.dll的属性“复制本地”要设置为False，否则将报错接口找不到ProtocolStubAttribute属性，导致生成代码失败
+
+使用BuildLinkShell构建的运行程序运行需要STA线程的程序
+[STAThread]
+static void Main(string[] args)
+{
+    if (Thread.CurrentThread.GetApartmentState() != ApartmentState.STA)
+    {
+        var wait = new AutoResetEvent(false);
+        Thread sta = new Thread((obj) =>
+			{
+				try
+				{
+					Run();
+				}
+				finally
+				{
+					wait.Set();
+				}
+			});
+        sta.SetApartmentState(ApartmentState.STA);
+        sta.IsBackground = true;
+        sta.Start();
+        wait.WaitOne();
+    }
+    else
+    {
+        Run();
+    }
+}
+static void Run()
+{
+    using (XnaGate gate = new XnaGate())
+    {
+        gate.OnInitialized += new Action<EntryEngine.Entry>(gate_OnInitialized);
+        gate.Run();
+    }
+}
+
+BuildCSVFromExcel生成出~$的csv时，删掉xlsx所在的文件夹重新更新即可

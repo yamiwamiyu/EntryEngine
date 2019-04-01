@@ -8,7 +8,7 @@ namespace EntryEngine.UI
     /// <summary>屏幕中央弹出提示文字，常用于提示错误信息</summary>
     public class STextHint : UIScene
     {
-        TIME showTime = new TIME(1000);
+        TIME showTime = new TIME(2000);
         public Label HintLabel;
         public string HintContent
         {
@@ -43,13 +43,13 @@ namespace EntryEngine.UI
             get { return HintLabel.Y - (Height * 0.5f); }
             set { HintLabel.Y = value + (Height * 0.5f); }
         }
-        void HintScene_PhaseShowing(UIScene arg1, UIScene arg2)
+        void HintScene_PhaseShowing(UIScene arg1)
         {
             y = 30;
             HintLabel.UIText.FontColor.A = 15;
             Close(EState.None, false);
         }
-        protected internal override IEnumerable<ICoroutine> Ending(UIScene next)
+        protected internal override IEnumerable<ICoroutine> Ending()
         {
             while (y > -10)
             {
@@ -85,8 +85,9 @@ namespace EntryEngine.UI
     /// <summary>屏幕全黑或全白的淡入淡出，常用于切换场景</summary>
     public class SFade : UIScene
     {
+        private float fadeSpeed = 255;
         /// <summary>渐变完成所需时间，单位秒</summary>
-        public float FadeOverSecond = 1f;
+        public float FadeOverSecond { get { return 255 / fadeSpeed; } set { fadeSpeed = 255 / value; } }
         public Action OnFadeOutOver;
         public SFade()
         {
@@ -95,11 +96,8 @@ namespace EntryEngine.UI
         }
 
         float alpha;
-        float FadeSpeed
-        {
-            get { return 255 / FadeOverSecond; }
-        }
-        protected internal override IEnumerable<ICoroutine> Showing(UIScene previous)
+
+        protected internal override IEnumerable<ICoroutine> Preparing()
         {
             alpha = 0;
             Color.A = 0;
@@ -112,7 +110,7 @@ namespace EntryEngine.UI
             {
                 while (Color.A < 255)
                 {
-                    alpha += Entry.GameTime.ElapsedSecond * FadeSpeed;
+                    alpha += Entry.GameTime.ElapsedSecond * fadeSpeed;
                     Color.A = (byte)(alpha > 255 ? 255 : alpha);
                     yield return null;
                 }
@@ -121,8 +119,12 @@ namespace EntryEngine.UI
             if (OnFadeOutOver != null)
                 OnFadeOutOver();
         }
-        protected internal override IEnumerable<ICoroutine> Ending(UIScene next)
+        protected internal override IEnumerable<ICoroutine> Ending()
         {
+            // 等待一帧，防止同步加载时时间过长，直接导致菜单Alpha减到0
+            yield return null;
+            while (Entry.Scene.Phase < EPhase.Preparing)
+                yield return null;
             if (FadeOverSecond == 0)
             {
                 alpha = 0;
@@ -133,21 +135,21 @@ namespace EntryEngine.UI
                 alpha = 255;
                 while (Color.A > 0)
                 {
-                    alpha -= Entry.GameTime.ElapsedSecond * FadeSpeed;
+                    alpha -= Entry.GameTime.ElapsedSecond * fadeSpeed;
                     Color.A = (byte)(alpha < 0 ? 0 : alpha);
                     yield return null;
                 }
             }
         }
 
-        public static SFade FadeBlack(Action onFadeOut)
+        public static SFade ShowBlack(Action onFadeOut)
         {
             SFade fade = Entry.Instance.ShowDialogScene<SFade>(EState.Dialog);
             fade.Color = COLOR.Black;
             fade.OnFadeOutOver = onFadeOut;
             return fade;
         }
-        public static SFade FadeWhite(Action onFadeOut)
+        public static SFade ShowWhite(Action onFadeOut)
         {
             SFade fade = Entry.Instance.ShowDialogScene<SFade>(EState.Dialog);
             fade.Color = COLOR.White;

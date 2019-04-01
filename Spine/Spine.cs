@@ -7,7 +7,7 @@ using System.IO;
 
 namespace Spine
 {
-    public class SPINE : TEXTURE, IDrawableTexture
+    public class SPINE : TEXTURE
     {
         private const int TL = 0;
         private const int TR = 1;
@@ -62,22 +62,23 @@ namespace Spine
             Animation.Update(time.ElapsedSecond);
             Animation.Apply(Skeleton);
         }
+
         /// <summary>
         /// 除了坐标和颜色需要每次计算外，uv是固定的，顶点数量也是固定的，所以可以固定顶点数组和索引数组
         /// </summary>
         [Code(ECode.Optimize)]
-        void IDrawableTexture.Draw(GRAPHICS graphics, ref SpriteVertex vertex)
+        protected override bool Draw(GRAPHICS graphics, ref SpriteVertex vertex)
         {
             if (IsDisposed)
-                return;
+                return true;
 
             var drawOrder = Skeleton.DrawOrder;
             if (drawOrder.Count == 0)
-                return;
+                return true;
 
             MATRIX2x3 matrix;
             __GRAPHICS.DrawMatrix(ref vertex.Destination, ref vertex.Source, vertex.Rotation, ref vertex.Origin, vertex.Flip, out matrix);
-            graphics.Begin(matrix, null, true);
+            graphics.BeginFromPrevious(matrix);
 
             var drawOrderItems = Skeleton.DrawOrder.Items;
             float skeletonR = Skeleton.R, skeletonG = Skeleton.G, skeletonB = Skeleton.B, skeletonA = Skeleton.A;
@@ -204,6 +205,8 @@ namespace Spine
             }
 
             graphics.End();
+
+            return true;
         }
         protected override void InternalDispose()
         {

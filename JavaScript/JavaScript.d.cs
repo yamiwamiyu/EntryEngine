@@ -126,6 +126,7 @@ public static class window
         public HTMLElement documentElement;
         public HTMLElement body;
         public HTMLElement getElementById(string elementId) { return null; }
+        public extern HTMLElement createElement(string label);
         public void write(string content) { }
         public void writeln(string content) { }
     }
@@ -154,8 +155,8 @@ public static class window
     public static float parseFloat(object obj) { return 0; }
     public static bool isNaN(object obj) { return false; }
     public static bool isFinite(object obj) { return false; }
-    public static int setTimeout(Action action, int ms) { return 0; }
-    public static int setInterval(Action action, int ms) { return 0; }
+    public static int setTimeout(Action action, double ms) { return 0; }
+    public static int setInterval(Action action, double ms) { return 0; }
     public static void clearTimeout(int timer) { }
     public static void clearInterval(int timer) { }
     /// <summary>转换成base64编码</summary>
@@ -319,6 +320,7 @@ public abstract class HTMLElement : Element
 {
     public string outerHTML;
     public string outerText;
+    public extern void appendChild(HTMLElement element);
 }
 public abstract class HTMLCanvasElement : HTMLElement
 {

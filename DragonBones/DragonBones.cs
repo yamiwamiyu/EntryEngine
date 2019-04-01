@@ -8,7 +8,7 @@ using EntryEngine.Serialize;
 
 namespace EntryEngine.DragonBones
 {
-    public class DRAGON_BONES : TEXTURE, IDrawableTexture
+    public class DRAGON_BONES : TEXTURE
     {
         internal ArmatureEE Armature;
 
@@ -36,16 +36,17 @@ namespace EntryEngine.DragonBones
         {
             Armature.AdvanceTime(time.Elapsed);
         }
-        void IDrawableTexture.Draw(GRAPHICS graphics, ref SpriteVertex vertex)
+        protected override bool Draw(GRAPHICS graphics, ref SpriteVertex vertex)
         {
             MATRIX2x3 matrix;
             __GRAPHICS.DrawMatrix(ref vertex.Destination, ref vertex.Source, vertex.Rotation, ref vertex.Origin, vertex.Flip, out matrix);
-            graphics.Begin(matrix, null, true);
+            graphics.BeginFromPrevious(matrix);
 
             var slots = Armature.GetSlots();
             SpriteVertex[] vertices = new SpriteVertex[slots.Sum(s => s._meshData.vertices.Count * 4)];
 
             graphics.End();
+            throw new NotImplementedException();
         }
         protected override void InternalDispose()
         {

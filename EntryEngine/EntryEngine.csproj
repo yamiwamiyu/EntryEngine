@@ -118,6 +118,7 @@
   <ItemGroup>
     <Compile Include="Animation.cs" />
     <Compile Include="EntryCommon.cs" />
+    <Compile Include="Model3D.cs" />
     <Compile Include="Network\_NETWORK.cs" />
     <Compile Include="UI\AnimationScene.cs" />
     <Compile Include="_LANGUAGE.cs" />

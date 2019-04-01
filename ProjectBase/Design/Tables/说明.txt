@@ -1,0 +1,29 @@
+批处理用于构建数据表，常量表，运行程序
+1. 构建数据表(构建表不需要关闭xlsx)
+使用_Build.bat构建数据表
+开发只有客户端的程序时使用_BuildClient.bat构建数据表
+2. 构建常量表(构建表不需要关闭xlsx)
+使用_BuildConstant.bat构建常量表，客户端和服务端常量表名为_CC.xlsx和_CS.xlsx
+开发只有客户端的程序时使用_BuildConstantClient.bat构建常量表
+3. 运行程序
+使用_LaunchClient.bat运行客户端程序
+使用_LaunchServer.bat运行服务端程序
+
+数据表类型
+* ushort[] 生成Dictionary<ushort, 类型>的字典
+* string#Item[ID(ushort),Count(uint)][|] '#'后需要生成Item类型
+* string:COLOR[R(byte),G(byte),B(byte),A(byte)] ':'后不需要生成类型
+* string:Range<float>[Min(float)~Max(float)] 可用于泛型
+* ushort[,] 解析成用','分割的ushort[]
+* string[Min(float)~Max(float)] 生成字段名的类型
+* ushort[,][#] 生成ushort[][]
+* string:COLOR[R(byte),G(byte),B(byte),A(byte)][#] 生成特殊类型的数组
+* string#Item[ID(ushort),Count(uint)][|][#] 特殊类型的数组最多支持二次交错数组，且不会重复生成Item类型
+* enum#EType:byte[A=0,B=1,C,D...] 生成类型的内部枚举
+* 以上均可复合使用
+* 生成的字典字段名为"_表明By字段名"
+* 生成的特殊字段名为"_源字段名"
+
+数据表头注释的格式
+[引用表.引用字段,引用表2.引用字段]注释，应标明字段的使用方法或公式，或每个可能的值代表的意思{数据填写格式，格式应包含所用到的所有符号}
+例如：[(数据表名一般T开头，这里可省略)Item.ID]3星通关的宝箱包含的道具{道具ID,数量|道具ID,数量}

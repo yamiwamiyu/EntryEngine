@@ -1,0 +1,21 @@
+﻿1. 交互协议的分类
+交互协议定义的是客户端与服务端交互的类型和行为
+(1).交互类型支持基础类型，带公共无参构造函数的特殊类型
+(2).交互行为应该按照一定的类型分开多个交互接口及其相应的回调接口
+分类大致可以按照以下几类区分：
+系统功能：游戏发展接口，核心战斗接口
+发起方：客户端向服务端请求，服务端主动推送给客户端
+请求处理对象：游戏世界处理，游戏世界里的一个玩家处理
+
+2. 交互行为的定义
+每个请求应标记EntryEngine.Network.ProtocolStub标记
+要生成交互协议代码，需要按照以下设置
+Protocol属性 -> 生成事件 -> 后期生成事件命令 -> 为一个交互接口添加一行命令 EntryBuilder.exe BuildProtocolAgentBinary "客户端输出路径" "服务端输出路径" "path\*.dll\Namespace.InterfaceName"
+若使用默认路劲，那么只需要替换最后的参数InterfaceName即可 EntryBuilder.exe BuildProtocolAgentBinary $(ProjectDir)..\..\Client\Client\ $(ProjectDir)..\..\Server\ $(TargetPath)\Protocol.InterfaceName
+
+3. 编译和生成交互代码
+在Debug下保证编译通过 -> 解决方案配置改为Release -> 编译Protocol确保无误 -> 改回Debug，编译依赖Protocol的所有项目
+首次生成的代码需要相应的项目将生成的文件添加到项目中
+
+4. 数据库代码生成
+若新建DLL专门编写数据库类型，记得设置EntryEngine.dll->属性->复制本地->false，否则会生成不出类型

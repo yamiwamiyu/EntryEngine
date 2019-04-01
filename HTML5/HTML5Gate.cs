@@ -47,6 +47,14 @@ namespace EntryEngine.HTML5
         {
             window.clearTimeout(timer);
         }
+        private void InternalUpdate()
+        {
+            entry.Update();
+        }
+        private void InternalDraw()
+        {
+            entry.Draw();
+        }
         protected void Update()
         {
             if (startTime2 == 0)
@@ -84,7 +92,7 @@ namespace EntryEngine.HTML5
             if (elapsed < entry.IPlatform.FrameRate)
             {
                 //window.clearTimeout(timer);
-                timer = window.setTimeout(Update, (int)(entry.IPlatform.FrameRate - elapsed).TotalMilliseconds);
+                timer = window.setTimeout(Update, (entry.IPlatform.FrameRate - elapsed).TotalMilliseconds);
             }
             else
             {
@@ -96,7 +104,7 @@ namespace EntryEngine.HTML5
                     double frameRate = entry.IPlatform.FrameRate.TotalMilliseconds;
                     while (wait > frameRate)
                         wait -= frameRate;
-                    timer = window.setTimeout(Update, (int)wait);
+                    timer = window.setTimeout(Update, wait);
                     overheat = 0;
                     return;
                 }

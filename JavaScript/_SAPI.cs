@@ -62,7 +62,8 @@ public partial class @_string : String
     // JS的正则表达式替换\\会出错，替换'\\'需要写成new RegExp("\\\\", "gm")
     public string Replace(string oldValue, string newValue)
     {
-        return replace(new RegExp(oldValue, "gm"), newValue);
+        //return replace(new RegExp(oldValue, "gm"), newValue);
+        return replace(new RegExp(oldValue, "g"), newValue);
     }
     //internal static string Create(char[] chars)
     //{

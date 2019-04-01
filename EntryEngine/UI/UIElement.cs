@@ -30,6 +30,7 @@ namespace EntryEngine.UI
     }
     public delegate void DUpdate<T>(T sender, Entry e) where T : UIElement;
     public delegate void DDraw<T>(T sender, GRAPHICS spriteBatch, Entry e) where T : UIElement;
+    public delegate void DUpdateGlobal(UIElement sender, bool senderEventInvoke, Entry e);
 
     /// <summary>
     /// 简单，高性能绘制
@@ -54,6 +55,11 @@ namespace EntryEngine.UI
     {
         public static bool Handled { get; protected internal set; }
         protected internal static UIElement FocusedElement { get; private set; }
+        public static DUpdateGlobal GlobalEnter;
+        public static DUpdateGlobal GlobalHover;
+        public static DUpdateGlobal GlobalUnHover;
+        public static DUpdateGlobal GlobalClick;
+        public static DUpdateGlobal GlobalClicked;
 
         public string Name;
         private RECT clip;
@@ -74,65 +80,38 @@ namespace EntryEngine.UI
         public DUpdate<UIElement> EventEnd;
         public DDraw<UIElement> DrawBeforeBegin;
         public DDraw<UIElement> DrawAfterBegin;
+        public DDraw<UIElement> DrawBeforeChilds;
         public DDraw<UIElement> DrawBeforeEnd;
         public DDraw<UIElement> DrawFocus;
         public DDraw<UIElement> DrawAfterEnd;
         private List<Action<Entry>> events = new List<Action<Entry>>();
-        /// <summary>
-        /// 鼠标进入区域内
-        /// </summary>
+        /// <summary>鼠标进入区域内</summary>
         public event DUpdate<UIElement> Enter;
-        /// <summary>
-        /// 鼠标在区域内移动
-        /// </summary>
+        /// <summary>鼠标在区域内移动</summary>
         public event DUpdate<UIElement> Move;
-        /// <summary>
-        /// 鼠标离开区域
-        /// </summary>
+        /// <summary>鼠标离开区域</summary>
         public event DUpdate<UIElement> Exit;
-        /// <summary>
-        /// 获得焦点
-        /// </summary>
+        /// <summary>获得焦点</summary>
         public event DUpdate<UIElement> Focus;
-        /// <summary>
-        /// 失去焦点
-        /// </summary>
+        /// <summary>失去焦点</summary>
         public event DUpdate<UIElement> Blur;
-        /// <summary>
-        /// 鼠标在区域内（不包含进入区域的一次）
-        /// </summary>
+        /// <summary>鼠标在区域内（不包含进入区域的一次）</summary>
         public event DUpdate<UIElement> Hover;
-        /// <summary>
-        /// 鼠标不在区域内
-        /// </summary>
+        /// <summary>鼠标不在区域内</summary>
         public event DUpdate<UIElement> UnHover;
-        /// <summary>
-        /// 鼠标左键按下
-        /// </summary>
+        /// <summary>鼠标左键按下</summary>
         public event DUpdate<UIElement> Click;
-        /// <summary>
-        /// 鼠标左键按住拖拽，并指针在目标范围内
-        /// </summary>
+        /// <summary>鼠标左键按住拖拽，并指针在目标范围内</summary>
         public event DUpdate<UIElement> Pressed;
-        /// <summary>
-        /// 鼠标左键按住拖拽
-        /// </summary>
+        /// <summary>鼠标左键按住拖拽</summary>
         public event DUpdate<UIElement> Drag;
-        /// <summary>
-        /// 鼠标左键抬起，需要触发过点击
-        /// </summary>
+        /// <summary>鼠标左键抬起，需要触发过点击</summary>
         public event DUpdate<UIElement> Clicked;
-        /// <summary>
-        /// 鼠标左键抬起
-        /// </summary>
+        /// <summary>鼠标左键抬起</summary>
         public event DUpdate<UIElement> Released;
-        /// <summary>
-        /// 鼠标左键双击
-        /// </summary>
+        /// <summary>鼠标左键双击</summary>
         public event DUpdate<UIElement> DoubleClick;
-        /// <summary>
-        /// 键盘按键状态改变
-        /// </summary>
+        /// <summary>键盘按键状态改变</summary>
         public event DUpdate<UIElement> Keyboard;
 
         private bool needUpdateLocalToWorld = true;
@@ -151,13 +130,9 @@ namespace EntryEngine.UI
         private bool needSort;
         protected bool isHover;
         private bool isClick;
-        /// <summary>
-        /// viewport in Parent
-        /// </summary>
+        /// <summary>viewport in Parent</summary>
         private RECT finalClip;
-        /// <summary>
-        /// graphics viewport in screen
-        /// </summary>
+        /// <summary>graphics viewport in screen</summary>
         private RECT finalViewClip;
         private UIElement[] drawOrder;
         private bool isTopMost;
@@ -450,11 +425,13 @@ namespace EntryEngine.UI
                 return new VECTOR2(PivotAlignmentX * size.X * 0.5f, PivotAlignmentY * size.Y * 0.5f);
             }
         }
+        /// <summary>左0/中1/右2</summary>
         public int PivotAlignmentX
         {
             get { return (int)pivot & 0x0f; }
             set { Pivot = (EPivot)(value + (PivotAlignmentY >> 4)); }
         }
+        /// <summary>上0/中1/下2</summary>
         public int PivotAlignmentY
         {
             get { return ((int)pivot & 0xf0) >> 4; }
@@ -472,7 +449,7 @@ namespace EntryEngine.UI
         {
             get { return clip.Height == 0; }
         }
-        /// <summary>约束子控件是否在父控件的可视范围内才让有效</summary>
+        /// <summary>约束子控件是否在自己的可视范围内才让有效</summary>
         public bool IsClip
         {
             get { return isClip; }
@@ -634,7 +611,7 @@ namespace EntryEngine.UI
             RegistEvent(DoKeyboard);
         }
 
-        internal void Update(Entry e)
+        public void Update(Entry e)
         {
             UpdateLocalToWorld();
 
@@ -654,7 +631,7 @@ namespace EntryEngine.UI
 
             OnUpdateEnd(e);
         }
-        internal void Event(Entry e)
+        public void Event(Entry e)
         {
             UpdateLocalToWorld();
 
@@ -699,7 +676,7 @@ namespace EntryEngine.UI
 
             needUpdateHover = true;
         }
-        internal void Draw(GRAPHICS spriteBatch, Entry e)
+        public void Draw(GRAPHICS spriteBatch, Entry e)
         {
             UpdateLocalToWorld();
             isTopMost = false;
@@ -723,6 +700,10 @@ namespace EntryEngine.UI
             }
 
             InternalDraw(spriteBatch, e);
+            if (DrawBeforeChilds != null)
+            {
+                DrawBeforeChilds(this, spriteBatch, e);
+            }
             if (NeedDrawChild)
             {
                 for (int i = 0; i < drawOrder.Length; i++)
@@ -852,8 +833,8 @@ namespace EntryEngine.UI
             transform.M31 = X;
             transform.M32 = Y;
 
-            float pivotX = PivotAlignmentX * Width / 2;
-            float pivotY = PivotAlignmentY * Height / 2;
+            float pivotX = PivotAlignmentX * Width * 0.5f;
+            float pivotY = PivotAlignmentY * Height * 0.5f;
             transform.M31 -= transform.M11 * pivotX + transform.M21 * pivotY;
             transform.M32 -= transform.M12 * pivotX + transform.M22 * pivotY;
         }
@@ -873,6 +854,11 @@ namespace EntryEngine.UI
         }
 		protected virtual void UpdateTransformEnd(ref MATRIX2x3 transform, ref MATRIX2x3 localToWorld)
         {
+        }
+        public void ResetContentSize()
+        {
+            contentSize.X = 0;
+            contentSize.Y = 0;
         }
         private void UpdateContent()
         {
@@ -1188,9 +1174,15 @@ namespace EntryEngine.UI
         }
         private void DoEnter(Entry e)
         {
-            if (Enter != null && OnEnter(e))
+            if (GlobalEnter == null && Enter == null) return;
+            bool enter = OnEnter(e);
+            if (Enter != null && enter)
             {
                 Enter(this, e);
+            }
+            if (GlobalEnter != null && enter)
+            {
+                GlobalEnter(this, Enter != null, e);
             }
         }
         protected bool OnMove(Entry e)
@@ -1243,12 +1235,20 @@ namespace EntryEngine.UI
             {
                 Hover(this, e);
             }
+            if (GlobalHover != null && isHover)
+            {
+                GlobalHover(this, Hover != null, e);
+            }
         }
         private void DoUnHover(Entry e)
         {
             if (UnHover != null && !isHover)
             {
                 UnHover(this, e);
+            }
+            if (GlobalUnHover != null && !isHover)
+            {
+                GlobalUnHover(this, UnHover != null, e);
             }
         }
         protected bool OnClick(Entry e)
@@ -1261,9 +1261,15 @@ namespace EntryEngine.UI
             {
                 SetFocus(false);
             }
-            if (Click != null && OnClick(e))
+            if (Click == null && GlobalClick == null) return;
+            bool flag = OnClick(e);
+            if (Click != null && flag)
             {
                 Click(this, e);
+            }
+            if (GlobalClick != null && flag)
+            {
+                GlobalClick(this, Click != null, e);
             }
         }
         protected bool OnPressed(Entry e)
@@ -1294,9 +1300,15 @@ namespace EntryEngine.UI
         }
         private void DoClicked(Entry e)
         {
-            if (Clicked != null && OnClicked(e))
+            if (Clicked == null && GlobalClicked == null) return;
+            bool flag = OnClicked(e);
+            if (Clicked != null && flag)
             {
                 Clicked(this, e);
+            }
+            if (GlobalClicked != null && flag)
+            {
+                GlobalClicked(this, Clicked != null, e);
             }
         }
         protected bool OnReleased(Entry e)
@@ -1479,17 +1491,17 @@ namespace EntryEngine.UI
     {
         internal EPhase Phase;
         internal COROUTINE Phasing;
-        protected internal EState State = EState.None;
+        public EState State = EState.None;
         public EContent ContentType = EContent.Inherit;
         public EShowPosition ShowPosition;
         public PCKeys FocusNextKey = PCKeys.Tab;
         public event Action<UIScene, ContentManager> PhaseLoading;
         public event Action<UIScene> PhasePreparing;
         public event Action<UIScene> PhasePrepared;
-        public event Action<UIScene, UIScene> PhaseShowing;
+        public event Action<UIScene> PhaseShowing;
         public event Action<UIScene> PhaseShown;
         public event Action<UIScene> PhaseEnding;
-        public event Action<UIScene, UIScene> PhaseEnded;
+        public event Action<UIScene> PhaseEnded;
         public event Action<UIScene, ContentManager> LoadCompleted;
         internal Queue<UIElement> TopMost = new Queue<UIElement>();
         private List<AsyncLoadContent> loadings = new List<AsyncLoadContent>();
@@ -1506,7 +1518,7 @@ namespace EntryEngine.UI
         public Entry Entry
         {
             get;
-            private set;
+            internal set;
         }
         public ContentManager Content
         {
@@ -1598,12 +1610,12 @@ namespace EntryEngine.UI
         /// Scene进入到Entry
         /// </summary>
         /// <param name="previous">切换菜单则是前一个主菜单，二级菜单则为当前主菜单</param>
-        internal void OnPhaseShowing(UIScene previous)
+        internal void OnPhaseShowing()
         {
             Phase = EPhase.Showing;
-            SetPhase(Showing(previous));
+            SetPhase(Showing());
             if (PhaseShowing != null)
-                PhaseShowing(this, previous);
+                PhaseShowing(this);
         }
         internal void OnPhaseShown()
         {
@@ -1612,10 +1624,10 @@ namespace EntryEngine.UI
             if (PhaseShown != null)
                 PhaseShown(this);
         }
-        internal void OnPhaseEnding(UIScene next)
+        internal void OnPhaseEnding()
         {
             Phase = EPhase.Ending;
-            SetPhase(Ending(next));
+            SetPhase(Ending());
             if (PhaseEnding != null)
                 PhaseEnding(this);
         }
@@ -1623,15 +1635,15 @@ namespace EntryEngine.UI
         /// Scene从Entry移除
         /// </summary>
         /// <param name="next">换菜单则是即将切换到的菜单，否则为null</param>
-        internal void OnPhaseEnded(UIScene next)
+        internal void OnPhaseEnded()
         {
             Phase = EPhase.None;
             if (PhaseEnded != null)
-                PhaseEnded(this, next);
+                PhaseEnded(this);
             Entry = null;
         }
 
-        protected internal virtual IEnumerable<ICoroutine> Ending(UIScene next)
+        protected internal virtual IEnumerable<ICoroutine> Ending()
         {
             return null;
         }
@@ -1643,7 +1655,7 @@ namespace EntryEngine.UI
         {
             return null;
         }
-        protected internal virtual IEnumerable<ICoroutine> Showing(UIScene previous)
+        protected internal virtual IEnumerable<ICoroutine> Showing()
         {
             return null;
         }
@@ -1667,7 +1679,7 @@ namespace EntryEngine.UI
             }
             return null;
         }
-        internal void Show(Entry entry, UIScene parent)
+        internal void Show(Entry entry)
         {
             this.Entry = entry;
 
@@ -1677,25 +1689,19 @@ namespace EntryEngine.UI
             {
                 case EShowPosition.ParentCenter:
                     Pivot = EPivot.MiddleCenter;
-                    if (parent != null && parent != Parent)
-                        if (Parent == null)
-                            Location = parent.ConvertLocalToGraphics(VECTOR2.Multiply(parent.Size, 0.5f));
-                        else
-                            // 在Parent中相对于parent的中间
-                            Location = parent.ConvertLocalToOther(VECTOR2.Multiply(parent.Size, 0.5f), Parent);
-                    else if (Parent != null)
-                        Location = VECTOR2.Multiply(Parent.Size, 0.5f);
+                    if (Parent != null)
+                        Location = Parent.Size * 0.5f;
                     else
                     {
                         //goto case EShowPosition.GraphicsCenter;
                         Pivot = EPivot.MiddleCenter;
-                        Location = VECTOR2.Multiply(Entry.GRAPHICS.GraphicsSize, 0.5f);
+                        Location = Entry.GRAPHICS.GraphicsSize * 0.5f;
                     }
                     break;
 
                 case EShowPosition.GraphicsCenter:
                     Pivot = EPivot.MiddleCenter;
-                    Location = VECTOR2.Multiply(Entry.GRAPHICS.GraphicsSize, 0.5f);
+                    Location = Entry.GRAPHICS.GraphicsSize * 0.5f;
                     break;
             }
 
@@ -1703,16 +1709,10 @@ namespace EntryEngine.UI
             {
                 if (ContentType == EContent.Inherit)
                 {
-                    if (parent == null)
+                    // inherit from parent scene
+                    if (Parent != null && Parent.Scene != null)
                     {
-                        if (Parent != null && Parent.Scene != null)
-                        {
-                            Content = Parent.Scene.Content;
-                        }
-                    }
-                    else
-                    {
-                        Content = parent.Content;
+                        Content = Parent.Scene.Content;
                     }
 
                     // inherit from current main scene
@@ -1832,6 +1832,7 @@ namespace EntryEngine.UI
         public EPivot TextAlignment;
         public TextShader TextShader;
         public VECTOR2 Padding;
+        public float Scale = 1f;
 
         public float FontSize
         {
@@ -1871,7 +1872,7 @@ namespace EntryEngine.UI
             rect.Y += Padding.Y * 0.5f;
             rect.Height -= Padding.Y;
 
-            VECTOR2 size = Font.MeasureString(Text);
+            VECTOR2 size = Font.MeasureString(Text) * Scale;
             float offsetX = (rect.Width - size.X) * 0.5f * x;
             float offsetY = (rect.Height - size.Y) * 0.5f * y;
             rect.X += offsetX;
@@ -1887,11 +1888,28 @@ namespace EntryEngine.UI
             if (Font != null && !string.IsNullOrEmpty(Text))
             {
                 VECTOR2 location = GetTextClip(rect).Location;
+                bool effect = false;
                 if (TextShader != null)
                 {
-                    spriteBatch.Draw(Font, Text, VECTOR2.Add(location, TextShader.Offset), TextShader.Color);
+                    FontTexture ft = Font as FontTexture;
+                    if (ft == null)
+                    {
+                        if (TextShader.IsShader)
+                        {
+                            spriteBatch.Draw(Font, Text, VECTOR2.Add(location, TextShader.Offset), TextShader.Color, Scale);
+                        }
+                        // 不支持描边
+                    }
+                    else
+                    {
+                        ft.Effect = TextShader;
+                    }
                 }
-                spriteBatch.Draw(Font, Text, location, FontColor);
+                spriteBatch.Draw(Font, Text, location, FontColor, Scale);
+                if (effect)
+                {
+                    ((FontTexture)Font).Effect = null;
+                }
             }
         }
     }

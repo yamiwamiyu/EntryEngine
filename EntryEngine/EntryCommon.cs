@@ -199,6 +199,10 @@ namespace EntryEngine
 	}
 	public class GameTime
 	{
+        public static GameTime Time;
+
+        /// <summary>不断累加的帧ID</summary>
+        public int FrameID { get; private set; }
         /// <summary>入口开放时间</summary>
 		public DateTime OpenTime
 		{
@@ -331,15 +335,19 @@ namespace EntryEngine
 			private set;
 		}
 
-		public GameTime()
-		{
-			OpenTime = DateTime.Now;
-			CurrentFrame = OpenTime;
+        public GameTime()
+        {
+            OpenTime = DateTime.Now;
+            CurrentFrame = OpenTime;
             PreviousFrame = OpenTime;
-		}
+            if (Time == null)
+                Time = this;
+        }
 
         public void Elapse()
 		{
+            FrameID++;
+
             PreviousFrame = CurrentFrame;
 			DateTime now = DateTime.Now;
 			TimeSpan elapsed = now - CurrentFrame;
@@ -1386,6 +1394,7 @@ namespace EntryEngine
         }
         public int ToArray(ref T[] array, int arrayStartIndex)
         {
+            int size = this.size;
             if (array == null || array.Length < size)
                 array = new T[size];
             int capacity = Capacity;
@@ -1393,7 +1402,7 @@ namespace EntryEngine
             int tail = Tail;
             for (int i = 0; i < tail; i++)
                 isNull[free[i]] = true;
-            for (int i = 0; i < capacity; i++)
+            for (int i = 0; i < capacity && arrayStartIndex < size; i++)
                 if (!isNull[i])
                     array[arrayStartIndex++] = items[i];
             return size;
@@ -2368,8 +2377,10 @@ namespace EntryEngine
         protected virtual void OnSetData(ref T data)
         {
         }
-        protected override void InternalRun()
+        protected sealed override void InternalRun()
         {
+            Data = default(T);
+            set = false;
         }
     }
 
@@ -2378,9 +2389,7 @@ namespace EntryEngine
         bool IsEnd { get; }
         void Update(GameTime time);
     }
-    /// <summary>
-    /// 自定义委托完成协程
-    /// </summary>
+    /// <summary>自定义委托完成协程</summary>
     public class CorDelegate : ICoroutine
     {
         private Func<GameTime, bool> coroutine;
@@ -2446,19 +2455,19 @@ namespace EntryEngine
             get { return coroutine == null; }
         }
 
-        internal COROUTINE(ICoroutine coroutine)
+        public COROUTINE(ICoroutine coroutine)
         {
             if (coroutine == null)
                 throw new ArgumentNullException("coroutine");
             this.coroutine = new CorSingleEnumerator(coroutine);
         }
-        internal COROUTINE(IEnumerator<ICoroutine> coroutine)
+        public COROUTINE(IEnumerator<ICoroutine> coroutine)
         {
             if (coroutine == null)
                 throw new ArgumentNullException("coroutine");
             this.coroutine = coroutine;
         }
-        internal COROUTINE(IEnumerable<ICoroutine> coroutine)
+        public COROUTINE(IEnumerable<ICoroutine> coroutine)
         {
             if (coroutine == null)
                 throw new ArgumentNullException("coroutine");
@@ -2714,7 +2723,7 @@ namespace EntryEngine
     {
         void Update(float elapsed);
     }
-    public class Timeline<T> : IUpdatable, IEnumerable<KeyValuePair<float, T>>
+    public class Timeline<T> : ICoroutine, IEnumerable<KeyValuePair<float, T>>
     {
         private class TimeKeyFrame
         {
@@ -2763,6 +2772,10 @@ namespace EntryEngine
 
                 return keyFrames.Last.Value.Time + StartTime;
             }
+        }
+        public bool IsEnd
+        {
+            get { return _elapsed >= OverTime; }
         }
         public T this[float time]
         {
@@ -2886,6 +2899,8 @@ namespace EntryEngine
         public void Clear()
         {
             keyFrames.Clear();
+            _elapsed = 0;
+            current = null;
         }
         public bool RemoveKeyFrame(float time)
         {
@@ -2910,26 +2925,26 @@ namespace EntryEngine
             if (current == null)
             {
                 current = keyFrames.First;
-                set(current.Value.KeyFrame.Update(0, current.Next == null ? null : current.Next.Value.KeyFrame));
+                //set(current.Value.KeyFrame.Update(0, current.Next == null ? null : current.Next.Value.KeyFrame));
             }
 
-            if (EndTime > StartTime && _elapsed > EndTime)
-            {
-                if (Loop)
-                {
-                    current = keyFrames.First;
-                    _elapsed = 0;
-                    set(current.Value.KeyFrame.Update(0, current.Next == null ? null : current.Next.Value.KeyFrame));
-                }
-                else
-                    return;
-            }
+            //if (EndTime > StartTime && _elapsed > EndTime)
+            //{
+            //    if (Loop)
+            //    {
+            //        current = keyFrames.First;
+            //        _elapsed = 0;
+            //        set(current.Value.KeyFrame.Update(0, current.Next == null ? null : current.Next.Value.KeyFrame));
+            //    }
+            //    else
+            //        return;
+            //}
 
             if (_elapsed >= StartTime)
             {
                 float time = _elapsed - StartTime;
                 // 切换到下一关键帧
-                if (current.Next != null && time >= current.Next.Value.Time)
+                while (current.Next != null && time >= current.Next.Value.Time)
                     current = current.Next;
                 // 更新当前帧
                 if (time >= current.Value.Time)
@@ -2937,25 +2952,47 @@ namespace EntryEngine
                     var next = current.Next;
                     if (next == null)
                     {
+                        var temp = current;
                         float et = OverTime;
                         if (et == 0)
                             time = 1;
                         else
-                            time = time / et;
+                        {
+                            if (time > et)
+                            {
+                                time = 1;
+                                if (Loop)
+                                {
+                                    _elapsed %= et;
+                                    // 下一帧起从头开始
+                                    current = null;
+                                }
+                            }
+                            else
+                            {
+                                time = time / et;
+                            }
+                        }
+                        set(temp.Value.KeyFrame.Update(time, null));
                     }
                     else
                     {
                         time = (time - current.Value.Time) / (next.Value.Time - current.Value.Time);
+                        // 时间：相对于当前帧开始时间到当前帧结束时间的百分比
+                        set(current.Value.KeyFrame.Update(time, next.Value.KeyFrame));
                     }
-                    // 时间：相对于当前帧开始时间到当前帧结束时间的百分比
-                    set(current.Value.KeyFrame.Update(time, next == null ? null : next.Value.KeyFrame));
                 }
             }
         }
+        public void Update(GameTime time)
+        {
+            _elapsed += time.ElapsedSecond;
+            Elapse();
+        }
         public void Update(float elapsed)
         {
-            Elapse();
             _elapsed += elapsed;
+            Elapse();
         }
         public IEnumerator<KeyValuePair<float, T>> GetEnumerator()
         {

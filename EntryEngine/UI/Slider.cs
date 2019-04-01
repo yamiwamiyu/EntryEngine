@@ -244,7 +244,7 @@ namespace EntryEngine.UI
 		public ScrollBarBase()
 		{
 			SortZ = int.MaxValue;
-            IsClip = false;
+            //IsClip = false;
 			RegistEvent(OnScroll);
 			this.Drag += DoDrag;
 		}
@@ -541,7 +541,7 @@ namespace EntryEngine.UI
 		}
 		protected override void SetButtonL(Button buttonL)
 		{
-			buttonL.IsClip = false;
+            //buttonL.IsClip = false;
 			buttonL.Pivot = EPivot.MiddleLeft;
 			buttonL.X = Width / 2;
 			buttonL.Y = 0;
@@ -549,7 +549,7 @@ namespace EntryEngine.UI
 		}
 		protected override void SetButtonR(Button buttonR)
 		{
-			buttonR.IsClip = false;
+            //buttonR.IsClip = false;
 			buttonR.Pivot = EPivot.MiddleRight;
 			buttonR.X = Width / 2;
 			buttonR.Y = Height;

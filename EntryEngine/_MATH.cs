@@ -30,9 +30,12 @@ namespace EntryEngine
 		public static int MaxSize = 2048;
 		public static float FloatError = 0.0005f;
 		public readonly static float[] DIVIDE_BY_2048;
+        /// <summary>1 ~ 2048的倒数(reciprocal)</summary>
 		public readonly static float[] DIVIDE_BY_1;
         public readonly static ushort[] POW_2_SIZE = { 1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048 };
 		public const float DIVIDE_2048 = 1f / 2048f;
+        public const float D2R = 0.0174532924f;
+        public const float R2D = 57.2957764f;
 
 		public static float Abs(float value)
 		{
@@ -109,11 +112,11 @@ namespace EntryEngine
 		}
 		public static float ToDegree(float value)
 		{
-			return value * 57.2957764f;
+            return value * R2D;
 		}
 		public static float ToRadian(float value)
 		{
-			return value * 0.0174532924f;
+            return value * D2R;
 		}
 		public static float Distance(float x, float y)
 		{
@@ -735,9 +738,10 @@ namespace EntryEngine
 		/// <returns>角度差（带方向）</returns>
 		public static float Closewise(float value, float target)
 		{
-			value %= 360;
-			target %= 360;
-			float diff = (target - value) % 360;
+            //value %= 360;
+            //target %= 360;
+            //float diff = (target - value) % 360;
+            float diff = target - value;
             if (diff > 0)
             {
                 if (diff > 180)
@@ -750,6 +754,29 @@ namespace EntryEngine
             }
 			return diff;
         }
+        /// <summary>
+        /// 角度1到角度2顺时针还是逆时针比较近(角度范围必须是[-180~180])
+        /// </summary>
+        /// <param name="a1">当前角</param>
+        /// <param name="a2">目标角</param>
+        /// <returns>角度差（不带方向）</returns>
+        public static float AngleDifference(float a1, float a2)
+        {
+            float diff = a2 - a1;
+            if (diff > 180)
+            {
+                return 360 + a1 - a2;
+            }
+            else if (diff < -180)
+            {
+                return 360 + a2 - a1;
+            }
+            else
+            {
+                return diff < 0 ? -diff : diff;
+            }
+        }
+
 
         /// <summary>权重变化</summary>
         /// <param name="weight">当前待改变的权重</param>

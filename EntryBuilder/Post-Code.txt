@@ -1,0 +1,26 @@
+﻿1. Build EntryEngine
+
+copy "$(ProjectDir)bin\Debug\EntryBuilder.exe" "$(ProjectDir)..\EntryEngine\bin\Debug\EntryBuilder.exe"
+copy "$(ProjectDir)bin\Debug\CodeBuilder.dll" "$(ProjectDir)..\EntryEngine\bin\Debug\CodeBuilder.dll"
+$(ProjectDir)..\EntryEngine\bin\Debug\EntryBuilder.exe 0 ..\..\..\EntryEngine\
+
+if not $(ConfigurationName) == Debug goto end
+$(TargetDir)EntryBuilder.exe 1 ..\..\EntryEngine D:\Projects\EntryEngine\trunk\Demo\UnityDemo\Assets\Scripts\EntryEngine.dll false false 3.5 $(TargetDir)..\
+$(TargetDir)EntryBuilder.exe 1 ..\..\..\Unity D:\Projects\EntryEngine\trunk\Demo\UnityDemo\Assets\Scripts\Unity.dll false false 3.5
+:end
+
+2. 调用外部命令或批处理:
+
+call "C:\Program Files\XXX.exe"
+
+3. 条件判断:
+
+IF NOT $(ConfigurationName) == Release GOTO end
+
+    call "C:\Program Files\XXX.exe" $(ProjectDir)$(TargetName).cvp
+
+:end
+
+IF EXIST file IF EXISTS file (
+  ::do work
+)

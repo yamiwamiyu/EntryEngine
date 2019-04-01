@@ -1,0 +1,1 @@
+xcopy /D /Y /E %cd% "your path"

@@ -184,10 +184,6 @@ namespace EntryEngine
         {
             __instance.Draw(texture, rect, color);
         }
-        public static void Draw(EntryEngine.TEXTURE texture, EntryEngine.RECT rect, EntryEngine.RECT source)
-        {
-            __instance.Draw(texture, rect, source);
-        }
         public static void Draw(EntryEngine.TEXTURE texture, EntryEngine.RECT rect, EntryEngine.RECT source, EntryEngine.COLOR color)
         {
             __instance.Draw(texture, rect, source, color);
@@ -196,9 +192,13 @@ namespace EntryEngine
         {
             __instance.Draw(texture, rect, rotation, originX, originY);
         }
-        public static void Draw(EntryEngine.TEXTURE texture, EntryEngine.RECT rect, float rotation, EntryEngine.VECTOR2 origin, EntryEngine.EFlip flip)
+        public static void Draw(EntryEngine.TEXTURE texture, EntryEngine.RECT rect, float rotation, float originX, float originY, EntryEngine.EFlip flip)
         {
-            __instance.Draw(texture, rect, rotation, origin, flip);
+            __instance.Draw(texture, rect, rotation, originX, originY, flip);
+        }
+        public static void Draw(EntryEngine.TEXTURE texture, EntryEngine.RECT rect, EntryEngine.COLOR color, float rotation, float originX, float originY, EntryEngine.EFlip flip)
+        {
+            __instance.Draw(texture, rect, color, rotation, originX, originY, flip);
         }
         public static void Draw(EntryEngine.TEXTURE texture, EntryEngine.RECT rect, EntryEngine.RECT source, EntryEngine.COLOR color, float rotation, float originX, float originY, EntryEngine.EFlip flip)
         {
@@ -207,10 +207,6 @@ namespace EntryEngine
         public static void Draw(EntryEngine.TEXTURE texture, EntryEngine.VECTOR2 location)
         {
             __instance.Draw(texture, location);
-        }
-        public static void Draw(EntryEngine.TEXTURE texture, EntryEngine.VECTOR2 location, float scaleX, float scaleY)
-        {
-            __instance.Draw(texture, location, scaleX, scaleY);
         }
         public static void Draw(EntryEngine.TEXTURE texture, EntryEngine.VECTOR2 location, EntryEngine.COLOR color)
         {
@@ -224,13 +220,17 @@ namespace EntryEngine
         {
             __instance.Draw(texture, location, rotation, originX, originY, scaleX, scaleY);
         }
-        public static void Draw(EntryEngine.TEXTURE texture, EntryEngine.VECTOR2 location, float rotation, EntryEngine.VECTOR2 origin, float scaleX, float scaleY)
+        public static void Draw(EntryEngine.TEXTURE texture, EntryEngine.VECTOR2 location, float rotation, float originX, float originY, float scaleX, float scaleY, EntryEngine.EFlip flip)
         {
-            __instance.Draw(texture, location, rotation, origin, scaleX, scaleY);
+            __instance.Draw(texture, location, rotation, originX, originY, scaleX, scaleY, flip);
         }
         public static void Draw(EntryEngine.TEXTURE texture, EntryEngine.VECTOR2 location, EntryEngine.COLOR color, float rotation, float originX, float originY, float scaleX, float scaleY)
         {
             __instance.Draw(texture, location, color, rotation, originX, originY, scaleX, scaleY);
+        }
+        public static void Draw(EntryEngine.TEXTURE texture, EntryEngine.VECTOR2 location, EntryEngine.COLOR color, float rotation, float originX, float originY, float scaleX, float scaleY, EntryEngine.EFlip flip)
+        {
+            __instance.Draw(texture, location, color, rotation, originX, originY, scaleX, scaleY, flip);
         }
         public static void Draw(EntryEngine.TEXTURE texture, EntryEngine.VECTOR2 location, EntryEngine.RECT source, EntryEngine.COLOR color, float rotation, EntryEngine.VECTOR2 origin, EntryEngine.VECTOR2 scale, EntryEngine.EFlip flip)
         {
@@ -248,9 +248,17 @@ namespace EntryEngine
         {
             __instance.Draw(font, text, location, color);
         }
+        public static void Draw(EntryEngine.FONT font, string text, EntryEngine.VECTOR2 location, EntryEngine.COLOR color, float scale)
+        {
+            __instance.Draw(font, text, location, color, scale);
+        }
         public static void Draw(EntryEngine.FONT font, string text, EntryEngine.RECT bound, EntryEngine.COLOR color, EntryEngine.UI.EPivot alignment)
         {
             __instance.Draw(font, text, bound, color, alignment);
+        }
+        public static void Draw(EntryEngine.FONT font, string text, EntryEngine.RECT bound, EntryEngine.COLOR color, EntryEngine.UI.EPivot alignment, float scale)
+        {
+            __instance.Draw(font, text, bound, color, alignment, scale);
         }
         public static void DrawPrimitives(EntryEngine.TEXTURE texture, EntryEngine.TextureVertex[] vertices, int offset, int count, short[] indexes, int indexOffset, int primitiveCount)
         {

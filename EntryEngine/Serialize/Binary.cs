@@ -527,14 +527,15 @@ namespace EntryEngine.Serialize
             }
             else
             {
-                Type type = typeof(T);
+                var childType = typeof(T);
+                Type type = childType.MakeArrayType();
                 if (!WriteSupportiveType(type, array))
                 {
                     int count = array.Length;
                     Write(count);
                     for (int i = 0; i < count; i++)
                     {
-                        WriteObject(array.GetValue(i), type);
+                        WriteObject(array.GetValue(i), childType);
                     }
                 }
             }
@@ -1904,8 +1905,8 @@ namespace EntryEngine.Serialize
                     types[type] = index;
                     Write(-index);
                     // 短AQ名在加密方式加载下的程序集中还是未能通过Type.GetType获得类型
-                    //byte[] typeName = Encoding.UTF8.GetBytes(type.SimpleAQName());
-                    byte[] typeName = Encoding.UTF8.GetBytes(type.AssemblyQualifiedName);
+                    byte[] typeName = Encoding.UTF8.GetBytes(type.SimpleAQName());
+                    //byte[] typeName = Encoding.UTF8.GetBytes(type.AssemblyQualifiedName);
                     //Write(type.SimpleAQName());
                     Write(typeName);
                 }

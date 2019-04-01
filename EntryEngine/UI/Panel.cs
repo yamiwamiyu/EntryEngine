@@ -22,6 +22,8 @@ namespace EntryEngine.UI
 	}
 	public class Panel : UIElement
 	{
+        public const float INERTIA_STOP = 0.05f;
+
 		private EScrollOrientation scrollOrientation = EScrollOrientation.VerticalAuto | EScrollOrientation.HorizontalAuto;
 		private ScrollBarBase scrollBarHorizontal;
 		private ScrollBarBase scrollBarVertical;
@@ -34,6 +36,10 @@ namespace EntryEngine.UI
 		public TEXTURE Background;
         public TEXTURE BackgroundFull;
 		public EDragMode DragMode;
+        public float DragInertia;
+        /// <summary>惯性移动量，拖拽时会自动维护，也可以自定义设置这个值</summary>
+        public VECTOR2 Inertia;
+        private float dragFriction = 0.95f;
 		public event DUpdate<Panel> Scroll;
 		public event DUpdate<Panel> ScrollBarChanged;
 
@@ -99,6 +105,12 @@ namespace EntryEngine.UI
 				}
 			}
 		}
+        /// <summary>拖拽惯性摩擦，惯性力*=摩擦力；0则立刻停下，1则停不下来</summary>
+        public float DragFriction
+        {
+            get { return dragFriction; }
+            set { dragFriction = _MATH.Clamp(value, 0, 1); }
+        }
 		public float OffsetX
 		{
 			get { return offset.X; }
@@ -133,7 +145,7 @@ namespace EntryEngine.UI
 				VECTOR2 temp = offset;
 				offset.X = _MATH.Clamp(value.X, 0, offsetScope.X);
 				offset.Y = _MATH.Clamp(value.Y, 0, offsetScope.Y);
-				if (!temp.Equals(ref offset))
+				if (temp.X != offset.X || temp.Y != offset.Y)
 				{
 					OnScroll();
 				}
@@ -301,7 +313,7 @@ namespace EntryEngine.UI
 					scrollBarHorizontal.Body.Width = scrollBarHorizontal.BarViewClip.Width * percent;
 				}
 				scrollBarHorizontal.Value = OffsetX;
-				scrollBarHorizontal.IsClip = false;
+                //scrollBarHorizontal.IsClip = false;
 				scrollBarHorizontal.ValueChanged -= DoScrollX;
 				scrollBarHorizontal.ValueChanged += DoScrollX;
 				scrollBarHorizontal.Body.Visible = CanScrollHorizontal;
@@ -319,7 +331,7 @@ namespace EntryEngine.UI
 					scrollBarVertical.Body.Height = scrollBarVertical.BarViewClip.Height * percent;
 				}
 				scrollBarVertical.Value = OffsetY;
-				scrollBarVertical.IsClip = false;
+                //scrollBarVertical.IsClip = false;
 				scrollBarVertical.ValueChanged -= DoScrollY;
 				scrollBarVertical.ValueChanged += DoScrollY;
 				scrollBarVertical.Body.Visible = CanScrollVertical;
@@ -375,27 +387,84 @@ namespace EntryEngine.UI
 		{
 			if (DragMode != EDragMode.None)
 			{
+                Inertia.X = 0;
+                Inertia.Y = 0;
                 VECTOR2 delta = e.INPUT.Pointer.DeltaPosition;
-                if (!delta.IsNaN())
+                if (!delta.IsNaN() && (delta.X != 0 || delta.Y != 0))
                 {
                     switch (DragMode)
                     {
                         case EDragMode.Drag:
-                            if ((offsetScope.X == 0 || delta.X == 0) &&
-                                (offsetScope.Y == 0 || delta.Y == 0))
+                            if (offsetScope.X == 0 && offsetScope.Y == 0)
                                 return;
                             Offset = VECTOR2.Subtract(Offset, delta);
                             break;
 
                         case EDragMode.Move:
-                            if (delta.X != 0 || delta.Y != 0)
-                                Location = VECTOR2.Add(Location, delta);
+                            bool bx, by;
+                            DoMove(delta.X, delta.Y, out bx, out by);
                             break;
+                    }
+                    if (DragInertia != 0)
+                    {
+                        Inertia = delta * DragInertia;
                     }
                 }
                 Handled = true;
 			}
 		}
+        /// <summary>移动面板</summary>
+        /// <param name="moveX">X移动量</param>
+        /// <param name="moveY">Y移动量</param>
+        /// <param name="boundaryX">X是否已到边界</param>
+        /// <param name="boundaryY">Y是否已到边界</param>
+        protected void DoMove(float moveX, float moveY, out bool boundaryX, out bool boundaryY)
+        {
+            VECTOR2 limit;
+            if (Parent == null)
+                limit = Entry._GRAPHICS.GraphicsSize;
+            else
+                limit = Parent.Size;
+            VECTOR2 center = Size * 0.5f;
+            center.X *= 1 - PivotAlignmentX;
+            center.Y *= 1 - PivotAlignmentY;
+            limit.X -= center.X;
+            limit.Y -= center.Y;
+
+            VECTOR2 temp = Location;
+            temp.X = _MATH.Clamp(temp.X + moveX, -center.X, limit.X);
+            temp.Y = _MATH.Clamp(temp.Y + moveY, -center.Y, limit.Y);
+            Location = temp;
+
+            boundaryX = temp.X == -center.X || temp.X == limit.X;
+            boundaryY = temp.Y == -center.Y || temp.Y == limit.Y;
+        }
+        public void SetInertiaTarget(VECTOR2 localPositionTarget)
+        {
+            if (dragFriction == 0 || dragFriction == 1) return;
+
+            if (DragMode == EDragMode.None) return;
+            VECTOR2 start;
+            if (DragMode == EDragMode.Drag)
+            {
+                start = localPositionTarget - Size * 0.5f;
+                if (start.X < 0) start.X = 0;
+                if (start.Y < 0) start.Y = 0;
+                if (start.X > offsetScope.X) start.X = offsetScope.X;
+                if (start.Y > offsetScope.Y) start.Y = offsetScope.Y;
+                localPositionTarget = Offset;
+            }
+            else
+                start = Location;
+
+            float distance = VECTOR2.Distance(localPositionTarget, start);
+            // 等比数列求和公式S = (a1 - an * q) / (1 - q)，这里反求a1
+            float endSpeed = distance * (1 - dragFriction) + (INERTIA_STOP * dragFriction);
+
+            float radian;
+            VECTOR2.Radian(ref start, ref localPositionTarget, out radian);
+            CIRCLE.ParametricEquation(endSpeed, radian, out this.Inertia);
+        }
 		//protected override void UpdateChilds(IEnumerable<UIElement> childs)
 		//{
 		//	UpdateScrollScope();
@@ -414,10 +483,44 @@ namespace EntryEngine.UI
 			localToWorld.M31 -= OffsetX;
 			localToWorld.M32 -= OffsetY;
 		}
-		protected override void InternalEvent(Entry e)
-		{
-			InternalUpdateScrollBar();
-		}
+        protected override void InternalUpdate(Entry e)
+        {
+            base.InternalUpdate(e);
+            InternalUpdateScrollBar();
+            if (DragMode != EDragMode.None && !IsClick && (Inertia.X != 0 || Inertia.Y != 0))
+            {
+                VECTOR2 temp;
+                // 移动惯性，碰撞到边界则反弹
+                switch (DragMode)
+                {
+                    case EDragMode.Drag:
+                        temp = Offset;
+                        temp.X -= Inertia.X;
+                        temp.Y -= Inertia.Y;
+                        if (temp.X < 0 || temp.X > offsetScope.X)
+                            Inertia.X = -Inertia.X;
+                        if (temp.Y < 0 || temp.Y > offsetScope.Y)
+                            Inertia.Y = -Inertia.Y;
+                        Offset = temp;
+                        break;
+
+                    case EDragMode.Move:
+                        bool bx, by;
+                        DoMove(Inertia.X, Inertia.Y, out bx, out by);
+                        if (bx)
+                            Inertia.X = -Inertia.X;
+                        if (by)
+                            Inertia.Y = -Inertia.Y;
+                        break;
+                }
+                Inertia.X *= dragFriction;
+                if (_MATH.Abs(Inertia.X) <= INERTIA_STOP)
+                    Inertia.X = 0;
+                Inertia.Y *= dragFriction;
+                if (_MATH.Abs(Inertia.Y) <= INERTIA_STOP)
+                    Inertia.Y = 0;
+            }
+        }
 		protected override void DrawBegin(GRAPHICS spriteBatch, ref MATRIX2x3 transform, ref RECT view, SHADER shader)
 		{
 			needBeginEnd = NeedBeginEnd;

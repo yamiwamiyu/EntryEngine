@@ -1,0 +1,47 @@
+﻿)1 .d.cs的文件参与语法和语义分析，不进行代码生成
+	实际等同于BinaryAssembly，由于其内部可能和引用的类型形成循环引用，所以放在同一个dll，用后缀.d.cs标识
+
+)2 系统API代码由代码生成器生成，因为实现系统函数时可能使用了特殊语法，导致编译时通过不了（例如JS在静态方法里调用this.length，this可指向调用此静态方法的对象）
+
+)3 LightDotNet库用到与系统库冲突的类型时，实现代码使用预编译!DEBUG条件规避，最终输出编译时将是Release或其它!DEBUG的条件
+
+)4 IEnumerator的生成代码
+public bool MoveNext()
+{
+	int temp = this._s;
+	do
+	{
+		temp = this.__Move(temp);
+	} while (temp >= 0);
+	return temp == -1;
+}
+// __Move为生成的代码
+int __Move()
+{
+	// ...生成的代码
+}
+
+)5 Attribute暂时不支持简写，即FlagsAttribute不能简写成[Flags]
+
+)6 不支持接口成员的显示实现[IEnumerator.Current]，所以IEnumerable<T>实现IEnumerable的GetEnumerator方法需要增加#if DEBUG [显示实现代码块] #endif（貌似不调用会被默认优化掉，所以不加好像也无所谓）
+
+)7 .r.cs的文件内的所有类型都生成程序集信息（后续可扩展.r1.cs只对字段生成程序集反射信息之类的）
+
+)8 对于类型溢出，对于byte和sbyte会自动检测溢出，对于其他类型，若需要检测溢出时，a++或a+=n表达式应该改为a=(目标类型)(a+n)，由()强制类型转换表达式来检测溢出
+
+)9 编译输出JS代码时的程序集解析顺序 .net -> EntryEngine -> JavaScript -> HTML5 -> 实际程序
+
+)10 闭包的情况
+(1). VECTOR2 v = new VECTOR2() { X = 5, Y = 10 };
+[1]. var v = (function() { var __obj = new VECTOR2(); __obj.X = 5; __obj.Y = 5; return __obj; })();
+
+(2). 
+
+)11 "_"符号结尾的临时变量不进行重命名，#if ___ #endif 中的内容原封不动的输出代码，可以用于写特殊语言的特殊语法
+	特殊语法需用到的变量，就可采用补充明明的变量，这些变量放在#if ___前面，就可用于连接特殊语法段的上下文
+
+)12 extern标识的成员由外部生成代码而不直接生成
+
+)13 不要让一个方法实现两个接口，这样在重命名时会导致错误，例如IPointer : IInputState
+
+)14 BUG:闭包实现的Test(ref int a)还存在问题，方法执行完毕后才将值赋回源，若方法内部有改变临时变量，又调用了源的值，此时源值将不发生改变

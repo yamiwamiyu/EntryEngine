@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using EntryEngine.Serialize;
 using System.Text;
+using System.IO;
 
 namespace EntryEngine
 {
@@ -192,6 +193,34 @@ namespace EntryEngine
             }
         }
 	}
+#if !HTML5
+    public class LoggerFile : _LOG.Logger
+    {
+        const string NEW_LOG = "#LOG_new.txt";
+        const string OLD_LOG = "#LOG_old.txt";
+        public _LOG.Logger Base;
+        StreamWriter writer;
+        public LoggerFile() : this(_LOG._Logger) { }
+        public LoggerFile(_LOG.Logger baseLog)
+        {
+            Base = baseLog;
+            if (File.Exists(NEW_LOG))
+            {
+                File.Copy(NEW_LOG, OLD_LOG, true);
+            }
+            writer = new StreamWriter(NEW_LOG, false, Encoding.UTF8);
+            //writer = File.CreateText(NEW_LOG);
+            writer.AutoFlush = true;
+        }
+        public override void Log(ref Record record)
+        {
+            if (Base != null)
+                Base.Log(ref record);
+            string format = string.Format("[{0}] {1}", record.Time.ToString("yyyy-MM-dd HH:mm:ss"), record.ToString());
+            writer.WriteLine(format);
+        }
+    }
+#endif
 
     public interface IOperation
     {

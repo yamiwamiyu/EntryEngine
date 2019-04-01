@@ -231,7 +231,7 @@ namespace EntryEngine.Serialize
                 throw new ArgumentNullException();
             if (value != null && type == null)
                 type = value.GetType();
-            JsonWriter writer = new JsonWriter();
+            CSVWriter writer = new CSVWriter();
             writer.Setting = setting;
             writer.WriteObject(value, type);
             return writer.Result;
@@ -425,7 +425,7 @@ namespace EntryEngine.Serialize
                 {
                     var property = properties.FirstOrDefault(p => p.Name == keys[i]);
                     if (property == null)
-                        throw new InvalidCastException();
+                        throw new KeyNotFoundException(string.Format("缺少CSV列{0}[长度:{1}]", keys[i], keys[i].Length));
                     column.Property = property;
                     column.Special = property.PropertyType.IsCustomType();
                 }

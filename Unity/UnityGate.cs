@@ -7,7 +7,7 @@ namespace EntryEngine.Unity
 {
     public class UnityGate : MonoBehaviour
     {
-        public static Material GLMaterial;
+        public Material GLMaterial;
 
         public static UnityGate Gate
         {
@@ -43,6 +43,7 @@ namespace EntryEngine.Unity
         {
             Entry.Update();
         }
+        //protected virtual void OnPostRender()
         protected virtual void OnGUI()
         {
             if (Event.current.type == EventType.repaint)

@@ -3,11 +3,6 @@
 using System;
 namespace EntryEngine.UI
 {
-	public class TextShader
-	{
-		public VECTOR2 Offset = new VECTOR2(2, 2);
-		public COLOR Color = new COLOR(128, 128, 128, 128);
-	}
 	public class Label : Button, ITypist
 	{
 		private string text = string.Empty;
@@ -237,7 +232,12 @@ namespace EntryEngine.UI
         {
             if (IsAutoHeight)
                 return false;
+            if (InputDevice == null)
+                return false;
             var size = TextContentSize;
+            // 各平台相同字体尺寸有误差，不要因为细小误差导致BeginEnd
+            size.X -= 1;
+            size.Y -= 1;
             //size.X -= UIText.Padding.X;
             //size.Y -= UIText.Padding.Y;
             if (InputDevice.Typist != this)
@@ -334,6 +334,27 @@ namespace EntryEngine.UI
             Text = result;
             if (TextEditOver != null)
                 TextEditOver(this);
+        }
+
+        public static bool ValidLength(ref string text, int limit)
+        {
+            if (string.IsNullOrEmpty(null))
+                return true;
+            if (text.Length > limit) return false;
+            int length = 0;
+            for (int i = 0; i < text.Length; i++)
+            {
+                if (text[i] > 255)
+                    length += 2;
+                else
+                    length++;
+                if (length > limit)
+                {
+                    text = text.Substring(0, i);
+                    return false;
+                }
+            }
+            return true;
         }
 	}
 }

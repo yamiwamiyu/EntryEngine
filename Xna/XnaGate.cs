@@ -25,7 +25,7 @@ namespace EntryEngine.Xna
         // 帧效率测试
 		FPSTest updateTime;
 		FPSTest drawTime;
-		FPSTest realTime;
+		TimeSpan realTime;
 
         GraphicsDeviceManager graphics;
         GameTime gameTime;
@@ -33,7 +33,6 @@ namespace EntryEngine.Xna
         public event Func<Entry> OnCreateEntry;
         public event Action<Entry> OnInitialize;
         public event Action<Entry> OnInitialized;
-        bool loaded;
 
         public GraphicsDeviceManager GraphicsManager
         {
@@ -54,6 +53,7 @@ namespace EntryEngine.Xna
             graphics = new GraphicsDeviceManager(this);
             base.Content.RootDirectory = "Content";
             Gate = this;
+            //this.IsFixedTimeStep = false;
         }
 
         protected sealed override void Initialize()
@@ -62,7 +62,6 @@ namespace EntryEngine.Xna
         }
         protected sealed override void LoadContent()
         {
-            loaded = true;
             if (OnCreateEntry != null)
                 Entry = OnCreateEntry();
             else
@@ -89,17 +88,19 @@ namespace EntryEngine.Xna
 			updateTime.InvokeCount++;
 
             base.Update(gameTime);
-			
-            if ((updateTime.InvokeTime + drawTime.InvokeTime).TotalSeconds >= 1)
+
+            realTime += gameTime.ElapsedRealTime;
+            if (realTime.TotalSeconds >= 1)
             {
-				string fps = string.Format("Update: {0} / {1} = {2} Render: {3} / {4} = {5}",
-					updateTime.InvokeTime.TotalMilliseconds, updateTime.InvokeCount, updateTime.InvokeTime.TotalMilliseconds / updateTime.InvokeCount,
-					drawTime.InvokeTime.TotalMilliseconds, drawTime.InvokeCount, drawTime.InvokeTime.TotalMilliseconds / drawTime.InvokeCount);
-                //Utility.Debug(fps);
-				updateTime = new FPSTest();
-				drawTime = new FPSTest();
+                Window.Title = string.Format("Update: {0} / {1} = {2} Render: {3} / {4} = {5}",
+                    updateTime.InvokeTime.TotalMilliseconds.ToString("0.00"), updateTime.InvokeCount, (updateTime.InvokeTime.TotalMilliseconds / updateTime.InvokeCount).ToString("0.00"),
+                    drawTime.InvokeTime.TotalMilliseconds.ToString("0.00"), drawTime.InvokeCount, (drawTime.InvokeTime.TotalMilliseconds / drawTime.InvokeCount).ToString("0.00"));
+                realTime -= TimeSpan.FromSeconds(1);
+                updateTime = new FPSTest();
+                drawTime = new FPSTest();
             }
         }
+        CAMERA camera = new CAMERA() { Position = new VECTOR3(5, 5, 20) };
         protected override void Draw(GameTime gameTime)
         {
             Stopwatch clock = new Stopwatch();
@@ -113,14 +114,6 @@ namespace EntryEngine.Xna
 			drawTime.InvokeCount++;
 
             base.Draw(gameTime);
-
-			realTime.InvokeCount++;
-			realTime.InvokeTime += gameTime.ElapsedRealTime;
-			if (realTime.InvokeTime.TotalSeconds >= 1)
-			{
-				Window.Title = string.Format("FPS:{0}", realTime.InvokeCount);
-				realTime = new FPSTest();
-			}
         }
     }
 }

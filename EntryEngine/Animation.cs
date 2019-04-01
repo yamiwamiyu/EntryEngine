@@ -65,8 +65,8 @@ namespace EntryEngine
         public int BornPerSecond = 60;
         public ushort LimitCount;
         private float _time;
-        public int StartTime;
-        public int EndTime = -1;
+        public float StartTime;
+        public float EndTime = -1;
 
         public PBByTime()
         {
@@ -95,10 +95,10 @@ namespace EntryEngine
                 {
                     if (previous <= StartTime)
                     {
-                        if (BornPerSecond != 0)
-                            born = BornPerSecond;
-                        else if (LimitCount != 0)
+                        if (LimitCount != 0)
                             born = LimitCount;
+                        else if (BornPerSecond != 0)
+                            born = BornPerSecond;
                     }
                 }
                 else if (EndTime < 0 || _time < EndTime)
@@ -106,7 +106,7 @@ namespace EntryEngine
                     if (LimitCount <= 0 || ps.Count < LimitCount)
                     {
                         // 根据每秒出生率计算出生数
-                        float temp = elapsed * (BornPerSecond * 0.001f) + _remain;
+                        float temp = elapsed * BornPerSecond + _remain;
                         born = (int)(temp);
                         _remain = temp - born;
 
@@ -153,7 +153,7 @@ namespace EntryEngine
     }
     public class PSLifecycle : PSRandomSkip
     {
-        public float Lifecycle = 2000f;
+        public float Lifecycle = 2f;
         public float VaryP = 0.25f;
         public override bool Update(Particle p, ParticleEmitter ps, float elapsed)
         {
@@ -243,7 +243,6 @@ namespace EntryEngine
                 p.speed = Speed;
                 if (VaryP != 0)
                     p.speed *= 1 + Random.NextSign() * Random.Next(VaryP);
-                p.speed *= 0.001f;
             }
 
             p.direction = Direction;
@@ -460,14 +459,13 @@ namespace EntryEngine
         public EPSCheck OP;
         public override bool Update(Particle p, ParticleEmitter ps, float elapsed)
         {
-            float spd = Speed * 0.001f;
             switch (OP)
             {
-                case EPSCheck.Euqals: return p.speed == spd;
-                case EPSCheck.Greater: return p.speed > spd;
-                case EPSCheck.GreaterEuqal: return p.speed >= spd;
-                case EPSCheck.Less: return p.speed < spd;
-                case EPSCheck.LessEuqal: return p.speed <= spd;
+                case EPSCheck.Euqals: return p.speed == Speed;
+                case EPSCheck.Greater: return p.speed > Speed;
+                case EPSCheck.GreaterEuqal: return p.speed >= Speed;
+                case EPSCheck.Less: return p.speed < Speed;
+                case EPSCheck.LessEuqal: return p.speed <= Speed;
                 default: return true;
             }
         }
@@ -475,9 +473,9 @@ namespace EntryEngine
     public class PSTimer : ParticleStream
     {
         //private float _time;
-        public int StartTime;
-        public short Interval = -1;
-        public int EndTime = -1;
+        public float StartTime;
+        public float Interval = -1;
+        public float EndTime = -1;
         public override bool Update(Particle p, ParticleEmitter ps, float elapsed)
         {
             float _time = p.Age;
@@ -488,7 +486,7 @@ namespace EntryEngine
                 if (Interval <= 0)
                     return true;
                 else
-                    return (int)(_time - StartTime) / Interval != (int)temp / Interval;
+                    return (int)((_time - StartTime) / Interval) != (int)(temp / Interval);
             }
             return false;
         }
@@ -612,8 +610,8 @@ namespace EntryEngine
         public VECTOR2 Force;
         public override bool Update(Particle p, ParticleEmitter ps, float elapsed)
         {
-            p.Position.X += Force.X;
-            p.Position.Y += Force.Y;
+            p.Position.X += Force.X * elapsed;
+            p.Position.Y += Force.Y * elapsed;
             return true;
         }
     }
@@ -639,7 +637,7 @@ namespace EntryEngine
         public VECTOR2 Origin;
         public EFlip Flip;
 
-        // 每毫秒移动的像素
+        // 每秒移动的像素
         internal float speed;
         internal float direction;
         public float Speed
@@ -684,7 +682,7 @@ namespace EntryEngine
         private List<ParticleEmitter> emitters = new List<ParticleEmitter>();
         private bool _updated;
         private float _elapsed;
-        /// <summary>粒子持续时间(ms)</summary>
+        /// <summary>粒子持续时间(s)</summary>
         public float Duration;
 
         public ParticleEmitter[] Emitters
@@ -743,15 +741,19 @@ namespace EntryEngine
         {
             return emitters.Remove(emitter);
         }
+        public void SetElapsed(float value)
+        {
+            SetElapsed(value, value * 0.005f);
+        }
         public void SetElapsed(float value, float fps)
         {
-            if (fps <= 0)
-                throw new ArgumentException("fps must bigger than 0.");
             if (value <= 0)
             {
                 Reset();
                 return;
             }
+            if (fps <= 0)
+                throw new ArgumentException("fps must bigger than 0.");
             if (value <= _elapsed)
                 Reset();
 
@@ -769,12 +771,12 @@ namespace EntryEngine
         }
         public override void Update(GameTime time)
         {
-            Update(time.Elapsed);
+            Update(time.ElapsedSecond);
         }
         protected internal override bool Draw(GRAPHICS graphics, ref SpriteVertex vertex)
         {
             if (!_updated && EntryService.Instance != null)
-                Update(EntryService.Instance.GameTime.Elapsed);
+                Update(EntryService.Instance.GameTime.ElapsedSecond);
 
             if (emitters.Count > 0)
             {
@@ -826,7 +828,7 @@ namespace EntryEngine
         private static Particle nullParticle = new Particle();
 
         private Pool<Particle> particles = new Pool<Particle>();
-        private bool _updated;
+        private int _updated;
         private float _elapsed;
         internal int _stream;
         public List<ParticleStream> Flow;
@@ -888,7 +890,7 @@ namespace EntryEngine
         }
         public void Update(float elapsed)
         {
-            _updated = true;
+            _updated = GameTime.Time.FrameID;
             if (Flow == null || Flow.Count == 0 || elapsed == 0)
                 return;
 
@@ -975,8 +977,11 @@ namespace EntryEngine
         }
         protected internal override bool Draw(GRAPHICS graphics, ref SpriteVertex vertex)
         {
-            if (!_updated && EntryService.Instance != null)
-                Update(EntryService.Instance.GameTime.Elapsed);
+            if (_updated != GameTime.Time.FrameID)
+            {
+                _updated = GameTime.Time.FrameID;
+                Update(GameTime.Time.ElapsedSecond);
+            }
 
             if (particles.Count > 0)
             {
@@ -988,12 +993,11 @@ namespace EntryEngine
                 graphics.End();
             }
 
-            _updated = false;
             return true;
         }
         public void Reset()
         {
-            _updated = false;
+            _updated = 0;
             particles.ClearToFree();
             if (Flow != null)
                 for (int i = 0; i < Flow.Count; i++)

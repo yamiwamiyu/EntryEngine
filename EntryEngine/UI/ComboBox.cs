@@ -6,87 +6,6 @@ using System.Linq;
 
 namespace EntryEngine.UI
 {
-    [Obsolete("to use of TabPage")]
-    public class Collapsable : Button
-    {
-        public event DUpdate<Collapsable> BeforeExpand;
-        public event DUpdate<Collapsable> AfterExpand;
-        public event DUpdate<Collapsable> BeforeCollapse;
-        public event DUpdate<Collapsable> AfterCollapse;
-
-        public Panel Panel
-        {
-            get;
-            private set;
-        }
-        public override bool Checked
-        {
-            get { return Panel.Visible; }
-            set
-            {
-                if (value != Checked)
-                {
-                    if (value)
-                    {
-                        Expand();
-                    }
-                    else
-                    {
-                        Collapse();
-                    }
-                    base.Checked = value;
-                }
-            }
-        }
-
-        public Collapsable()
-        {
-            Panel = new Panel();
-            Panel.IsClip = false;
-            Panel.ScrollOrientation = EScrollOrientation.None;
-            Panel.DragMode = EDragMode.Drag;
-            Panel.Width = 300;
-            Panel.Height = 100;
-            Add(Panel);
-
-            Width = 100;
-            Height = 24;
-            Panel.Y = Height;
-
-            UIText.TextAlignment = EPivot.MiddleLeft;
-        }
-
-        public void Expand()
-        {
-            if (Checked)
-                return;
-            if (BeforeExpand != null)
-                BeforeExpand(this, Entry.Instance);
-            Panel.Visible = true;
-            if (AfterExpand != null)
-                AfterExpand(this, Entry.Instance);
-        }
-        public void Collapse()
-        {
-            if (!Checked)
-                return;
-            if (BeforeCollapse != null)
-                BeforeCollapse(this, Entry.Instance);
-            Panel.Visible = false;
-            if (AfterCollapse != null)
-                AfterCollapse(this, Entry.Instance);
-        }
-        protected override bool OnCheckedChanging()
-        {
-            return !Checked;
-        }
-        public override IEnumerator<UIElement> GetEnumerator()
-        {
-            foreach (var item in Childs.ToArray())
-                if (item != Panel)
-                    yield return item;
-        }
-    }
     public class TabPage : CheckBox
     {
         private Panel page;
@@ -107,7 +26,7 @@ namespace EntryEngine.UI
                 {
                     Add(page);
                     page.Visible = base.Checked;
-                    page.IsClip = false;
+                    //page.IsClip = false;
                 }
             }
         }
@@ -217,7 +136,7 @@ namespace EntryEngine.UI
                 if (value != null)
                 {
                     Add(dropDownList);
-                    dropDownList.IsClip = false;
+                    //dropDownList.IsClip = false;
                     dropDownList.DragMode = EDragMode.Drag;
                     dropDownList.SelectHandle += OnSelectHandle;
                     dropDownList.Select += OnSelect;
@@ -259,6 +178,7 @@ namespace EntryEngine.UI
 
         public DropDown()
         {
+            this.IsClip = false;
             Clicked -= OnClicked;
         }
 

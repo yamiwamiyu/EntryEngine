@@ -1,0 +1,16 @@
+﻿using System.Collections.Generic;
+using EntryEngine;
+using EntryEngine.UI;
+
+public partial class {0} : UIScene
+{{
+	public {0}()
+	{{
+		Initialize();
+	}}
+
+	private IEnumerable<ICoroutine> MyLoading()
+    {{
+        return null;
+    }}
+}}

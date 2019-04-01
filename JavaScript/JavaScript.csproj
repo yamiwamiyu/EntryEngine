@@ -38,6 +38,7 @@
   <ItemGroup>
     <Compile Include="JavaScript.d.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Wx.d.cs" />
     <Compile Include="_SAPI.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

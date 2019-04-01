@@ -16,7 +16,7 @@ namespace EntryEngine.Cmdline
             public MethodInfo[] Methods;
         }
 
-        private TimeSpan frameRate = TimeSpan.FromMilliseconds(16.667);
+        private TimeSpan frameRate = TimeSpan.FromMilliseconds(1.0 / 60);
         private byte overheatFrameCount = 10;
         /// <summary>
         /// 程序Update用时超过FrameRate连续超过OverheatFrameCount时触发

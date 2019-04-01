@@ -22,7 +22,14 @@ namespace EntryEngine.Unity
     {
 		public override void Log(ref Record record)
 		{
-			UnityEngine.Debug.Log(string.Format("[{0} {1}] {2}", record.Level, record.Time, record.ToString()));
+            string result = string.Format("[{0} {1}] {2}", record.Level, record.Time, record.ToString());
+            switch (record.Level)
+            {
+                case 1: UnityEngine.Debug.Log(result); break;
+                case 2: UnityEngine.Debug.LogWarning(result); break;
+                case 3: UnityEngine.Debug.LogError(result); break;
+                default: UnityEngine.Debug.Log(result); break;
+            }
 		}
 	}
 	public class IOWWW : _IO.iO
@@ -241,7 +248,7 @@ namespace EntryEngine.Unity
             string localFile = file;
             io.GetReadPath(ref localFile);
             using (WWW www = io.Load(localFile))
-                return new SoundUnity(www.audioClip);
+                return new SoundUnity(www.GetAudioClip());
             //else
             //{
             //    return new SoundUnity(Resources.Load<AudioClip>(BuildResourcePath(file)));
@@ -329,13 +336,190 @@ namespace EntryEngine.Unity
 			Texture2D texture = new Texture2D(1, 1);
 			if (!texture.LoadImage(bytes))
 				Resources.UnloadAsset(texture);
-			return new TextureUnity(texture);
+			return new Texture2DUnity(texture);
 		}
 	}
 
-    public class TextureUnity : TEXTURE
+    public class CameraTexture : TextureUnity
     {
-        private Texture2D texture;
+        static VECTOR2 RotateCenter = new VECTOR2(0.5f, 0.5f);
+
+        WebCamTexture camera;
+
+        public bool IsFront { get; private set; }
+        public int DeviceIndex { get; private set; }
+        public bool IsPlaying { get { return camera.isPlaying; } }
+        public override int Width { get { return camera.requestedWidth; } }
+        public override int Height { get { return camera.requestedHeight; } }
+        public float FPS
+        {
+            get { return camera.requestedFPS; }
+            set { camera.requestedFPS = value; }
+        }
+        public bool FrameRefreshed { get { return camera.didUpdateThisFrame; } }
+
+        public CameraTexture(bool front, int index)
+        {
+            this.IsFront = front;
+            this.DeviceIndex = index;
+
+            var cameras = WebCamTexture.devices;
+            for (int i = 0; i < cameras.Length; i++)
+            {
+                if (front == cameras[i].isFrontFacing)
+                {
+                    if (index == 0)
+                    {
+                        camera = new WebCamTexture(cameras[i].name, 640, 480, 10);
+                        texture = camera;
+                        break;
+                    }
+                    else
+                    {
+                        index--;
+                    }
+                }
+            }
+        }
+
+        public void SetWidth(int width)
+        {
+            camera.requestedWidth = width;
+        }
+        public void SetHeight(int height)
+        {
+            camera.requestedHeight = height;
+        }
+        public void Play()
+        {
+            camera.Play();
+        }
+        public void Pause()
+        {
+            camera.Pause();
+        }
+        public void Stop()
+        {
+            camera.Stop();
+        }
+
+        public override COLOR[] GetData(RECT area)
+        {
+            bool rotate;
+            return GetColor((int)area.X, (int)area.Y, (int)area.Width, (int)area.Height, out rotate).GetColor();
+        }
+        Color[] GetColor(int x, int y, int width, int height, out bool whChange)
+        {
+            whChange = false;
+            Color[] colors = camera.GetPixels(x, Height - y - height, width, height);
+            // Unity获得的摄像头图像是横竖颠倒的
+            if (camera.videoRotationAngle != 0)
+            {
+                if (camera.videoRotationAngle == 90)
+                {
+                    Color[] temp = new Color[width * height];
+                    int index1 = 0;
+                    int index2;
+                    for (int i = 0; i < height; i++)
+                    {
+                        index2 = (width - 1) * height + i;
+                        for (int j = 0; j < width; j++)
+                        {
+                            temp[index2] = colors[index1];
+                            index1++;
+                            index2 -= height;
+                        }
+                    }
+                    colors = temp;
+                }
+                else if (camera.videoRotationAngle == -90)
+                {
+                    Color[] temp = new Color[width * height];
+                    int index1 = 0;
+                    int index2;
+                    for (int i = 0; i < height; i++)
+                    {
+                        index2 = width - 1 - i;
+                        for (int j = 0; j < width; j++)
+                        {
+                            temp[index2] = colors[index1];
+                            index1++;
+                            index2 += height;
+                        }
+                    }
+                    colors = temp;
+                }
+                else
+                {
+                    throw new NotImplementedException("videoRotationAngle:" + camera.videoRotationAngle);
+                }
+
+                {
+                    // 颠倒宽高
+                    whChange = true;
+                    int temp = width;
+                    width = height;
+                    height = temp;
+                }
+            }
+            if (camera.videoVerticallyMirrored)
+            {
+                Color temp;
+                for (int i = 0; i < width; i++)
+                {
+                    int index1 = i;
+                    int index2 = (height - 1) * width + i;
+                    for (int j = height << 1; j >= 0; j--)
+                    {
+                        temp = colors[index1];
+                        colors[index1] = colors[index2];
+                        colors[index2] = temp;
+                        index1 += width;
+                        index2 -= width;
+                    }
+                }
+            }
+            return colors;
+        }
+        protected override bool Draw(GRAPHICS graphics, ref SpriteVertex vertex)
+        {
+            if (camera.videoVerticallyMirrored)
+            {
+                if ((vertex.Flip & EFlip.FlipVertically) == EFlip.None)
+                    vertex.Flip |= EFlip.FlipVertically;
+                else
+                    vertex.Flip &= ~EFlip.FlipVertically;
+            }
+            if (camera.videoRotationAngle != 0)
+            {
+                float radian = _MATH.ToRadian(camera.videoRotationAngle);
+                vertex.Rotation += radian;
+                VECTOR2.Rotate(ref RotateCenter, ref vertex.Origin, -radian, out vertex.Origin);
+            }
+            return base.Draw(graphics, ref vertex);
+        }
+        public override void Save(string file)
+        {
+            bool rotate;
+            Color[] colors = GetColor(0, 0, Width, Height, out rotate);
+            Texture2D tex1;
+            if (rotate)
+                tex1 = new Texture2D(Height, Width);
+            else
+                tex1 = new Texture2D(Width, Height);
+            tex1.SetPixels(colors);
+            tex1.Apply();
+            _IO.WriteByte(file, tex1.EncodeToPNG());
+            tex1.Destroy();
+        }
+    }
+    public abstract class TextureUnity : TEXTURE
+    {
+        protected internal Texture texture;
+        public Texture Texture
+        {
+            get { return texture; }
+        }
         public override bool IsDisposed
         {
             get { return texture == null; }
@@ -344,16 +528,22 @@ namespace EntryEngine.Unity
         {
             get { return texture.width; }
         }
-		public override int Height
+        public override int Height
         {
             get { return texture.height; }
         }
-        public Texture2D Texture2D
+        protected override void InternalDispose()
         {
-            get { return texture; }
-            internal set { texture = value; }
+            if (texture != null)
+            {
+                texture.Destroy();
+                texture = null;
+            }
         }
-        public TextureUnity(Texture2D texture)
+    }
+    public class Texture2DUnity : TextureUnity
+    {
+        public Texture2DUnity(Texture2D texture)
         {
             if (texture == null)
                 throw new ArgumentNullException("texture");
@@ -362,42 +552,26 @@ namespace EntryEngine.Unity
         public override COLOR[] GetData(RECT area)
         {
             // 颜色从左下角开始取
-            return texture.GetPixels((int)area.X, (int)(Height - area.Y - area.Height), (int)area.Width, (int)area.Height).GetColor();
+            return ((Texture2D)texture).GetPixels((int)area.X, (int)(Height - area.Y - area.Height), (int)area.Width, (int)area.Height).GetColor();
         }
         public override void SetData(COLOR[] buffer, RECT area)
         {
-            texture.SetPixels32((int)area.X, (int)(Height - area.Y - area.Height), (int)area.Width, (int)area.Height, buffer.GetColor());
-            texture.Apply();
+            Texture2D tex1 = (Texture2D)texture;
+            // 颜色从左下角开始取
+            tex1.SetPixels32((int)area.X, (int)(Height - area.Y - area.Height), (int)area.Width, (int)area.Height, buffer.GetColor());
+            tex1.Apply();
         }
-		protected override void InternalDispose()
-		{
-            if (texture != null)
-            {
-                texture.Destroy();
-                texture = null;
-            }
-		}
         public override void Save(string file)
         {
-            _IO.WriteByte(file, texture.EncodeToPNG());
+            _IO.WriteByte(file, ((Texture2D)texture).EncodeToPNG());
         }
     }
     public class FontDynamicUnity : FontDynamic
     {
-        private static GUIStyle style = GUIStyle.none;
-        private static GUIContent content = new GUIContent();
-
-        public static GUIStyle FontStyle
-        {
-            get { return style; }
-            set
-            {
-                if (value == null)
-                    style = GUIStyle.none;
-                else
-                    style = value;
-            }
-        }
+        // 一帧最多只绘制10个字，多了就异步
+        private const int FRAME_DRAW_CHAR_COUNT = 10;
+        private static int frameID;
+        private static int drawCharCount;
 
         private new class CacheInfo : FontDynamic.CacheInfo2
         {
@@ -421,7 +595,7 @@ namespace EntryEngine.Unity
                 throw new ArgumentNullException("font");
             cache.Font = font;
             fontSize = font.fontSize;
-            lineHeight = font.lineHeight;
+            lineHeight = font.lineHeight + 1;
         }
 
         protected override FontDynamic.CacheInfo2 BuildGraphicsInfo()
@@ -449,204 +623,147 @@ namespace EntryEngine.Unity
             //        _IO.WriteByte("TEST.png", (cache.Font.material.mainTexture as Texture2D).EncodeToPNG());
             //        cache.Textures[0].Save("TestFont.png");
             //    });
-            return new TextureUnity(texture);
+            return new Texture2DUnity(texture);
         }
-        /// <summary>
-        /// 1. 文字有黑色边缘
-        /// 2. 数组越界
-        /// </summary>
-        [Code(ECode.BUG)]
-        protected override COLOR[] DrawChar(char c, ref RECT uv)
+        protected override void DrawChar(AsyncDrawDynamicChar async, char c, Buffer uv)
         {
-            if ('\r' == c)
-                return null;
+            //if ('\r' == c)
+            //{
+            //    async.Cancel();
+            //    return;
+            //}
 
             Font font = cache.Font;
 
-            //if (!font.HasCharacter(c))
-                font.RequestCharactersInTexture(c.ToString());
             CharacterInfo info;
-            font.GetCharacterInfo(c, out info);
+            if (!font.GetCharacterInfo(c, out info))
+            {
+                font.RequestCharactersInTexture(c.ToString());
+                font.GetCharacterInfo(c, out info);
+            }
+
+            uv.Space = (byte)info.advance;
+            int width = info.glyphWidth;
+            int height = info.glyphHeight;
+            if (width > uv.W)
+                uv.W = (byte)width;
+            if (height > uv.H)
+                uv.H = (byte)height;
+
+            if (frameID != GameTime.Time.FrameID)
+            {
+                //if (drawCharCount != 0)
+                //{
+                //    _LOG.Debug("draw char count = {0}", drawCharCount);
+                //}
+                drawCharCount = 0;
+                frameID = GameTime.Time.FrameID;
+            }
+
             Texture2D graphics = font.material.mainTexture as Texture2D;
+            int twidth = graphics.width;
+            int theight = graphics.height;
             //_IO.WriteByte("TEXT.png", graphics.EncodeToPNG());
-
-            Vector2 tl = info.uvTopLeft;
-            Vector2 tr = info.uvTopRight;
-            Vector2 bl = info.uvBottomLeft;
-            Vector2 br = info.uvBottomRight;
-            int width = font.material.mainTexture.width;
-            int height = font.material.mainTexture.height;
-            POINT ptl = new POINT((int)(tl.x * width + 0.5f), (int)(tl.y * height + 0.5f));
-            POINT ptr = new POINT((int)(tr.x * width + 0.5f), (int)(tr.y * height + 0.5f));
-            POINT pbl = new POINT((int)(bl.x * width + 0.5f), (int)(bl.y * height + 0.5f));
-            POINT pbr = new POINT((int)(br.x * width + 0.5f), (int)(br.y * height + 0.5f));
-            int x, y, w, h;
-            bool flipV;// 循环宽度i
-            bool flipH;// 循环高度j
-            bool flipped = ptl.X != pbl.X;
-            // 旋转90度
-            if (flipped)
-            {
-                // 左右颠倒
-                if (ptl.Y < ptr.Y)
-                {
-                    flipV = true;
-                    y = ptl.Y;
-                    h = ptr.Y - ptl.Y;
-                }
-                else
-                {
-                    flipV = false;
-                    y = ptr.Y;
-                    h = ptl.Y - ptr.Y;
-                }
-                // 左右颠倒
-                if (ptl.X > pbl.X)
-                {
-                    flipH = true;
-                    x = pbl.X;
-                    w = ptl.X - pbl.X;
-                }
-                else
-                {
-                    flipH = false;
-                    x = ptl.X;
-                    w = pbl.X - ptl.X;
-                }
-            }
-            else
-            {
-                // 左右颠倒
-                if (ptl.X > ptr.X)
-                {
-                    flipH = true;
-                    x = ptr.X;
-                    w = ptl.X - ptr.X;
-                }
-                else
-                {
-                    flipH = false;
-                    x = ptl.X;
-                    w = ptr.X - ptl.X;
-                }
-                // 上下颠倒
-                if (ptl.Y < pbl.Y)
-                {
-                    flipV = true;
-                    y = ptl.Y;
-                    h = pbl.Y - ptl.Y;
-                }
-                else
-                {
-                    flipV = false;
-                    y = pbl.Y;
-                    h = ptl.Y - pbl.Y;
-                }
-            }
-
             // GetPixel矩形为屏幕坐标
-            COLOR[] colors = graphics.GetPixels(x, y, w, h).GetColor();
+            COLOR[] colors = graphics.GetPixels((int)(info.uv.x * twidth), (int)((info.uv.y + info.uv.height) * theight), (int)(info.uv.width * twidth), (int)(-info.uv.height * theight)).GetColor();
+            float ascent = font.ascent;
 
-            if (flipped)
-                Utility.Swap(ref w, ref h);
-            // 由于w,h不等于uv的宽高，导致文字变为等宽字体，绘制时文字对不齐
-            //uv.Width = w;
-            //uv.Height = h;
-            //width = (int)uv.Width;
-            //height = (int)uv.Height;
-            width = _MATH.Ceiling(uv.Width);
-            height = _MATH.Ceiling(uv.Height);
-            //if (w > width || h > height)
-            //    throw new ArgumentOutOfRangeException("Buffer size must bigger than source size.");
-            int nextline = width - w;
-            int start = ((height - h - info.minY - (font.lineHeight - font.ascent)) * width) + _MATH.Ceiling(nextline * 0.5f);
-            //_LOG.Debug("height={0} h={1} info.minY={2} lineheight={3} ascent={4} width={5} nextline={6} start={7}", height, h, info.minY, font.lineHeight, font.ascent, width, nextline, start);
+            System.Threading.WaitCallback call = (_) =>
+            {
+                // 由于w,h不等于uv的宽高，导致文字变为非等宽字体，绘制时文字对不齐
 
-            COLOR[] result = new COLOR[width * height];
-            //_IO.WriteText(c + ".txt", string.Join("\r\n", graphics.GetPixels(x, y, w, h).Where(cl => cl.a != 0).Select(cl => string.Format("r:{0} g:{1} b:{2} a:{3}", cl.r, cl.g, cl.b, cl.a)).ToArray()));
+                //int width = info.glyphWidth;
+                //int height = info.glyphHeight;
 
-            // 从colors上取正确的颜色到result里
-            int presult = start;
-            int count = result.Length;
+                int uvwidth = _MATH.Ceiling(uv.W);
+                int uvheight = _MATH.Ceiling(uv.H);
 
-            int i1, i2, i3;
-            int j1, j2, j3;
-            if (flipV)
-            {
-                i1 = h - 1;
-                i2 = -1;
-                i3 = -1;
-            }
-            else
-            {
-                i1 = 0;
-                i2 = h;
-                i3 = 1;
-            }
-            if (flipH)
-            {
-                j1 = w - 1;
-                j2 = -1;
-                j3 = -1;
-            }
-            else
-            {
-                j1 = 0;
-                j2 = w;
-                j3 = 1;
-            }
+                int left = -(int)info.vert.x;
+                if (left < 0) left = 0;
+                if (uvwidth - width < left) left = uvwidth - width;
+                int right = uvwidth - width - left;
+                if (right < 0) right = 0;
 
-            if (flipped)
-            {
+                int count = uvwidth * uvheight;
+                COLOR[] result = new COLOR[count];
+
+                // 字体高度28，font.ascent=21，那么字模从下往上数7个像素为基准点绘制
+                // 类似jpq这样下面到底的文字info.minY就可能为-7
+                // 类似`这样的上面到顶的文字info.minY就可能是13，字模高度为8的话，正好28
+                // 从colors上取正确的颜色到result里
+                int startY = (int)(lineHeight - (lineHeight - ascent + info.minY + height));
+                if (startY < 0)
+                    startY = 0;
+                int presult = left + startY * uvwidth;
+                int tempStart = presult;
+
                 int index = 0;
-                for (int i = i1; i != i2; i += i3)
+                if (info.flipped)
                 {
-                    for (int j = j1; j != j2; j += j3)
+                    // 图像顺时针旋转了90°
+                    //for (int i = height - 1; i >= 0; i--)
+                    //{
+                    //    for (int j = 0; j < width; j++)
+                    for (int i = 0; i < height; i++)
                     {
-                        index = j * h + i;
-                        result[presult].R = colors[index].R;
-                        result[presult].G = colors[index].G;
-                        result[presult].B = colors[index].B;
-                        result[presult].A = colors[index].A;
-                        presult++;
+                        for (int j = width - 1; j >= 0; j--)
+                        {
+                            index = j * height + i;
+                            result[presult].R = colors[index].R;
+                            result[presult].G = colors[index].G;
+                            result[presult].B = colors[index].B;
+                            result[presult].A = colors[index].A;
+                            presult++;
+                        }
+                        presult += right + left;
                     }
-                    presult += nextline;
                 }
+                else
+                {
+                    // 图像时上下镜像的
+                    for (int i = height - 1; i >= 0; i--)
+                    {
+                        index = i * width;
+                        for (int j = 0; j < width; j++)
+                        {
+                            result[presult].R = colors[index].R;
+                            result[presult].G = colors[index].G;
+                            result[presult].B = colors[index].B;
+                            result[presult].A = colors[index].A;
+                            presult++;
+                            index++;
+                        }
+                        presult += right + left;
+                    }
+                }
+                //try
+                //{
+
+                //}
+                //catch (IndexOutOfRangeException ex)
+                //{
+                //    _LOG.Error("越界 c:{6} flip:{7} presult:{0} index:{1} u:{2} v:{3} y:{4} h:{5} lineHeight:{8} start:{9} left:{10} right:{11} ascent:{12} uw:{13} uh:{14}", presult, index, uvwidth, uvheight, info.vert.y, info.vert.height, c, info.flipped, lineHeight, tempStart, left, right, font.ascent, info.uv.width * twidth, info.uv.height * theight);
+                //}
+
+                //_LOG.Debug(c.ToString());
+                if (_ == this)
+                    Entry.Instance.Synchronize(() => async.SetData(result));
+                else
+                    async.SetData(result);
+                //Entry.Instance.Synchronize(() => cache.Textures.First().Save(c + ".png"));
+            };
+
+            if (drawCharCount < FRAME_DRAW_CHAR_COUNT)
+            {
+                // 同步绘制
+                call(null);
             }
             else
             {
-                int index = 0;
-                for (int i = i1; i != i2; i += i3)
-                {
-                    index = i * w;
-                    for (int j = j1; j != j2; j += j3)
-                    {
-                        result[presult].R = colors[index].R;
-                        result[presult].G = colors[index].G;
-                        result[presult].B = colors[index].B;
-                        result[presult].A = colors[index].A;
-                        presult++;
-                        index++;
-                    }
-                    presult += nextline;
-                }
+                // 异步处理
+                System.Threading.ThreadPool.QueueUserWorkItem(call, this);
             }
-
-            return result;
-        }
-        /// <summary>
-        /// // 5.4以后CalcSize算出来的高度变低，导致start的计算变为负数以至于数组越界
-        /// </summary>
-        [Code(ECode.BUG)]
-        protected override VECTOR2 MeasureBufferSize(char c)
-        {
-            content.text = c.ToString();
-            style.font = cache.Font;
-            if (Application.unityVersion.StartsWith("5.3"))
-                return style.CalcSize(content).GetVector2();
-            VECTOR2 size1 = FontStyle.CalcSize(content).GetVector2();
-            VECTOR2 size2 = base.MeasureBufferSize(c);
-            return new VECTOR2(_MATH.Max(size1.X, size2.X), _MATH.Max(size1.Y, size2.Y));
+            drawCharCount++;
         }
         protected override void InternalDispose()
         {
@@ -659,6 +776,83 @@ namespace EntryEngine.Unity
             FontDynamicUnity font = new FontDynamicUnity(cache.Font);
             font._Key = this._Key;
             return font;
+        }
+    }
+    public class FontUnity : FONT
+    {
+        private static GUIStyle style = GUIStyle.none;
+        private static GUIContent content = new GUIContent();
+        public static GUIStyle FontStyle
+        {
+            get { return style; }
+            set
+            {
+                if (value == null)
+                    style = GUIStyle.none;
+                else
+                    style = value;
+            }
+        }
+
+        Font font;
+        float scale;
+
+        public override float FontSize
+        {
+            get { return font.fontSize * scale; }
+            set
+            {
+                int intSize = (int)value;
+                scale = value - intSize;
+                if (font.fontSize != intSize)
+                    font = Font.CreateDynamicFontFromOSFont(font.fontNames, intSize);
+            }
+        }
+        public override float LineHeight
+        {
+            get { return font.lineHeight; }
+        }
+        public override bool IsDisposed
+        {
+            get { return false; }
+        }
+        public override bool IsDynamic { get { return true; } }
+
+        public FontUnity(string name, float size)
+        {
+            int intSize = (int)size;
+            if (size != intSize)
+            {
+                scale = size - intSize;
+            }
+            font = Font.CreateDynamicFontFromOSFont(name, intSize);
+        }
+
+        protected override float CharWidth(char c)
+        {
+            style.font = font;
+            content.text = c.ToString();
+            return style.CalcSize(content).x;
+        }
+        public override VECTOR2 MeasureString(string text)
+        {
+            content.text = text;
+            var size = style.CalcSize(content);
+            return new VECTOR2(size.x, size.y); ;
+        }
+
+        protected override void Draw(GRAPHICS spriteBatch, string text, VECTOR2 location, COLOR color, float scale)
+        {
+            style.font = font;
+            style.normal.textColor = color.GetColor();
+            content.text = text;
+            //var matrix = GUI.matrix;
+            //GUI.matrix = matrix * Matrix4x4.Scale(new Vector3(scale, scale, 1));
+            style.Draw(new Rect(location.X, location.Y, 2048, 2048), content, false, false, false, false);
+            //GUI.matrix = matrix;
+        }
+        protected override void InternalDispose()
+        {
         }
     }
     public class ShaderUnity : SHADER
@@ -721,7 +915,7 @@ namespace EntryEngine.Unity
         }
         public TEXTURE GetValueTexture(string property)
         {
-            return new TextureUnity((Texture2D)material.GetTexture(property));
+            return new Texture2DUnity((Texture2D)material.GetTexture(property));
         }
         public VECTOR2 GetValueVector2(string property)
         {
@@ -855,8 +1049,7 @@ namespace EntryEngine.Unity
     {
         private RECT screenShotArea;
         private Coroutine screenShotCoroutine;
-        private MATRIX2x3 modelview;
-        private VECTOR2 _gs;
+        //private MATRIX2x3 modelview;
 
         public override bool IsFullScreen
         {
@@ -881,75 +1074,107 @@ namespace EntryEngine.Unity
 
         protected override void SetViewport(MATRIX2x3 view, RECT viewport)
         {
+            this.View = MATRIX2x3.Identity;
         }
-        protected override void InternalBegin(ref MATRIX2x3 matrix, ref RECT graphics, SHADER shader)
+        protected override void InternalBegin(bool threeD, ref MATRIX matrix, ref RECT graphics, SHADER shader)
         {
-            if (RenderTargetCount > 1)
-                // Flush
-                base.Ending(null);
-
-            GL.LoadOrtho();
-            Rect screen = AreaToScreen(graphics).ToCartesian();
-            GL.Viewport(screen);
-
-            VECTOR2 temp = GraphicsSize;
-            matrix.M31 /= temp.X;
-            matrix.M32 /= temp.Y;
-            modelview = 
-                matrix * MATRIX2x3.Invert(View)
-                * MATRIX2x3.CreateTranslation(-graphics.X / temp.X, -graphics.Y / temp.Y)
-                * MATRIX2x3.CreateScale(temp.X / graphics.Width, temp.Y / graphics.Height)
-                ;
-        }
-        protected override void InternalDraw(TEXTURE texture, ref SpriteVertex vertex)
-        {
-            float x = _MATH.DIVIDE_BY_1[texture.Width];
-            float y = _MATH.DIVIDE_BY_1[texture.Height];
-
-            vertex.Origin.X *= x;
-            vertex.Origin.Y *= y;
-
-            vertex.Source.X *= x;
-            vertex.Source.Y *= y;
-            vertex.Source.Width *= x;
-            vertex.Source.Height *= y;
-            
-            base.InternalDraw(texture, ref vertex);
-        }
-        protected override void DrawPrimitivesBegin(TEXTURE texture)
-        {
-            if (texture == null)
+            Rect scissor = AreaToScreen(graphics).ToCartesian();
+            if (threeD)
             {
-                _LOG.Debug("DrawPrimitivesBegin Texture: null");
-                return;
+                VECTOR2 temp = GraphicsSize;
+                matrix.M31 /= temp.X;
+                matrix.M32 /= temp.Y;
+                var modelview =
+                    (MATRIX2x3)matrix * MATRIX2x3.Invert(View)
+                    * MATRIX2x3.CreateTranslation(-graphics.X / temp.X, -graphics.Y / temp.Y)
+                    * MATRIX2x3.CreateScale(temp.X / graphics.Width, temp.Y / graphics.Height)
+                    ;
+                GL.LoadProjectionMatrix(matrix.GetMatrix());
+                //GL.modelview = ((matrix * (MATRIX)(MATRIX2x3.Invert(View)
+                //    * MATRIX2x3.CreateTranslation(-graphics.X / temp.X, -graphics.Y / temp.Y)
+                //    * MATRIX2x3.CreateScale(temp.X / graphics.Width, temp.Y / graphics.Height))).GetMatrix());
             }
-            UnityGate.GLMaterial.mainTexture = texture.GetTexture();
-            UnityGate.GLMaterial.SetPass(0);
-            GL.Begin(GL.TRIANGLES);
-
-            var graphics = GraphicsSize;
-            _gs.X = 1 / graphics.X;
-            _gs.Y = 1 / graphics.Y;
-        }
-        protected override void OutputVertex(ref TextureVertex output)
-        {
-            output.TextureCoordinate.Y = 1 - output.TextureCoordinate.Y;
-
-            // 使用左上坐标系计算好坐标再转换成左下角坐标
-            output.Position.X *= _gs.X;
-            output.Position.Y *= _gs.Y;
-            VECTOR2.Transform(ref output.Position.X, ref output.Position.Y, ref modelview);
-            output.Position.Y = 1 - output.Position.Y;
-        }
-        protected override void DrawPrimitives(TextureVertex[] vertices, int offset, int count, short[] indexes, int indexOffset, int primitiveCount)
-        {
-            int idx;
-            for (int c = 0; c < primitiveCount; c++)
+            else
             {
-                idx = indexOffset + c * 3;
-                DrawPrimitive(ref vertices[offset + indices[idx]]);
-                DrawPrimitive(ref vertices[offset + indices[idx + 1]]);
-                DrawPrimitive(ref vertices[offset + indices[idx + 2]]);
+                GL.LoadOrtho();
+                VECTOR2 temp = GraphicsSize;
+                // 将像素坐标从左下角0~1设置为左上角宽0~width,高0~height
+                MATRIX2x3 view =
+                    // 1280, 0
+                    (MATRIX2x3)matrix *
+                    // 将画布内左上角坐标转换成是口内左下角坐标
+                    MATRIX2x3.CreateTranslation(-graphics.X, -graphics.Y) *
+                    // 1, 0
+                    //MATRIX2x3.CreateScale(1 / temp.X, 1 / temp.Y) *
+                    MATRIX2x3.CreateScale(1 / graphics.Width, 1 / graphics.Height) *
+                    // 1, -1
+                    MATRIX2x3.CreateTranslation(0, -1) *
+                    // 1, 1
+                    MATRIX2x3.CreateScale(1, -1)
+                    ;
+
+                GL.modelview = view.GetMatrix();
+            }
+            GL.Viewport(scissor);
+        }
+        protected override void DrawPrimitivesBegin(TEXTURE texture, EPrimitiveType ptype)
+        {
+            if (texture != null)
+            {
+                UnityGate.Gate.GLMaterial.mainTexture = texture.GetTexture();
+                UnityGate.Gate.GLMaterial.SetPass(0);
+            }
+            
+            if (ptype == EPrimitiveType.Point) throw new NotImplementedException();
+            else if (ptype == EPrimitiveType.Line) GL.Begin(GL.LINES);
+            else GL.Begin(GL.TRIANGLES);
+        }
+        protected override void DrawPrimitives(EPrimitiveType ptype, TextureVertex[] vertices, int offset, int count, short[] indexes, int indexOffset, int primitiveCount)
+        {
+            float twidth = Texture == null ? 1 : _MATH.DIVIDE_BY_1[Texture.Width];
+            float theight = Texture == null ? 1 : _MATH.DIVIDE_BY_1[Texture.Height];
+            for (int i = offset, e = offset + count; i < e; i++)
+            {
+                vertices[i].TextureCoordinate.X *= twidth;
+                vertices[i].TextureCoordinate.Y = 1 - vertices[i].TextureCoordinate.Y * theight;
+
+                // Begin时已用GL.LoadPixelMatrix代替此坐标转换
+                //if (twoD)
+                //{
+                //    // 使用左上坐标系计算好坐标再转换成左下角坐标
+                //    vertices[i].Position.X *= _gs.X;
+                //    vertices[i].Position.Y *= _gs.Y;
+                //    VECTOR2.Transform(ref vertices[i].Position.X, ref vertices[i].Position.Y, ref modelview);
+                //    vertices[i].Position.Y = 1 - vertices[i].Position.Y;
+                //}
+            }
+
+            if (ptype == EPrimitiveType.Triangle)
+            {
+                int idx = indexOffset;
+                for (int c = 0; c < primitiveCount; c++)
+                {
+                    DrawPrimitive(ref vertices[offset + indexes[idx++]]);
+                    DrawPrimitive(ref vertices[offset + indexes[idx++]]);
+                    DrawPrimitive(ref vertices[offset + indexes[idx++]]);
+                }
+            }
+            else if (ptype == EPrimitiveType.Line)
+            {
+                int idx = indexOffset;
+                for (int c = 0; c < primitiveCount; c++)
+                {
+                    DrawPrimitive(ref vertices[offset + indexes[idx++]]);
+                    DrawPrimitive(ref vertices[offset + indexes[idx++]]);
+                }
+            }
+            else
+            {
+                throw new NotImplementedException();
+                //for (int c = 0; c < primitiveCount; c++)
+                //{
+                //    DrawPrimitive(ref vertices[offset + indices[indexOffset + c]]);
+                //}
             }
         }
         private void DrawPrimitive(ref TextureVertex vertex)
@@ -968,7 +1193,7 @@ namespace EntryEngine.Unity
             Texture2D texture = new Texture2D((int)rect.width, (int)rect.height, TextureFormat.ARGB32, false);
             texture.ReadPixels(rect, 0, 0);
             texture.Apply();
-            return new TextureUnity(texture);
+            return new Texture2DUnity(texture);
         }
         public override void Screenshot(RECT graphics, Action<TEXTURE> callback)
         {
@@ -1468,6 +1693,9 @@ namespace EntryEngine.Unity
             else
             {
                 text = keyboard.text;
+                //if (keyboard.status == TouchScreenKeyboard.Status.Canceled)
+                //    return EInput.Canceled;
+                //else if (keyboard.status == TouchScreenKeyboard.Status.Done)
                 if (keyboard.wasCanceled)
                     return EInput.Canceled;
                 else if (keyboard.done)
@@ -1541,14 +1769,9 @@ namespace EntryEngine.Unity
             switch (Application.platform)
             {
                 case RuntimePlatform.Android:
-                case RuntimePlatform.BlackBerryPlayer:
                 case RuntimePlatform.IPhonePlayer:
-                case RuntimePlatform.OSXDashboardPlayer:
-                case RuntimePlatform.WP8Player:
                     return EPlatform.Mobile;
-                case RuntimePlatform.OSXWebPlayer:
                 case RuntimePlatform.WebGLPlayer:
-                case RuntimePlatform.WindowsWebPlayer:
                     //return EPlatform.Web;
                 case RuntimePlatform.LinuxPlayer:
                 case RuntimePlatform.OSXEditor:
@@ -1559,13 +1782,9 @@ namespace EntryEngine.Unity
                 case RuntimePlatform.WindowsEditor:
                 case RuntimePlatform.WindowsPlayer:
                     return EPlatform.Desktop;
-                case RuntimePlatform.PS3:
                 case RuntimePlatform.PS4:
-                case RuntimePlatform.PSM:
                 case RuntimePlatform.PSP2:
-                case RuntimePlatform.SamsungTVPlayer:
                 case RuntimePlatform.TizenPlayer:
-                case RuntimePlatform.XBOX360:
                 case RuntimePlatform.XboxOne:
                     return EPlatform.Console;
                 default:
@@ -1578,6 +1797,7 @@ namespace EntryEngine.Unity
         protected override void Initialize(out AUDIO AUDIO, out ContentManager ContentManager, out FONT FONT, out GRAPHICS GRAPHICS, out INPUT INPUT, out _IO.iO iO, out IPlatform IPlatform, out TEXTURE TEXTURE)
         {
             _LOG._Logger = new LoggerUnity();
+            _LOG._Logger = new LoggerFile();
 
             iO = NewiO(null);
 
@@ -1604,6 +1824,9 @@ namespace EntryEngine.Unity
             TEXTURE = null;
 
             GRAPHICS = new GraphicsUnityGL();
+
+            // 可以让手机在不操作时不进入休眠状态
+            //Screen.sleepTimeout = SleepTimeout.NeverSleep;
         }
         protected override _IO.iO InternalNewiO(string root)
         {
@@ -1646,7 +1869,7 @@ namespace EntryEngine.Unity
         }
         protected override TEXTURE InternalNewTEXTURE(int width, int height)
         {
-            return new TextureUnity(new Texture2D(width, height));
+            return new Texture2DUnity(new Texture2D(width, height));
         }
 
         public override void Exit()

@@ -1,0 +1,2 @@
+Xna.exe
+pause

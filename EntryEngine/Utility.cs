@@ -836,12 +836,12 @@ namespace EntryEngine
 		{
 			int num = count;
 			int num2 = index + count;
-			T _default = default(T);
+            //T _default = default(T);
 			for (int i = index; i < num2; i++)
 			{
 				if (comparer(array[i]))
 				{
-					array[i] = _default;
+                    //array[i] = _default;
 					num--;
 				}
 			}
@@ -850,7 +850,7 @@ namespace EntryEngine
 			num = 0;
 			for (int i = index; i < num2; i++)
 			{
-				if (array[i].Equals(_default))
+                if (comparer(array[i]))
 				{
 					copy[num++] = array[i];
 				}

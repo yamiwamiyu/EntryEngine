@@ -20,6 +20,114 @@ namespace EntryEngine.HTML5
         }
     }
 
+#if WX
+    public class IOJSLocal : _IO.iO
+    {
+        protected override string _ReadText(string file)
+        {
+            object data = wx.getStorageSync(file);
+            if (data == null) return null;
+            else return data.ToString();
+        }
+        protected override byte[] _ReadByte(string file)
+        {
+            string text = _ReadText(file);
+            if (text == null) return null;
+            return SingleEncoding.Single.GetBytes(text);
+        }
+        protected override void _WriteText(string file, string content, Encoding encoding)
+        {
+            // 可能由重写IO或File.WriteAllText完成对LocalStorage内写入文件
+            wx.setStorageSync(file, content);
+        }
+        protected override void _WriteByte(string file, byte[] content)
+        {
+            wx.setStorageSync(file, SingleEncoding.Single.GetString(content));
+        }
+    }
+    public class IOJSWeb : IOJSLocal
+    {
+        /* 文件请求方式加载图片
+         * var req = new XMLHttpRequest();
+            req.responseType = "blob";
+            req.onreadystatechange = () =>
+            {
+                if (req.readyState == 4)
+                {
+                    if (req.status == 200)
+                    {
+                        console.log("load succuss");
+
+                        var response = req.response;  
+                        var data = new Image();
+
+                        data.onload = function()
+                        {
+                            texture = gl.createTexture();
+                            gl.bindTexture(gl.TEXTURE_2D, texture);
+                            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+                            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+                            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+                            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+                            gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, data);
+                            gl.bindTexture(gl.TEXTURE_2D, null);
+                        }
+                        data.src = window.URL.createObjectURL(response);
+                    }
+                    else
+                    {
+                        console.log("error:" + req.status);
+                    }
+                }
+            };
+            req.open("GET", "imgfile.png", true);
+            req.send();
+         */
+        internal static string BuildNetUrl(string url)
+        {
+            if (string.IsNullOrEmpty(HTML5Gate.PATH))
+                return url;
+            return HTML5Gate.PATH + url;
+        }
+        protected override AsyncReadFile _ReadAsync(string file)
+        {
+            AsyncReadFile async = new AsyncReadFile(this, file);
+
+            byte[] data = base._ReadByte(file);
+            if (data != null)
+            {
+                async.SetData(data);
+            }
+            else
+            {
+                RequestObject param = new RequestObject();
+                param.url = BuildNetUrl(file);
+                param.success = (res) =>
+                {
+                    if (res.statusCode == 200)
+                    {
+                        async.SetData(SingleEncoding.UTF8.GetBytes(res.data.ToString()));
+                    }
+                    else
+                    {
+                        async.Error(new HttpException((HttpStatusCode)res.statusCode));
+                    }
+                };
+                wx.request(param);
+            }
+
+            return async;
+        }
+        protected sealed override string _ReadText(string file)
+        {
+            throw new NotImplementedException();
+        }
+        protected sealed override byte[] _ReadByte(string file)
+        {
+            throw new NotImplementedException();
+        }
+    }
+#else
     public class IOJSLocal : _IO.iO
     {
         protected override string _ReadText(string file)
@@ -163,6 +271,7 @@ namespace EntryEngine.HTML5
             }
         }
     }
+#endif
     public class HttpException : Exception
     {
         public HttpStatusCode StatusCode { get; private set; }
@@ -171,7 +280,7 @@ namespace EntryEngine.HTML5
             this.StatusCode = code;
         }
     }
-    
+
     public class MouseStateJS : IMouseState
     {
         internal VECTOR2 position;
@@ -253,6 +362,10 @@ namespace EntryEngine.HTML5
             }
         }
     }
+    #if WX
+#else
+
+#endif
     public class TextureJSData : TextureJS
     {
         internal ImageData Data;
@@ -331,6 +444,16 @@ namespace EntryEngine.HTML5
                 Image = null;
             }
         }
+        public static void FromBase64(string code, Action<TextureJSGL> onLoad)
+        {
+            Image image = new Image();
+            image.onload = () =>
+            {
+                if (onLoad != null)
+                    onLoad(GraphicsWebGL.CreateTexture(image));
+            };
+            image.src = code;
+        }
     }
     public class PipelineTextureJSGL : ContentPipeline
     {
@@ -340,6 +463,12 @@ namespace EntryEngine.HTML5
         }
         protected override Content Load(string file)
         {
+            TEXTURE_DELAY delay = new TEXTURE_DELAY();
+
+            // 延迟完成同步加载
+            AsyncData<Content> async = new AsyncData<Content>();
+            delay.Async = async;
+
             TextureJSGL result = new TextureJSGL();
 
             Image img = new Image();
@@ -348,9 +477,9 @@ namespace EntryEngine.HTML5
                 var texture = GraphicsWebGL.CreateGLTexture(img);
                 result.Image = img;
                 result.Texture = texture;
+                delay.Base = result;
             };
             img.src = IOJSWeb.BuildNetUrl(IO.BuildPath(file));
-            // todo: 貌似无法实现同步加载完成
 
             return result;
         }
@@ -501,9 +630,9 @@ namespace EntryEngine.HTML5
             }
             return result;
         }
-        protected override COLOR[] DrawChar(char c, ref RECT uv)
+        protected override void DrawChar(AsyncDrawDynamicChar result, char c, Buffer uv)
         {
-            return COLOR.Convert(GraphicsCanvas.DrawText(GetFontStyle(), c.ToString(), (int)uv.Width, (int)uv.Height).data.GetBytes());
+            result.SetData(COLOR.Convert(GraphicsCanvas.DrawText(GetFontStyle(), c.ToString(), uv.W, uv.H).data.GetBytes()));
         }
         protected override void CopyTo(FontTexture target)
         {
@@ -522,10 +651,13 @@ namespace EntryEngine.HTML5
         internal static WebGLShader defaultVertexShader;
         internal static WebGLShader defaultPixelShader;
         private static WebGLProgram shaderProgram;
-        private static Float32Array arrayBuffer = new Float32Array(8 * 4 * 1);
+        private static WebGLUniformLocation vertexShaderMatrix;
+        private static float[] vertexShaderMatrixArray;
+        private static Float32Array arrayBuffer = new Float32Array(9 * 4 * 1);
         private static WebGLBuffer verticesBuffer;
         private static WebGLBuffer indicesBuffer;
-        private static int indicesBufferCount = 0;
+        private static short[] indicesBufferArray;
+        static int[] PrimitiveTypes;
 
         public static WebGLTexture CreateGLTexture(Image image)
         {
@@ -576,8 +708,6 @@ namespace EntryEngine.HTML5
             return new TextureJSGL(image, CreateGLTexture(image));
         }
 
-        private VECTOR2 _gs;
-        private MATRIX2x3 modelview;
         public override bool IsFullScreen { get { return false; } set { } }
         protected override VECTOR2 InternalScreenSize
         {
@@ -594,6 +724,7 @@ namespace EntryEngine.HTML5
             //YCornerOffsets = new float[] {  };
 
             GraphicsWebGL.gl = context;
+            PrimitiveTypes = new int[] { context.POINTS, context.LINES, context.TRIANGLES };
             /*
              * [Pixel Shader]
              * precision mediump float;
@@ -605,17 +736,40 @@ namespace EntryEngine.HTML5
              * min: precision mediump float;varying vec4 color;varying vec2 coord;uniform sampler2D sampler;void main(void){gl_FragColor=color*texture2D(sampler,coord);}
              * 
              * [Vertex Shader]
-             * attribute vec2 vpos;
+             * attribute vec3 vpos;
              * attribute vec4 vcolor;
              * attribute vec2 vcoord;
              * varying vec4 color;
              * varying vec2 coord;
-             * void main(void) { gl_Position = vec4(vpos, 0.0, 1.0); color = vcolor; coord = vcoord; }
+             * void main(void) { gl_Position = vec4(vpos, 1.0); color = vcolor; coord = vcoord; }
              * 
-             * min: attribute vec2 vpos;attribute vec4 vcolor;attribute vec2 vcoord;varying vec4 color;varying vec2 coord;void main(void){gl_Position=vec4(vpos,0.0,1.0);color=vcolor;coord=vcoord;}
+             * min: attribute vec3 vpos;attribute vec4 vcolor;attribute vec2 vcoord;varying vec4 color;varying vec2 coord;void main(void){gl_Position=vec4(vpos,1.0);color=vcolor;coord=vcoord;}
+             * 
+             * 处理3D时需要的矩阵
+             * uniform mat4 view;
+             * 
+             * main中修改
+             * gl_Position = view * vec4(vpos, 1.0);
+             * 
+             * 代码中追加
+             * var view = gl.getUniformLocation(program, "view");
+             * 在Begin中绑定矩阵即可，matrix要求的是float[]，参数顺序暂时未明确
+             * gl.uniformMatrix4fv(view, false, [matrix]);
+             * 其中3D需要开启深度测试，暂未清楚开始绑定就好还是每次Begin都需要绑定
+             * context.enable(context.DEPTH_TEST);
+             * 
+             * uniform mat4 view;
+             * attribute vec3 vpos;
+             * attribute vec4 vcolor;
+             * attribute vec2 vcoord;
+             * varying vec4 color;
+             * varying vec2 coord;
+             * void main(void) { gl_Position = view * vec4(vpos, 1.0); color = vcolor; coord = vcoord; }
+             * 
+             * min: uniform mat4 view;attribute vec3 vpos;attribute vec4 vcolor;attribute vec2 vcoord;varying vec4 color;varying vec2 coord;void main(void){gl_Position=view*vec4(vpos,1.0);color=vcolor;coord=vcoord;}
              */
             defaultVertexShader = context.createShader(context.VERTEX_SHADER);
-            context.shaderSource(defaultVertexShader, "attribute vec2 vpos;attribute vec4 vcolor;attribute vec2 vcoord;varying vec4 color;varying vec2 coord;void main(void){gl_Position=vec4(vpos,0.0,1.0);color=vcolor;coord=vcoord;}");
+            context.shaderSource(defaultVertexShader, "uniform mat4 view;attribute vec3 vpos;attribute vec4 vcolor;attribute vec2 vcoord;varying vec4 color;varying vec2 coord;void main(void){gl_Position=view*vec4(vpos,1.0);color=vcolor;coord=vcoord;}");
             context.compileShader(defaultVertexShader);
 
             defaultPixelShader = context.createShader(context.FRAGMENT_SHADER);
@@ -631,15 +785,18 @@ namespace EntryEngine.HTML5
             context.enableVertexAttribArray(0);
             context.enableVertexAttribArray(1);
             context.enableVertexAttribArray(2);
+            
+            vertexShaderMatrix = gl.getUniformLocation(shaderProgram, "view");
+            vertexShaderMatrixArray = new float[16];
 
             verticesBuffer = context.createBuffer();
             context.bindBuffer(context.ARRAY_BUFFER, verticesBuffer);
-            // 0-2个float是坐标
-            context.vertexAttribPointer(0, 2, context.FLOAT, false, 32, 0);
-            // 2-6个float是颜色
-            context.vertexAttribPointer(1, 4, context.FLOAT, false, 32, 8);
-            // 6-8个float是uv
-            context.vertexAttribPointer(2, 2, context.FLOAT, false, 32, 24);
+            // 0-3个float是坐标
+            context.vertexAttribPointer(0, 3, context.FLOAT, false, 36, 0);
+            // 3-7个float是颜色
+            context.vertexAttribPointer(1, 4, context.FLOAT, false, 36, 12);
+            // 7-9个float是uv
+            context.vertexAttribPointer(2, 2, context.FLOAT, false, 36, 28);            
         }
         protected override void SetViewport(MATRIX2x3 view, RECT viewport)
         {
@@ -655,29 +812,67 @@ namespace EntryEngine.HTML5
             gl.enable(gl.BLEND);
             gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
         }
-        protected override void InternalBegin(ref MATRIX2x3 matrix, ref RECT graphics, SHADER shader)
+        protected override void InternalBegin(bool threeD, ref MATRIX matrix, ref RECT graphics, SHADER shader)
         {
             RECT rect = AreaToScreen(graphics);
             // 左下角0,0 单位像素
             gl.scissor((int)rect.X, gl.canvas.height - (int)(rect.Y + rect.Height), (int)rect.Width, (int)rect.Height);
-            modelview = matrix;
+            if (threeD)
+            {
+                vertexShaderMatrixArray[0] = matrix.M11;
+                vertexShaderMatrixArray[1] = matrix.M12;
+                vertexShaderMatrixArray[2] = matrix.M13;
+                vertexShaderMatrixArray[3] = matrix.M14;
+                vertexShaderMatrixArray[4] = matrix.M21;
+                vertexShaderMatrixArray[5] = matrix.M22;
+                vertexShaderMatrixArray[6] = matrix.M23;
+                vertexShaderMatrixArray[7] = matrix.M24;
+                vertexShaderMatrixArray[8] = matrix.M31;
+                vertexShaderMatrixArray[9] = matrix.M32;
+                vertexShaderMatrixArray[10] = matrix.M33;
+                vertexShaderMatrixArray[11] = matrix.M34;
+                vertexShaderMatrixArray[12] = matrix.M41;
+                vertexShaderMatrixArray[13] = matrix.M42;
+                vertexShaderMatrixArray[14] = matrix.M43;
+                vertexShaderMatrixArray[15] = matrix.M44;
+
+                gl.uniformMatrix4fv(vertexShaderMatrix, false, vertexShaderMatrixArray);
+                // todo: 大范围使用3D时，不清楚遮挡关系会如何；目前开启深度测试相同深度的对象覆盖关系将发生变化
+                //gl.enable(gl.DEPTH_TEST);
+            }
+            else
+            {
+                var gsize = GraphicsSize;
+                MATRIX2x3 view =
+                    // 1280, 720
+                    (MATRIX2x3)matrix *
+                    // 将左上角坐标转换成屏幕中央坐标
+                    // 2, -2
+                    MATRIX2x3.CreateScale(2 / gsize.X, -2 / gsize.Y) *
+                    // 1, -1
+                    MATRIX2x3.CreateTranslation(-1, 1)
+                    ;
+                vertexShaderMatrixArray[0] = view.M11;
+                vertexShaderMatrixArray[1] = view.M12;
+                vertexShaderMatrixArray[2] = 0;
+                vertexShaderMatrixArray[3] = 0;
+                vertexShaderMatrixArray[4] = view.M21;
+                vertexShaderMatrixArray[5] = view.M22;
+                vertexShaderMatrixArray[6] = 0;
+                vertexShaderMatrixArray[7] = 0;
+                vertexShaderMatrixArray[8] = 0;
+                vertexShaderMatrixArray[9] = 0;
+                vertexShaderMatrixArray[10] = 1;
+                vertexShaderMatrixArray[11] = 0;
+                vertexShaderMatrixArray[12] = view.M31;
+                vertexShaderMatrixArray[13] = view.M32;
+                vertexShaderMatrixArray[14] = 0;
+                vertexShaderMatrixArray[15] = 1;
+
+                gl.uniformMatrix4fv(vertexShaderMatrix, false, vertexShaderMatrixArray);
+            }
         }
-        protected override void InternalDraw(TEXTURE texture, ref SpriteVertex vertex)
-        {
-            float x = _MATH.DIVIDE_BY_1[texture.Width];
-            float y = _MATH.DIVIDE_BY_1[texture.Height];
-
-            vertex.Origin.X *= x;
-            vertex.Origin.Y *= y;
-
-            vertex.Source.X *= x;
-            vertex.Source.Y *= y;
-            vertex.Source.Width *= x;
-            vertex.Source.Height *= y;
-
-            base.InternalDraw(texture, ref vertex);
-        }
-        protected override void DrawPrimitivesBegin(TEXTURE texture)
+        protected override void DrawPrimitivesBegin(TEXTURE texture, EPrimitiveType ptype)
         {
             //var tex = _HTML5.GetTextureGL(texture);
             var tex = ((TextureJS)TEXTURE.GetDrawableTexture(texture)).Texture;
@@ -690,78 +885,68 @@ namespace EntryEngine.HTML5
             //canvas.activeTexture(canvas.TEXTURE0);
             gl.bindTexture(gl.TEXTURE_2D, tex);
 
-            var graphics = GraphicsSize;
-            _gs.X = 1 / graphics.X;
-            _gs.Y = 1 / graphics.Y;
-
             //HTML5Gate.TestTime++;
         }
-        //public override void BaseDraw(TEXTURE texture, float x, float y, float w, float h, bool scale, float sx, float sy, float sw, float sh, bool color, byte r, byte g, byte b, byte a, float rotation, float ox, float oy, EFlip flip)
-        //{
-        //    // BUG: 占用1/3 ~ 2/3时间
-        //    var time = new Date().getTime();
-        //    base.BaseDraw(texture, x, y, w, h, scale, sx, sy, sw, sh, color, r, g, b, a, rotation, ox, oy, flip);
-        //    HTML5Gate.TestTime += new Date().getTime() - time;
-        //}
-        protected override void OutputVertex(ref TextureVertex output)
+        protected override void DrawPrimitives(EPrimitiveType ptype, TextureVertex[] vertices, int offset, int count, short[] indexes, int indexOffset, int primitiveCount)
         {
-            //var time = new Date().getTime();
-            // 坐标系：屏幕中央为0,0 左-1 右1 下-1 上1 区间-1~1
-
-            // UV坐标系：左上角0,0 区间0~1
-            //output.TextureCoordinate.Y = 1 - output.TextureCoordinate.Y;
-
-            // 使用左上坐标系计算好坐标再转换成左下角坐标
-            // WebGL的原点在画布中央
-            float x = output.Position.X;
-            float y = output.Position.Y;
-            output.Position.X = ((x * modelview.M11 + y * modelview.M21 + modelview.M31) * _gs.X - 0.5f) * 2;
-            output.Position.Y = (0.5f - (x * modelview.M12 + y * modelview.M22 + modelview.M32) * _gs.Y) * 2;
-
-            //VECTOR2.Transform(ref output.Position.X, ref output.Position.Y, ref modelview);
-            //output.Position.X *= _gs.X;
-            //output.Position.Y *= _gs.Y;
-            // WebGL的原点在画布中央
-            //output.Position.X = (output.Position.X - 0.5f) * 2;
-            //output.Position.Y = (0.5f - output.Position.Y) * 2;
-
-            //HTML5Gate.TestTime += new Date().getTime() - time;
-        }
-        protected override void DrawPrimitives(TextureVertex[] vertices, int offset, int count, short[] indexes, int indexOffset, int primitiveCount)
-        {
+            if (indexOffset != 0)
+                throw new NotImplementedException();
             // 核心绘制只占用时间1/10
-            if (indicesBufferCount != indices.Length)
+            if (indicesBufferArray != indexes)
             {
-                indicesBufferCount = indices.Length;
                 if (indicesBuffer == null)
                     indicesBuffer = gl.createBuffer();
                 gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indicesBuffer);
-                gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(indices), gl.STATIC_DRAW);
+                gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(indexes), gl.STATIC_DRAW);
+                indicesBufferArray = indexes;
             }
 
-            int vcount = count * 8;
+            int vcount = count * 9;
             if (vcount > arrayBuffer.length)
             {
                 int capcity = arrayBuffer.length * 2;
                 if (vcount > capcity)
-                    capcity = vcount + 32;
+                    capcity = vcount + 36;
                 arrayBuffer = new Float32Array(capcity);
             }
 
+            float twidth = Texture == null ? 1 : _MATH.DIVIDE_BY_1[Texture.Width];
+            float theight = Texture == null ? 1 : _MATH.DIVIDE_BY_1[Texture.Height];
             for (int i = offset, n = offset + count; i < n; i++)
             {
-                int _offset = i * 8;
+                // 使用左上坐标系计算好坐标再转换成左下角坐标
+                // WebGL的原点在画布中央
+                //float x = vertices[i].Position.X;
+                //float y = vertices[i].Position.Y;
+                //vertices[i].Position.X = ((x * modelview.M11 + y * modelview.M21 + modelview.M31) * _gs.X - 0.5f) * 2;
+                //vertices[i].Position.Y = (0.5f - (x * modelview.M12 + y * modelview.M22 + modelview.M32) * _gs.Y) * 2;
+
+                vertices[i].TextureCoordinate.X *= twidth;
+                vertices[i].TextureCoordinate.Y *= theight;
+            }
+            for (int i = offset, n = offset + count; i < n; i++)
+            {
+                int _offset = i * 9;
                 arrayBuffer[_offset + 0] = vertices[i].Position.X;
                 arrayBuffer[_offset + 1] = vertices[i].Position.Y;
-                arrayBuffer[_offset + 2] = vertices[i].Color.R * COLOR.BYTE_TO_FLOAT;
-                arrayBuffer[_offset + 3] = vertices[i].Color.G * COLOR.BYTE_TO_FLOAT;
-                arrayBuffer[_offset + 4] = vertices[i].Color.B * COLOR.BYTE_TO_FLOAT;
-                arrayBuffer[_offset + 5] = vertices[i].Color.A * COLOR.BYTE_TO_FLOAT;
-                arrayBuffer[_offset + 6] = vertices[i].TextureCoordinate.X;
-                arrayBuffer[_offset + 7] = vertices[i].TextureCoordinate.Y;
+                arrayBuffer[_offset + 2] = vertices[i].Position.Z;
+                arrayBuffer[_offset + 3] = vertices[i].Color.R * COLOR.BYTE_TO_FLOAT;
+                arrayBuffer[_offset + 4] = vertices[i].Color.G * COLOR.BYTE_TO_FLOAT;
+                arrayBuffer[_offset + 5] = vertices[i].Color.B * COLOR.BYTE_TO_FLOAT;
+                arrayBuffer[_offset + 6] = vertices[i].Color.A * COLOR.BYTE_TO_FLOAT;
+                arrayBuffer[_offset + 7] = vertices[i].TextureCoordinate.X;
+                arrayBuffer[_offset + 8] = vertices[i].TextureCoordinate.Y;
             }
-            gl.bufferData(gl.ARRAY_BUFFER, arrayBuffer.subarray(offset, offset + count * 8), gl.STREAM_DRAW);
-            gl.drawElements(gl.TRIANGLES, primitiveCount * 3, gl.UNSIGNED_SHORT, 0);
+            gl.bufferData(gl.ARRAY_BUFFER, arrayBuffer.subarray(offset, offset + count * 9), gl.STREAM_DRAW);
+
+            int drawVCount;
+            switch (ptype)
+            {
+                case EPrimitiveType.Line: drawVCount = primitiveCount << 1; break;
+                case EPrimitiveType.Triangle: drawVCount = primitiveCount * 3; break;
+                default: drawVCount = primitiveCount; break;
+            }
+            gl.drawElements(PrimitiveTypes[(int)ptype], drawVCount, gl.UNSIGNED_SHORT, 0);
         }
         // 占用大量时间貌似还没什么作用
         //protected override void DrawPrimitivesEnd()
@@ -826,15 +1011,19 @@ namespace EntryEngine.HTML5
         protected override void SetViewport(MATRIX2x3 view, RECT viewport)
         {
         }
-        protected override void InternalBegin(ref MATRIX2x3 matrix, ref RECT graphics, SHADER shader)
+        protected override void InternalBegin(bool threeD, ref MATRIX matrix, ref RECT graphics, SHADER shader)
         {
             throw new NotImplementedException();
         }
-        protected override void DrawPrimitives(TextureVertex[] vertices, int offset, int count, short[] indexes, int indexOffset, int primitiveCount)
+        protected override void InternalDraw(TEXTURE texture, ref SpriteVertex vertex, ref BoundingBox box)
+        {
+            base.InternalDraw(texture, ref vertex, ref box);
+        }
+        protected override void DrawPrimitives(EPrimitiveType ptype, TextureVertex[] vertices, int offset, int count, short[] indexes, int indexOffset, int primitiveCount)
         {
             throw new NotImplementedException();
         }
-        protected override void DrawPrimitivesBegin(TEXTURE texture)
+        protected override void DrawPrimitivesBegin(TEXTURE texture, EPrimitiveType ptype)
         {
             throw new NotImplementedException();
         }
@@ -898,12 +1087,13 @@ namespace EntryEngine.HTML5
             {
                 INPUT = new INPUT(new MouseJS());
             }
-            
 
             AUDIO = null;
 
             TEXTURE = null;
-            var canvas = (HTMLCanvasElement)window.document.getElementById("WEBGL");
+            //var canvas = (HTMLCanvasElement)window.document.getElementById("WEBGL");
+            var canvas = (HTMLCanvasElement)window.document.createElement("canvas");
+            window.document.body.appendChild(canvas);
             if (canvas == null) throw new ArgumentNullException("don't have 'canvas' element");
             var graphics = canvas.getContext("webgl");
             if (graphics == null)
@@ -917,7 +1107,9 @@ namespace EntryEngine.HTML5
                 GRAPHICS = new GraphicsCanvas((CanvasRenderingContext2D)graphics);
             }
             // 保留2d-context用于绘制文字，获取图片颜色数据等，此canvas不能和gl的一样，否则getContext会返回null
-            canvas = (HTMLCanvasElement)window.document.getElementById("CANVAS");
+            //canvas = (HTMLCanvasElement)window.document.getElementById("CANVAS");
+            canvas = (HTMLCanvasElement)window.document.createElement("canvas");
+            window.document.body.appendChild(canvas);
             graphics = canvas.getContext("2d");
             GraphicsCanvas.TextGraphics = new GraphicsCanvas((CanvasRenderingContext2D)graphics);
 
@@ -930,7 +1122,9 @@ namespace EntryEngine.HTML5
             window.document.onmouseup = document_onmouseup;
             window.document.onmousewheel = document_onmousewheel;
 
-            //throw new NotImplementedException();
+            // 微信小游戏不支持创建图片，只能加载图片来设置PIXEL和PATCH的默认图
+            TextureJSGL.FromBase64("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAACXBIWXMAAAsSAAALEgHS3X78AAAADUlEQVQImWP4////fwAJ+wP9CNHoHgAAAABJRU5ErkJggg==", t => SetPIXEL(t));
+            TextureJSGL.FromBase64("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAgAAAAICAYAAADED76LAAAACXBIWXMAAAsSAAALEgHS3X78AAAAFklEQVQYlWP8////fwY8gAmf5PBRAAAbbgQMcSRW5wAAAABJRU5ErkJggg==", t => SetPATCH(t));
         }
         public override void Exit()
         {

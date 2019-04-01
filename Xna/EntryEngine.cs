@@ -9,6 +9,7 @@ using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using Rectangle = Microsoft.Xna.Framework.Rectangle;
+using System.IO;
 
 namespace EntryEngine.Xna
 {
@@ -25,6 +26,9 @@ namespace EntryEngine.Xna
 
         private ScreenshotData screenshot = new ScreenshotData();
         private Matrix spriteTransformMatrix;
+        private BasicEffect effect;
+        private bool current3D;
+        private bool endingBatchEnd = true;
 
         public SpriteBatch XnaBatch
         {
@@ -93,10 +97,12 @@ namespace EntryEngine.Xna
             Device.Viewport = v;
             Device.RenderState.ScissorTestEnable = true;
         }
-        protected override void InternalBegin(ref MATRIX2x3 matrix, ref RECT graphics, SHADER shader)
+        protected override void InternalBegin(bool threeD, ref MATRIX matrix, ref RECT graphics, SHADER shader)
         {
-            if (RenderTargetCount > 1)
-                XnaBatch.End();
+            //if (RenderTargetCount > 1)
+                BatchEnd(false);
+
+            this.endingBatchEnd = false;
 
             if (screenshot.OnBegin != null)
             {
@@ -105,10 +111,37 @@ namespace EntryEngine.Xna
             }
 
             spriteTransformMatrix = matrix.GetMatrix();
-            XnaBatch.Begin(SpriteBlendMode.AlphaBlend,
-                    SpriteSortMode.Immediate, SaveStateMode.SaveState,
+            current3D = threeD;
+
+            if (threeD)
+            {
+                if (effect == null)
+                {
+                    effect = new BasicEffect(XnaGate.Gate.GraphicsDevice, null);
+                    effect.VertexColorEnabled = true;
+                    effect.TextureEnabled = true;
+                    //effect.EnableDefaultLighting();
+                    //effect.LightingEnabled = true;
+                    //effect.PreferPerPixelLighting = true;
+                }
+                effect.View = spriteTransformMatrix;
+                effect.Begin();
+                foreach (var pass in effect.CurrentTechnique.Passes)
+                    pass.Begin();
+            }
+            else
+            {
+                XnaBatch.Begin(SpriteBlendMode.AlphaBlend,
+                    SpriteSortMode.Immediate, SaveStateMode.None,
                     spriteTransformMatrix);
-            XnaBatch.GraphicsDevice.RenderState.CullMode = CullMode.None;
+            }
+
+            var renderState = XnaBatch.GraphicsDevice.RenderState;
+
+            //renderState.CullMode = CullMode.CullCounterClockwiseFace;
+            renderState.CullMode = CullMode.None;
+            //renderState.DepthBufferEnable = true;
+            
             // Draw时设置SrouceRectangle超过Texture的宽高可以达到平铺
             SamplerStateCollection samplers = XnaBatch.GraphicsDevice.SamplerStates;
             samplers[0].AddressU = TextureAddressMode.Wrap;
@@ -123,8 +156,25 @@ namespace EntryEngine.Xna
         }
         protected override void Ending(GRAPHICS.RenderState render)
         {
-            if (RenderTargetCount <= 2)
-                XnaBatch.End();
+            BatchEnd(true);
+        }
+        private void BatchEnd(bool endingBatchEnd)
+        {
+            if (endingBatchEnd || !this.endingBatchEnd)
+            {
+                if (current3D)
+                {
+                    foreach (var pass in effect.CurrentTechnique.Passes)
+                        pass.End();
+                    effect.End();
+                }
+                else
+                {
+                    XnaBatch.End();
+                }
+            }
+
+            this.endingBatchEnd = endingBatchEnd;
         }
         //public override void BeginShader(IShader shader)
         //{
@@ -265,18 +315,27 @@ namespace EntryEngine.Xna
         //    else
         //        return (SpriteEffects)flip;
         //}
-        protected override void DrawPrimitivesBegin(TEXTURE texture)
+        protected override void DrawPrimitivesBegin(TEXTURE texture, EPrimitiveType ptype)
         {
             if (texture == null)
                 return;
             var t2d = texture.GetTexture();
-            Device.Textures[0] = t2d;
             Device.SetVertexShaderConstant(1, new Vector4((float)t2d.Width, (float)t2d.Height, 0f, 0f));
-            Device.SetVertexShaderConstant(2, spriteTransformMatrix);
+            if (current3D)
+            {
+                effect.Texture = t2d;
+            }
+            else
+            {
+                Device.Textures[0] = t2d;
+                Device.SetVertexShaderConstant(2, spriteTransformMatrix);
+            }
         }
-        protected override void DrawPrimitives(TextureVertex[] vertices, int offset, int count, short[] indexes, int indexOffset, int primitiveCount)
+        protected override void DrawPrimitives(EPrimitiveType ptype, TextureVertex[] vertices, int offset, int count, short[] indexes, int indexOffset, int primitiveCount)
         {
-            Device.DrawUserIndexedPrimitives(PrimitiveType.TriangleList, vertices, offset, count, indexes, indexOffset, primitiveCount);
+            PrimitiveType resultType = ptype == EPrimitiveType.Point ? PrimitiveType.PointList :
+                (ptype == EPrimitiveType.Line) ? PrimitiveType.LineList : PrimitiveType.TriangleList;
+            Device.DrawUserIndexedPrimitives(resultType, vertices, offset, count, indexes, indexOffset, primitiveCount);
         }
         //protected override void OutputVertex(ref TextureVertex output)
         //{
@@ -1083,7 +1142,7 @@ namespace EntryEngine.Xna
             captureEnd = false;
             builder.Clear();
         }
-		protected override void Copy(string copy)
+		public override void Copy(string copy)
 		{
 			System.Windows.Forms.Clipboard.SetText(copy);
 		}
@@ -1182,16 +1241,16 @@ namespace EntryEngine.Xna
             cacheP2.graphics.Clear(System.Drawing.Color.Transparent);
 			return new TextureXna(new Texture2D(XnaGate.Gate.GraphicsDevice, cacheP2.image.Width, cacheP2.image.Height));
 		}
-		protected override COLOR[] DrawChar(char c, ref RECT uv)
+        protected override void DrawChar(AsyncDrawDynamicChar async, char c, Buffer buffer)
 		{
             CacheInfo3 info = this.cacheP2;
 
 			System.Drawing.Rectangle source =
 				new System.Drawing.Rectangle(
-					(int)uv.X,
-					(int)uv.Y,
-					(int)uv.Width,
-					(int)uv.Height);
+                    buffer.X,
+					buffer.Y,
+                    buffer.W,
+                    buffer.H);
             info.graphics.DrawString(c.ToString(), info.font, brush, source, StringFormat.GenericTypographic);
 
             BitmapData data = info.image.LockBits(source, ImageLockMode.ReadOnly, info.image.PixelFormat);
@@ -1212,7 +1271,8 @@ namespace EntryEngine.Xna
                 int index = i * 4;
                 colors[i] = new COLOR(bytes[index], bytes[index + 1], bytes[index + 2], bytes[index + 3]);
             }
-            return colors;
+
+            async.SetData(colors);
 		}
 		protected override void InternalDispose()
 		{
@@ -1236,7 +1296,7 @@ namespace EntryEngine.Xna
         }
 	}
 
-    public class Logger : _LOG.Logger
+    public class LoggerConsole : _LOG.Logger
     {
         private const byte LOG = (byte)ELog.Debug;
         private byte last;
@@ -1247,7 +1307,7 @@ namespace EntryEngine.Xna
             private set;
         }
 
-        public Logger()
+        public LoggerConsole()
         {
             Colors = new ConsoleColor[]
             {
@@ -1272,12 +1332,38 @@ namespace EntryEngine.Xna
             Console.WriteLine("[{0}] {1}", record.Time.ToString("yyyy-MM-dd HH:mm:ss"), record.ToString());
         }
     }
+    //public class LoggerFile : _LOG.Logger
+    //{
+    //    const string NEW_LOG = "#LOG_new.txt";
+    //    const string OLD_LOG = "#LOG_old.txt";
+    //    public _LOG.Logger Base;
+    //    StreamWriter writer;
+    //    public LoggerFile() : this(_LOG._Logger) { }
+    //    public LoggerFile(_LOG.Logger baseLog)
+    //    {
+    //        Base = baseLog;
+    //        if (File.Exists(NEW_LOG))
+    //        {
+    //            File.Copy(NEW_LOG, OLD_LOG, true);
+    //        }
+    //        writer = File.CreateText(NEW_LOG);
+    //        writer.AutoFlush = true;
+    //    }
+    //    public override void Log(ref Record record)
+    //    {
+    //        if (Base != null)
+    //            Base.Log(ref record);
+    //        string format = string.Format("[{0}] {1}", record.Time.ToString("yyyy-MM-dd HH:mm:ss"), record.ToString());
+    //        writer.WriteLine(format);
+    //    }
+    //}
 
 	public class EntryXna : Entry
 	{
         protected override void Initialize(out AUDIO AUDIO, out ContentManager ContentManager, out FONT FONT, out GRAPHICS GRAPHICS, out INPUT INPUT, out _IO.iO iO, out IPlatform IPlatform, out TEXTURE TEXTURE)
         {
-            _LOG._Logger = new Logger();
+            _LOG._Logger = new LoggerConsole();
+            _LOG._Logger = new LoggerFile();
 
             XnaGate xna = XnaGate.Gate;
 

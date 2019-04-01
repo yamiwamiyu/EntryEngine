@@ -1,0 +1,1 @@
+..\EntryBuilder.exe BuildTranslate LANGUAGE.csv LANGUAGE∑≠“Î.xlsx ENG,JP
