@@ -126,10 +126,6 @@
     <Reference Include="Microsoft.Office.Interop.Excel, Version=14.0.0.0, Culture=neutral, PublicKeyToken=71e9bce111e9429c, processorArchitecture=MSIL">
       <EmbedInteropTypes>True</EmbedInteropTypes>
     </Reference>
-    <Reference Include="PhotoShop, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>bin\Debug\PhotoShop.dll</HintPath>
-    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Data" />
     <Reference Include="System.Drawing" />
@@ -153,6 +149,10 @@
     <ProjectReference Include="..\EntryEngine\EntryEngine.csproj">
       <Project>{424D14E4-1661-42E9-A192-B1C60D4669FF}</Project>
       <Name>EntryEngine</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\PhotoshopDll\PSD\PhotoShop.csproj">
+      <Project>{F72A4353-0557-44B0-9F7B-901A7200BA3D}</Project>
+      <Name>PhotoShop</Name>
     </ProjectReference>
     <ProjectReference Include="..\ReflectionHelper\ReflectionHelper.csproj">
       <Project>{D6E12A5C-CD9D-4671-9BD7-5D3E79CE3543}</Project>

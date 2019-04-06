@@ -9,5 +9,5 @@ copy ..\..\..\..\Xna\*.dll EntryEditor\
 copy ..\..\..\..\EntryEngine\bin\CLIENT\*.dll EntryEditor\
 
 move EntryEditor\fmodex.dll fmodex.dll
-..\EntryBuilder.exe BuildLinkShell EntryEditor\ 3.5 10 EntryEditor.exe "" "2019-12-31"
+..\EntryBuilder.exe BuildLinkShell EntryEditor\ 3.5 10 EntryEditor.exe "" ""
 del fmodex.dll
