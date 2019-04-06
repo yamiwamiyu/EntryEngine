@@ -75,6 +75,483 @@ namespace EntryBuilder
             }
         }
 
+        public enum EBlurType
+        {
+            Both,
+            HorizontalOnly,
+            VerticalOnly,
+        }
+        public class GaussianBlur
+        {
+            private int _radius = 1;
+            private int[] _kernel;
+            private int _kernelSum;
+            private float _kernelSumD;
+            private int[,] _multable;
+            private EBlurType _blurType;
+
+            public int Radius
+            {
+                get { return _radius; }
+                set
+                {
+                    if (value < 1)
+                    {
+                        throw new InvalidOperationException("Radius must be greater then 0");
+                    }
+                    _radius = value;
+
+                }
+            }
+            public EBlurType BlurType
+            {
+                get { return _blurType; }
+                set
+                {
+                    _blurType = value;
+                }
+            }
+
+            public GaussianBlur()
+            {
+                PreCalculateSomeStuff();
+            }
+            public GaussianBlur(int radius)
+            {
+                _radius = radius;
+                PreCalculateSomeStuff();
+            }
+            private void PreCalculateSomeStuff()
+            {
+                int sz = _radius * 2 + 1;
+                _kernel = new int[sz];
+                _multable = new int[sz, 256];
+                for (int i = 1; i <= _radius; i++)
+                {
+                    int szi = _radius - i;
+                    int szj = _radius + i;
+                    _kernel[szj] = _kernel[szi] = (szi + 1) * (szi + 1);
+                    _kernelSum += (_kernel[szj] + _kernel[szi]);
+                    for (int j = 0; j < 256; j++)
+                    {
+                        _multable[szj, j] = _multable[szi, j] = _kernel[szj] * j;
+                    }
+                }
+                _kernel[_radius] = (_radius + 1) * (_radius + 1);
+                _kernelSum += _kernel[_radius];
+                _kernelSumD = 1f / _kernelSum;
+                for (int j = 0; j < 256; j++)
+                {
+                    _multable[_radius, j] = _kernel[_radius] * j;
+                }
+            }
+            public Bitmap ProcessImage(Image inputImage)
+            {
+                Bitmap origin = new Bitmap(inputImage);
+                Bitmap blurred = new Bitmap(inputImage.Width, inputImage.Height);
+
+                int width = inputImage.Width;
+                int height = inputImage.Height;
+                using (RawBitmap src = new RawBitmap(origin))
+                {
+                    using (RawBitmap dest = new RawBitmap(blurred))
+                    {
+                        int pixelCount = width * height;
+
+                        int[] b = new int[pixelCount];
+                        int[] g = new int[pixelCount];
+                        int[] r = new int[pixelCount];
+
+                        int[] b2 = new int[pixelCount];
+                        int[] g2 = new int[pixelCount];
+                        int[] r2 = new int[pixelCount];
+
+                        int offset = src.GetOffset();
+                        int index = 0;
+                        unsafe
+                        {
+                            // 获取原始RGB到数组
+                            byte* ptr = src.Begin;
+                            for (int i = 0; i < height; i++)
+                            {
+                                for (int j = 0; j < width; j++)
+                                {
+                                    b[index] = *ptr;
+                                    ptr++;
+                                    g[index] = *ptr;
+                                    ptr++;
+                                    r[index] = *ptr;
+                                    ptr++;
+
+                                    ++index;
+                                }
+                                ptr += offset;
+                            }
+
+                            int bsum;
+                            int gsum;
+                            int rsum;
+                            int read;
+                            int start = 0;
+                            index = 0;
+
+                            #region 横向高斯模糊
+                            if (_blurType != EBlurType.VerticalOnly)
+                            {
+                                for (int i = 0; i < height; i++)
+                                {
+                                    for (int j = 0; j < width; j++)
+                                    {
+                                        bsum = gsum = rsum = 0;
+                                        read = index - _radius;
+
+                                        for (int z = 0; z < _kernel.Length; z++)
+                                        {
+                                            if (read < start)
+                                            {
+                                                // 左边界
+                                                bsum += _multable[z, b[start]];
+                                                gsum += _multable[z, g[start]];
+                                                rsum += _multable[z, r[start]];
+                                            }
+                                            else if (read > start + width - 1)
+                                            {
+                                                // 右边界
+                                                int idx = start + width - 1;
+                                                bsum += _multable[z, b[idx]];
+                                                gsum += _multable[z, g[idx]];
+                                                rsum += _multable[z, r[idx]];
+                                            }
+                                            else
+                                            {
+                                                bsum += _multable[z, b[read]];
+                                                gsum += _multable[z, g[read]];
+                                                rsum += _multable[z, r[read]];
+                                            }
+                                            ++read;
+                                        }
+
+                                        b2[index] = (int)(bsum * _kernelSumD);
+                                        g2[index] = (int)(gsum * _kernelSumD);
+                                        r2[index] = (int)(rsum * _kernelSumD);
+
+                                        // 将经过高斯模糊的结果赋值到目标图像
+                                        if (_blurType == EBlurType.HorizontalOnly)
+                                        {
+                                            byte* pcell = dest[j, i];
+                                            //*pcell = (byte)(bsum / _kernelSum);
+                                            //pcell++;
+                                            //*pcell = (byte)(gsum / _kernelSum);
+                                            //pcell++;
+                                            //*pcell = (byte)(rsum / _kernelSum);
+                                            //pcell++;
+                                            pcell[0] = (byte)(bsum * _kernelSumD);
+                                            pcell[1] = (byte)(gsum * _kernelSumD);
+                                            pcell[2] = (byte)(rsum * _kernelSumD);
+                                        }
+
+                                        ++index;
+                                    }
+                                    start += width;
+                                }
+                            }
+                            #endregion
+                            if (_blurType == EBlurType.HorizontalOnly)
+                            {
+                                return blurred;
+                            }
+
+                            #region 纵向高斯模糊
+                            int tempy;
+                            // 原始RGB || 已经经过横向高斯模糊的RGB 上进行纵向高斯模糊
+                            int[] targetR;
+                            int[] targetG;
+                            int[] targetB;
+                            if (_blurType == Program.EBlurType.VerticalOnly)
+                            {
+                                targetR = r;
+                                targetG = g;
+                                targetB = b;
+                            }
+                            else
+                            {
+                                targetR = r2;
+                                targetG = g2;
+                                targetB = b2;
+                            }
+                            for (int i = 0; i < height; i++)
+                            {
+                                int y = i - _radius;
+                                start = y * width;
+                                for (int j = 0; j < width; j++)
+                                {
+                                    bsum = gsum = rsum = 0;
+                                    read = start + j;
+                                    tempy = y;
+                                    for (int z = 0; z < _kernel.Length; z++)
+                                    {
+                                        if (tempy < 0)
+                                        {
+                                            bsum += _multable[z, targetB[j]];
+                                            gsum += _multable[z, targetG[j]];
+                                            rsum += _multable[z, targetR[j]];
+                                        }
+                                        else if (tempy > height - 1)
+                                        {
+                                            int idx = pixelCount - (width - j);
+                                            bsum += _multable[z, targetB[idx]];
+                                            gsum += _multable[z, targetG[idx]];
+                                            rsum += _multable[z, targetR[idx]];
+                                        }
+                                        else
+                                        {
+                                            bsum += _multable[z, targetB[read]];
+                                            gsum += _multable[z, targetG[read]];
+                                            rsum += _multable[z, targetR[read]];
+                                        }
+
+                                        read += width;
+                                        ++tempy;
+                                    }
+
+                                    byte* pcell = dest[j, i];
+
+                                    //pcell[0] = (byte)(bsum / _kernelSum);
+                                    //pcell[1] = (byte)(gsum / _kernelSum);
+                                    //pcell[2] = (byte)(rsum / _kernelSum);
+                                    pcell[0] = (byte)(bsum * _kernelSumD);
+                                    pcell[1] = (byte)(gsum * _kernelSumD);
+                                    pcell[2] = (byte)(rsum * _kernelSumD);
+                                }
+                            }
+                            #endregion
+                        }
+                    }
+                }
+
+                return blurred;
+            }
+            public Bitmap ProcessImageReverse(Image inputImage)
+            {
+                Bitmap origin = new Bitmap(inputImage);
+                Bitmap blurred = new Bitmap(inputImage.Width, inputImage.Height);
+
+                int width = inputImage.Width;
+                int height = inputImage.Height;
+                using (RawBitmap src = new RawBitmap(origin))
+                {
+                    using (RawBitmap dest = new RawBitmap(blurred))
+                    {
+                        int pixelCount = width * height;
+
+                        int[] b = new int[pixelCount];
+                        int[] g = new int[pixelCount];
+                        int[] r = new int[pixelCount];
+
+                        int[] b2 = new int[pixelCount];
+                        int[] g2 = new int[pixelCount];
+                        int[] r2 = new int[pixelCount];
+
+                        int offset = src.GetOffset();
+                        int index = 0;
+                        unsafe
+                        {
+                            // 获取原始RGB到数组
+                            byte* ptr = src.Begin;
+                            for (int i = 0; i < height; i++)
+                            {
+                                for (int j = 0; j < width; j++)
+                                {
+                                    b[index] = *ptr;
+                                    ptr++;
+                                    g[index] = *ptr;
+                                    ptr++;
+                                    r[index] = *ptr;
+                                    ptr++;
+
+                                    ++index;
+                                }
+                                ptr += offset;
+                            }
+
+                            int bsum;
+                            int gsum;
+                            int rsum;
+                            int read;
+                            int start = 0;
+                            index = 0;
+
+                            #region 横向高斯模糊
+                            if (_blurType != EBlurType.VerticalOnly)
+                            {
+                                for (int i = 0; i < height; i++)
+                                {
+                                    for (int j = 0; j < width; j++)
+                                    {
+                                        bsum = gsum = rsum = 0;
+                                        read = index - _radius;
+
+                                        for (int z = 0; z < _kernel.Length; z++)
+                                        {
+                                            if (read < start)
+                                            {
+                                                // 左边界
+                                                bsum += _multable[z, b[start]];
+                                                gsum += _multable[z, g[start]];
+                                                rsum += _multable[z, r[start]];
+                                            }
+                                            else if (read > start + width - 1)
+                                            {
+                                                // 右边界
+                                                int idx = start + width - 1;
+                                                bsum += _multable[z, b[idx]];
+                                                gsum += _multable[z, g[idx]];
+                                                rsum += _multable[z, r[idx]];
+                                            }
+                                            else
+                                            {
+                                                bsum += _multable[z, b[read]];
+                                                gsum += _multable[z, g[read]];
+                                                rsum += _multable[z, r[read]];
+                                            }
+                                            ++read;
+                                        }
+
+                                        b2[index] = (int)(bsum * _kernelSumD);
+                                        g2[index] = (int)(gsum * _kernelSumD);
+                                        r2[index] = (int)(rsum * _kernelSumD);
+
+                                        // 将经过高斯模糊的结果赋值到目标图像
+                                        if (_blurType == EBlurType.HorizontalOnly)
+                                        {
+                                            byte* pcell = dest[j, i];
+                                            //*pcell = (byte)(bsum / _kernelSum);
+                                            //pcell++;
+                                            //*pcell = (byte)(gsum / _kernelSum);
+                                            //pcell++;
+                                            //*pcell = (byte)(rsum / _kernelSum);
+                                            //pcell++;
+                                            pcell[0] = (byte)(bsum * _kernelSumD);
+                                            pcell[1] = (byte)(gsum * _kernelSumD);
+                                            pcell[2] = (byte)(rsum * _kernelSumD);
+                                        }
+
+                                        ++index;
+                                    }
+                                    start += width;
+                                }
+                            }
+                            #endregion
+                            if (_blurType == EBlurType.HorizontalOnly)
+                            {
+                                return blurred;
+                            }
+
+                            #region 纵向高斯模糊
+                            int tempy;
+                            // 原始RGB || 已经经过横向高斯模糊的RGB 上进行纵向高斯模糊
+                            int[] targetR;
+                            int[] targetG;
+                            int[] targetB;
+                            if (_blurType == Program.EBlurType.VerticalOnly)
+                            {
+                                targetR = r;
+                                targetG = g;
+                                targetB = b;
+                            }
+                            else
+                            {
+                                targetR = r2;
+                                targetG = g2;
+                                targetB = b2;
+                            }
+                            for (int i = 0; i < height; i++)
+                            {
+                                int y = i - _radius;
+                                start = y * width;
+                                for (int j = 0; j < width; j++)
+                                {
+                                    bsum = gsum = rsum = 0;
+                                    read = start + j;
+                                    tempy = y;
+                                    for (int z = 0; z < _kernel.Length; z++)
+                                    {
+                                        if (tempy < 0)
+                                        {
+                                            bsum += _multable[z, targetB[j]];
+                                            gsum += _multable[z, targetG[j]];
+                                            rsum += _multable[z, targetR[j]];
+                                        }
+                                        else if (tempy > height - 1)
+                                        {
+                                            int idx = pixelCount - (width - j);
+                                            bsum += _multable[z, targetB[idx]];
+                                            gsum += _multable[z, targetG[idx]];
+                                            rsum += _multable[z, targetR[idx]];
+                                        }
+                                        else
+                                        {
+                                            bsum += _multable[z, targetB[read]];
+                                            gsum += _multable[z, targetG[read]];
+                                            rsum += _multable[z, targetR[read]];
+                                        }
+
+                                        read += width;
+                                        ++tempy;
+                                    }
+
+                                    byte* pcell = dest[j, i];
+
+                                    //pcell[0] = (byte)(bsum / _kernelSum);
+                                    //pcell[1] = (byte)(gsum / _kernelSum);
+                                    //pcell[2] = (byte)(rsum / _kernelSum);
+                                    pcell[0] = (byte)(bsum * _kernelSumD);
+                                    pcell[1] = (byte)(gsum * _kernelSumD);
+                                    pcell[2] = (byte)(rsum * _kernelSumD);
+                                }
+                            }
+                            #endregion
+                        }
+                    }
+                }
+
+                return blurred;
+            }
+        }
+        public unsafe class RawBitmap : IDisposable
+        {
+            private Bitmap _originBitmap;
+            private BitmapData _bitmapData;
+            private byte* _begin;
+
+            public RawBitmap(Bitmap originBitmap)
+            {
+                _originBitmap = originBitmap;
+                _bitmapData = _originBitmap.LockBits(new Rectangle(0, 0, _originBitmap.Width, _originBitmap.Height), ImageLockMode.ReadWrite, PixelFormat.Format24bppRgb);
+                _begin = (byte*)(void*)_bitmapData.Scan0;
+            }
+
+            public unsafe byte* Begin
+            {
+                get { return _begin; }
+            }
+            public unsafe byte* this[int x, int y]
+            {
+                get
+                {
+                    return _begin + y * (_bitmapData.Stride) + x * 3;
+                }
+            }
+            public int GetOffset()
+            {
+                return _bitmapData.Stride - _bitmapData.Width * 3;
+            }
+            public void Dispose()
+            {
+                _originBitmap.UnlockBits(_bitmapData);
+            }
+        }
+
         [STAThread]
 		static void Main(string[] args)
         {
@@ -88,6 +565,14 @@ namespace EntryBuilder
             //return;
 
             _LOG._Logger = new Logger();
+            //using (Bitmap bitmap = new Bitmap("Test.png"))
+            //{
+            //    GaussianBlur gauss = new GaussianBlur(15);
+            //    gauss.BlurType = EBlurType.Both;
+            //    Bitmap gaussImage = gauss.ProcessImage(bitmap);
+            //    gaussImage.Save("Test1.png");
+            //}
+            //return;
 
             //BuildDll(@"..\..\..\Xna\", "Output\\Dummy\\Xna.dll", "3.5", "", true, "");
 
@@ -112,54 +597,54 @@ namespace EntryBuilder
 
             #region Test Code Analysis
 
-            //TestResolve[] testResolves = new TestResolve[]
-            //{
-            //    new TestResolve(".net", "CLIENT;SERVER", Directory.GetFiles(@"..\..\..\CSharp\.net\", "*.cs", SearchOption.AllDirectories)
-            //        .Concat(Directory.GetFiles(@"..\..\..\JavaScript\", "*.cs", SearchOption.TopDirectoryOnly)).ToArray()),
-            //    new TestResolve("EntryEngine", "CLIENT;HTML5", Directory.GetFiles(@"..\..\..\EntryEngine\", "*.cs", SearchOption.AllDirectories)),
-            //    new TestResolve("HTML5", "", Directory.GetFiles(@"..\..\..\HTML5\", "*.cs", SearchOption.AllDirectories)),
-            //    //new TestResolve("Chamber", "", Directory.GetFiles(@"D:\Project\ChamberH5\Code\Client\", "*.cs", SearchOption.AllDirectories)),
-            //    //new TestResolve("Entry", "HTML5", Directory.GetFiles(@"D:\Project\ChamberH5\Code\Chamber\", "*.cs", SearchOption.AllDirectories)),
-            //    new TestResolve("Project", "", Directory.GetFiles(@"D:\Project\TestWebgl\Code\Client\Client\", "*.cs", SearchOption.AllDirectories)),
-            //    new TestResolve("Entry", "HTML5", Directory.GetFiles(@"D:\Project\TestWebgl\Code\Client\PCRun", "*.cs", SearchOption.AllDirectories)),
-            //};
+            TestResolve[] testResolves = new TestResolve[]
+            {
+                new TestResolve(".net", "CLIENT;SERVER", Directory.GetFiles(@"..\..\..\CSharp\.net\", "*.cs", SearchOption.AllDirectories)
+                    .Concat(Directory.GetFiles(@"..\..\..\JavaScript\", "*.cs", SearchOption.TopDirectoryOnly)).ToArray()),
+                new TestResolve("EntryEngine", "CLIENT;HTML5", Directory.GetFiles(@"..\..\..\EntryEngine\", "*.cs", SearchOption.AllDirectories)),
+                new TestResolve("HTML5", "", Directory.GetFiles(@"..\..\..\HTML5\", "*.cs", SearchOption.AllDirectories)),
+                new TestResolve("Chamber", "", Directory.GetFiles(@"C:\Users\Administrator\Desktop\ChamberH5\Code\Client\", "*.cs", SearchOption.AllDirectories)),
+                new TestResolve("Entry", "HTML5", Directory.GetFiles(@"C:\Users\Administrator\Desktop\ChamberH5\Code\Chamber\", "*.cs", SearchOption.AllDirectories)),
+                //new TestResolve("Project", "", Directory.GetFiles(@"D:\Project\TestWebgl\Code\Client\Client\", "*.cs", SearchOption.AllDirectories)),
+                //new TestResolve("Entry", "HTML5", Directory.GetFiles(@"D:\Project\TestWebgl\Code\Client\PCRun", "*.cs", SearchOption.AllDirectories)),
+            };
 
-            //Stopwatch watch = Stopwatch.StartNew();
-            //List<DefineFile> defines = new List<DefineFile>();
-            //foreach (var item in testResolves)
-            //{
-            //    Project project = new Project();
-            //    project.AddSymbols(item.Symbols);
-            //    project.ParseFromFile(item.Files);
-            //    Console.WriteLine("Parse [{0}]: {1}", item.Name, watch.ElapsedMilliseconds.ToString());
-            //    Refactor.Resolve(project, true);
-            //    Console.WriteLine("Resolve [{0}]: {1}", item.Name, watch.ElapsedMilliseconds.ToString());
-            //    defines.AddRange(project.Files);
-            //}
-            //Refactor.Optimize();
+            Stopwatch watch = Stopwatch.StartNew();
+            List<DefineFile> defines = new List<DefineFile>();
+            foreach (var item in testResolves)
+            {
+                Project project = new Project();
+                project.AddSymbols(item.Symbols);
+                project.ParseFromFile(item.Files);
+                Console.WriteLine("Parse [{0}]: {1}", item.Name, watch.ElapsedMilliseconds.ToString());
+                Refactor.Resolve(project, true);
+                Console.WriteLine("Resolve [{0}]: {1}", item.Name, watch.ElapsedMilliseconds.ToString());
+                defines.AddRange(project.Files);
+            }
+            Refactor.Optimize();
 
-            //string code = Refactor.RebuildCode(ECodeLanguage.JavaScript, defines.ToArray());
-            //string code2 = _RH.Indent(code);
-            //StringBuilder builder = new StringBuilder();
-            //builder.AppendLine("<head><meta charset=\"utf-8\"></head>");
-            //builder.AppendLine("<body>");
-            ////builder.AppendLine("<canvas id=\"WEBGL\"></canvas>");
-            ////builder.AppendLine("<canvas id=\"CANVAS\"></canvas>");
-            //builder.AppendLine("</body>");
-            //builder.AppendLine("<script>");
-            //builder.AppendLine(code2);
-            //builder.AppendLine("console.log(\"LOAD COMPLETED\");");
-            //builder.AppendLine("console.log(\"RUNNING\");");
-            //builder.AppendLine("Program.Main(null);");
-            //builder.AppendLine("console.log(\"EXITED\");");
-            //builder.AppendLine("</script>");
-            //watch.Stop();
-            ////File.WriteAllText(@"D:\Project\ChamberH5\PublishH5\test.html", builder.ToString());
+            string code = Refactor.RebuildCode(ECodeLanguage.JavaScript, defines.ToArray());
+            string code2 = _RH.Indent(code);
+            StringBuilder builder = new StringBuilder();
+            builder.AppendLine("<head><meta charset=\"utf-8\"></head>");
+            builder.AppendLine("<body>");
+            //builder.AppendLine("<canvas id=\"WEBGL\"></canvas>");
+            //builder.AppendLine("<canvas id=\"CANVAS\"></canvas>");
+            builder.AppendLine("</body>");
+            builder.AppendLine("<script>");
+            builder.AppendLine(code2);
+            builder.AppendLine("console.log(\"LOAD COMPLETED\");");
+            builder.AppendLine("console.log(\"RUNNING\");");
+            builder.AppendLine("Program.Main(null);");
+            builder.AppendLine("console.log(\"EXITED\");");
+            builder.AppendLine("</script>");
+            watch.Stop();
+            File.WriteAllText(@"C:\Users\Administrator\Desktop\ChamberH5\PublishH5\test.html", builder.ToString());
             //File.WriteAllText(@"D:\Project\TestWebgl\Publish\Webgl\test.html", builder.ToString());
-            //Console.WriteLine("Write code: {0}", watch.ElapsedMilliseconds.ToString());
-            //Console.ReadKey();
+            Console.WriteLine("Write code: {0}", watch.ElapsedMilliseconds.ToString());
+            Console.ReadKey();
 
-            //return;
+            return;
             #endregion
 
 			Methods = typeof(Program).GetMethods(BindingFlags.Static | BindingFlags.Public);

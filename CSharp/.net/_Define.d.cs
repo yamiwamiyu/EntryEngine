@@ -44,11 +44,12 @@ namespace __System
     {
         return new Enumerator(this);
     }
-    public new T this[int index]
-    {
-        get { return this[index]; }
-        set { this[index] = value; }
-    }
+    //public new T this[int index]
+    //{
+    //    get { return this[index]; }
+    //    set { this[index] = value; }
+    //}
+    public extern T this[int index] { get; set; }
     public new void RemoveAt(int index)
     {
         throw new NotImplementedException();

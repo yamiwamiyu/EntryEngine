@@ -6339,7 +6339,12 @@ namespace EntryBuilder.CodeAnalysis.Refactoring
         }
         bool IsJSArray(CSharpMember member)
         {
-            return member.ContainingType.Name.Name.EndsWith("ClampedArray") || (member.ContainingType.Name.Name == "ArrayBuffer" || (member.ContainingType.BaseClass != null && member.ContainingType.BaseClass.Name.Name == "ArrayBuffer"));
+            return member.IsIndexer && member.IsExtern;
+            //return member.ContainingType.Name.Name.EndsWith("ClampedArray") 
+            //    || (member.ContainingType.Name.Name == "ArrayBuffer" 
+            //    || (member.ContainingType.BaseClass != null 
+            //        && (member.ContainingType.BaseClass.Name.Name == "ArrayBuffer"
+            //            || member.ContainingType.BaseClass.Name.Name == "Array")));
         }
 
         // BUG todo

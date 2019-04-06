@@ -71,6 +71,7 @@ public class Number
 public class Array
 {
     public int length;
+    public extern object this[int index] { get; set; }
     public Array() { }
     public Array(int size) { }
     public Array(params object[] args) { }
@@ -81,6 +82,7 @@ public class Array
 public class Array_
 {
     public int length;
+    public extern object this[int index] { get; set; }
 }
 public class Error
 {
@@ -93,6 +95,28 @@ public static class console
 }
 public static class window
 {
+    public class TouchList
+    {
+        public int length;
+        public extern object this[int index] { get; set; }
+    }
+    public class TouchEvent
+    {
+        public TouchList touches;
+    }
+    public class TouchData
+    {
+        public float clientX;
+        public float clientY;
+        public int identifier;
+        public float pageX;
+        public float pageY;
+        public float radiusX;
+        public float radiusY;
+        public float rotationAngle;
+        public int screenX;
+        public int screenY;
+    }
     public class MouseEvent
     {
         public int x;
@@ -116,9 +140,9 @@ public static class window
         public Action<MouseEvent> onmousedown;
         public Action<MouseEvent> onmousemove;
         public Action<MouseEvent> onmouseup;
-        //public static Action<TouchEvent> ontouchstart;
-        //public static Action<TouchEvent> ontouchmove;
-        //public static Action<TouchEvent> ontouchend;
+        public Action<TouchEvent> ontouchstart;
+        public Action<TouchEvent> ontouchmove;
+        public Action<TouchEvent> ontouchend;
         public Action<KeyboardEvent> onkeydown;
         public Action<KeyboardEvent> onkeyup;
         public Action onload;
@@ -192,6 +216,7 @@ public abstract class URL
 public class Image
 {
     public string src;
+    public string crossOrigin;
     public Action onload;
     public int width;
     public int height;
@@ -870,7 +895,7 @@ public class Float32Array : ArrayBuffer
 }
 public class Uint16Array : ArrayBuffer
 {
-    public ushort this[int index] { get { return 0; } set { } }
+    public extern ushort this[int index] { get; set; }
     public Uint16Array(int length) { }
     public Uint16Array(short[] array) { }
     public Uint16Array(ushort[] array) { }

@@ -345,6 +345,43 @@ namespace EntryEngine.HTML5
             }
         }
     }
+    public class TouchStateJS : ITouchState
+    {
+        private VECTOR2 position;
+        private float radius;
+        public float Pressure
+        {
+            get { return radius; }
+        }
+        public VECTOR2 Position
+        {
+            get { return position; }
+            set { position = value; }
+        }
+        public TouchStateJS(window.TouchData touch)
+        {
+            position.X = touch.clientX;
+            position.Y = touch.clientY;
+            radius = touch.radiusX * touch.radiusX + touch.radiusY * touch.radiusY;
+        }
+        public bool IsClick(int key)
+        {
+            return true;
+        }
+    }
+    public class TouchJS : TOUCH
+    {
+        internal static window.TouchEvent TouchEvent;
+        protected override int GetTouches(ITouchState[] states)
+        {
+            if (TouchEvent == null) return 0;
+
+            int current = _MATH.Min(TouchEvent.touches.length, states.Length);
+            for (int i = 0; i < current; i++)
+                states[i] = new TouchStateJS((window.TouchData)TouchEvent.touches[i]);
+            return current;
+        }
+    }
 
     public abstract class TextureJS : TEXTURE
     {
@@ -472,6 +509,7 @@ namespace EntryEngine.HTML5
             TextureJSGL result = new TextureJSGL();
 
             Image img = new Image();
+            img.crossOrigin = "";
             img.onload = () =>
             {
                 var texture = GraphicsWebGL.CreateGLTexture(img);
@@ -486,6 +524,7 @@ namespace EntryEngine.HTML5
         protected override void LoadAsync(AsyncLoadContent async)
         {
             Image img = new Image();
+            img.crossOrigin = "";
             img.onload = () =>
             {
                 async.SetData(GraphicsWebGL.CreateTexture(img));
@@ -791,12 +830,16 @@ namespace EntryEngine.HTML5
 
             verticesBuffer = context.createBuffer();
             context.bindBuffer(context.ARRAY_BUFFER, verticesBuffer);
+            // 在手机浏览器中，这个索引的顺序是021，所以一定要用getAttribLocation获得的索引
+            int vpos = context.getAttribLocation(shaderProgram, "vpos");
+            int vcolor = context.getAttribLocation(shaderProgram, "vcolor");
+            int vcoord = context.getAttribLocation(shaderProgram, "vcoord");
             // 0-3个float是坐标
-            context.vertexAttribPointer(0, 3, context.FLOAT, false, 36, 0);
+            context.vertexAttribPointer(vpos, 3, context.FLOAT, false, 36, 0);
             // 3-7个float是颜色
-            context.vertexAttribPointer(1, 4, context.FLOAT, false, 36, 12);
+            context.vertexAttribPointer(vcolor, 4, context.FLOAT, false, 36, 12);
             // 7-9个float是uv
-            context.vertexAttribPointer(2, 2, context.FLOAT, false, 36, 28);            
+            context.vertexAttribPointer(vcoord, 2, context.FLOAT, false, 36, 28);            
         }
         protected override void SetViewport(MATRIX2x3 view, RECT viewport)
         {
@@ -1038,6 +1081,12 @@ namespace EntryEngine.HTML5
         {
             get
             {
+                if (window.navigator.appVersion.Contains("Android")
+                    || window.navigator.appVersion.Contains("iP")
+                    || window.navigator.appVersion.Contains("Phone"))
+                {
+                    return EPlatform.Mobile;
+                }
                 string pname = window.navigator.platform;
                 if (pname.StartsWith("Win") ||
                     pname.StartsWith("Mac") ||
@@ -1082,10 +1131,19 @@ namespace EntryEngine.HTML5
                 INPUT = new INPUT(new MouseJS());
                 //INPUT.Keyboard = new KeyboardXna();
                 //INPUT.InputDevice = new InputTextXna();
+
+                window.document.onmousedown = document_onmousedown;
+                window.document.onmousemove = document_onmousemove;
+                window.document.onmouseup = document_onmouseup;
+                window.document.onmousewheel = document_onmousewheel;
             }
             else
             {
-                INPUT = new INPUT(new MouseJS());
+                INPUT = new INPUT(new TouchJS());
+
+                window.document.ontouchstart = document_ontouchstart;
+                window.document.ontouchmove = document_ontouchmove;
+                window.document.ontouchend = document_ontouchend;
             }
 
             AUDIO = null;
@@ -1117,11 +1175,6 @@ namespace EntryEngine.HTML5
 
             ContentManager = NewContentManager();
 
-            window.document.onmousedown = document_onmousedown;
-            window.document.onmousemove = document_onmousemove;
-            window.document.onmouseup = document_onmouseup;
-            window.document.onmousewheel = document_onmousewheel;
-
             // 微信小游戏不支持创建图片，只能加载图片来设置PIXEL和PATCH的默认图
             TextureJSGL.FromBase64("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAACXBIWXMAAAsSAAALEgHS3X78AAAADUlEQVQImWP4////fwAJ+wP9CNHoHgAAAABJRU5ErkJggg==", t => SetPIXEL(t));
             TextureJSGL.FromBase64("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAgAAAAICAYAAADED76LAAAACXBIWXMAAAsSAAALEgHS3X78AAAAFklEQVQYlWP8////fwY8gAmf5PBRAAAbbgQMcSRW5wAAAABJRU5ErkJggg==", t => SetPATCH(t));
@@ -1152,6 +1205,19 @@ namespace EntryEngine.HTML5
         void document_onmousewheel(window.WheelEvent obj)
         {
             MouseJS.state.scrollWheelValue = -obj.wheelDelta / 120;
+        }
+
+        void document_ontouchstart(window.TouchEvent touch)
+        {
+            TouchJS.TouchEvent = touch;
+        }
+        void document_ontouchmove(window.TouchEvent touch)
+        {
+            TouchJS.TouchEvent = touch;
+        }
+        void document_ontouchend(window.TouchEvent touch)
+        {
+            TouchJS.TouchEvent = null;
         }
 
         protected override _IO.iO InternalNewiO(string root)
