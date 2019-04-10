@@ -1,6 +1,4 @@
-﻿#if SERVER
-
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Data;
 using System.IO;
@@ -11,6 +9,7 @@ using EntryEngine.Serialize;
 
 namespace EntryEngine.Network
 {
+#if SERVER
     public static partial class _DATABASE
     {
         public abstract class Database : IDisposable
@@ -620,84 +619,6 @@ namespace EntryEngine.Network
         public bool IsIdentity { get { return EXTRA == "auto_increment"; } }
     }
 
-    public enum EIndex : byte
-    {
-        /// <summary>
-        /// 索引：用于查询
-        /// </summary>
-        Index,
-        /// <summary>
-        /// 主键：添加时要测重
-        /// <para>多主键时，每个主键生成Group</para>
-        /// <para>所有主键生成一个复合主键类型，由此类型生成</para>
-        /// </summary>
-        Primary,
-        /// <summary>
-        /// 自增：视为主键
-        /// </summary>
-        Identity,
-        /// <summary>
-        /// 分组：例如同一个玩家的操作记录
-        /// </summary>
-        Group,
-    }
-    [AttributeUsage(AttributeTargets.Field)]
-    public class IndexAttribute : Attribute
-    {
-        public EIndex Index
-        {
-            get;
-            private set;
-        }
-
-        public IndexAttribute()
-        {
-        }
-        public IndexAttribute(EIndex index)
-        {
-            this.Index = index;
-        }
-    }
-    [AttributeUsage(AttributeTargets.Field)]
-    public class ForeignAttribute : Attribute
-    {
-        public Type ForeignTable
-        {
-            get;
-            private set;
-        }
-        public string ForeignField
-        {
-            get;
-            private set;
-        }
-
-        public ForeignAttribute(Type type, string field)
-        {
-            this.ForeignTable = type;
-            this.ForeignField = field;
-        }
-        public ForeignAttribute(Type type)
-        {
-            this.ForeignTable = type;
-        }
-    }
-    /// <summary>数据库不生成标记此特性的字段</summary>
-    [AttributeUsage(AttributeTargets.Field)]
-    [Code(ECode.ToBeContinue)]
-    public class IgnoreAttribute : Attribute { }
-    [AttributeUsage(AttributeTargets.Class | AttributeTargets.Struct)]
-    public class MemoryTableAttribute : Attribute
-    {
-        public bool TempTable { get; private set; }
-        public MemoryTableAttribute()
-        {
-        }
-        public MemoryTableAttribute(bool temp)
-        {
-            TempTable = temp;
-        }
-    }
     public class MergeDatabase
     {
         public string ConnectionStringWithDB;
@@ -790,6 +711,84 @@ namespace EntryEngine.Network
             });
         }
     }
-}
-
 #endif
+
+    public enum EIndex : byte
+    {
+        /// <summary>
+        /// 索引：用于查询
+        /// </summary>
+        Index,
+        /// <summary>
+        /// 主键：添加时要测重
+        /// <para>多主键时，每个主键生成Group</para>
+        /// <para>所有主键生成一个复合主键类型，由此类型生成</para>
+        /// </summary>
+        Primary,
+        /// <summary>
+        /// 自增：视为主键
+        /// </summary>
+        Identity,
+        /// <summary>
+        /// 分组：例如同一个玩家的操作记录
+        /// </summary>
+        Group,
+    }
+    [AttributeUsage(AttributeTargets.Field)]
+    public class IndexAttribute : Attribute
+    {
+        public EIndex Index
+        {
+            get;
+            private set;
+        }
+
+        public IndexAttribute()
+        {
+        }
+        public IndexAttribute(EIndex index)
+        {
+            this.Index = index;
+        }
+    }
+    [AttributeUsage(AttributeTargets.Field)]
+    public class ForeignAttribute : Attribute
+    {
+        public Type ForeignTable
+        {
+            get;
+            private set;
+        }
+        public string ForeignField
+        {
+            get;
+            private set;
+        }
+
+        public ForeignAttribute(Type type, string field)
+        {
+            this.ForeignTable = type;
+            this.ForeignField = field;
+        }
+        public ForeignAttribute(Type type)
+        {
+            this.ForeignTable = type;
+        }
+    }
+    /// <summary>数据库不生成标记此特性的字段</summary>
+    [AttributeUsage(AttributeTargets.Field)]
+    [Code(ECode.ToBeContinue)]
+    public class IgnoreAttribute : Attribute { }
+    [AttributeUsage(AttributeTargets.Class | AttributeTargets.Struct)]
+    public class MemoryTableAttribute : Attribute
+    {
+        public bool TempTable { get; private set; }
+        public MemoryTableAttribute()
+        {
+        }
+        public MemoryTableAttribute(bool temp)
+        {
+            TempTable = temp;
+        }
+    }
+}

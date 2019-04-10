@@ -220,6 +220,42 @@ namespace EntryEngine
             writer.WriteLine(format);
         }
     }
+    public class LoggerConsole : _LOG.Logger
+    {
+        private const byte LOG = (byte)ELog.Debug;
+        private byte last;
+
+        public ConsoleColor[] Colors
+        {
+            get;
+            private set;
+        }
+
+        public LoggerConsole()
+        {
+            Colors = new ConsoleColor[]
+            {
+                ConsoleColor.Gray,
+                ConsoleColor.White,
+                ConsoleColor.DarkYellow,
+                ConsoleColor.Red,
+            };
+        }
+
+        public override void Log(ref Record record)
+        {
+            byte level = record.Level;
+            if (level > LOG)
+                return;
+
+            if (level != last)
+            {
+                last = level;
+                Console.ForegroundColor = Colors[level];
+            }
+            Console.WriteLine("[{0}] {1}", record.Time.ToString("yyyy-MM-dd HH:mm:ss"), record.ToString());
+        }
+    }
 #endif
 
     public interface IOperation

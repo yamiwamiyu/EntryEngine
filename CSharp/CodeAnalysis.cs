@@ -10713,6 +10713,7 @@ namespace EntryBuilder.CodeAnalysis.Refactoring
         {
             get
             {
+                //return namespaceUsing.Concat(fileUsing).Distinct();
                 return fileUsing.Concat(namespaceUsing).Distinct();
             }
         }
@@ -10720,7 +10721,9 @@ namespace EntryBuilder.CodeAnalysis.Refactoring
         {
             get
             {
-                return AssemblyAccessableNamespaces.SelectMany(a => a.Types);
+                // 引用的命名空间顺序应该倒过来，继承相同名字的类型时，越后加载的程序集的类型越先被继承
+                // 但是WebGL的Array会覆盖掉System.Array
+                return AssemblyAccessableNamespaces.Reverse().SelectMany(a => a.Types);
             }
         }
         protected internal EFileType FileType { get; private set; }
@@ -12864,7 +12867,6 @@ namespace EntryBuilder.CodeAnalysis.Refactoring
                     }
 
 
-                    // 在定义域内，同一个名字可能是引用成员也可能是引用类型，需要根据后面点出来的对象是否静态来区分
                     //ReferenceMember typeNameName = null;
                     //IList<CSharpType> typeNameTypeArguments = null;
                     //List<CSharpMember> typeNameMembers = null;
@@ -12872,7 +12874,7 @@ namespace EntryBuilder.CodeAnalysis.Refactoring
                     {
                         var current = parents.Pop();
                         // todo: test
-                        if (current.Name.Name == "Sin" && definingMember != null && definingMember.Name.Name == "Slerp")
+                        if (current.Name.Name == "Request" && definingMember != null && definingMember.Name.Name == "Bregister_Click")
                         //if (current.Name.Name == "IndexOf" && definingMember != null && definingMember.Name.Name == "IndexOf" && definingType.Name.Name == "Utility")
                         {
                             CSharpMember member2 = definingType.Members.FirstOrDefault(f => f.Name.Name == current.Name.Name);

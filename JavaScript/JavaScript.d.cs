@@ -68,16 +68,16 @@ public class Number
     public static double POSITIVE_INFINITY;
     public Number(string str) { }
 }
-public class Array
-{
-    public int length;
-    public extern object this[int index] { get; set; }
-    public Array() { }
-    public Array(int size) { }
-    public Array(params object[] args) { }
-    public string join(string seperator) { return null; }
-    public Array slice(int start, int end) { return null; }
-}
+//public class Array
+//{
+//    public int length;
+//    public extern object this[int index] { get; set; }
+//    public Array() { }
+//    public Array(int size) { }
+//    public Array(params object[] args) { }
+//    public string join(string seperator) { return null; }
+//    public Array slice(int start, int end) { return null; }
+//}
 // 用于给Array继承
 public class Array_
 {

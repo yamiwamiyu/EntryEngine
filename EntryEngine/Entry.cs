@@ -6273,6 +6273,11 @@ namespace EntryEngine
         //    //if (scaled)
         //    //    spriteBatch.End();
         //}
+        protected internal override void Draw(GRAPHICS spriteBatch, string text, VECTOR2 location, COLOR color, float scale)
+        {
+            scale *= this.scale;
+            base.Draw(spriteBatch, text, location, color, scale);
+        }
         protected override void CopyTo(FontTexture target)
         {
             base.CopyTo(target);

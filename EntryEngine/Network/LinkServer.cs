@@ -963,7 +963,9 @@ namespace EntryEngine.Network
                 foreach (var stub in agent.Value.protocols)
                 {
                     int index = path.IndexOf(stub.Key);
-                    if (index != -1 && path.Substring(index + 1) == agent.Key)
+                    if (index != -1
+                        //&& path.Substring(index + 1) == agent.Key)
+                        )
                     {
                         agent.Value.Context = context;
                         agent.Value.OnProtocol(null);
@@ -1718,7 +1720,14 @@ namespace EntryEngine.Network
             if (index != -1)
                 stub = stub.Substring(0, index);
 
-            agent[stub](Context);
+            try
+            {
+                agent[stub](Context);
+            }
+            catch (Exception ex)
+            {
+                _LOG.Error(ex, "协议处理错误");
+            }
 
             Context = null;
             Param = null;
@@ -1811,7 +1820,13 @@ namespace EntryEngine.Network
         }
         public void Response(byte[] buffer, int offset, int count)
         {
-            Context.Response.OutputStream.BeginWrite(buffer, offset, count, null, Context);
+            Context.Response.OutputStream.BeginWrite(buffer, offset, count, EndResponse, Context);
+        }
+        public void EndResponse(IAsyncResult ar)
+        {
+            var context = (HttpListenerContext)ar.AsyncState;
+            context.Response.OutputStream.EndWrite(ar);
+            context.Response.Close();
         }
     }
 

@@ -7,8 +7,12 @@ namespace EntryEngine
 {
     static partial class _LOG
     {
+#if !HTML5
         public static Logger _Logger = new EntryEngine._LOG.LoggerEmpty();
-        
+#else
+        public static Logger _Logger = new LoggerFile(new LoggerConsole());
+#endif
+
         public static void Append(string value, params object[] param)
         {
             #if EntryBuilder

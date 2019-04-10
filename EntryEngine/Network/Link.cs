@@ -1,6 +1,4 @@
-﻿#if SERVER
-
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
@@ -10,6 +8,8 @@ using System.Linq;
 
 namespace EntryEngine.Network
 {
+#if SERVER
+
     public interface IConnector
     {
         //void Connect(string host, ushort port);
@@ -977,6 +977,305 @@ namespace EntryEngine.Network
         }
     }
 
+    // agent and stub
+    public abstract class Agent
+    {
+        public virtual Link Link { get; set; }
+        public virtual IEnumerable<byte[]> Receive()
+        {
+            while (Link.CanRead)
+            {
+                byte[] package = Link.Read();
+                if (package != null)
+                    yield return package;
+                else
+                    yield break;
+            }
+        }
+        public abstract void OnProtocol(byte[] package);
+        public virtual void Bridge()
+        {
+            /*
+             * Link是包协议
+             * 由Link发送和读取的内容是数据协议
+             * 数据的写入格式自定义
+             * Agent的OnProtocol则是对数据的读取和自定义处理
+             */
+            if (Link != null && Link.IsConnected)
+            {
+                /* 每帧需要手动发出客户端的请求数据 */
+                Link.Flush();
+                foreach (var item in Receive())
+                {
+                    OnProtocol(item);
+                }
+            }
+        }
+    }
+	public abstract class Agent_Link : Agent
+	{
+        public virtual EntryEngine.Network.Agent Base { get; set; }
+        public override EntryEngine.Network.Link Link
+        {
+            get { return Base.Link; }
+            set { Base.Link = value; }
+        }
+
+        public Agent_Link() { }
+        public Agent_Link(EntryEngine.Network.Agent Base) { this.Base = Base; }
+
+        public override System.Collections.Generic.IEnumerable<byte[]> Receive()
+        {
+            return Base.Receive();
+        }
+        public override void OnProtocol(byte[] package)
+        {
+            Base.OnProtocol(package);
+        }
+        public override void Bridge()
+        {
+            Base.Bridge();
+        }
+	}
+	public class AgentProtocolStub : Agent
+	{
+		private Dictionary<byte, Stub> protocols = new Dictionary<byte, Stub>();
+
+        public AgentProtocolStub()
+        {
+        }
+        public AgentProtocolStub(Link link)
+        {
+            this.Link = link;
+        }
+        public AgentProtocolStub(params Stub[] stubs)
+        {
+            foreach (var stub in stubs)
+                AddAgent(stub);
+        }
+        public AgentProtocolStub(Link link, params Stub[] stubs)
+        {
+            this.Link = link;
+            foreach (var stub in stubs)
+                AddAgent(stub);
+        }
+
+		public void AddAgent(Stub stub)
+		{
+			if (stub == null)
+				throw new ArgumentNullException("agent");
+            stub.ProtocolAgent = this;
+			protocols.Add(stub.Protocol, stub);
+		}
+		public override void OnProtocol(byte[] data)
+		{
+			ByteReader reader = new ByteReader(data);
+            while (true)
+            {
+                int position = reader.Position;
+                byte protocol;
+                ushort index;
+                reader.Read(out protocol);
+                reader.Read(out index);
+
+                Stub agent;
+                if (!protocols.TryGetValue(protocol, out agent))
+                    throw new NotImplementedException("no procotol: " + protocol);
+
+                agent[index](reader);
+                if (position == reader.Position || reader.IsEnd)
+                    break;
+            }
+		}
+	}
+    // be used to generate code
+    public abstract class Stub
+    {
+        private Dictionary<ushort, Action<ByteReader>> stubs = new Dictionary<ushort, Action<ByteReader>>();
+        protected internal byte Protocol
+        {
+            get;
+            protected set;
+        }
+        protected internal AgentProtocolStub ProtocolAgent;
+        public Link Link
+        {
+            get { return ProtocolAgent.Link; }
+        }
+        internal Action<ByteReader> this[ushort index]
+        {
+            get
+            {
+                Action<ByteReader> stub;
+                if (!stubs.TryGetValue(index, out stub))
+                    throw new ArgumentOutOfRangeException(string.Format("protocol: {0} method stub {1} not find!", Protocol, index));
+                return stub;
+            }
+        }
+        protected Stub()
+        {
+        }
+        public Stub(byte protocol)
+        {
+            this.Protocol = protocol;
+        }
+        protected void AddMethod(Action<ByteReader> method)
+        {
+            AddMethod((ushort)stubs.Count, method);
+        }
+        protected void AddMethod(ushort id, Action<ByteReader> method)
+        {
+            if (method == null)
+                throw new ArgumentNullException("method");
+            stubs.Add(id, method);
+        }
+    }
+    public abstract class StubClientAsync : Stub
+    {
+        public class AsyncWaitCallback : ICoroutine
+        {
+            private StubClientAsync stub;
+            public event Action<sbyte, string> OnError;
+
+            public bool IsEnd
+            {
+                get;
+                internal set;
+            }
+            public byte ID
+            {
+                get;
+                private set;
+            }
+            public sbyte Ret
+            {
+                get;
+                private set;
+            }
+            public string Msg
+            {
+                get;
+                private set;
+            }
+            public Delegate Function
+            {
+                get;
+                private set;
+            }
+
+            internal AsyncWaitCallback(StubClientAsync stub, Delegate function, byte id)
+            {
+                if (stub == null)
+                    throw new ArgumentNullException("stub");
+                this.stub = stub;
+                this.Function = function;
+                this.ID = id;
+            }
+
+            internal void Error(sbyte ret, string msg)
+            {
+                this.Ret = ret;
+                this.Msg = msg;
+                if (OnError != null)
+                    OnError(ret, msg);
+                this.IsEnd = true;
+            }
+            void ICoroutine.Update(GameTime time)
+            {
+            }
+        }
+
+        private Dictionary<byte, AsyncWaitCallback> requests = new Dictionary<byte, AsyncWaitCallback>();
+        private byte id;
+        public event Action<ushort, sbyte, string> OnAsyncCallbackError;
+        public event Action OnAsyncRequestFull;
+        public event Action<Exception> OnAgentError;
+
+        protected bool HasRequest
+        {
+            get { return requests.Count > 0; }
+        }
+        public bool IsAsyncRequestFull
+        {
+            get
+            {
+                byte next = (byte)(id + 1);
+                return requests.ContainsKey(next);
+            }
+        }
+
+        protected AsyncWaitCallback Push(Delegate method)
+        {
+            if (requests.ContainsKey(id))
+            {
+                if (OnAsyncRequestFull == null)
+                {
+                    throw new InsufficientMemoryException("stack full");
+                }
+                else
+                {
+                    OnAsyncRequestFull();
+                    return null;
+                }
+            }
+            var async = new AsyncWaitCallback(this, method, id);
+            requests.Add(id, async);
+            id++;
+            return async;
+        }
+        protected AsyncWaitCallback Pop(byte id)
+        {
+            AsyncWaitCallback async;
+            if (requests.TryGetValue(id, out async))
+            {
+                async.IsEnd = true;
+                requests.Remove(id);
+            }
+            else
+                throw new KeyNotFoundException(id.ToString());
+            return async;
+        }
+        protected void Error(AsyncWaitCallback async, ushort key, sbyte ret, string msg)
+        {
+            async.Error(ret, msg);
+            if (OnAsyncCallbackError != null)
+                OnAsyncCallbackError(key, ret, msg);
+        }
+        public void Update(int packageCount)
+        {
+            Update(null, packageCount);
+        }
+        public void Update(Agent agent, int packageCount)
+        {
+            Link link = Link;
+            if (agent == null)
+            {
+                agent = ProtocolAgent;
+                link = Link;
+            }
+            if (agent != null && link != null && link.IsConnected)
+            {
+                link.Flush();
+                foreach (var item in agent.Receive())
+                {
+                    try
+                    {
+                        agent.OnProtocol(item);
+                        if (--packageCount == 0)
+                            break;
+                    }
+                    catch (Exception ex)
+                    {
+                        if (OnAgentError == null)
+                            throw ex;
+                        else
+                            OnAgentError(ex);
+                    }
+                }
+            }
+        }
+    }
+
     // http
     public class LinkHttpRequest : LinkBinary, IConnector
     {
@@ -1037,7 +1336,7 @@ namespace EntryEngine.Network
         {
             get { return dataLength; }
         }
-        
+
         public override byte[] Read()
         {
             byte[] data = base.Read();
@@ -1175,6 +1474,9 @@ namespace EntryEngine.Network
                 Dequeue.Dispose();
         }
     }
+
+#endif
+    
     //public class LinkHttpRequest : LinkBinary
     //{
     //    /// <summary>超时时间(ms)，小于0则不超时</summary>
@@ -1616,326 +1918,25 @@ namespace EntryEngine.Network
         }
     }
 
-    // agent and stub
-    public abstract class Agent
+    [AttributeUsage(AttributeTargets.Interface)]
+    public class ProtocolStubAttribute : Attribute
     {
-        public virtual Link Link { get; set; }
-        public virtual IEnumerable<byte[]> Receive()
+        private byte protocol;
+        private Type callback;
+        private string agentType;
+        public byte Protocol { get { return protocol; } }
+        public Type Callback { get { return callback; } }
+        public string AgentType { get { return agentType; } }
+        public ProtocolStubAttribute(byte protocol, Type callback)
         {
-            while (Link.CanRead)
-            {
-                byte[] package = Link.Read();
-                if (package != null)
-                    yield return package;
-                else
-                    yield break;
-            }
+            this.protocol = protocol;
+            this.callback = callback;
         }
-        public abstract void OnProtocol(byte[] package);
-        public virtual void Bridge()
+        public ProtocolStubAttribute(byte protocol, Type callback, string agentType)
         {
-            /*
-             * Link是包协议
-             * 由Link发送和读取的内容是数据协议
-             * 数据的写入格式自定义
-             * Agent的OnProtocol则是对数据的读取和自定义处理
-             */
-            if (Link != null && Link.IsConnected)
-            {
-                /* 每帧需要手动发出客户端的请求数据 */
-                Link.Flush();
-                foreach (var item in Receive())
-                {
-                    OnProtocol(item);
-                }
-            }
+            this.protocol = protocol;
+            this.callback = callback;
+            this.agentType = agentType;
         }
     }
-	public abstract class Agent_Link : Agent
-	{
-        public virtual EntryEngine.Network.Agent Base { get; set; }
-        public override EntryEngine.Network.Link Link
-        {
-            get { return Base.Link; }
-            set { Base.Link = value; }
-        }
-
-        public Agent_Link() { }
-        public Agent_Link(EntryEngine.Network.Agent Base) { this.Base = Base; }
-
-        public override System.Collections.Generic.IEnumerable<byte[]> Receive()
-        {
-            return Base.Receive();
-        }
-        public override void OnProtocol(byte[] package)
-        {
-            Base.OnProtocol(package);
-        }
-        public override void Bridge()
-        {
-            Base.Bridge();
-        }
-	}
-	public class AgentProtocolStub : Agent
-	{
-		private Dictionary<byte, Stub> protocols = new Dictionary<byte, Stub>();
-
-        public AgentProtocolStub()
-        {
-        }
-        public AgentProtocolStub(Link link)
-        {
-            this.Link = link;
-        }
-        public AgentProtocolStub(params Stub[] stubs)
-        {
-            foreach (var stub in stubs)
-                AddAgent(stub);
-        }
-        public AgentProtocolStub(Link link, params Stub[] stubs)
-        {
-            this.Link = link;
-            foreach (var stub in stubs)
-                AddAgent(stub);
-        }
-
-		public void AddAgent(Stub stub)
-		{
-			if (stub == null)
-				throw new ArgumentNullException("agent");
-            stub.ProtocolAgent = this;
-			protocols.Add(stub.Protocol, stub);
-		}
-		public override void OnProtocol(byte[] data)
-		{
-			ByteReader reader = new ByteReader(data);
-            while (true)
-            {
-                int position = reader.Position;
-                byte protocol;
-                ushort index;
-                reader.Read(out protocol);
-                reader.Read(out index);
-
-                Stub agent;
-                if (!protocols.TryGetValue(protocol, out agent))
-                    throw new NotImplementedException("no procotol: " + protocol);
-
-                agent[index](reader);
-                if (position == reader.Position || reader.IsEnd)
-                    break;
-            }
-		}
-	}
-    // be used to generate code
-    public abstract class Stub
-    {
-        private Dictionary<ushort, Action<ByteReader>> stubs = new Dictionary<ushort, Action<ByteReader>>();
-        protected internal byte Protocol
-        {
-            get;
-            protected set;
-        }
-        protected internal AgentProtocolStub ProtocolAgent;
-        public Link Link
-        {
-            get { return ProtocolAgent.Link; }
-        }
-        internal Action<ByteReader> this[ushort index]
-        {
-            get
-            {
-                Action<ByteReader> stub;
-                if (!stubs.TryGetValue(index, out stub))
-                    throw new ArgumentOutOfRangeException(string.Format("protocol: {0} method stub {1} not find!", Protocol, index));
-                return stub;
-            }
-        }
-        protected Stub()
-        {
-        }
-        public Stub(byte protocol)
-        {
-            this.Protocol = protocol;
-        }
-        protected void AddMethod(Action<ByteReader> method)
-        {
-            AddMethod((ushort)stubs.Count, method);
-        }
-        protected void AddMethod(ushort id, Action<ByteReader> method)
-        {
-            if (method == null)
-                throw new ArgumentNullException("method");
-            stubs.Add(id, method);
-        }
-    }
-    public abstract class StubClientAsync : Stub
-    {
-        public class AsyncWaitCallback : ICoroutine
-        {
-            private StubClientAsync stub;
-            public event Action<sbyte, string> OnError;
-
-            public bool IsEnd
-            {
-                get;
-                internal set;
-            }
-            public byte ID
-            {
-                get;
-                private set;
-            }
-            public sbyte Ret
-            {
-                get;
-                private set;
-            }
-            public string Msg
-            {
-                get;
-                private set;
-            }
-            public Delegate Function
-            {
-                get;
-                private set;
-            }
-
-            internal AsyncWaitCallback(StubClientAsync stub, Delegate function, byte id)
-            {
-                if (stub == null)
-                    throw new ArgumentNullException("stub");
-                this.stub = stub;
-                this.Function = function;
-                this.ID = id;
-            }
-
-            internal void Error(sbyte ret, string msg)
-            {
-                this.Ret = ret;
-                this.Msg = msg;
-                if (OnError != null)
-                    OnError(ret, msg);
-                this.IsEnd = true;
-            }
-            void ICoroutine.Update(GameTime time)
-            {
-            }
-        }
-
-        private Dictionary<byte, AsyncWaitCallback> requests = new Dictionary<byte, AsyncWaitCallback>();
-        private byte id;
-        public event Action<ushort, sbyte, string> OnAsyncCallbackError;
-        public event Action OnAsyncRequestFull;
-        public event Action<Exception> OnAgentError;
-
-        protected bool HasRequest
-        {
-            get { return requests.Count > 0; }
-        }
-        public bool IsAsyncRequestFull
-        {
-            get
-            {
-                byte next = (byte)(id + 1);
-                return requests.ContainsKey(next);
-            }
-        }
-
-        protected AsyncWaitCallback Push(Delegate method)
-        {
-            if (requests.ContainsKey(id))
-            {
-                if (OnAsyncRequestFull == null)
-                {
-                    throw new InsufficientMemoryException("stack full");
-                }
-                else
-                {
-                    OnAsyncRequestFull();
-                    return null;
-                }
-            }
-            var async = new AsyncWaitCallback(this, method, id);
-            requests.Add(id, async);
-            id++;
-            return async;
-        }
-        protected AsyncWaitCallback Pop(byte id)
-        {
-            AsyncWaitCallback async;
-            if (requests.TryGetValue(id, out async))
-            {
-                async.IsEnd = true;
-                requests.Remove(id);
-            }
-            else
-                throw new KeyNotFoundException(id.ToString());
-            return async;
-        }
-        protected void Error(AsyncWaitCallback async, ushort key, sbyte ret, string msg)
-        {
-            async.Error(ret, msg);
-            if (OnAsyncCallbackError != null)
-                OnAsyncCallbackError(key, ret, msg);
-        }
-        public void Update(int packageCount)
-        {
-            Update(null, packageCount);
-        }
-        public void Update(Agent agent, int packageCount)
-        {
-            Link link = Link;
-            if (agent == null)
-            {
-                agent = ProtocolAgent;
-                link = Link;
-            }
-            if (agent != null && link != null && link.IsConnected)
-            {
-                link.Flush();
-                foreach (var item in agent.Receive())
-                {
-                    try
-                    {
-                        agent.OnProtocol(item);
-                        if (--packageCount == 0)
-                            break;
-                    }
-                    catch (Exception ex)
-                    {
-                        if (OnAgentError == null)
-                            throw ex;
-                        else
-                            OnAgentError(ex);
-                    }
-                }
-            }
-        }
-    }
-
-	[AttributeUsage(AttributeTargets.Interface)]
-	public class ProtocolStubAttribute : Attribute
-	{
-		private byte protocol;
-		private Type callback;
-		private string agentType;
-		public byte Protocol { get { return protocol; } }
-		public Type Callback { get { return callback; } }
-		public string AgentType { get { return agentType; } }
-		public ProtocolStubAttribute(byte protocol, Type callback)
-		{
-			this.protocol = protocol;
-			this.callback = callback;
-		}
-		public ProtocolStubAttribute(byte protocol, Type callback, string agentType)
-		{
-			this.protocol = protocol;
-			this.callback = callback;
-			this.agentType = agentType;
-		}
-	}
 }
-
-#endif

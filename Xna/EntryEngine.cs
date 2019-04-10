@@ -1295,75 +1295,13 @@ namespace EntryEngine.Xna
             return font.Name.GetHashCode() + ((int)(GetDynamicSize(font.Size) * 100) / 100) + (int)font.Style;
         }
 	}
-
-    public class LoggerConsole : _LOG.Logger
-    {
-        private const byte LOG = (byte)ELog.Debug;
-        private byte last;
-
-        public ConsoleColor[] Colors
-        {
-            get;
-            private set;
-        }
-
-        public LoggerConsole()
-        {
-            Colors = new ConsoleColor[]
-            {
-                ConsoleColor.Gray,
-                ConsoleColor.White,
-                ConsoleColor.DarkYellow,
-                ConsoleColor.Red,
-            };
-        }
-
-        public override void Log(ref Record record)
-        {
-            byte level = record.Level;
-            if (level > LOG)
-                return;
-
-            if (level != last)
-            {
-                last = level;
-                Console.ForegroundColor = Colors[level];
-            }
-            Console.WriteLine("[{0}] {1}", record.Time.ToString("yyyy-MM-dd HH:mm:ss"), record.ToString());
-        }
-    }
-    //public class LoggerFile : _LOG.Logger
-    //{
-    //    const string NEW_LOG = "#LOG_new.txt";
-    //    const string OLD_LOG = "#LOG_old.txt";
-    //    public _LOG.Logger Base;
-    //    StreamWriter writer;
-    //    public LoggerFile() : this(_LOG._Logger) { }
-    //    public LoggerFile(_LOG.Logger baseLog)
-    //    {
-    //        Base = baseLog;
-    //        if (File.Exists(NEW_LOG))
-    //        {
-    //            File.Copy(NEW_LOG, OLD_LOG, true);
-    //        }
-    //        writer = File.CreateText(NEW_LOG);
-    //        writer.AutoFlush = true;
-    //    }
-    //    public override void Log(ref Record record)
-    //    {
-    //        if (Base != null)
-    //            Base.Log(ref record);
-    //        string format = string.Format("[{0}] {1}", record.Time.ToString("yyyy-MM-dd HH:mm:ss"), record.ToString());
-    //        writer.WriteLine(format);
-    //    }
-    //}
-
+    
 	public class EntryXna : Entry
 	{
         protected override void Initialize(out AUDIO AUDIO, out ContentManager ContentManager, out FONT FONT, out GRAPHICS GRAPHICS, out INPUT INPUT, out _IO.iO iO, out IPlatform IPlatform, out TEXTURE TEXTURE)
         {
-            _LOG._Logger = new LoggerConsole();
-            _LOG._Logger = new LoggerFile();
+            //_LOG._Logger = new LoggerConsole();
+            //_LOG._Logger = new LoggerFile();
 
             XnaGate xna = XnaGate.Gate;
 
