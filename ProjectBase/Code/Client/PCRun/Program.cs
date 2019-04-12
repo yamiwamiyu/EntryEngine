@@ -5,11 +5,10 @@ using EntryEngine.Xna;
 
 namespace PCRun
 {
-    class Program
+    [AInvariant]class Program
     {
 #if HTML5
-        [AInvariant]
-        static void Main(string[] args)
+        [AInvariant]static void Main(string[] args)
         {
             // 可修改PATH更改项目资源的根目录
             EntryEngine.HTML5.HTML5Gate.PATH = "http://127.0.0.1:88/Content/";

@@ -7,7 +7,7 @@ namespace EntryEngine
 {
     static partial class _LOG
     {
-#if !HTML5
+#if !DEBUG
         public static Logger _Logger = new EntryEngine._LOG.LoggerEmpty();
 #else
         public static Logger _Logger = new LoggerFile(new LoggerConsole());

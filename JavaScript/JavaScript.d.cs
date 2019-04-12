@@ -171,6 +171,7 @@ public static class window
         public static double random() { return 0; }
     }
 
+    public static Action onresize;
     public static Document document;
     public static Storage localStorage;
     public static URL URL;
@@ -345,6 +346,7 @@ public abstract class HTMLElement : Element
 {
     public string outerHTML;
     public string outerText;
+    public string style;
     public extern void appendChild(HTMLElement element);
 }
 public abstract class HTMLCanvasElement : HTMLElement

@@ -24,56 +24,7 @@ namespace EntryBuilder
 {
     partial class Program
 	{
-        class Logger : _LOG.Logger
-        {
-            private const byte LOG = (byte)ELog.Debug;
-            private byte last;
-
-            public ConsoleColor[] Colors
-            {
-                get;
-                private set;
-            }
-
-            public Logger()
-            {
-                Colors = new ConsoleColor[]
-                {
-                    ConsoleColor.Gray,
-                    ConsoleColor.White,
-                    ConsoleColor.DarkYellow,
-                    ConsoleColor.Red,
-                };
-            }
-
-            public override void Log(ref Record record)
-            {
-                byte level = record.Level;
-                if (level > LOG)
-                    return;
-
-                if (level != last)
-                {
-                    last = level;
-                    Console.ForegroundColor = Colors[level];
-                }
-                Console.WriteLine("[{0}] {1}", record.Time.ToString("yyyy-MM-dd HH:mm:ss"), record.ToString());
-            }
-        }
 		private static MethodInfo[] Methods;
-
-        class TestResolve
-        {
-            public string Name;
-            public string[] Files;
-            public string Symbols;
-            public TestResolve(string name, string symbols, string[] files)
-            {
-                this.Name = name;
-                this.Symbols = symbols;
-                this.Files = files;
-            }
-        }
 
         public enum EBlurType
         {
@@ -555,16 +506,8 @@ namespace EntryBuilder
         [STAThread]
 		static void Main(string[] args)
         {
-            //BuildStaticInterface("EntryEngine.dll\\EntryEngine._LOG", "a.cs", true, "");
+            _LOG._Logger = new LoggerConsole();
 
-            //TexAnimationFromExcel("Outputs\\a.xlsx", "Outputs", "Outputs");
-            //Environment.CurrentDirectory = @"D:\Projects\AIDemo\Design\Pack\";
-            //TexPiece("打包图.xlsx", @"..\..\Launch\Client\Content\", @"..\..\Launch\Client\Content\");
-            //TestText();
-            //Console.ReadKey();
-            //return;
-
-            _LOG._Logger = new Logger();
             //using (Bitmap bitmap = new Bitmap("Test.png"))
             //{
             //    GaussianBlur gauss = new GaussianBlur(15);
@@ -572,80 +515,10 @@ namespace EntryBuilder
             //    Bitmap gaussImage = gauss.ProcessImage(bitmap);
             //    gaussImage.Save("Test1.png");
             //}
-            //return;
 
-            //BuildDll(@"..\..\..\Xna\", "Output\\Dummy\\Xna.dll", "3.5", "", true, "");
-
-            //BuildEntryEngine(@"..\..\..\EntryEngine\");
-
-            //BuildLinkShell(@"Outputs\EntryEditor\", "3.5", 1, "Outputs\\EntryEditor.exe", "", "2017-12-30");
-
-            //BuildCSVFromExcel(@"D:\Project\FaerieChronicle\Design\Tables_Build\战斗相关.xlsx", "Outputs\\Unity\\", null, "12.0", "Outputs\\Unity\\TABLE.cs", false);
-
-            //PsdFile psd = new PsdFile("Test/远征港（坐标）_JP.t.psd");
-            //Layer li = psd.Layers.FirstOrDefault(l => l.Name == "确认");
-
-            //BuildDatabaseMysql(@"..\..\..\EntryBuilderTest\bin\Debug\EntryBuilderTest.dll", "EntryBuilderTest.DB", @"..\..\..\EntryBuilderTest\DB.cs", "RELEASE", "");
-            //return;
-
-            //BuildPSDTranslate("Test", "LANGUAGE.csv");
-            //return;
-
-            //BuildTranslatePSD("Test", "LANGUAGE.csv", "JP");
-            //Console.ReadLine();
-            //return;
-
-            #region Test Code Analysis
-
-            //TestResolve[] testResolves = new TestResolve[]
-            //{
-            //    new TestResolve(".net", "CLIENT;SERVER", Directory.GetFiles(@"..\..\..\CSharp\.net\", "*.cs", SearchOption.AllDirectories)
-            //        .Concat(Directory.GetFiles(@"..\..\..\JavaScript\", "*.cs", SearchOption.TopDirectoryOnly)).ToArray()),
-            //    new TestResolve("EntryEngine", "CLIENT;HTML5", Directory.GetFiles(@"..\..\..\EntryEngine\", "*.cs", SearchOption.AllDirectories)),
-            //    new TestResolve("HTML5", "", Directory.GetFiles(@"..\..\..\HTML5\", "*.cs", SearchOption.AllDirectories)),
-            //    new TestResolve("Chamber", "", Directory.GetFiles(@"C:\Users\Administrator\Desktop\ChamberH5\Code\Client\", "*.cs", SearchOption.AllDirectories)),
-            //    new TestResolve("Entry", "HTML5", Directory.GetFiles(@"C:\Users\Administrator\Desktop\ChamberH5\Code\Chamber\", "*.cs", SearchOption.AllDirectories)),
-            //    //new TestResolve("Project", "", Directory.GetFiles(@"D:\Project\TestWebgl\Code\Client\Client\", "*.cs", SearchOption.AllDirectories)),
-            //    //new TestResolve("Entry", "HTML5", Directory.GetFiles(@"D:\Project\TestWebgl\Code\Client\PCRun", "*.cs", SearchOption.AllDirectories)),
-            //};
-
-            //Stopwatch watch = Stopwatch.StartNew();
-            //List<DefineFile> defines = new List<DefineFile>();
-            //foreach (var item in testResolves)
-            //{
-            //    Project project = new Project();
-            //    project.AddSymbols(item.Symbols);
-            //    project.ParseFromFile(item.Files);
-            //    Console.WriteLine("Parse [{0}]: {1}", item.Name, watch.ElapsedMilliseconds.ToString());
-            //    Refactor.Resolve(project, true);
-            //    Console.WriteLine("Resolve [{0}]: {1}", item.Name, watch.ElapsedMilliseconds.ToString());
-            //    defines.AddRange(project.Files);
-            //}
-            //Refactor.Optimize();
-
-            //string code = Refactor.RebuildCode(ECodeLanguage.JavaScript, defines.ToArray());
-            //string code2 = _RH.Indent(code);
-            //StringBuilder builder = new StringBuilder();
-            //builder.AppendLine("<head><meta charset=\"utf-8\"></head>");
-            //builder.AppendLine("<body>");
-            ////builder.AppendLine("<canvas id=\"WEBGL\"></canvas>");
-            ////builder.AppendLine("<canvas id=\"CANVAS\"></canvas>");
-            //builder.AppendLine("</body>");
-            //builder.AppendLine("<script>");
-            //builder.AppendLine(code2);
-            //builder.AppendLine("console.log(\"LOAD COMPLETED\");");
-            //builder.AppendLine("console.log(\"RUNNING\");");
-            //builder.AppendLine("Program.Main(null);");
-            //builder.AppendLine("console.log(\"EXITED\");");
-            //builder.AppendLine("</script>");
-            //watch.Stop();
-            //File.WriteAllText(@"C:\Users\Administrator\Desktop\ChamberH5\PublishH5\test.html", builder.ToString());
-            ////File.WriteAllText(@"D:\Project\TestWebgl\Publish\Webgl\test.html", builder.ToString());
-            //Console.WriteLine("Write code: {0}", watch.ElapsedMilliseconds.ToString());
+            //PublishToWebGL(@"..\..\..\", @"C:\Users\Administrator\Desktop\ChamberH5\Code", @"C:\Users\Administrator\Desktop\ChamberH5\PublishH5\test.html", true, 0);
             //Console.ReadKey();
-
             //return;
-            #endregion
 
 			Methods = typeof(Program).GetMethods(BindingFlags.Static | BindingFlags.Public);
 
@@ -2910,6 +2783,19 @@ namespace EntryBuilder
             public RECT Padding;
         }
 
+        private class CodeResolve
+        {
+            public string Name;
+            public string[] Files;
+            public string Symbols;
+            public CodeResolve(string name, string symbols, string[] files)
+            {
+                this.Name = name;
+                this.Symbols = symbols;
+                this.Files = files;
+            }
+        }
+
 		public static void BuildEntryEngine(string outputDir)
 		{
 			var entryType = typeof(Entry);
@@ -3201,7 +3087,8 @@ namespace EntryBuilder
                     builder.AppendLine(" : base(\"{0}\")", protocol.AgentType);
                 builder.AppendBlock(() =>
                 {
-                    builder.AppendLine("this.Agent = agent;");
+                    builder.AppendLine("this.__Agent = agent;");
+                    builder.AppendLine("this.Protocol = \"{0}\";", protocol.Protocol);
                     foreach (var method in call)
                         builder.AppendLine("AddMethod(\"{0}\", {0});", method.Name);
                 });
@@ -8355,9 +8242,130 @@ namespace EntryBuilder
             File.WriteAllBytes(fileListVersion, BitConverter.GetBytes(new FileInfo(fileList).LastWriteTime.Ticks));
             Console.WriteLine("复制资源完成");
         }
-        public static void PublishToWebGL(string xnaCodeDir, string xnaContentDir, string outputFile, bool min, byte encrypt)
+        public static void PublishToWebGL(string entryEngineRootDir, string projectCodeClientDir, string outputFile, bool min, byte encrypt)
         {
-            throw new NotImplementedException();
+            BuildDir(ref entryEngineRootDir);
+            BuildDir(ref projectCodeClientDir);
+            CodeResolve[] resolves = new CodeResolve[]
+            {
+                new CodeResolve(".net", "CLIENT;SERVER", Directory.GetFiles(entryEngineRootDir + @"CSharp\.net\", "*.cs", SearchOption.AllDirectories)
+                    .Concat(Directory.GetFiles(entryEngineRootDir + @"JavaScript\", "*.cs", SearchOption.TopDirectoryOnly)).ToArray()),
+                new CodeResolve("EntryEngine", "CLIENT", Directory.GetFiles(entryEngineRootDir + @"EntryEngine\", "*.cs", SearchOption.AllDirectories)),
+                new CodeResolve("HTML5", "", Directory.GetFiles(entryEngineRootDir + @"HTML5\", "*.cs", SearchOption.AllDirectories)),
+                new CodeResolve("Client", "", Directory.GetFiles(projectCodeClientDir + @"Client\", "*.cs", SearchOption.AllDirectories)),
+                new CodeResolve("Entry", "HTML5", Directory.GetFiles(projectCodeClientDir + @"PCRun\", "*.cs", SearchOption.AllDirectories)),
+            };
+
+            Stopwatch watch = Stopwatch.StartNew();
+            List<DefineFile> defines = new List<DefineFile>();
+            foreach (var item in resolves)
+            {
+                Project project = new Project();
+                project.AddSymbols(item.Symbols);
+                try
+                {
+                    project.ParseFromFile(item.Files);
+                    Console.WriteLine("Parse [{0}] Time Elapsed: {1}", item.Name, watch.ElapsedMilliseconds.ToString());
+                }
+                catch (ParseFileException ex)
+                {
+                    _LOG.Error(ex, "Parse Project Error!\r\nFile={0}\r\nFocus:{1}", item.Name, ex.File, ((ParseSourceException)ex.InnerException).ErrorFocus);
+                    return;
+                }
+                catch (Exception ex)
+                {
+                    _LOG.Error(ex, "Parse Project Error!\r\nFile={0}", item.Name);
+                    return;
+                }
+                try
+                {
+                    Refactor.Resolve(project, true);
+                    Console.WriteLine("Resolve [{0}]: {1}", item.Name, watch.ElapsedMilliseconds.ToString());
+                }
+                catch (Exception ex)
+                {
+                    _LOG.Error(ex, "Resolve Project Error!\r\nFile={0}", item.Name);
+                    return;
+                }
+                defines.AddRange(project.Files);
+            }
+            try
+            {
+                Refactor.Optimize();
+            }
+            catch (Exception ex)
+            {
+                _LOG.Error(ex, "Optimize Error!");
+                return;
+            }
+
+            string code = null;
+            try
+            {
+                code = Refactor.RebuildCode(ECodeLanguage.JavaScript, defines.ToArray());
+            }
+            catch (Exception ex)
+            {
+                _LOG.Error(ex, "Build JavaScript Code Error!");
+                return;
+            }
+
+            if (min)
+            {
+                StringStreamReader reader = new StringStreamReader(code);
+                reader.WORD_BREAK = reader.WHITE_SPACE;
+                //reader.WHITE_SPACE = string.Empty;
+
+                // BUG: 不排除会把字符串里应保留的空格也省略掉
+                const string OMIT = "{};()|&+-*/%<>=:?";
+                StringBuilder toMin = new StringBuilder();
+                while (!reader.IsEnd)
+                {
+                    string word1 = reader.NextWord();
+                    int index1 = reader.Pos;
+                    reader.EatWhitespace();
+
+                    toMin.Append(word1);
+
+                    if (reader.IsEnd) break;
+                    int index2 = reader.Pos;
+                    string word3 = reader.PeekNextWord;
+
+                    char c1 = word1[word1.Length - 1];
+                    char c2 = word3[0];
+                    if (OMIT.Contains(c1) || OMIT.Contains(c2))
+                    {
+                        // 省略掉空格
+                    }
+                    else
+                    {
+                        toMin.Append(reader.str, index1, index2 - index1);
+                    }
+                }
+                code = toMin.ToString();
+            }
+            else
+            {
+                code = _RH.Indent(code);
+            }
+
+            StringBuilder builder = new StringBuilder();
+            builder.AppendLine("<head><meta charset=\"utf-8\"></head>");
+            builder.AppendLine("<body>");
+            //builder.AppendLine("<canvas id=\"WEBGL\"></canvas>");
+            //builder.AppendLine("<canvas id=\"CANVAS\"></canvas>");
+            builder.AppendLine("</body style=\"width:100%;height:100%;\">");
+            builder.AppendLine("<script>");
+            builder.AppendLine(code);
+            builder.AppendLine("console.log(\"LOAD COMPLETED\");");
+            builder.AppendLine("console.log(\"RUNNING\");");
+            builder.AppendLine("Program.Main(null);");
+            builder.AppendLine("console.log(\"EXITED\");");
+            builder.AppendLine("</script>");
+            watch.Stop();
+
+            File.WriteAllText(outputFile, builder.ToString());
+            Console.WriteLine("Write Code Time Elapsed: {0}", watch.ElapsedMilliseconds.ToString());
         }
         public static void CreateFileToEmptyDirectory(string inputDir, string defaultFile)
         {

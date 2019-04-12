@@ -652,7 +652,9 @@ namespace EntryEngine.HTML5
         }
         private string GetFontStyle()
         {
-            return string.Format("{0}px {1}", (int)this.fontSize, fontName);
+            //return string.Format("{0}px {1}", (int)this.fontSize, fontName);
+            // 生成min.js时px后面的空格会被省略掉
+            return (int)this.fontSize + "px " + fontName;
         }
         //protected override VECTOR2 MeasureBufferSize(char c)
         //{
@@ -753,8 +755,16 @@ namespace EntryEngine.HTML5
             get { return new VECTOR2(gl.canvas.width, gl.canvas.height); }
             set
             {
-                gl.canvas.width = (int)value.X;
-                gl.canvas.height = (int)value.Y;
+                float scale;
+                VECTOR2 offset;
+                __GRAPHICS.ViewAdapt(value,
+                    new VECTOR2(
+                        window.document.body.clientWidth,
+                        window.document.body.clientHeight),
+                    out scale, out offset);
+                gl.canvas.style = string.Format("left:{0}px;top:{1}px;position:absolute;", (int)offset.X, (int)offset.Y);
+                gl.canvas.width = (int)(value.X * scale);
+                gl.canvas.height = (int)(value.Y * scale);
             }
         }
         internal GraphicsWebGL(WebGLRenderingContext context)
@@ -1022,7 +1032,7 @@ namespace EntryEngine.HTML5
         internal static ImageData DrawText(string fontStyle, string text, int width, int height)
         {
             var ctx = SetCanvas(fontStyle, width, height);
-            ctx.fillText(text, width / 2, height / 2, width);
+            ctx.fillText(text, width >> 1, height >> 1, width);
             var data = ctx.getImageData(0, 0, width, height);
             ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
             return data;
@@ -1171,6 +1181,8 @@ namespace EntryEngine.HTML5
             graphics = canvas.getContext("2d");
             GraphicsCanvas.TextGraphics = new GraphicsCanvas((CanvasRenderingContext2D)graphics);
 
+            window.onresize = window_onresize;
+
             iO = new IOJSWeb();
 
             ContentManager = NewContentManager();
@@ -1183,6 +1195,12 @@ namespace EntryEngine.HTML5
         {
             HTML5Gate.Exit();
             base.Exit();
+        }
+
+        void window_onresize()
+        {
+            // 重置屏幕尺寸和居中偏移值
+            GRAPHICS.ScreenSize = GRAPHICS.ScreenSize;
         }
 
         void document_onmousedown(window.MouseEvent obj)

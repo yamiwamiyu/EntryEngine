@@ -2275,10 +2275,18 @@ namespace EntryBuilder.CodeAnalysis.Syntax
         {
             get { return Type.Name.Name == "var"; }
         }
+        public virtual bool IsMember
+        {
+            get { return false; }
+        }
     }
     public class DefineField : FieldLocal
     {
         public List<InvokeAttribute> Attributes;
+        public override bool IsMember
+        {
+            get { return true; }
+        }
     }
 
     public class DefineNamespace : Define
@@ -3701,11 +3709,7 @@ namespace EntryBuilder.CodeAnalysis.Syntax
                 foreach (var item in node.Generic.Constraints) Visit(item);
             builder.AppendLine();
             builder.AppendLine("{");
-            foreach (var item in node.Fields)
-            {
-                Visit(item);
-                builder.AppendLine(";");
-            }
+            foreach (var item in node.Fields) Visit(item);
             foreach (var item in node.Properties) Visit(item);
             foreach (var item in node.Methods) Visit(item);
             foreach (var item in node.NestedType) Visit(item);
@@ -3761,8 +3765,14 @@ namespace EntryBuilder.CodeAnalysis.Syntax
         {
             Visit(node.Attributes);
             Visit(node.Modifier);
-            builder.Append(" {0}", node.AccessorType.ToString().ToLower());
-            Visit(node.Body);
+            builder.Append(node.AccessorType.ToString().ToLower());
+            if (node.Body == null)
+                builder.AppendLine(";");
+            else
+            {
+                builder.AppendLine();
+                Visit(node.Body);
+            }
         }
         public override void Visit(DefineConstructor node)
         {
@@ -3777,6 +3787,7 @@ namespace EntryBuilder.CodeAnalysis.Syntax
                 builder.Append(" : ");
                 Visit(node.Base);
             }
+            builder.AppendLine();
             Visit(node.Body);
         }
         public override void Visit(DefineMethod node)
@@ -3802,7 +3813,13 @@ namespace EntryBuilder.CodeAnalysis.Syntax
             builder.Append(")");
             if (node.Generic.IsGeneric && node.Generic.Constraints.Count > 0)
                 foreach (var item in node.Generic.Constraints) Visit(item);
-            Visit(node.Body);
+            if (node.Body == null)
+                builder.AppendLine(";");
+            else
+            {
+                builder.AppendLine();
+                Visit(node.Body);
+            }
         }
         public override void Visit(DefineDelegate node)
         {
@@ -3847,7 +3864,7 @@ namespace EntryBuilder.CodeAnalysis.Syntax
                 builder.AppendLine(";");
             else
             {
-                builder.AppendLine();
+                //builder.AppendLine();
                 builder.AppendLine("{");
                 foreach (var item in node.Statements)
                     VisitStatement(item);
@@ -3891,6 +3908,8 @@ namespace EntryBuilder.CodeAnalysis.Syntax
                     Visit(item);
                 }
             }
+            if (node.IsMember)
+                builder.AppendLine(";");
         }
         public override void Visit(EModifier node)
         {
@@ -4035,7 +4054,7 @@ namespace EntryBuilder.CodeAnalysis.Syntax
         }
         public override void Visit(TryCatchFinallyStatement node)
         {
-            builder.Append("try");
+            builder.AppendLine("try");
             Visit(node.Try);
             Visit(node.Catch);
             if (node.Finally != null)
@@ -4057,6 +4076,7 @@ namespace EntryBuilder.CodeAnalysis.Syntax
                         builder.Append(" {0}", item.Name);
                     builder.Append(")");
                 }
+                builder.AppendLine();
                 Visit(item.Body);
             }
         }
@@ -4072,38 +4092,38 @@ namespace EntryBuilder.CodeAnalysis.Syntax
         }
         public override void Visit(UnsafeStatement node)
         {
-            builder.Append("unsafe");
+            builder.AppendLine("unsafe");
             Visit(node.Body);
         }
         public override void Visit(CheckedStatement node)
         {
-            builder.Append("checked");
+            builder.AppendLine("checked");
             Visit(node.Body);
         }
         public override void Visit(UncheckedStatement node)
         {
-            builder.Append("unchecked");
+            builder.AppendLine("unchecked");
             Visit(node.Body);
         }
         public override void Visit(LockStatement node)
         {
             builder.Append("lock (");
             Visit(node.Refenrence);
-            builder.Append(")");
+            builder.AppendLine(")");
             Visit(node.Body);
         }
         public override void Visit(UsingStatement node)
         {
             builder.Append("using (");
             WriteSplitByComma(node.Fields);
-            builder.Append(")");
+            builder.AppendLine(")");
             Visit(node.Body);
         }
         public override void Visit(FixedStatement node)
         {
             builder.Append("fixed (");
             WriteSplitByComma(node.Fields);
-            builder.Append(")");
+            builder.AppendLine(")");
             Visit(node.Body);
         }
         public override void Visit(EmptyStatement node)
@@ -4229,7 +4249,10 @@ namespace EntryBuilder.CodeAnalysis.Syntax
             if (node.IsSingleBody)
                 Visit(node.Body.Statements[0]);
             else
+            {
+                builder.AppendLine();
                 Visit(node.Body);
+            }
         }
         public override void Visit(ReferenceMember node)
         {
@@ -5907,16 +5930,16 @@ namespace EntryBuilder.CodeAnalysis.Refactoring
         string GetName(string name, bool type)
         {
             char c = name[0];
-            if (c == '_' || (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z'))
-            {
-                int count;
-                if (!testRename.TryGetValue(name, out count))
-                    count = 0;
-                count++;
-                testRename[name] = count;
-                return name + count;
-            }
-            else
+            //if (c == '_' || (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z'))
+            //{
+            //    int count;
+            //    if (!testRename.TryGetValue(name, out count))
+            //        count = 0;
+            //    count++;
+            //    testRename[name] = count;
+            //    return name + count;
+            //}
+            //else
             {
                 if (type)
                     return tprovider.Provide();
@@ -6638,7 +6661,7 @@ namespace EntryBuilder.CodeAnalysis.Refactoring
                                 builder = beginWriter;
 
                                 builder.AppendLine("window.$sp{0} = function()", TypeName);
-                                builder.AppendBlock(() =>
+                                builder.AppendBlockWithEnd(() =>
                                 {
                                     builder.AppendLine("if ($sp{0}.$initd) return;", TypeName);
                                     builder.AppendLine("$sp{0}.$initd = true;", TypeName);
@@ -7306,6 +7329,8 @@ namespace EntryBuilder.CodeAnalysis.Refactoring
                         Visit(item);
                 }
             }
+            if (node.IsMember)
+                builder.AppendLine(";");
         }
         public override void Visit(EModifier node)
         {

@@ -193,7 +193,7 @@ namespace EntryEngine
             }
         }
 	}
-#if !HTML5
+#if DEBUG
     public class LoggerFile : _LOG.Logger
     {
         const string NEW_LOG = "#LOG_new.txt";
