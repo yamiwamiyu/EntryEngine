@@ -752,19 +752,20 @@ namespace EntryEngine.HTML5
         public override bool IsFullScreen { get { return false; } set { } }
         protected override VECTOR2 InternalScreenSize
         {
-            get { return new VECTOR2(gl.canvas.width, gl.canvas.height); }
+            //get { return new VECTOR2(gl.canvas.width, gl.canvas.height); }
+            get { return new VECTOR2(window.document.body.clientWidth, window.document.body.clientHeight); }
             set
             {
-                float scale;
-                VECTOR2 offset;
-                __GRAPHICS.ViewAdapt(value,
-                    new VECTOR2(
-                        window.document.body.clientWidth,
-                        window.document.body.clientHeight),
-                    out scale, out offset);
-                gl.canvas.style = string.Format("left:{0}px;top:{1}px;position:absolute;", (int)offset.X, (int)offset.Y);
-                gl.canvas.width = (int)(value.X * scale);
-                gl.canvas.height = (int)(value.Y * scale);
+                //float scale;
+                //VECTOR2 offset;
+                //__GRAPHICS.ViewAdapt(GraphicsSize,
+                //    new VECTOR2(
+                //        window.document.body.clientWidth,
+                //        window.document.body.clientHeight),
+                //    out scale, out offset);
+                //gl.canvas.style = string.Format("left:{0}px;top:{1}px;position:absolute;", (int)offset.X, (int)offset.Y);
+                //gl.canvas.width = (int)(GraphicsSize.X * scale);
+                //gl.canvas.height = (int)(GraphicsSize.Y * scale);
             }
         }
         internal GraphicsWebGL(WebGLRenderingContext context)
@@ -853,9 +854,23 @@ namespace EntryEngine.HTML5
         }
         protected override void SetViewport(MATRIX2x3 view, RECT viewport)
         {
-            RECT rect = AreaToScreen(viewport);
+            // 固定画布尺寸撑满屏幕
+            VECTOR2 gsize = GraphicsSize;
+            float scale;
+            VECTOR2 offset;
+            __GRAPHICS.ViewAdapt(gsize,
+                new VECTOR2(
+                    window.document.body.clientWidth,
+                    window.document.body.clientHeight),
+                out scale, out offset);
+            gl.canvas.style = string.Format("left:{0}px;top:{1}px;position:absolute;", (int)offset.X, (int)offset.Y);
+            gl.canvas.width = (int)(gsize.X * scale);
+            gl.canvas.height = (int)(gsize.Y * scale);
+
+            //RECT rect = AreaToScreen(viewport);
             this.View = MATRIX2x3.Identity;
-            gl.viewport(rect.X, rect.Y, rect.Width, rect.Height);
+            //gl.viewport(-rect.X, -rect.Y, rect.Width, rect.Height);
+            gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
             gl.enable(gl.SCISSOR_TEST);
         }
         public override void Clear()
@@ -868,6 +883,9 @@ namespace EntryEngine.HTML5
         protected override void InternalBegin(bool threeD, ref MATRIX matrix, ref RECT graphics, SHADER shader)
         {
             RECT rect = AreaToScreen(graphics);
+            // 严格来说这里的rect不是屏幕的，而是画布内部的，所以不采用屏幕的偏移值
+            rect.X -= graphicsToScreen.M31;
+            rect.Y -= graphicsToScreen.M32;
             // 左下角0,0 单位像素
             gl.scissor((int)rect.X, gl.canvas.height - (int)(rect.Y + rect.Height), (int)rect.Width, (int)rect.Height);
             if (threeD)
@@ -1200,6 +1218,8 @@ namespace EntryEngine.HTML5
         void window_onresize()
         {
             // 重置屏幕尺寸和居中偏移值
+            //GRAPHICS.ScreenSize = new VECTOR2(GraphicsWebGL.gl.canvas.width, GraphicsWebGL.gl.canvas.height);
+            //GRAPHICS.ScreenSize = new VECTOR2(window.document.body.clientWidth, window.document.body.clientHeight);
             GRAPHICS.ScreenSize = GRAPHICS.ScreenSize;
         }
 
@@ -1208,6 +1228,11 @@ namespace EntryEngine.HTML5
             MouseJS.state.position.X = obj.x;
             MouseJS.state.position.Y = obj.y;
             MouseJS.state.left = true;
+            //_LOG.Debug("{0},{1}", obj.x, obj.y);
+            //var pos = Entry._GRAPHICS.PointToGraphics(MouseJS.state.position);
+            //_LOG.Debug("{0},{1}", (int)pos.X, (int)pos.Y);
+            //pos = Entry._GRAPHICS.PointToScreen(pos);
+            //_LOG.Debug("{0},{1}", (int)pos.X, (int)pos.Y);
         }
         void document_onmousemove(window.MouseEvent obj)
         {
