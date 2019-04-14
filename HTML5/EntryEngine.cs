@@ -1272,6 +1272,7 @@ namespace EntryEngine.HTML5
         protected override ContentManager InternalNewContentManager()
         {
             ContentManager manager = new ContentManager(NewiO(iO.RootDirectory));
+            manager.AddPipeline(new PipelineParticle());
             manager.AddPipeline(new PipelineAnimation());
             manager.AddPipeline(new PipelinePiece());
             manager.AddPipeline(new PipelinePatch());

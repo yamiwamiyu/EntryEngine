@@ -13,7 +13,7 @@ namespace EntryEngine
 	 * 3. 帧动画 Sequence
 	 * 4. 骨骼动画 Avatar
 	 */
-    public abstract class ParticleStream
+    [AReflexible]public abstract class ParticleStream
     {
         /// <summary>当前流更新一次后下次粒子将跳到当前流的后一个流处开始执行</summary>
         public bool Skip;
@@ -32,7 +32,7 @@ namespace EntryEngine
         public virtual ParticleStream Clone() { return this; }
     }
     /// <summary>若Random都采用同一个种子，会出现各种规律现象</summary>
-    public abstract class PSRandom : ParticleStream
+    [AReflexible]public abstract class PSRandom : ParticleStream
     {
         private _RANDOM.Random random;
         public int Seed;
@@ -59,7 +59,7 @@ namespace EntryEngine
     }
 
     // BORN
-    public class PBByTime : ParticleStream
+    [AReflexible]public class PBByTime : ParticleStream
     {
         private float _remain;
         public int BornPerSecond = 60;
@@ -139,7 +139,7 @@ namespace EntryEngine
     }
 
     // APPEAR | SKIP
-    public class PSSkip : ParticleStream
+    [AReflexible]public class PSSkip : ParticleStream
     {
         public PSSkip() { Skip = true; }
         public override bool Update(Particle p, ParticleEmitter ps, float elapsed)
@@ -147,11 +147,11 @@ namespace EntryEngine
             return true;
         }
     }
-    public abstract class PSRandomSkip : PSRandom
+    [AReflexible]public abstract class PSRandomSkip : PSRandom
     {
         protected PSRandomSkip() { Skip = true; }
     }
-    public class PSLifecycle : PSRandomSkip
+    [AReflexible]public class PSLifecycle : PSRandomSkip
     {
         public float Lifecycle = 2f;
         public float VaryP = 0.25f;
@@ -163,7 +163,7 @@ namespace EntryEngine
             return true;
         }
     }
-    public class PSTex : PSSkip
+    [AReflexible]public class PSTex : PSSkip
     {
         public TEXTURE Texture = TEXTURE.Pixel;
         public COLOR Color = COLOR.White;
@@ -178,7 +178,7 @@ namespace EntryEngine
             return true;
         }
     }
-    public class PSTexClone : PSTex
+    [AReflexible]public class PSTexClone : PSTex
     {
         public override bool Update(Particle p, ParticleEmitter ps, float elapsed)
         {
@@ -187,7 +187,7 @@ namespace EntryEngine
             return true;
         }
     }
-    public class PSPosPoint : PSSkip
+    [AReflexible]public class PSPosPoint : PSSkip
     {
         public VECTOR2 Position;
         public override bool Update(Particle p, ParticleEmitter ps, float elapsed)
@@ -197,7 +197,7 @@ namespace EntryEngine
             return true;
         }
     }
-    public class PSPosRectangle : PSRandomSkip
+    [AReflexible]public class PSPosRectangle : PSRandomSkip
     {
         public RECT Area = new RECT(-50, -50, 100, 100);
         public override bool Update(Particle p, ParticleEmitter ps, float elapsed)
@@ -209,7 +209,7 @@ namespace EntryEngine
             return true;
         }
     }
-    public class PSPosCircle : PSRandomSkip
+    [AReflexible]public class PSPosCircle : PSRandomSkip
     {
         public CIRCLE Area = new CIRCLE(50);
         public override bool Update(Particle p, ParticleEmitter ps, float elapsed)
@@ -220,7 +220,7 @@ namespace EntryEngine
             return true;
         }
     }
-    public class PSPosAbsolute : PSSkip
+    [AReflexible]public class PSPosAbsolute : PSSkip
     {
         public override bool Update(Particle p, ParticleEmitter ps, float elapsed)
         {
@@ -228,7 +228,7 @@ namespace EntryEngine
             return true;
         }
     }
-    public class PSSpeed : PSRandomSkip
+    [AReflexible]public class PSSpeed : PSRandomSkip
     {
         /// <summary>每秒移动的像素</summary>
         public float Speed = 300;
@@ -254,7 +254,7 @@ namespace EntryEngine
             return true;
         }
     }
-    public class PSScale : PSRandomSkip
+    [AReflexible]public class PSScale : PSRandomSkip
     {
         public float Scale = 1;
         public float VaryP;
@@ -269,7 +269,7 @@ namespace EntryEngine
             return true;
         }
     }
-    public class PSRotation : PSRandomSkip
+    [AReflexible]public class PSRotation : PSRandomSkip
     {
         public float Rotation;
         public float VaryV = 180;
@@ -303,7 +303,7 @@ namespace EntryEngine
         A = 8,
         //All = 15,
     }
-    public class PSColor : PSRandomSkip
+    [AReflexible]public class PSColor : PSRandomSkip
     {
         public COLOR From = COLOR.Black;
         public COLOR To = COLOR.White;
@@ -366,7 +366,7 @@ namespace EntryEngine
     }
 
     // CONDITION
-    public class PSRandomChild : PSRandom
+    [AReflexible]public class PSRandomChild : PSRandom
     {
         public override bool Update(Particle p, ParticleEmitter ps, float elapsed)
         {
@@ -383,7 +383,7 @@ namespace EntryEngine
             return true;
         }
     }
-    public class PSProbability : PSRandom
+    [AReflexible]public class PSProbability : PSRandom
     {
         public byte Percent = 50;
         public override bool Update(Particle p, ParticleEmitter ps, float elapsed)
@@ -397,7 +397,7 @@ namespace EntryEngine
             return true;
         }
     }
-    public class PSAnd : ParticleStream
+    [AReflexible]public class PSAnd : ParticleStream
     {
         public bool Not;
         public override bool Update(Particle p, ParticleEmitter ps, float elapsed)
@@ -411,7 +411,7 @@ namespace EntryEngine
             return true;
         }
     }
-    public class PSOr : ParticleStream
+    [AReflexible]public class PSOr : ParticleStream
     {
         public bool Not;
         public override bool Update(Particle p, ParticleEmitter ps, float elapsed)
@@ -426,7 +426,7 @@ namespace EntryEngine
             return true;
         }
     }
-    public class PSInArea : ParticleStream
+    [AReflexible]public class PSInArea : ParticleStream
     {
         public RECT Area = new RECT(-50, -50, 100, 100);
         public bool Not;
@@ -435,7 +435,7 @@ namespace EntryEngine
             return Area.Contains(p.Position.X, p.Position.Y) != Not;
         }
     }
-    public class PSInCircle : ParticleStream
+    [AReflexible]public class PSInCircle : ParticleStream
     {
         public CIRCLE Area = new CIRCLE(50);
         public bool Not;
@@ -444,7 +444,7 @@ namespace EntryEngine
             return Area.Contains(p.Position.X, p.Position.Y) != Not;
         }
     }
-    public enum EPSCheck : byte
+    [AReflexible]public enum EPSCheck : byte
     {
         Euqals,
         Greater,
@@ -452,7 +452,7 @@ namespace EntryEngine
         Less,
         LessEuqal,
     }
-    public class PSSpeedCheck : ParticleStream
+    [AReflexible]public class PSSpeedCheck : ParticleStream
     {
         /// <summary>每秒移动的像素</summary>
         public float Speed;
@@ -470,7 +470,7 @@ namespace EntryEngine
             }
         }
     }
-    public class PSTimer : ParticleStream
+    [AReflexible]public class PSTimer : ParticleStream
     {
         //private float _time;
         public float StartTime;
@@ -493,7 +493,7 @@ namespace EntryEngine
     }
 
     // MOTION
-    public class PSLifeAdd : ParticleStream
+    [AReflexible]public class PSLifeAdd : ParticleStream
     {
         public float Lifecycle;
         public override bool Update(Particle p, ParticleEmitter ps, float elapsed)
@@ -502,7 +502,7 @@ namespace EntryEngine
             return true;
         }
     }
-    public abstract class PSPropertyAdd : PSRandom
+    [AReflexible]public abstract class PSPropertyAdd : PSRandom
     {
         public float VaryFrom;
         public float Vary;
@@ -529,7 +529,7 @@ namespace EntryEngine
             return vary;
         }
     }
-    public class PSSpeedAdd : PSPropertyAdd
+    [AReflexible]public class PSSpeedAdd : PSPropertyAdd
     {
         public override bool Update(Particle p, ParticleEmitter ps, float elapsed)
         {
@@ -541,7 +541,7 @@ namespace EntryEngine
             return true;
         }
     }
-    public class PSDirectionAdd : PSPropertyAdd
+    [AReflexible]public class PSDirectionAdd : PSPropertyAdd
     {
         public override bool Update(Particle p, ParticleEmitter ps, float elapsed)
         {
@@ -553,7 +553,7 @@ namespace EntryEngine
             return true;
         }
     }
-    public class PSRotateAdd : PSPropertyAdd
+    [AReflexible]public class PSRotateAdd : PSPropertyAdd
     {
         public override bool Update(Particle p, ParticleEmitter ps, float elapsed)
         {
@@ -561,7 +561,7 @@ namespace EntryEngine
             return true;
         }
     }
-    public class PSRotationForward : ParticleStream
+    [AReflexible]public class PSRotationForward : ParticleStream
     {
         public float Offset;
         public override bool Update(Particle p, ParticleEmitter ps, float elapsed)
@@ -570,7 +570,7 @@ namespace EntryEngine
             return true;
         }
     }
-    public class PSColorAdd : PSPropertyAdd
+    [AReflexible]public class PSColorAdd : PSPropertyAdd
     {
         public EPSColor Change = EPSColor.A;
         public override bool Update(Particle p, ParticleEmitter ps, float elapsed)
@@ -605,7 +605,7 @@ namespace EntryEngine
         }
     }
 
-    public class PSWind : ParticleStream
+    [AReflexible]public class PSWind : ParticleStream
     {
         public VECTOR2 Force;
         public override bool Update(Particle p, ParticleEmitter ps, float elapsed)
@@ -617,7 +617,7 @@ namespace EntryEngine
     }
 
     // DISAPPEAR
-    public class PSDie : ParticleStream
+    [AReflexible]public class PSDie : ParticleStream
     {
         public override bool Update(Particle p, ParticleEmitter ps, float elapsed)
         {
@@ -677,7 +677,7 @@ namespace EntryEngine
             Vector.Y = (float)Math.Sin(radian) * speed;
         }
     }
-    public class ParticleSystem : TEXTURE, IUpdatable
+    [AReflexible]public class ParticleSystem : TEXTURE, IUpdatable
     {
         private List<ParticleEmitter> emitters = new List<ParticleEmitter>();
         private bool _updated;
@@ -813,7 +813,7 @@ namespace EntryEngine
             emitters = null;
         }
     }
-    public struct StructureParticleSystem
+    [AReflexible]public struct StructureParticleSystem
     {
         public float Duration;
         public ParticleEmitter[] Emitters;
@@ -823,7 +823,7 @@ namespace EntryEngine
             this.Emitters = ps.Emitters;
         }
     }
-    public class ParticleEmitter : TEXTURE, IUpdatable
+    [AReflexible]public class ParticleEmitter : TEXTURE, IUpdatable
     {
         private static Particle nullParticle = new Particle();
 
