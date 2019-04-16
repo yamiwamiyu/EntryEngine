@@ -382,6 +382,112 @@ namespace EntryEngine.HTML5
             return current;
         }
     }
+    public class KeyboardStateJS : IKeyboardState
+    {
+        internal int[] pressedKeys;
+
+        public bool HasPressedAnyKey
+        {
+            get { return pressedKeys.Length > 0; }
+        }
+        public int[] GetPressedKey()
+        {
+            return pressedKeys;
+        }
+        public bool IsClick(int key)
+        {
+            for (int i = 0; i < pressedKeys.Length; i++)
+                if (pressedKeys[i] == key)
+                    return true;
+            return false;
+        }
+    }
+    public class KeyboardJS : KEYBOARD
+    {
+        internal static List<int> Pressed = new List<int>(8);
+        protected override IKeyboardState GetState()
+        {
+            KeyboardStateJS state = new KeyboardStateJS();
+            state.pressedKeys = Pressed.ToArray();
+            return state;
+        }
+    }
+    public class InputTextJS : InputText
+    {
+        internal static bool IME;
+        static HTMLElement inputElement;
+        static void PrepareInputElement()
+        {
+            if (inputElement == null)
+                inputElement = window.document.getElementById("__input");
+            inputElement.onblur = OnBlur;
+        }
+        static void OnBlur()
+        {
+            // 防止鼠标框选文字时打断输入层的焦点
+            if (Entry._INPUT.InputDevice.IsActive)
+                inputElement.focus();
+        }
+
+        string imeText;
+        public override bool ImmCapturing
+        {
+            get { return IME; }
+        }
+
+        protected override InputText.EInput InputCapture(out string text)
+        {
+            PrepareInputElement();
+            bool __ime = IME;
+            IME = false;
+            //if (Entry._IPlatform.Platform == EPlatform.Desktop)
+            //{
+            //    if (!string.IsNullOrEmpty(inputElement.innerText))
+            //    {
+            //        if (__ime)
+            //        {
+            //            imeText = inputElement.innerText;
+            //            inputElement.innerText = string.Empty;
+            //            text = string.Empty;
+            //            return EInput.Input;
+            //        }
+            //        else
+            //        {
+            //            // BUG: 最后空格或123确认输入的文字时那次案件还是属于IME状态
+            //            imeText = null;
+            //            text = inputElement.innerText;
+            //            inputElement.innerText = string.Empty;
+            //            return EInput.Input;
+            //        }
+            //    }
+            //    else
+            //    {
+            //        text = string.Empty;
+            //        return EInput.Input;
+            //    }
+            //}
+            //else
+            {
+                text = inputElement.innerText;
+                return EInput.Replace;
+            }
+        }
+        protected override void OnActive(ITypist typist)
+        {
+            OnStop(typist);
+            PrepareInputElement();
+            //inputElement.contenteditable = true;
+            inputElement.innerText = typist.Text;
+            inputElement.focus();
+        }
+        protected override void OnStop(ITypist typist)
+        {
+            PrepareInputElement();
+            //element.contenteditable = false;
+            inputElement.blur();
+            inputElement.innerText = "";
+        }
+    }
 
     public abstract class TextureJS : TEXTURE
     {
@@ -1157,13 +1263,15 @@ namespace EntryEngine.HTML5
             if (IPlatform.Platform == EPlatform.Desktop)
             {
                 INPUT = new INPUT(new MouseJS());
-                //INPUT.Keyboard = new KeyboardXna();
-                //INPUT.InputDevice = new InputTextXna();
+                INPUT.Keyboard = new KeyboardJS();
 
                 window.document.onmousedown = document_onmousedown;
                 window.document.onmousemove = document_onmousemove;
                 window.document.onmouseup = document_onmouseup;
                 window.document.onmousewheel = document_onmousewheel;
+
+                window.document.onkeydown = document_onkeydown;
+                window.document.onkeyup = document_onkeyup;
             }
             else
             {
@@ -1173,6 +1281,7 @@ namespace EntryEngine.HTML5
                 window.document.ontouchmove = document_ontouchmove;
                 window.document.ontouchend = document_ontouchend;
             }
+            INPUT.InputDevice = new InputTextJS();
 
             AUDIO = null;
 
@@ -1221,6 +1330,29 @@ namespace EntryEngine.HTML5
             //GRAPHICS.ScreenSize = new VECTOR2(GraphicsWebGL.gl.canvas.width, GraphicsWebGL.gl.canvas.height);
             //GRAPHICS.ScreenSize = new VECTOR2(window.document.body.clientWidth, window.document.body.clientHeight);
             GRAPHICS.ScreenSize = GRAPHICS.ScreenSize;
+        }
+
+        void document_onkeydown(window.KeyboardEvent e)
+        {
+            var pressed = KeyboardJS.Pressed;
+            int count = pressed.Count;
+            for (int i = 0; i < count; i++)
+                if (pressed[i] == e.keyCode)
+                    return;
+            // ime输入，每次按键都是229
+            if (e.keyCode == 229)
+            {
+                InputTextJS.IME = true;
+            }
+            else
+            {
+                InputTextJS.IME = false;
+                pressed.Add(e.keyCode);
+            }
+        }
+        void document_onkeyup(window.KeyboardEvent e)
+        {
+            KeyboardJS.Pressed.Remove(e.keyCode);
         }
 
         void document_onmousedown(window.MouseEvent obj)

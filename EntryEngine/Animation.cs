@@ -1042,7 +1042,7 @@ namespace EntryEngine
         {
             byte[] buffer = IO.ReadByte(file);
             ByteRefReader reader = new ByteRefReader(buffer);
-            reader.OnDeserialize = TEXTURE.Deserializer(Manager, null);
+            reader.AddOnDeserialize(TEXTURE.Deserializer(Manager, null));
             return new ParticleSystem(reader.ReadObject<StructureParticleSystem>());
         }
         protected internal override void LoadAsync(AsyncLoadContent async)
@@ -1053,7 +1053,7 @@ namespace EntryEngine
                     List<AsyncLoadContent> asyncs = new List<AsyncLoadContent>();
 
                     ByteRefReader reader = new ByteRefReader(wait.Data);
-                    reader.OnDeserialize = TEXTURE.Deserializer(Manager, asyncs);
+                    reader.AddOnDeserialize(TEXTURE.Deserializer(Manager, asyncs));
                     TEXTURE result = new ParticleSystem(reader.ReadObject<StructureParticleSystem>());
 
                     // 等待异步加载的延迟图片加载完成

@@ -1914,7 +1914,7 @@ namespace EntryEngine
             get
             {
                 blick.Interval = BlickInterval;
-                return blick.Current <= BlickInterval / 2;
+                return blick.Current <= (BlickInterval >> 1);
             }
         }
         public VECTOR2 CursorLocation
@@ -2006,8 +2006,9 @@ namespace EntryEngine
                 throw new InvalidOperationException();
             this.stopping = true;
             typist.OnStop(current);
-            OnStop(typist);
+            var temp = typist;
             typist = null;
+            OnStop(typist);
             operations.Clear();
             this.index = -1;
             this.from = -1;
@@ -2194,8 +2195,9 @@ namespace EntryEngine
                         break;
 
                     case EInput.Replace:
-                        current = input;
-                        //index = current.Length;
+                        index += input.Length - current.Length;
+                        //current = input;
+                        Text = input;
                         break;
 
                     case EInput.Done:
@@ -6793,7 +6795,7 @@ namespace EntryEngine
 
         private EViewport viewportMode = EViewport.Adapt;
         private MATRIX2x3 view = MATRIX2x3.Identity;
-        private MATRIX2x3 graphicsToScreen;
+        protected MATRIX2x3 graphicsToScreen;
         private MATRIX2x3 screenToGraphics;
         private RECT graphicsViewport = new RECT(0, 0, 1280, 720);
         private RenderState nullRenderState;

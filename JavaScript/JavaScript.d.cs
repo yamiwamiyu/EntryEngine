@@ -144,6 +144,7 @@ public static class window
         public Action<TouchEvent> ontouchmove;
         public Action<TouchEvent> ontouchend;
         public Action<KeyboardEvent> onkeydown;
+        public Action<KeyboardEvent> onkeypress;
         public Action<KeyboardEvent> onkeyup;
         public Action onload;
         public Action<WheelEvent> onmousewheel;
@@ -344,10 +345,17 @@ public abstract class Element
 }
 public abstract class HTMLElement : Element
 {
+    /// <summary>是否允许编辑文字，允许则可以输入文字</summary>
+    public bool contenteditable;
     public string outerHTML;
     public string outerText;
+    public string innerText;
     public string style;
+    //public Action oninput;
+    public Action onblur;
     public extern void appendChild(HTMLElement element);
+    public extern void focus();
+    public extern void blur();
 }
 public abstract class HTMLCanvasElement : HTMLElement
 {

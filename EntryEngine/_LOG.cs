@@ -167,8 +167,46 @@ namespace EntryEngine
 			}
             public void Error(Exception ex, string message, params object[] param)
             {
-                AppendException(ex);
-                _LOG.Error(message, param);
+                //lock (this)
+                //{
+                //    AppendException(ex);
+                //    Error(message, param);
+                //}
+
+                int exDepth = 0;
+                Exception temp = ex;
+                while (temp != null)
+                {
+                    exDepth++;
+                    temp = temp.InnerException;
+                }
+
+                if (exDepth > 0)
+                {
+                    int len = param.Length;
+                    Array.Resize(ref param, len + exDepth);
+                    Exception[] exes = new Exception[exDepth];
+                    {
+                        int index = 0;
+                        temp = ex;
+                        while (temp != null)
+                        {
+                            exes[index++] = temp;
+                            temp = temp.InnerException;
+                        }
+                    }
+                    StringBuilder builder = new StringBuilder(message);
+                    for (int i = len; i < param.Length; i++)
+                    {
+                        builder.AppendFormat("\r\n{{{0}}}", i);
+                        // 从内往外记录异常
+                        temp = exes[exDepth - (i - len) - 1];
+                        param[i] = string.Format("msg: {0}\r\nstack: {1}", temp.Message, temp.StackTrace);
+                    }
+                    message = builder.ToString();
+                }
+
+                Error(message, param);
             }
 			public void Statistics(string key, int value)
 			{
@@ -194,7 +232,7 @@ namespace EntryEngine
         }
 	}
 #if DEBUG
-    public class LoggerFile : _LOG.Logger
+    public class LoggerFile : _LOG.Logger, IDisposable
     {
         const string NEW_LOG = "#LOG_new.txt";
         const string OLD_LOG = "#LOG_old.txt";
@@ -218,6 +256,13 @@ namespace EntryEngine
                 Base.Log(ref record);
             string format = string.Format("[{0}] {1}", record.Time.ToString("yyyy-MM-dd HH:mm:ss"), record.ToString());
             writer.WriteLine(format);
+        }
+        public void Dispose()
+        {
+            if (writer != null)
+            {
+                writer.Close();
+            }
         }
     }
     public class LoggerConsole : _LOG.Logger
