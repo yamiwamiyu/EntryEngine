@@ -506,8 +506,8 @@ namespace EntryBuilder
         [STAThread]
 		static void Main(string[] args)
         {
-            _LOG._Logger = new LoggerConsole();
-
+            //_LOG._Logger = new LoggerConsole();
+            
             //using (Bitmap bitmap = new Bitmap("Test.png"))
             //{
             //    GaussianBlur gauss = new GaussianBlur(15);
@@ -516,7 +516,7 @@ namespace EntryBuilder
             //    gaussImage.Save("Test1.png");
             //}
 
-            //PublishToWebGL(@"..\..\..\", @"C:\Users\Administrator\Desktop\ChamberH5\Code", @"C:\Users\Administrator\Desktop\ChamberH5\PublishH5\test.html", true, 0);
+            //PublishToWebGL(@"..\..\..\", @"D:\Project\xss\xss\Code\Client", @"D:\Project\xss\xss\Code\Protocol\Protocol", @"D:\Project\xss\xss\Launch\Client\index.html", false, 5);
             //Console.ReadKey();
             //return;
 
@@ -1309,7 +1309,8 @@ namespace EntryBuilder
                 string cbname = agent.Callback != null ? agent.Callback.CodeName() : null;
 
                 //builder.AppendLine("class {0} : {1}, {2}", name, typeof(StubClientAsync).Name, type.Name);
-                builder.AppendLine("class {0} : {1}, {2}", name, typeof(StubClientAsync).Name, type.Name);
+                //builder.AppendLine("class {0} : {1}, {2}", name, typeof(StubClientAsync).Name, type.Name);
+                builder.AppendLine("class {0} : {1}", name, typeof(StubClientAsync).Name);
                 builder.AppendBlock(() =>
                 {
                     if (agent.Callback != null)
@@ -6539,8 +6540,8 @@ namespace EntryBuilder
 					 */
 				});
 			});
-			Shell[] shells = Assembly.GetExecutingAssembly().GetTypes(typeof(Shell)).
-				Where(t => !t.IsAbstract).Select(t => (Shell)(t.GetConstructor(new Type[0]).Invoke(new object[0]))).ToArray();
+			var shells = Assembly.GetExecutingAssembly().GetTypes(typeof(CSharpShell.Shell)).
+                Where(t => !t.IsAbstract).Select(t => (CSharpShell.Shell)(t.GetConstructor(new Type[0]).Invoke(new object[0]))).ToArray();
 			// shell on
 			ushort d = 0;
 			bytes = result;
@@ -6638,7 +6639,7 @@ namespace EntryBuilder
 
 				// Protect之后result长度可能发生变化
 				int length = result.Length;
-				Shell shell = shells[_RANDOM.Next(shells.Length)];
+				var shell = shells[_RANDOM.Next(shells.Length)];
 				shell.Protect(ref result);
 				//File.WriteAllText(string.Format("Temp{0}.txt", d), Utility.Indent(builder.ToString()));
 
@@ -7505,7 +7506,7 @@ namespace EntryBuilder
 			}
 			Console.WriteLine("生成动画完毕");
 		}
-        public static void TexFontFromText(string inputText, string fontName, byte fontSize, byte fontStyle, string outputFileName)
+        public static void TexFontFromText(string inputTextOrEmptyForAllChar, string fontName, byte fontSize, byte fontStyle, string outputFileName)
         {
             Font font;
             if (string.IsNullOrEmpty(fontName) || fontSize <= 0)
@@ -7518,8 +7519,16 @@ namespace EntryBuilder
             else
                 font = new Font(fontName, fontSize, (FontStyle)fontStyle, GraphicsUnit.Pixel);
 
-            char[] text = File.ReadAllText(inputText).Distinct().ToArray();
-            Array.Sort(text);
+            char[] text;
+            if (!string.IsNullOrEmpty(inputTextOrEmptyForAllChar))
+            {
+                text = File.ReadAllText(inputTextOrEmptyForAllChar).Distinct().ToArray();
+                Array.Sort(text);
+            }
+            else
+            {
+                text = _UNICODE.GetString(ushort.MinValue, ushort.MaxValue).ToCharArray();
+            }
 
             ByteWriter writer = new ByteWriter();
             writer.Write(font.Name);
@@ -7529,7 +7538,7 @@ namespace EntryBuilder
             int count = text.Length;
             writer.Write(count);
 
-            using (Bitmap bitmap = new Bitmap(256, 256))
+            using (Bitmap bitmap = new Bitmap(1024, 1024))
             {
                 using (Graphics graphics = Graphics.FromImage(bitmap))
                 {
@@ -7557,7 +7566,7 @@ namespace EntryBuilder
 
                         if (x + w > bitmap.Width)
                         {
-                            if (y + h > bitmap.Height)
+                            if (y + h + h > bitmap.Height)
                             {
                                 // save
                                 string file = string.Format("{0}\\{1}_{2}_{3}.png", outputDir, font.Name, font.Size, index);
@@ -7570,10 +7579,14 @@ namespace EntryBuilder
                                     return;
                                 }
                                 graphics.Clear(Color.Transparent);
+
+                                x = 0;
+                                y = 0;
                             }
                             else
                             {
                                 x = 0;
+                                y += h;
                             }
                         }
 
@@ -7611,7 +7624,7 @@ namespace EntryBuilder
             int count = text.Length;
             writer.Write(count);
 
-            using (Bitmap bitmap = new Bitmap(256, 256))
+            using (Bitmap bitmap = new Bitmap(1024, 1024))
             {
                 using (Graphics graphics = Graphics.FromImage(bitmap))
                 {
@@ -7636,7 +7649,7 @@ namespace EntryBuilder
 
                         if (x + w > bitmap.Width)
                         {
-                            if (y + h > bitmap.Height)
+                            if (y + h + h > bitmap.Height)
                             {
                                 // save
                                 string file = string.Format("{0}\\{1}_{2}_{3}.png", outputDir, fontName, fontSize, index);
@@ -7649,10 +7662,14 @@ namespace EntryBuilder
                                     return;
                                 }
                                 graphics.Clear(Color.Transparent);
+
+                                x = 0;
+                                y = 0;
                             }
                             else
                             {
                                 x = 0;
+                                y += h;
                             }
                         }
 
@@ -8242,19 +8259,28 @@ namespace EntryBuilder
             File.WriteAllBytes(fileListVersion, BitConverter.GetBytes(new FileInfo(fileList).LastWriteTime.Ticks));
             Console.WriteLine("复制资源完成");
         }
-        public static void PublishToWebGL(string entryEngineRootDir, string projectCodeClientDir, string outputFile, bool min, byte encrypt)
+        public static void PublishToWebGL(string entryEngineRootDir, string projectCodeClientDir, string otherSplitBySemicolon, string outputFile, bool min, byte encrypt)
         {
             BuildDir(ref entryEngineRootDir);
             BuildDir(ref projectCodeClientDir);
-            CodeResolve[] resolves = new CodeResolve[]
+            CodeResolve[] resolves;
+            if (!string.IsNullOrEmpty(otherSplitBySemicolon))
             {
-                new CodeResolve(".net", "CLIENT;SERVER", Directory.GetFiles(entryEngineRootDir + @"CSharp\.net\", "*.cs", SearchOption.AllDirectories)
-                    .Concat(Directory.GetFiles(entryEngineRootDir + @"JavaScript\", "*.cs", SearchOption.TopDirectoryOnly)).ToArray()),
-                new CodeResolve("EntryEngine", "CLIENT", Directory.GetFiles(entryEngineRootDir + @"EntryEngine\", "*.cs", SearchOption.AllDirectories)),
-                new CodeResolve("HTML5", "", Directory.GetFiles(entryEngineRootDir + @"HTML5\", "*.cs", SearchOption.AllDirectories)),
-                new CodeResolve("Client", "", Directory.GetFiles(projectCodeClientDir + @"Client\", "*.cs", SearchOption.AllDirectories)),
-                new CodeResolve("Entry", "HTML5", Directory.GetFiles(projectCodeClientDir + @"PCRun\", "*.cs", SearchOption.AllDirectories)),
-            };
+                string[] others = otherSplitBySemicolon.Split(';');
+                resolves = new CodeResolve[5 + others.Length];
+                for (int i = 0, offset = 2; i < others.Length; i++, offset++)
+                    resolves[offset] = new CodeResolve(others[i], "", Directory.GetFiles(others[i], "*.cs", SearchOption.AllDirectories));
+            }
+            else
+            {
+                resolves = new CodeResolve[5];
+            }
+            resolves[0] = new CodeResolve(".net", "CLIENT;SERVER", Directory.GetFiles(entryEngineRootDir + @"CSharp\.net\", "*.cs", SearchOption.AllDirectories)
+                    .Concat(Directory.GetFiles(entryEngineRootDir + @"JavaScript\", "*.cs", SearchOption.TopDirectoryOnly)).ToArray());
+            resolves[1] = new CodeResolve("EntryEngine", "CLIENT", Directory.GetFiles(entryEngineRootDir + @"EntryEngine\", "*.cs", SearchOption.AllDirectories));
+            resolves[resolves.Length - 3] = new CodeResolve("HTML5", "", Directory.GetFiles(entryEngineRootDir + @"HTML5\", "*.cs", SearchOption.AllDirectories));
+            resolves[resolves.Length - 2] = new CodeResolve("Client", "HTML5", Directory.GetFiles(projectCodeClientDir + @"Client\", "*.cs", SearchOption.AllDirectories));
+            resolves[resolves.Length - 1] = new CodeResolve("Entry", "HTML5", Directory.GetFiles(projectCodeClientDir + @"PCRun\", "*.cs", SearchOption.AllDirectories));
 
             Stopwatch watch = Stopwatch.StartNew();
             List<DefineFile> defines = new List<DefineFile>();
@@ -8265,7 +8291,7 @@ namespace EntryBuilder
                 try
                 {
                     project.ParseFromFile(item.Files);
-                    Console.WriteLine("Parse [{0}] Time Elapsed: {1}", item.Name, watch.ElapsedMilliseconds.ToString());
+                    _LOG.Debug("Parse [{0}] Time Elapsed: {1}", item.Name, watch.ElapsedMilliseconds.ToString());
                 }
                 catch (ParseFileException ex)
                 {
@@ -8277,16 +8303,16 @@ namespace EntryBuilder
                     _LOG.Error(ex, "Parse Project Error!\r\nFile={0}", item.Name);
                     return;
                 }
-                try
-                {
+                //try
+                //{
                     Refactor.Resolve(project, true);
                     Console.WriteLine("Resolve [{0}]: {1}", item.Name, watch.ElapsedMilliseconds.ToString());
-                }
-                catch (Exception ex)
-                {
-                    _LOG.Error(ex, "Resolve Project Error!\r\nFile={0}", item.Name);
-                    return;
-                }
+                //}
+                //catch (Exception ex)
+                //{
+                //    _LOG.Error(ex, "Resolve Project Error!\r\nFile={0}", item.Name);
+                //    return;
+                //}
                 defines.AddRange(project.Files);
             }
             try
@@ -8352,11 +8378,43 @@ namespace EntryBuilder
             StringBuilder builder = new StringBuilder();
             builder.AppendLine("<head><meta charset=\"utf-8\"></head>");
             builder.AppendLine("<body>");
+            builder.AppendLine("<div id=\"__input\" contenteditable=\"true\"></div>");
             //builder.AppendLine("<canvas id=\"WEBGL\"></canvas>");
             //builder.AppendLine("<canvas id=\"CANVAS\"></canvas>");
-            builder.AppendLine("</body style=\"width:100%;height:100%;\">");
+            builder.AppendLine("</body>");
             builder.AppendLine("<script>");
+
+            // 进一步加密压缩代码
+            //if (encrypt > 0)
+            //{
+            //    byte[] bytes = Encoding.UTF8.GetBytes(code);
+            //    var shells = Assembly.GetExecutingAssembly().GetTypes(typeof(JSShell.Shell)).
+            //        Where(t => !t.IsAbstract).Select(t => (JSShell.Shell)(t.GetConstructor(new Type[0]).Invoke(new object[0]))).ToArray();
+
+            //    builder.AppendLine("var req = new XMLHttpRequest();");
+            //    builder.AppendLine("req.onreadystatechange = () =>");
+            //    builder.AppendBlockWithEnd(() =>
+            //    {
+            //        builder.AppendLine("if (req.readyState == 4 && req.status == 200)");
+            //        // 解析代码
+            //        builder.AppendLine("");
+            //    });
+            //    builder.AppendLine("req.open(\"GET\", \"code.js\", true);");
+            //    builder.AppendLine("req.responseType = \"text\";");
+            //    builder.AppendLine("req.send();");
+
+            //    for (int i = 0; i < encrypt; i++)
+            //    {
+            //        var shell = shells[_RANDOM.Next(0, shells.Length)];
+            //        shell.Protect(ref bytes);
+
+                    
+            //    }
+
+            //    File.WriteAllBytes(Path.Combine(Path.GetDirectoryName(outputFile), "code.js"), bytes);
+            //}
             builder.AppendLine(code);
+
             builder.AppendLine("console.log(\"LOAD COMPLETED\");");
             builder.AppendLine("console.log(\"RUNNING\");");
             builder.AppendLine("Program.Main(null);");
@@ -8365,7 +8423,7 @@ namespace EntryBuilder
             watch.Stop();
 
             File.WriteAllText(outputFile, builder.ToString());
-            Console.WriteLine("Write Code Time Elapsed: {0}", watch.ElapsedMilliseconds.ToString());
+            _LOG.Debug("Write Code Time Elapsed: {0}", watch.ElapsedMilliseconds.ToString());
         }
         public static void CreateFileToEmptyDirectory(string inputDir, string defaultFile)
         {

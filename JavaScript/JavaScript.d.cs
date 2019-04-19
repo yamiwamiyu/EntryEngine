@@ -351,7 +351,7 @@ public abstract class HTMLElement : Element
     public string outerText;
     public string innerText;
     public string style;
-    //public Action oninput;
+    public Action oninput;
     public Action onblur;
     public extern void appendChild(HTMLElement element);
     public extern void focus();

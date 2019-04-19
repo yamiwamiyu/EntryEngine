@@ -101,6 +101,11 @@ namespace EntryEngine.UI
 			get;
 			set;
 		}
+        string ITypist.Text
+        {
+            get { return this.Text; }
+            set { this.Text = value; }
+        }
         bool ITypist.Readonly
         {
             get { return true; }
@@ -112,6 +117,10 @@ namespace EntryEngine.UI
         bool ITypist.IsMask
         {
             get { return false; }
+        }
+        RECT ITypist.TextArea
+        {
+            get { return this.TextArea; }
         }
         public bool IsActive
         {
@@ -356,7 +365,7 @@ namespace EntryEngine.UI
             }
             return true;
         }
-	}
+    }
 }
 
 #endif

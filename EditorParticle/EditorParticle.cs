@@ -646,14 +646,14 @@ public partial class EditorParticle : SceneEditorEntry
     {
         //ByteRefWriter writer = new ByteRefWriter(SerializeSetting.DefaultSerializeProperty);
         ByteRefWriter writer = new ByteRefWriter();
-        writer.OnSerialize = TEXTURE.Serializer;
+        writer.AddOnSerialize(TEXTURE.Serializer);
         return writer;
     }
     ByteRefReader GetReader(byte[] buffer)
     {
         //ByteRefReader reader = new ByteRefReader(buffer, SerializeSetting.DefaultSerializeProperty);
         ByteRefReader reader = new ByteRefReader(buffer);
-        reader.OnDeserialize = TEXTURE.Deserializer(Content, null);
+        reader.AddOnDeserialize(TEXTURE.Deserializer(Content, null));
         return reader;
     }
     ParticleStream[] Load(string file)

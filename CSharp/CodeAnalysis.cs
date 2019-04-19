@@ -5930,16 +5930,16 @@ namespace EntryBuilder.CodeAnalysis.Refactoring
         string GetName(string name, bool type)
         {
             char c = name[0];
-            //if (c == '_' || (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z'))
-            //{
-            //    int count;
-            //    if (!testRename.TryGetValue(name, out count))
-            //        count = 0;
-            //    count++;
-            //    testRename[name] = count;
-            //    return name + count;
-            //}
-            //else
+            if (c == '_' || (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z'))
+            {
+                int count;
+                if (!testRename.TryGetValue(name, out count))
+                    count = 0;
+                count++;
+                testRename[name] = count;
+                return name + count;
+            }
+            else
             {
                 if (type)
                     return tprovider.Provide();
@@ -6523,7 +6523,6 @@ namespace EntryBuilder.CodeAnalysis.Refactoring
 
             FixedBuilder(() =>
             {
-
                 #region 泛型外包类型
                 // 通过定义一个方法传入泛型类型来动态创建具体类型的泛型类实例
                 if (node.Generic.IsGeneric)
@@ -7472,7 +7471,7 @@ namespace EntryBuilder.CodeAnalysis.Refactoring
                 if (_var != null)
                 {
                     // 内部定义的临时变量不需要clone
-                    if (isReturn && _var.DeclaringMember != DefiningMember)
+                    //if (isReturn && _var.DeclaringMember != DefiningMember)
                         structType = _var.Type;
                 }
                 else
@@ -8176,7 +8175,10 @@ namespace EntryBuilder.CodeAnalysis.Refactoring
                     {
                         if (member.IsStatic || member.IsConstant)
                         {
-                            if (t2 != null && !(node.Target is New))
+                            if (t2 != null && !(node.Target is New) 
+                                && (!(node.Target is ReferenceMember) 
+                                // 例如this继承IEnumerable<T>，this会使t2 != null，此时应该调用的是扩展方法
+                                    || (((ReferenceMember)node.Target).Name.Name != "this" && ((ReferenceMember)node.Target).Name.Name != "base")))
                             {
                                 // 显示调用从父类型继承的静态成员
                                 builder.Append(GetTypeName(member.ContainingType));
@@ -9009,15 +9011,21 @@ namespace EntryBuilder.CodeAnalysis.Refactoring
             if (!t.IsStruct)
                 return 4;
             var members = t.Members;
-            int size = 0;
-            foreach (var item in members)
+            // 基础类型
+            int size = Refactor.GetPrimitiveTypeSize(t);
+            if (size == -1)
             {
-                if (!item.IsField)
-                    continue;
-                var type = item.ReturnType;
-                int s = Refactor.GetPrimitiveTypeSize(type);
-                if (s != -1) size += s;
-                else size += GetStructSize(type);
+                // 其它自定义结构类型
+                size = 0;
+                foreach (var item in members)
+                {
+                    if (!item.IsField)
+                        continue;
+                    var type = item.ReturnType;
+                    int s = Refactor.GetPrimitiveTypeSize(type);
+                    if (s != -1) size += s;
+                    else size += GetStructSize(type);
+                }
             }
             return size;
         }
@@ -9064,7 +9072,7 @@ namespace EntryBuilder.CodeAnalysis.Refactoring
             StringBuilder sb = new StringBuilder();
             foreach (var item in renamedTypes)
                 sb.AppendLine(item.ToString());
-            System.IO.File.WriteAllText("index.txt", sb.ToString());
+            //System.IO.File.WriteAllText("index.txt", sb.ToString());
 
             builder.AppendLine("Number.prototype.GetHashCode = function() { return this; };");
             builder.AppendLine("Number.prototype.$c2s = function() { return String.fromCharCode(this); };");
@@ -12899,7 +12907,7 @@ namespace EntryBuilder.CodeAnalysis.Refactoring
                     {
                         var current = parents.Pop();
                         // todo: test
-                        if (current.Name.Name == "Request" && definingMember != null && definingMember.Name.Name == "Bregister_Click")
+                        if (current.Name.Name == "Protocol" && definingMember != null && definingMember.Name.Name == "IAccountProxy")
                         //if (current.Name.Name == "IndexOf" && definingMember != null && definingMember.Name.Name == "IndexOf" && definingType.Name.Name == "Utility")
                         {
                             CSharpMember member2 = definingType.Members.FirstOrDefault(f => f.Name.Name == current.Name.Name);
@@ -12994,6 +13002,7 @@ namespace EntryBuilder.CodeAnalysis.Refactoring
                             //if (!HasMethodArgument || parents.Count == 0)
                             {
                                 // HACK: (暂不解决，修改成员名称不与类名冲突即可)成员和类型名相同时，两种都有可能，不过作为返回类型一定是一致的；引用类型变成引用成员，可能导致生成的代码有错误
+                                // BUG: 类型成员名称和命名空间重名，例如Stub类的Protocol
                                 var members = definingMember.ContainingType.Members.Where(m => m.Name.Name == cname && (findMethodFlag || (m.IsField || m.IsConstant || m.IsProperty)) && finder.CanVisitMember(m)).ToList();
                                 if (members.Count > 0)
                                 {

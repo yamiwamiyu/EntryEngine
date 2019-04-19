@@ -11,7 +11,7 @@ namespace PCRun
         [AInvariant]static void Main(string[] args)
         {
             // 可修改PATH更改项目资源的根目录
-            EntryEngine.HTML5.HTML5Gate.PATH = "http://127.0.0.1:88/Content/";
+            EntryEngine.HTML5.HTML5Gate.PATH = "Content/";
             new EntryEngine.HTML5.HTML5Gate().Run(gate_OnInitialized);
         }
 #else

@@ -1914,21 +1914,27 @@ namespace EntryEngine.Serialize
             }
             public override void WriteObject(object value, Type type)
             {
-                if (PARENT.OnSerialize != null)
+                if (PARENT.onSerialize.Count > 0)
                 {
-                    var list = PARENT.OnSerialize.GetInvocationList();
-                    if (list.Length == 1)
-                    {
-                        if (PARENT.OnSerialize(PARENT, value, type))
+                    for (int i = 0; i < PARENT.onSerialize.Count; i++)
+                        if (PARENT.onSerialize[i](PARENT, value, type))
                             return;
-                    }
-                    else
-                    {
-                        for (int i = 0; i < list.Length; i++)
-                            if (((Func<ByteRefWriter, object, Type, bool>)list[i])(PARENT, value, type))
-                                return;
-                    }
                 }
+                //if (PARENT.OnSerialize != null)
+                //{
+                //    var list = PARENT.OnSerialize.GetInvocationList();
+                //    if (list.Length == 1)
+                //    {
+                //        if (PARENT.OnSerialize(PARENT, value, type))
+                //            return;
+                //    }
+                //    else
+                //    {
+                //        for (int i = 0; i < list.Length; i++)
+                //            if (((Func<ByteRefWriter, object, Type, bool>)list[i])(PARENT, value, type))
+                //                return;
+                //    }
+                //}
                 //if (PARENT.OnSerialize != null && PARENT.OnSerialize(PARENT, value, type))
                 //    return;
 
@@ -2025,8 +2031,11 @@ namespace EntryEngine.Serialize
         }
 
         /// <summary>自定义类型序列化，若进行了序列化，应该返回true</summary>
-        public Func<ByteRefWriter, object, Type, bool> OnSerialize;
+        //public Func<ByteRefWriter, object, Type, bool> OnSerialize;
+        private List<Func<ByteRefWriter, object, Type, bool>> onSerialize = new List<Func<ByteRefWriter, object, Type, bool>>();
         private INNER_WRITER writer;
+
+        public List<Func<ByteRefWriter, object, Type, bool>> OnSerialize { get { return onSerialize; } }
 
         public ByteRefWriter()
         {
@@ -2036,6 +2045,27 @@ namespace EntryEngine.Serialize
         public ByteRefWriter(SerializeSetting setting) : this()
         {
             writer.Setting = setting;
+        }
+
+        public void AddOnSerialize(Func<ByteRefWriter, object, Type, bool> method)
+        {
+            if (!onSerialize.Contains(method))
+            {
+                onSerialize.Add(method);
+            }
+        }
+        public void SetOnSerialize(Func<ByteRefWriter, object, Type, bool> method)
+        {
+            onSerialize.Clear();
+            onSerialize.Add(method);
+        }
+        public void RemoveOnSerialize(Func<ByteRefWriter, object, Type, bool> method)
+        {
+            onSerialize.Remove(method);
+        }
+        public void ClearOnSerialize()
+        {
+            onSerialize.Clear();
         }
 
         public void Write<T>(T obj)
@@ -2089,7 +2119,7 @@ namespace EntryEngine.Serialize
             if (value != null && type == null)
                 type = value.GetType();
             ByteRefWriter writer = new ByteRefWriter();
-            writer.OnSerialize = onSerialize;
+            writer.AddOnSerialize(onSerialize);
             writer.writer.Setting = setting;
             writer.WriteObject(value, type);
             return writer.GetBuffer();
@@ -2214,26 +2244,36 @@ namespace EntryEngine.Serialize
             /// <summary>由于读取数组不一样，需要先读取引用，所以封装成内部类，仅允许ReadObject操作</summary>
             public override object ReadObject(Type type)
             {
-                if (PARENT.OnDeserialize != null)
+                if (PARENT.onDeserialize.Count > 0)
                 {
-                    var list = PARENT.OnDeserialize.GetInvocationList();
                     Func<ByteRefReader, object> _read = null;
-                    if (list.Length == 1)
-                        _read = PARENT.OnDeserialize(type);
-                    else
+                    for (int i = 0; i < PARENT.onDeserialize.Count; i++)
                     {
-                        for (int i = 0; i < list.Length; i++)
-                        {
-                            _read = ((Func<Type, Func<ByteRefReader, object>>)list[i])(type);
-                            if (_read != null)
-                                break;
-                        }
+                        _read = PARENT.onDeserialize[i](type);
+                        if (_read != null)
+                            return _read(PARENT);
                     }
-                    // 以上方法主要GetInvocationList费时
-                    //var _read = PARENT.OnDeserialize(type);
-                    if (_read != null)
-                        return _read(PARENT);
                 }
+                //if (PARENT.OnDeserialize != null)
+                //{
+                //    var list = PARENT.OnDeserialize.GetInvocationList();
+                //    Func<ByteRefReader, object> _read = null;
+                //    if (list.Length == 1)
+                //        _read = PARENT.OnDeserialize(type);
+                //    else
+                //    {
+                //        for (int i = 0; i < list.Length; i++)
+                //        {
+                //            _read = ((Func<Type, Func<ByteRefReader, object>>)list[i])(type);
+                //            if (_read != null)
+                //                break;
+                //        }
+                //    }
+                //    // 以上方法主要GetInvocationList费时
+                //    //var _read = PARENT.OnDeserialize(type);
+                //    if (_read != null)
+                //        return _read(PARENT);
+                //}
 
                 if (type.IsEnum)
                 {
@@ -2343,8 +2383,11 @@ namespace EntryEngine.Serialize
             }
         }
 
-        public Func<Type, Func<ByteRefReader, object>> OnDeserialize;
+        //public Func<Type, Func<ByteRefReader, object>> OnDeserialize;
+        private List<Func<Type, Func<ByteRefReader, object>>> onDeserialize = new List<Func<Type, Func<ByteRefReader, object>>>();
         private INNER_READER reader;
+
+        public List<Func<Type, Func<ByteRefReader, object>>> OnDeserialize { get { return onDeserialize; } }
 
         public ByteRefReader(byte[] buffer)
         {
@@ -2354,6 +2397,27 @@ namespace EntryEngine.Serialize
         public ByteRefReader(byte[] buffer, SerializeSetting setting): this(buffer)
         {
             reader.Setting = setting;
+        }
+
+        public void AddOnDeserialize(Func<Type, Func<ByteRefReader, object>> method)
+        {
+            if (!onDeserialize.Contains(method))
+            {
+                onDeserialize.Add(method);
+            }
+        }
+        public void SetOnDeserialize(Func<Type, Func<ByteRefReader, object>> method)
+        {
+            onDeserialize.Clear();
+            onDeserialize.Add(method);
+        }
+        public void RemoveOnDeserialize(Func<Type, Func<ByteRefReader, object>> method)
+        {
+            onDeserialize.Remove(method);
+        }
+        public void ClearOnDeserialize()
+        {
+            onDeserialize.Clear();
         }
 
         public object ReadObject(Type type)
@@ -2386,7 +2450,7 @@ namespace EntryEngine.Serialize
             if (type == null)
                 throw new ArgumentNullException();
             ByteRefReader reader = new ByteRefReader(buffer);
-            reader.OnDeserialize = onDeserialize;
+            reader.AddOnDeserialize(onDeserialize);
             reader.reader.Setting = setting;
             return reader.ReadObject(type);
         }

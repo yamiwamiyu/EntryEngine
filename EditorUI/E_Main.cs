@@ -307,9 +307,9 @@ namespace EditorUI
         public static byte[] SaveUI(Widget target, bool reff = false)
         {
             ByteRefWriter writer = new ByteRefWriter(GetSetting());
-            writer.OnSerialize += TEXTURE.Serializer;
-            writer.OnSerialize += EntryEngine.Content.Serializer;
-            //writer.OnSerialize += UISerializer;
+            writer.AddOnSerialize(TEXTURE.Serializer);
+            writer.AddOnSerialize(EntryEngine.Content.Serializer);
+            //writer.AddOnSerialize(UISerializer;
             writer.Write(target.Target.Instance.GetType().SimpleAQName());
             InternalSaveUI(target, writer, reff);
             return writer.GetBuffer();
@@ -331,21 +331,21 @@ namespace EditorUI
                     InternalSaveUI((Widget)element[i].Tag, writer, true);
             }
 
-            writer.OnSerialize += UISerializer;
+            writer.AddOnSerialize(UISerializer);
             WritingProperty = element;
             element.ResetContentSize();
             writer.WriteObject(element, typeof(UIElement));
             WritingProperty = null;
-            writer.OnSerialize -= UISerializer;
+            writer.RemoveOnSerialize(UISerializer);
         }
         public static ByteRefReader GetReader(byte[] buffer)
         {
             SerializeSetting setting = SerializeSetting.DefaultSetting;
             setting.Property = true;
             ByteRefReader reader = new ByteRefReader(buffer, setting);
-            reader.OnDeserialize += TEXTURE.Deserializer(Instance.Content, null);
-            reader.OnDeserialize += FONT.Deserializer(Instance.Content, null);
-            //reader.OnDeserialize += UIDeserializer;
+            reader.AddOnDeserialize(TEXTURE.Deserializer(Instance.Content, null));
+            reader.AddOnDeserialize(FONT.Deserializer(Instance.Content, null));
+            //reader.AddOnDeserializeUIDeserializer;
             return reader;
         }
         public static UIElement LoadUI(string file)
@@ -402,7 +402,7 @@ namespace EditorUI
             }
 
             var deserializer = UIDeserializer(childs);
-            reader.OnDeserialize += deserializer;
+            reader.AddOnDeserialize(deserializer);
             UIElement instance = reader.ReadObject<UIElement>();
             if (reference == null)
             {
@@ -417,7 +417,7 @@ namespace EditorUI
                 reference.Anchor = instance.Anchor;
                 instance = reference;
             }
-            reader.OnDeserialize -= deserializer;
+            reader.RemoveOnDeserialize(deserializer);
 
             // editor should be built by instance
             Widget view = SetElement(instance);

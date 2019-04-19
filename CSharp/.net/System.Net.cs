@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using __System.IO;
 using System.Text;
+using __System.Net.Sockets;
 
 namespace __System.Net
 {
@@ -207,6 +208,7 @@ namespace __System.Net
         private string method = "GET";
         private Uri uri;
         private int timeout = 60000;
+        private Dictionary<string, string> headers = new Dictionary<string, string>();
         public override string ContentType
         {
             get { return contentType; }
@@ -216,6 +218,10 @@ namespace __System.Net
         {
             get { return method; }
             set { method = value; }
+        }
+        public Dictionary<string, string> Headers
+        {
+            get { return headers; }
         }
         public override Uri RequestUri
         {
@@ -278,9 +284,9 @@ namespace __System.Net
             if (stream == null)
                 data = __empty;
             else
-                data = stream.GetBuffer();
+                data = stream.ToArray();
             AsyncResult result = new AsyncResult(state);
-            this.__api = HttpRequestAsync(ContentType, Method, uri.AbsolutePath, Timeout, data,
+            this.__api = HttpRequestAsync(ContentType, Method, uri.AbsolutePath, Timeout, headers, data,
                 () =>
                 {
                     result.isCompleted = true;
@@ -301,8 +307,9 @@ namespace __System.Net
                 stream = null;
             }
         }
+        [ASystemAPI]private void AddHeader(string key, string value) { }
 
-        [ASystemAPI]private static object HttpRequestAsync(string contentType, string method, string url, int timeout, byte[] data, Action callback) { return null; }
+        [ASystemAPI]private static object HttpRequestAsync(string contentType, string method, string url, int timeout, Dictionary<string, string> headers, byte[] data, Action callback) { return null; }
         [ASystemAPI]private static void HttpRequestAbort(object provide) { }
     }
     public abstract class WebResponse
@@ -387,42 +394,344 @@ namespace __System.Net
         [ASystemAPI]private static byte[] GetResponse(object provide) { return null; }
     }
 
-    //public abstract class EndPoint
-    //{
-    //    protected EndPoint() { }
-    //}
-    //public class IPEndPoint : EndPoint
-    //{
-    //    public const int MinPort = 0;
-    //    public const int MaxPort = 65535;
-    //    private IPAddress m_Address;
-    //    private int m_Port;
-    //    public IPAddress Address
-    //    {
-    //        get { return this.m_Address; }
-    //        set { this.m_Address = value; }
-    //    }
-    //    public int Port
-    //    {
-    //        get { return this.m_Port; }
-    //        set { this.m_Port = value; }
-    //    }
-    //    public IPEndPoint(IPAddress address, int port)
-    //    {
-    //        this.m_Port = port;
-    //        this.m_Address = address;
-    //    }
-    //    public override string ToString()
-    //    {
-    //        return string.Format("{0}:{1}", this.m_Address.ToString(), this.Port.ToString());
-    //    }
-    //    public override bool Equals(object comparand)
-    //    {
-    //        return comparand is IPEndPoint && ((IPEndPoint)comparand).m_Address.Equals(this.m_Address) && ((IPEndPoint)comparand).m_Port == this.m_Port;
-    //    }
-    //    public override int GetHashCode()
-    //    {
-    //        return this.m_Address.GetHashCode() ^ this.m_Port;
-    //    }
-    //}
+    public abstract class EndPoint
+    {
+        public virtual AddressFamily AddressFamily
+        {
+            get
+            {
+                throw new NotImplementedException();
+            }
+        }
+    }
+    public class IPEndPoint : EndPoint
+    {
+        public const int MinPort = 0;
+        public const int MaxPort = 65535;
+        private IPAddress m_Address;
+        private int m_Port;
+        internal const int AnyPort = 0;
+        internal static IPEndPoint Any = new IPEndPoint(IPAddress.Any, 0);
+        internal static IPEndPoint IPv6Any = new IPEndPoint(IPAddress.IPv6Any, 0);
+        public override AddressFamily AddressFamily
+        {
+            get
+            {
+                return this.m_Address.AddressFamily;
+            }
+        }
+        public IPAddress Address
+        {
+            get
+            {
+                return this.m_Address;
+            }
+            set
+            {
+                this.m_Address = value;
+            }
+        }
+        public int Port
+        {
+            get
+            {
+                return this.m_Port;
+            }
+            set
+            {
+                if (value < MinPort || value >= MaxPort)
+                {
+                    throw new ArgumentOutOfRangeException("value");
+                }
+                this.m_Port = value;
+            }
+        }
+        public IPEndPoint(long address, int port)
+        {
+            this.Port = port;
+            this.m_Address = new IPAddress(address);
+        }
+        public IPEndPoint(IPAddress address, int port)
+        {
+            if (address == null)
+            {
+                throw new ArgumentNullException("address");
+            }
+            this.Port = port;
+            this.m_Address = address;
+        }
+        public override string ToString()
+        {
+            string format;
+            if (this.m_Address.AddressFamily == AddressFamily.InterNetworkV6)
+            {
+                format = "[{0}]:{1}";
+            }
+            else
+            {
+                format = "{0}:{1}";
+            }
+            return string.Format(format, this.m_Address.ToString(), this.Port.ToString());
+        }
+        public override bool Equals(object comparand)
+        {
+            return comparand is IPEndPoint && ((IPEndPoint)comparand).m_Address.Equals(this.m_Address) && ((IPEndPoint)comparand).m_Port == this.m_Port;
+        }
+        public override int GetHashCode()
+        {
+            return this.m_Address.GetHashCode() ^ this.m_Port;
+        }
+    }
+    public class IPAddress
+    {
+        public static readonly IPAddress Any = new IPAddress(0);
+        public static readonly IPAddress Loopback = new IPAddress(16777343);
+        //public static readonly IPAddress Broadcast = new IPAddress((long)((ulong)-1));
+        //public static readonly IPAddress None = IPAddress.Broadcast;
+        internal const long LoopbackMask = 255L;
+        internal long m_Address;
+        internal string m_ToString;
+        public static readonly IPAddress IPv6Any = new IPAddress(new byte[16], 0L);
+        public static readonly IPAddress IPv6Loopback = new IPAddress(new byte[]
+		{
+			0,
+			0,
+			0,
+			0,
+			0,
+			0,
+			0,
+			0,
+			0,
+			0,
+			0,
+			0,
+			0,
+			0,
+			0,
+			1
+		}, 0L);
+        public static readonly IPAddress IPv6None = new IPAddress(new byte[16], 0L);
+        private AddressFamily m_Family = AddressFamily.InterNetwork;
+        private ushort[] m_Numbers = new ushort[8];
+        private long m_ScopeId;
+        private int m_HashCode;
+        internal const int IPv4AddressBytes = 4;
+        internal const int IPv6AddressBytes = 16;
+        internal const int NumberOfLabels = 8;
+        public AddressFamily AddressFamily
+        {
+            get
+            {
+                return this.m_Family;
+            }
+        }
+        //internal bool IsBroadcast
+        //{
+        //    get
+        //    {
+        //        return this.m_Family != AddressFamily.InterNetworkV6 && this.m_Address == IPAddress.Broadcast.m_Address;
+        //    }
+        //}
+        public bool IsIPv6Multicast
+        {
+            get
+            {
+                return this.m_Family == AddressFamily.InterNetworkV6 && (this.m_Numbers[0] & 65280) == 65280;
+            }
+        }
+        public bool IsIPv6LinkLocal
+        {
+            get
+            {
+                return this.m_Family == AddressFamily.InterNetworkV6 && (this.m_Numbers[0] & 65472) == 65152;
+            }
+        }
+        public bool IsIPv6SiteLocal
+        {
+            get
+            {
+                return this.m_Family == AddressFamily.InterNetworkV6 && (this.m_Numbers[0] & 65472) == 65216;
+            }
+        }
+        public bool IsIPv6Teredo
+        {
+            get
+            {
+                return this.m_Family == AddressFamily.InterNetworkV6 && this.m_Numbers[0] == 8193 && this.m_Numbers[1] == 0;
+            }
+        }
+        public bool IsIPv4MappedToIPv6
+        {
+            get
+            {
+                if (this.AddressFamily != AddressFamily.InterNetworkV6)
+                {
+                    return false;
+                }
+                for (int i = 0; i < 5; i++)
+                {
+                    if (this.m_Numbers[i] != 0)
+                    {
+                        return false;
+                    }
+                }
+                return this.m_Numbers[5] == 65535;
+            }
+        }
+        public IPAddress(long newAddress)
+        {
+            this.m_Address = newAddress;
+        }
+        public IPAddress(byte[] address, long scopeid)
+        {
+            if (address == null)
+            {
+                throw new ArgumentNullException("address");
+            }
+            if (address.Length != 16)
+            {
+                throw new ArgumentException("dns_bad_ip_address");
+            }
+            this.m_Family = AddressFamily.InterNetworkV6;
+            for (int i = 0; i < 8; i++)
+            {
+                this.m_Numbers[i] = (ushort)((int)address[i * 2] * 256 + (int)address[i * 2 + 1]);
+            }
+            this.m_ScopeId = scopeid;
+        }
+        private IPAddress(ushort[] address, uint scopeid)
+        {
+            this.m_Family = AddressFamily.InterNetworkV6;
+            this.m_Numbers = address;
+            this.m_ScopeId = (long)((ulong)scopeid);
+        }
+        internal IPAddress(int newAddress)
+        {
+            //this.m_Address = ((long)newAddress & (long)((ulong)-1));
+        }
+        public static bool TryParse(string ipString, out IPAddress address)
+        {
+            address = IPAddress.InternalParse(ipString, true);
+            return address != null;
+        }
+        public static IPAddress Parse(string ipString)
+        {
+            return IPAddress.InternalParse(ipString, false);
+        }
+        private static IPAddress InternalParse(string ipString, bool tryParse)
+        {
+            if (ipString == null)
+            {
+                if (tryParse)
+                {
+                    return null;
+                }
+                throw new ArgumentNullException("ipString");
+            }
+            else
+            {
+                throw new NotImplementedException();
+            }
+        }
+        public byte[] GetAddressBytes()
+        {
+            byte[] array;
+            if (this.m_Family == AddressFamily.InterNetworkV6)
+            {
+                array = new byte[16];
+                int num = 0;
+                for (int i = 0; i < 8; i++)
+                {
+                    array[num++] = (byte)(this.m_Numbers[i] >> 8 & 255);
+                    array[num++] = (byte)(this.m_Numbers[i] & 255);
+                }
+            }
+            else
+            {
+                array = new byte[]
+				{
+					(byte)this.m_Address,
+					(byte)(this.m_Address >> 8),
+					(byte)(this.m_Address >> 16),
+					(byte)(this.m_Address >> 24)
+				};
+            }
+            return array;
+        }
+        public override string ToString()
+        {
+            if (this.m_ToString == null)
+            {
+                int num2 = 15;
+                char[] ptr = new char[15];
+                int num3 = (int)(this.m_Address >> 24 & 255L);
+                do
+                {
+                    ptr[--num2] = (char)(48 + num3 % 10);
+                    num3 /= 10;
+                }
+                while (num3 > 0);
+                ptr[--num2] = '.';
+                num3 = (int)(this.m_Address >> 16 & 255L);
+                do
+                {
+                    ptr[--num2] = (char)(48 + num3 % 10);
+                    num3 /= 10;
+                }
+                while (num3 > 0);
+                ptr[--num2] = '.';
+                num3 = (int)(this.m_Address >> 8 & 255L);
+                do
+                {
+                    ptr[--num2] = (char)(48 + num3 % 10);
+                    num3 /= 10;
+                }
+                while (num3 > 0);
+                ptr[--num2] = '.';
+                num3 = (int)(this.m_Address & 255L);
+                do
+                {
+                    ptr[--num2] = (char)(48 + num3 % 10);
+                    num3 /= 10;
+                }
+                while (num3 > 0);
+                this.m_ToString = new string(ptr, num2, 15 - num2);
+            }
+            return this.m_ToString;
+        }
+        public static bool IsLoopback(IPAddress address)
+        {
+            if (address == null)
+            {
+                throw new ArgumentNullException("address");
+            }
+            if (address.m_Family == AddressFamily.InterNetworkV6)
+            {
+                return address.Equals(IPAddress.IPv6Loopback);
+            }
+            return (address.m_Address & 255L) == (IPAddress.Loopback.m_Address & 255L);
+        }
+        internal bool Equals(object comparandObj, bool compareScopeId)
+        {
+            IPAddress iPAddress = comparandObj as IPAddress;
+            if (iPAddress == null)
+            {
+                return false;
+            }
+            if (this.m_Family != iPAddress.m_Family)
+            {
+                return false;
+            }
+            return iPAddress.m_Address == this.m_Address;
+        }
+        public override bool Equals(object comparand)
+        {
+            return this.Equals(comparand, true);
+        }
+        public override int GetHashCode()
+        {
+            return (int)this.m_Address;
+        }
+    }
 }

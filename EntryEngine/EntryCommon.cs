@@ -1869,10 +1869,9 @@ namespace EntryEngine
         }
         public void Clear()
         {
-            T parent = (T)this;
             T[] item = this.ToArray();
-            for (int i = 0; i < item.Length; i++)
-                Remove(item[i]);
+            for (int i = Childs.Count - 1; i >= 0; i--)
+                Remove(i);
         }
         public T Find(Func<T, bool> func)
         {

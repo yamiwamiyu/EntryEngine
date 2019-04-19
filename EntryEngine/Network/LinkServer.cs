@@ -849,6 +849,7 @@ namespace EntryEngine.Network
         {
             get { return contexts.Count > 0; }
         }
+        protected Queue<HttpListenerContext> Contexts { get { return contexts; } }
 
         public string RelativeUrl(string url)
         {
@@ -898,7 +899,7 @@ namespace EntryEngine.Network
                 }
             }
         }
-        protected sealed override Link Accept()
+        protected override Link Accept()
         {
             HttpListenerContext context;
             IPEndPoint ep;
@@ -941,7 +942,7 @@ namespace EntryEngine.Network
     }
     public class ProxyHttpService : ProxyHttpAsync
     {
-        private Dictionary<string, AgentHttp> agents = new Dictionary<string, AgentHttp>();
+        public AgentHttp Agent;
 
         protected override IEnumerator<LoginResult> Login(Link link)
         {
@@ -949,297 +950,26 @@ namespace EntryEngine.Network
         }
         protected override Link InternalAccept(HttpListenerContext context)
         {
-            string origin = context.Request.Url.OriginalString;
-            string url = RelativeUrl(origin);
-            if (url == null)
+            if (Agent != null)
             {
-                _LOG.Error("Invalid url: {0}", context.Request.Url.OriginalString);
-                return null;
-            }
-
-            string path = context.Request.Url.LocalPath;
-            foreach (var agent in agents)
-            {
-                foreach (var stub in agent.Value.protocols)
-                {
-                    int index = path.IndexOf(stub.Key);
-                    if (index != -1
-                        //&& path.Substring(index + 1) == agent.Key)
-                        )
-                    {
-                        agent.Value.Context = context;
-                        agent.Value.OnProtocol(null);
-                        return null;
-                    }
-                }
+                Agent.Context = context;
+                Agent.OnProtocol(null);
             }
             return null;
         }
-        public void AddAgent(string directory, AgentHttp agent)
-        {
-            if (agent == null)
-                throw new ArgumentNullException("agent");
-            agents.Add(directory, agent);
-        }
         protected override void OnUpdate(GameTime time) { }
     }
-    //public abstract class ProxyHttpLong : ProxyHttpAsync
-    //{
-    //    class _LinkHttpResponse : LinkHttpResponse
-    //    {
-    //        static byte[] ID_BUFFER = new byte[1];
-
-    //        public byte ID
-    //        {
-    //            get;
-    //            private set;
-    //        }
-    //        public bool IsKeepAlive
-    //        {
-    //            get { return length == 0; }
-    //        }
-
-    //        public _LinkHttpResponse(HttpListenerContext context)
-    //            : base(context)
-    //        {
-    //            this.length -= 2;
-    //            if (!IsKeepAlive)
-    //            {
-    //                Request.Read(ID_BUFFER, 0, 1);
-    //                this.ID = ID_BUFFER[0];
-    //                this.length -= 1;
-    //            }
-    //        }
-    //    }
-    //    class LinkLongHttpResponse : LinkQueue<_LinkHttpResponse>
-    //    {
-    //        class LinkFlush : LinkLink
-    //        {
-    //            public byte ID;
-    //            public byte[] Flushed;
-    //        }
-
-    //        internal int PoolID;
-    //        private Queue<Link> waitClosed = new Queue<Link>();
-    //        private LinkFlush lastFlush = new LinkFlush();
-    //        private IPEndPoint endPoint;
-
-    //        public override bool IsConnected
-    //        {
-    //            get { return PoolID != -1; }
-    //        }
-    //        public override Link BaseLink
-    //        {
-    //            get { return lastFlush.BaseLink; }
-    //            set { lastFlush.BaseLink = value; }
-    //        }
-    //        public override IPEndPoint EndPoint
-    //        {
-    //            get { return endPoint; }
-    //        }
-    //        public override bool CanFlush
-    //        {
-    //            get
-    //            {
-    //                return BaseLink != null &&
-    //                    (!BaseLink.CanRead || lastFlush.Flushed != null);
-    //            }
-    //        }
-
-    //        public void Reconnect(IPEndPoint ep)
-    //        {
-    //            if (endPoint != null && ep != null)
-    //                throw new InvalidOperationException("Endpoint has been set.");
-    //            endPoint = ep;
-    //        }
-    //        public void Enqueue(_LinkHttpResponse link)
-    //        {
-    //            if (link == null)
-    //                throw new ArgumentNullException("link");
-    //            if (link.IsKeepAlive)
-    //                queue.AddLast(link);
-    //            else
-    //                queue.AddFirst(link);
-    //        }
-    //        public override void Write(byte[] buffer, int offset, int size)
-    //        {
-    //            if (BaseLink == null)
-    //            {
-    //                if (queue.Count == 0)
-    //                    throw new ArgumentOutOfRangeException("没有可写的连接");
-    //                BaseLink = queue.First.Value;
-    //            }
-    //            base.Write(buffer, offset, size);
-    //        }
-    //        protected sealed override void FlushOver(byte[] flush)
-    //        {
-    //            if (!((_LinkHttpResponse)BaseLink).IsKeepAlive)
-    //                lastFlush.Flushed = flush;
-    //            waitClosed.Enqueue(Dequeue());
-
-    //            while (waitClosed.Count > 0)
-    //            {
-    //                Link link = waitClosed.Peek();
-    //                if (link.IsConnected)
-    //                {
-    //                    break;
-    //                }
-    //                else
-    //                {
-    //                    waitClosed.Dequeue();
-    //                }
-    //            }
-    //        }
-    //        public override byte[] Read()
-    //        {
-    //            _LinkHttpResponse link = null;
-    //            try
-    //            {
-    //                while (queue.Count > 0)
-    //                {
-    //                    link = queue.First.Value;
-    //                    if (link.IsConnected)
-    //                        break;
-    //                    Dequeue();
-    //                }
-    //                if (link == null || link.IsKeepAlive)
-    //                    return null;
-    //                if (lastFlush.ID == link.ID)
-    //                {
-    //                    if (lastFlush.Flushed == null)
-    //                    {
-    //                        _LOG.Warning("Repeated package.");
-    //                        // 视为过期请求不受理
-    //                        Dequeue().Close();
-    //                    }
-    //                    else
-    //                    {
-    //                        WriteBytes(lastFlush.Flushed, 0, lastFlush.Flushed.Length);
-    //                    }
-    //                    return null;
-    //                }
-    //                else
-    //                {
-    //                    lastFlush.Flushed = null;
-    //                    lastFlush.ID = link.ID;
-    //                }
-    //                return link.Read();
-    //            }
-    //            catch (HttpListenerException ex)
-    //            {
-    //                // 客户端关闭了流，可能已经操作超时
-    //                _LOG.Debug("response queue read error! ex:{0} code={1}", ex.Message, ex.ErrorCode);
-    //                Dequeue().Close();
-    //                return null;
-    //            }
-    //        }
-    //        public override void Close()
-    //        {
-    //            base.Close();
-    //            while (waitClosed.Count > 0)
-    //                waitClosed.Dequeue().Close();
-    //            endPoint = null;
-    //        }
-    //    }
-
-    //    private static byte[] ID_BUFFER = new byte[2];
-    //    private Pool<LinkLongHttpResponse> cpools = new Pool<LinkLongHttpResponse>(2048);
-    //    public TimeSpan KeepAlive = TimeSpan.FromMinutes(60);
-
-    //    public ProxyHttpLong()
-    //    {
-    //        this.ClientDisconnect += ProxyHttpLong_ClientDisconnect;
-    //    }
-
-    //    private void ProxyHttpLong_ClientDisconnect(Link obj)
-    //    {
-    //        LinkLongHttpResponse link = obj as LinkLongHttpResponse;
-    //        if (link != null && link.PoolID != -1)
-    //        {
-    //            cpools.RemoveAt(link.PoolID);
-    //            link.PoolID = -1;
-    //        }
-    //    }
-    //    protected override Link InternalAccept(HttpListenerContext context)
-    //    {
-    //        context.Request.InputStream.Read(ID_BUFFER, 0, 2);
-    //        ushort id = BitConverter.ToUInt16(ID_BUFFER, 0);
-    //        _LinkHttpResponse link = new _LinkHttpResponse(context);
-    //        if (id != 65535)
-    //        {
-    //            LinkLongHttpResponse client = cpools[id];
-    //            if (client == null || client.PoolID == -1)
-    //            {
-    //                _LOG.Warning("Invalid http connection id.");
-    //            }
-    //            else if (client.PoolID != id)
-    //            {
-    //                _LOG.Warning("Incorrect http connection id.");
-    //            }
-    //            else if (!client.EndPoint.Address.Equals(link.EndPoint.Address))
-    //            {
-    //                _LOG.Warning("Invalid http connection ip: {0}", link.EndPoint.Address.ToString());
-    //            }
-    //            else
-    //            {
-    //                client.Enqueue(link);
-    //            }
-    //            return null;
-    //        }
-    //        else
-    //        {
-    //            LinkLongHttpResponse client;
-    //            int index = cpools.Allot(out client);
-    //            if (index == -1)
-    //            {
-    //                client = new LinkLongHttpResponse();
-    //                index = cpools.Add(client);
-    //            }
-    //            if (index >= 65535)
-    //            {
-    //                cpools.RemoveAt(index);
-    //                throw new OutOfMemoryException("Http connection pool is full.");
-    //            }
-    //            client.PoolID = index;
-
-    //            client.Reconnect(link.EndPoint);
-    //            //client.Write(BitConverter.GetBytes((ushort)index));
-    //            //client.Flush();
-
-    //            link.WriteBytes(BitConverter.GetBytes((ushort)index), 0, 2);
-    //            link.Flush();   // Flush完成后会Close
-    //            return client;
-    //        }
-    //    }
-    //}
     public abstract class ProxyHttpLong : ProxyHttpAsync
     {
-        /// <summary>由于短连接的特性，未能由服务器主动推送出去的数据将会被缓存，超过此尺寸时，缓存将被清空，负数则允许无限增大</summary>
-        public static int MAX_PUSH_CACHE_SIZE = -1;
+        private static byte[] ID_BUFFER = new byte[2];
+        private Pool<LinkHttpResponse> cpools = new Pool<LinkHttpResponse>(2048);
 
-        class LinkHttpResponse : LinkBinary
+        protected class LinkHttpResponse : LinkHttpResponseShort
         {
-            internal int PoolID = -1;
-            private LinkedList<HttpListenerContext> requests = new LinkedList<HttpListenerContext>();
-            private int dataLength = -1;
-            internal IPEndPoint endpoint;
+            public int PoolID = -1;
             private byte[] pushCached = new byte[8192];
             private int pushCacheIndex = 0;
 
-            private HttpListenerContext Peek
-            {
-                get { return requests.First.Value; }
-            }
-            private HttpListenerContext Dequeue
-            {
-                get
-                {
-                    var link = requests.First.Value;
-                    dataLength = -1;
-                    requests.RemoveFirst();
-                    return link;
-                }
-            }
             public override bool IsConnected
             {
                 get { return PoolID != -1; }
@@ -1261,30 +991,8 @@ namespace EntryEngine.Network
                     return dataLength > 0;
                 }
             }
-            protected override int DataLength
-            {
-                get { return dataLength; }
-            }
-            public override IPEndPoint EndPoint
-            {
-                get
-                {
-                    if (requests.Count == 0)
-                        return endpoint;
-                    else
-                        return Peek.Request.RemoteEndPoint;
-                }
-            }
-            //public IPEndPoint RealEndPoint
-            //{
-            //    get { return context.Request.RemoteEndPoint; }
-            //}
-            protected override bool CanFlush
-            {
-                get { return base.CanFlush && requests.Count > 0; }
-            }
 
-            public void Enqueue(HttpListenerContext context)
+            public override void Enqueue(HttpListenerContext context)
             {
                 Beat();
                 int dataLength = (int)context.Request.ContentLength64;
@@ -1302,63 +1010,7 @@ namespace EntryEngine.Network
                     requests.AddFirst(context);
                 }
             }
-            protected override int InternalRead(byte[] buffer, int offset, int size)
-            {
-                int read = Peek.Request.InputStream.Read(buffer, offset, size);
-                dataLength -= read;
-                return read;
-            }
-            protected override void InternalFlush(byte[] buffer)
-            {
-                if (requests.Count == 0)
-                {
-                    // 没能推送成功时暂时缓存需要推送的数据
-                    SetPushCache(buffer, false);
-                    _LOG.Warning("No can response stream.");
-                    return;
-                }
-                int length = buffer.Length;
-                if (pushCacheIndex > 0)
-                {
-                    // 有之前没推送出去的数据时一并推送
-                    SetPushCache(buffer, true);
-                    buffer = pushCached;
-                    length = pushCacheIndex;
-                    pushCacheIndex = 0;
-                }
-                var response = Dequeue;
-                response.Response.ContentLength64 = length;
-                response.Response.KeepAlive = false;
-                response.Response.OutputStream.BeginWrite(buffer, 0, length, null, null);
-            }
-
-            private void SetPushCache(byte[] buffer, bool flush)
-            {
-                if (pushCacheIndex + buffer.Length > pushCached.Length)
-                {
-                    int capcity = (int)(pushCached.Length * 1.5f + buffer.Length);
-                    // 非最终推送消息需要检查缓冲区大小，超过尺寸则清空之前的所有内容
-                    if (!flush && MAX_PUSH_CACHE_SIZE > 0 && capcity > MAX_PUSH_CACHE_SIZE)
-                    {
-                        pushCacheIndex = 0;
-                    }
-                    else
-                    {
-                        Array.Resize(ref pushCached, (int)(pushCached.Length * 1.5f + buffer.Length));
-                    }
-                }
-                Array.Copy(buffer, 0, pushCached, pushCacheIndex, buffer.Length);
-                pushCacheIndex += buffer.Length;
-            }
-            public override void Close()
-            {
-                while (requests.Count > 0)
-                    Dequeue.Response.Close();
-            }
         }
-
-        private static byte[] ID_BUFFER = new byte[2];
-        private Pool<LinkHttpResponse> cpools = new Pool<LinkHttpResponse>(2048);
 
         public ProxyHttpLong()
         {
@@ -1474,6 +1126,165 @@ namespace EntryEngine.Network
                 socket.Close();
                 socket = null;
             }
+        }
+    }
+
+    public class LinkHttpResponseShort : LinkBinary
+    {
+        /// <summary>由于短连接的特性，未能由服务器主动推送出去的数据将会被缓存，超过此尺寸时，缓存将被清空，负数则允许无限增大</summary>
+        public static int MAX_PUSH_CACHE_SIZE = -1;
+
+        protected LinkedList<HttpListenerContext> requests = new LinkedList<HttpListenerContext>();
+        protected int dataLength = -1;
+        internal IPEndPoint endpoint;
+        private byte[] pushCached = new byte[8192];
+        private int pushCacheIndex = 0;
+
+        protected HttpListenerContext Peek
+        {
+            get { return requests.First.Value; }
+        }
+        protected HttpListenerContext Dequeue
+        {
+            get
+            {
+                var link = requests.First.Value;
+                dataLength = -1;
+                requests.RemoveFirst();
+                return link;
+            }
+        }
+        public override bool IsConnected
+        {
+            get { return true; }
+        }
+        public override bool CanRead
+        {
+            get
+            {
+                if (dataLength <= 0)
+                {
+                    if (requests.Count > 0)
+                    {
+                        dataLength = (int)Peek.Request.ContentLength64;
+                    }
+                }
+                return dataLength > 0;
+            }
+        }
+        protected override int DataLength
+        {
+            get { return dataLength; }
+        }
+        public override IPEndPoint EndPoint
+        {
+            get
+            {
+                if (requests.Count == 0)
+                    return endpoint;
+                else
+                    return Peek.Request.RemoteEndPoint;
+            }
+        }
+        //public IPEndPoint RealEndPoint
+        //{
+        //    get { return context.Request.RemoteEndPoint; }
+        //}
+        protected override bool CanFlush
+        {
+            get { return base.CanFlush && requests.Count > 0; }
+        }
+
+        public virtual void Enqueue(HttpListenerContext context)
+        {
+            Beat();
+            int dataLength = (int)context.Request.ContentLength64;
+            requests.AddFirst(context);
+        }
+        public override byte[] Read()
+        {
+            try
+            {
+                return base.Read();
+            }
+            catch (Exception ex)
+            {
+                dataLength = -1;
+                requests.RemoveFirst();
+                _LOG.Error(ex, "Read Error");
+                throw ex;
+            }
+        }
+        protected override int InternalRead(byte[] buffer, int offset, int size)
+        {
+            int read = Peek.Request.InputStream.Read(buffer, offset, size);
+            dataLength -= read;
+            return read;
+        }
+        protected override void InternalFlush(byte[] buffer)
+        {
+            if (requests.Count == 0)
+            {
+                // 没能推送成功时暂时缓存需要推送的数据
+                SetPushCache(buffer, false);
+                _LOG.Warning("No can response stream.");
+                return;
+            }
+            int length = buffer.Length;
+            if (pushCacheIndex > 0)
+            {
+                // 有之前没推送出去的数据时一并推送
+                SetPushCache(buffer, true);
+                buffer = pushCached;
+                length = pushCacheIndex;
+                pushCacheIndex = 0;
+            }
+            var response = Dequeue;
+            response.Response.ContentLength64 = length;
+            response.Response.KeepAlive = false;
+            //response.Response.OutputStream.BeginWrite(buffer, 0, length, WriteOver, response);
+            response.Response.OutputStream.BeginWrite(buffer, 0, length, null, null);
+        }
+        // 不关闭貌似写入没法断开连接
+        //void WriteOver(IAsyncResult ar)
+        //{
+        //    HttpListenerContext context = (HttpListenerContext)ar.AsyncState;
+        //    try
+        //    {
+        //        context.Response.OutputStream.EndWrite(ar);
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        _LOG.Error(ex, "回调写入错误");
+        //    }
+        //    finally
+        //    {
+        //        context.Response.Close();
+        //    }
+        //}
+
+        private void SetPushCache(byte[] buffer, bool flush)
+        {
+            if (pushCacheIndex + buffer.Length > pushCached.Length)
+            {
+                int capcity = (int)(pushCached.Length * 1.5f + buffer.Length);
+                // 非最终推送消息需要检查缓冲区大小，超过尺寸则清空之前的所有内容
+                if (!flush && MAX_PUSH_CACHE_SIZE > 0 && capcity > MAX_PUSH_CACHE_SIZE)
+                {
+                    pushCacheIndex = 0;
+                }
+                else
+                {
+                    Array.Resize(ref pushCached, (int)(pushCached.Length * 1.5f + buffer.Length));
+                }
+            }
+            Array.Copy(buffer, 0, pushCached, pushCacheIndex, buffer.Length);
+            pushCacheIndex += buffer.Length;
+        }
+        public override void Close()
+        {
+            while (requests.Count > 0)
+                Dequeue.Response.Close();
         }
     }
 
@@ -1641,6 +1452,7 @@ namespace EntryEngine.Network
         private Queue<HttpListenerContext> queue = new Queue<HttpListenerContext>();
         /// <summary>一次OnProtocol处理完一个请求时触发</summary>
         public Action OnReset;
+        public HttpListenerContext Context;
 
         protected bool IsPost
         {
@@ -1651,11 +1463,6 @@ namespace EntryEngine.Network
         {
             get;
             set;
-        }
-        public HttpListenerContext Context
-        {
-            get;
-            internal set;
         }
 
         public AgentHttp()
@@ -1698,41 +1505,43 @@ namespace EntryEngine.Network
 
             IsPost = Context.Request.HttpMethod == "POST";
 
-            var segments = Context.Request.Url.Segments;
-            if (segments.Length <= 1)
-                throw new FormatException("URL必须包含'/'以标识接口名");
-
-            string protocol;
-            if (segments.Length == 2)
-                protocol = string.Empty;
-            else
-            {
-                string temp = segments[segments.Length - 2];
-                protocol = temp.Substring(0, temp.Length - 1);
-            }
-
-            StubHttp agent;
-            if (!protocols.TryGetValue(protocol, out agent))
-                throw new NotImplementedException("no procotol: " + protocol);
-
-            string stub = segments[segments.Length - 1];
-            int index = stub.IndexOf('.');
-            if (index != -1)
-                stub = stub.Substring(0, index);
-
+            string path = Context.Request.Url.LocalPath.Substring(1);
             try
             {
+                StubHttp agent = null;
+                foreach (var protocol in protocols)
+                {
+                    if (path.StartsWith(protocol.Key))
+                    {
+                        agent = protocol.Value;
+                        break;
+                    }
+                }
+
+                if (agent == null)
+                {
+                    _LOG.Warning("No agent! URL: {0}", path);
+                    return;
+                }
+
+                string stub = path.Substring(agent.Protocol.Length + 1);
+                int paramIndex = stub.IndexOf('?');
+                if (paramIndex != -1)
+                    stub = stub.Substring(0, paramIndex);
+
                 agent[stub](Context);
             }
             catch (Exception ex)
             {
-                _LOG.Error(ex, "协议处理错误");
+                _LOG.Error(ex, "协议处理错误！URL: {0}", path);
             }
-
-            Context = null;
-            Param = null;
-            if (OnReset != null)
-                OnReset();
+            finally
+            {
+                Context = null;
+                Param = null;
+                if (OnReset != null)
+                    OnReset();
+            }
         }
         internal string GetParam(string paramName)
         {

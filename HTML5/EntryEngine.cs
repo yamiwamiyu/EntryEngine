@@ -415,13 +415,18 @@ namespace EntryEngine.HTML5
     public class InputTextJS : InputText
     {
         internal static bool IME;
+        internal static window.KeyboardEvent _229;
         static HTMLElement inputElement;
         static void PrepareInputElement()
         {
             if (inputElement == null)
                 inputElement = window.document.getElementById("__input");
+            //inputElement.oninput = OnInput;
             inputElement.onblur = OnBlur;
         }
+        //static void OnInput()
+        //{
+        //}
         static void OnBlur()
         {
             // 防止鼠标框选文字时打断输入层的焦点
@@ -1343,6 +1348,7 @@ namespace EntryEngine.HTML5
             if (e.keyCode == 229)
             {
                 InputTextJS.IME = true;
+                InputTextJS._229 = e;
             }
             else
             {

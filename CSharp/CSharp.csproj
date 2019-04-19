@@ -61,6 +61,7 @@
     <Compile Include=".net\System.Net.cs">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include=".net\System.Net.Sockets.cs" />
     <Compile Include=".net\System.Reflection.cs">
       <SubType>Code</SubType>
     </Compile>

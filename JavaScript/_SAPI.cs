@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Text;
+using System.Collections.Generic;
 
 public partial class @_float
 {
@@ -200,7 +201,7 @@ namespace __System.Net
 {
     public partial class HttpWebRequest
     {
-        private static object HttpRequestAsync(string contentType, string method, string url, int timeout, byte[] data, Action callback)
+        private static object HttpRequestAsync(string contentType, string method, string url, int timeout, Dictionary<string, string> headers, byte[] data, Action callback)
         {
             var request = new XMLHttpRequest();
             request.timeout = timeout;
@@ -213,6 +214,10 @@ namespace __System.Net
             };
             request.responseType = "text";
             request.open(method, url, true);
+            //request.setRequestHeader("content-length", data.Length.ToString());
+            if (headers.Count > 0)
+                foreach (var item in headers)
+                    request.setRequestHeader(item.Key, item.Value);
             request.send(SingleEncoding.Single.GetString(data));
             return request;
         }
