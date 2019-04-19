@@ -353,9 +353,30 @@ public abstract class HTMLElement : Element
     public string style;
     public Action oninput;
     public Action onblur;
+    public Action onchange;
     public extern void appendChild(HTMLElement element);
+    public extern void click();
     public extern void focus();
     public extern void blur();
+}
+public abstract class HTMLFileSelector : HTMLElement
+{
+    public FileList files;
+}
+public abstract class FileList
+{
+    public abstract class File : Blob
+    {
+        public string name;
+    }
+    public int length;
+    public extern File this[int index] { get; }
+}
+public class FileReader
+{
+    public Action onloadend;
+    public ArrayBuffer result;
+    public extern void readAsArrayBuffer(Blob blob);
 }
 public abstract class HTMLCanvasElement : HTMLElement
 {
@@ -392,6 +413,7 @@ public abstract class HTMLCanvasElement : HTMLElement
   */
 public abstract class ArrayBuffer
 {
+    public int byteLength;
     public ArrayBuffer slice(int begin, int end) { return null; }
 }
 public class ArrayBufferView
@@ -892,6 +914,12 @@ public class Uint8ClampedArray
     public void set(int index, byte value) { }
     public void set(Uint8ClampedArray array, int offset) { }
     public Uint8ClampedArray slice(int start, int end) { return null; }
+}
+public class Uint8Array : ArrayBuffer
+{
+    public int length;
+    public int byteLength;
+    public extern byte this[int index] { get; set; }
 }
 public class Float32Array : ArrayBuffer
 {

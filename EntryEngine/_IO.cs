@@ -162,6 +162,10 @@ namespace EntryEngine
             {
                 File.WriteAllBytes(file, content);
             }
+            public virtual void FileBrowser(string[] suffix, bool multiple, Action<byte[][]> onSelect)
+            {
+                throw new NotImplementedException();
+            }
 
             public static string ReadPreambleText(string text, Encoding encoding)
             {

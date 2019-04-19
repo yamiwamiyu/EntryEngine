@@ -1292,7 +1292,10 @@ namespace EntryEngine.Network
                 if (size > buffer.Length)
                 {
                     // buffer为最终数据包
-                    buffer = new byte[size - MAX_BUFFER_SIZE - 4];
+                    if (ValidateCRC)
+                        buffer = new byte[size - MAX_BUFFER_SIZE - 4];
+                    else
+                        buffer = new byte[size - MAX_BUFFER_SIZE];
                     bigData = 0;
                     // 去掉包头
                     if (peek < receive)
@@ -1342,14 +1345,17 @@ namespace EntryEngine.Network
                 available -= canReceive;
             }
             // 读取包尾crc验证
-            if (bigData == buffer.Length && available >= 4)
+            if (bigData == buffer.Length && (!ValidateCRC || available >= 4))
             {
-                byte[] crc = new byte[4];
-                InternalRead(crc, 0, 4);
-                uint getCrc = BitConverter.ToUInt32(crc, 0);
-                uint calcCrc = _IO.Crc32(buffer, 0, buffer.Length);
-                if (getCrc != calcCrc)
-                    throw new ExceptionCRC(getCrc, calcCrc);
+                if (ValidateCRC)
+                {
+                    byte[] crc = new byte[4];
+                    InternalRead(crc, 0, 4);
+                    uint getCrc = BitConverter.ToUInt32(crc, 0);
+                    uint calcCrc = _IO.Crc32(buffer, 0, buffer.Length);
+                    if (getCrc != calcCrc)
+                        throw new ExceptionCRC(getCrc, calcCrc);
+                }
                 bigData = -1;
                 byte[] bigPackage = buffer;
                 buffer = new byte[MaxBuffer];

@@ -149,6 +149,44 @@ namespace EntryEngine.HTML5
         {
             window.localStorage.setItem(file, SingleEncoding.Single.GetString(content));
         }
+
+        private static HTMLFileSelector fileSelector;
+        public override void FileBrowser(string[] suffix, bool multiple, Action<byte[][]> onSelect)
+        {
+            // 弹出文件选择框会阻塞导致激活不了鼠标键盘等事件
+            MouseJS.state.left = false;
+            TouchJS.TouchEvent = null;
+            KeyboardJS.Pressed.Clear();
+            if (fileSelector == null)
+            {
+                fileSelector = (HTMLFileSelector)window.document.getElementById("file");
+            }
+            fileSelector.onchange = () =>
+            {
+                int len = fileSelector.files.length;
+                if (len != 0)
+                {
+                    FileReader fileReader = new FileReader();
+                    byte[][] selectes = new byte[len][];
+                    int index = 0;
+                    fileReader.onloadend = () =>
+                    {
+                        Uint8Array array = (Uint8Array)fileReader.result;
+                        byte[] bytes = new byte[array.byteLength];
+                        for (int i = 0; i < array.byteLength; i++)
+                            bytes[i] = array[i];
+                        selectes[index] = bytes;
+                        index++;
+                        if (index != len)
+                            fileReader.readAsArrayBuffer(fileSelector.files[index]);
+                        else
+                            onSelect(selectes);
+                    };
+                    fileReader.readAsArrayBuffer(fileSelector.files[index]);
+                }
+            };
+            fileSelector.click();
+        }
     }
     public class IOJSWeb : IOJSLocal
     {

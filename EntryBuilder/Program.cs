@@ -8379,6 +8379,7 @@ namespace EntryBuilder
             builder.AppendLine("<head><meta charset=\"utf-8\"></head>");
             builder.AppendLine("<body>");
             builder.AppendLine("<div id=\"__input\" contenteditable=\"true\"></div>");
+            builder.AppendLine("<input type=\"file\" id=\"file\" style=\"filter:alpha(opacity=0);opacity:0;width: 0;height: 0;\"/>");
             //builder.AppendLine("<canvas id=\"WEBGL\"></canvas>");
             //builder.AppendLine("<canvas id=\"CANVAS\"></canvas>");
             builder.AppendLine("</body>");
