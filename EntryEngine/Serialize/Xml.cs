@@ -734,7 +734,9 @@ namespace EntryEngine.Serialize
                 //    node = node.First;
                 //    type = Type.GetType(node.Name);
                 //}
-                if (node.ChildCount == 1 && node.First.ChildCount > 0 && node.First.Name.StartsWith(XmlWriter.SPECIAL))
+                // 单纯的接口实现某方法而没有其它字段属性时，First.ChildCount是0
+                //if (node.ChildCount == 1 && node.First.ChildCount > 0 && node.First.Name.StartsWith(XmlWriter.SPECIAL))
+                if (node.ChildCount == 1 && node.First.Name.StartsWith(XmlWriter.SPECIAL))
                 {
                     node = node.First;
                     type = _SERIALIZE.LoadSimpleAQName(node.Name.Substring(XmlWriter.SPECIAL.Length));

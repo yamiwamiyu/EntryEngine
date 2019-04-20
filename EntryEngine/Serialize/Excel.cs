@@ -153,7 +153,7 @@ namespace EntryEngine.Serialize
             }
             else
             {
-                if (type != this.type)
+                if (type != this.type || cursor != 0)
                 {
                     if (value != null)
                     {
@@ -167,14 +167,18 @@ namespace EntryEngine.Serialize
             if (value == null)
                 return;
 
-            int count = 0;
+            //int count = 0;
+            cursor = 0;
             Setting.Serialize(type, value,
                 field =>
                 {
+                    cursor++;
                     WriteObject(field.GetValue(), field.Type);
-                    if (count++ < columnCount - 1)
+                    //if (count++ < columnCount - 1)
+                    if (cursor < columnCount)
                         WriteSeperator();
                 });
+            cursor = 0;
         }
 		private void WriteCustomValue(object value, Type type)
 		{

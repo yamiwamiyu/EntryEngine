@@ -2049,6 +2049,7 @@ namespace EntryEngine.Serialize
 
         public void AddOnSerialize(Func<ByteRefWriter, object, Type, bool> method)
         {
+            if (method == null) return;
             if (!onSerialize.Contains(method))
             {
                 onSerialize.Add(method);
@@ -2401,6 +2402,7 @@ namespace EntryEngine.Serialize
 
         public void AddOnDeserialize(Func<Type, Func<ByteRefReader, object>> method)
         {
+            if (method == null) return;
             if (!onDeserialize.Contains(method))
             {
                 onDeserialize.Add(method);

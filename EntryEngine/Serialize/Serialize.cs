@@ -1453,7 +1453,10 @@ namespace EntryEngine.Serialize
         }
         private static void BuildSimpleAQName(StringBuilder builder, Type type)
         {
-            builder.Append("{0}.", type.Namespace);
+            if (!string.IsNullOrEmpty(type.Namespace))
+            {
+                builder.Append("{0}.", type.Namespace);
+            }
             if (type.ReflectedType != null)
             {
                 int count = 0;

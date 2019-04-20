@@ -136,7 +136,7 @@ namespace EntryEngine.Serialize
 			if (abs)
 			{
 				type = value.GetType();
-                WriteString(type.SimpleAQName());
+                WriteString(XmlWriter.SPECIAL + type.SimpleAQName());
 				builder.Append(':');
 				builder.Append('{');
 			}
