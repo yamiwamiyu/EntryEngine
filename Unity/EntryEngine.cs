@@ -331,7 +331,7 @@ namespace EntryEngine.Unity
             get { return TEXTURE.TextureFileType.Enumerable(); }
         }
 
-		protected override Content InternalLoad(byte[] bytes)
+        public override Content LoadFromBytes(byte[] bytes)
 		{
 			Texture2D texture = new Texture2D(1, 1);
 			if (!texture.LoadImage(bytes))

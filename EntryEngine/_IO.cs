@@ -62,6 +62,21 @@ namespace EntryEngine
             return 1;
         }
     }
+    public class SelectFile
+    {
+        internal _IO.iO io;
+        internal object select;
+        internal string file;
+        private byte[] result;
+        public string File { get { return file; } }
+        public object SelectObject { get { return select; } }
+        public byte[] Read()
+        {
+            if (result == null)
+                result = io.ReadSelectFile(this);
+            return result;
+        }
+    }
     public static partial class _IO
     {
         [ADefaultValue(typeof(iO))]
@@ -162,9 +177,21 @@ namespace EntryEngine
             {
                 File.WriteAllBytes(file, content);
             }
-            public virtual void FileBrowser(string[] suffix, bool multiple, Action<byte[][]> onSelect)
+            public virtual void FileBrowser(string[] suffix, bool multiple, Action<SelectFile[]> onSelect)
             {
                 throw new NotImplementedException();
+            }
+            protected SelectFile CreateSelectFile(string file, object obj)
+            {
+                SelectFile select = new SelectFile();
+                select.file = file;
+                select.io = this;
+                select.select = obj;
+                return select;
+            }
+            protected internal virtual byte[] ReadSelectFile(SelectFile select)
+            {
+                return _ReadByte(select.file);
             }
 
             public static string ReadPreambleText(string text, Encoding encoding)

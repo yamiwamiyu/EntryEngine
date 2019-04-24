@@ -151,7 +151,7 @@ namespace EntryEngine.HTML5
         }
 
         private static HTMLFileSelector fileSelector;
-        public override void FileBrowser(string[] suffix, bool multiple, Action<byte[][]> onSelect)
+        public override void FileBrowser(string[] suffix, bool multiple, Action<SelectFile[]> onSelect)
         {
             // 弹出文件选择框会阻塞导致激活不了鼠标键盘等事件
             MouseJS.state.left = false;
@@ -166,26 +166,45 @@ namespace EntryEngine.HTML5
                 int len = fileSelector.files.length;
                 if (len != 0)
                 {
-                    FileReader fileReader = new FileReader();
-                    byte[][] selectes = new byte[len][];
-                    int index = 0;
-                    fileReader.onloadend = () =>
-                    {
-                        Uint8Array array = (Uint8Array)fileReader.result;
-                        byte[] bytes = new byte[array.byteLength];
-                        for (int i = 0; i < array.byteLength; i++)
-                            bytes[i] = array[i];
-                        selectes[index] = bytes;
-                        index++;
-                        if (index != len)
-                            fileReader.readAsArrayBuffer(fileSelector.files[index]);
-                        else
-                            onSelect(selectes);
-                    };
-                    fileReader.readAsArrayBuffer(fileSelector.files[index]);
+                    //FileReader fileReader = new FileReader();
+                    //byte[][] selectes = new byte[len][];
+                    //int index = 0;
+                    //fileReader.onloadend = () =>
+                    //{
+                    //    Uint8Array array = (Uint8Array)fileReader.result;
+                    //    byte[] bytes = new byte[array.byteLength];
+                    //    for (int i = 0; i < array.byteLength; i++)
+                    //        bytes[i] = array[i];
+                    //    selectes[index] = bytes;
+                    //    index++;
+                    //    if (index != len)
+                    //        fileReader.readAsArrayBuffer(fileSelector.files[index]);
+                    //    else
+                    //        onSelect(selectes);
+                    //};
+                    //fileReader.readAsArrayBuffer(fileSelector.files[index]);
+
+                    SelectFile[] files = new SelectFile[len];
+                    for (int i = 0; i < files.Length; i++)
+                        files[i] = CreateSelectFile(fileSelector.files[i].name, fileSelector.files[i]);
+                    onSelect(files);
                 }
             };
             fileSelector.click();
+        }
+        protected override byte[] ReadSelectFile(SelectFile select)
+        {
+            byte[] result = null;
+            FileReader fileReader = new FileReader();
+            fileReader.onloadend = () =>
+            {
+                Uint8Array array = (Uint8Array)fileReader.result;
+                result = new byte[array.byteLength];
+                for (int i = 0; i < array.byteLength; i++)
+                    result[i] = array[i];
+            };
+            fileReader.readAsArrayBuffer((Blob)select.SelectObject);
+            return result;
         }
     }
     public class IOJSWeb : IOJSLocal
@@ -779,7 +798,7 @@ namespace EntryEngine.HTML5
         {
             get { return null; }
         }
-        protected override Content InternalLoad(byte[] bytes)
+        public override Content LoadFromBytes(byte[] bytes)
         {
             throw new NotImplementedException();
         }

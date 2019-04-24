@@ -10,6 +10,10 @@ using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using Rectangle = Microsoft.Xna.Framework.Rectangle;
 using System.IO;
+using System.Windows.Forms;
+using System.Text;
+using Keys = Microsoft.Xna.Framework.Input.Keys;
+using ButtonState = Microsoft.Xna.Framework.Input.ButtonState;
 
 namespace EntryEngine.Xna
 {
@@ -437,7 +441,7 @@ namespace EntryEngine.Xna
         {
             get { return TEXTURE.TextureFileType.Enumerable(); }
         }
-        protected override Content InternalLoad(byte[] buffer)
+        public override Content LoadFromBytes(byte[] buffer)
         {
             using (System.IO.MemoryStream stream = new System.IO.MemoryStream(buffer))
             {
@@ -602,7 +606,7 @@ namespace EntryEngine.Xna
         {
             get { yield return SUFFIX; }
         }
-        protected override Content InternalLoad(byte[] buffer)
+        public override Content LoadFromBytes(byte[] buffer)
         {
             return new ShaderXna(new Effect(XnaGate.Gate.GraphicsDevice, buffer, CompilerOptions.None, null));
         }
@@ -770,7 +774,7 @@ namespace EntryEngine.Xna
             get { return SOUND.FileTypes.Enumerable(); }
         }
 
-        protected override Content InternalLoad(byte[] bytes)
+        public override Content LoadFromBytes(byte[] bytes)
         {
             Sound sound = null;
             CREATESOUNDEXINFO info = new CREATESOUNDEXINFO();
@@ -1295,6 +1299,73 @@ namespace EntryEngine.Xna
             return font.Name.GetHashCode() + ((int)(GetDynamicSize(font.Size) * 100) / 100) + (int)font.Style;
         }
 	}
+    public class IOWinform : _IO.iO
+    {
+        private static OpenFileDialog openFile = new OpenFileDialog();
+        private static string GetFilters(string[] suffix)
+        {
+            string filter = GetFilter(suffix);      // 全部
+            if (suffix != null && suffix.Length > 1)
+            {
+                filter += "|\r\n" + _GetFilters(suffix);       // 各类型
+            }
+            return filter;
+        }
+        private static string _GetFilters(string[] suffix)
+        {
+            if (suffix == null || suffix.Length == 0)
+                return "(*.*)| *.*";
+
+            StringBuilder filter = new StringBuilder();
+            for (int i = 0; i < suffix.Length; i++)
+            {
+                filter.AppendLine(string.Format("(*.{0})|*.{0}|", suffix[i]));
+            }
+            filter.Remove(filter.Length - 4, 4);        // 移除最后一个 "空格" "|" 和 "\r\n"
+            return filter.ToString();
+        }
+        private static string GetFilter(string[] suffix)
+        {
+            if (suffix == null || suffix.Length == 0)
+                return "(*.*)|*.*";
+            else
+                for (int i = 0; i < suffix.Length; i++)
+                    if (string.IsNullOrEmpty(suffix[i]))
+                        suffix[i] = "*";
+
+            StringBuilder filter = new StringBuilder();
+            filter.Append("(");
+            for (int i = 0; i < suffix.Length; i++)
+            {
+                filter.Append(string.Format("*.{0};", suffix[i]));
+            }
+            filter.Remove(filter.Length - 1, 1);    // 移除最后一个";"
+            filter.Append(")|");                 // 添加分割线
+            for (int i = 0; i < suffix.Length; i++)
+            {
+                filter.Append(string.Format("*.{0};", suffix[i]));
+            }
+            filter.Remove(filter.Length - 1, 1);    // 移除最后一个";"
+            return filter.ToString();
+        }
+        public override void FileBrowser(string[] suffix, bool multiple, Action<SelectFile[]> onSelect)
+        {
+            openFile.Multiselect = multiple;
+            openFile.Filter = GetFilter(suffix);
+            if (openFile.ShowDialog() == DialogResult.OK)
+            {
+                if (onSelect != null)
+                {
+                    string[] files = openFile.FileNames;
+                    int len = files.Length;
+                    SelectFile[] result = new SelectFile[len];
+                    for (int i = 0; i < len; i++)
+                        result[i] = CreateSelectFile(files[i], null);
+                    onSelect(result);
+                }
+            }
+        }
+    }
     
 	public class EntryXna : Entry
 	{
@@ -1324,7 +1395,7 @@ namespace EntryEngine.Xna
 
             TEXTURE = null;
 
-            iO = null;
+            iO = new IOWinform();
 
             PipelinePiece.GetDefaultPipeline();
             ContentManager = NewContentManager();

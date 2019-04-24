@@ -623,7 +623,17 @@ namespace EntryEngine.Network
         {
             try
             {
-                int read = Peek.Response.GetResponseStream().Read(buffer, offset, size);
+                int read = 0;
+                int __size = size;
+                while (read < size)
+                {
+                    int tempRead = Peek.Response.GetResponseStream().Read(buffer, offset, __size);
+                    read += tempRead;
+                    offset += tempRead;
+                    __size -= tempRead;
+                    if (tempRead == 0)
+                        break;
+                }
                 dataLength -= read;
                 if (dataLength == 0)
                     requests.RemoveFirst();
@@ -1307,10 +1317,10 @@ namespace EntryEngine.Network
                 {
                     int packageSize = size - peek;
                     receive = InternalRead(buffer, peek, packageSize);
-                    //if (receive != packageSize)
-                    //{
-                    //    throw new ArgumentException(string.Format("receive size invalid! receive={0} size={1}", receive, packageSize));
-                    //}
+                    if (receive != packageSize)
+                    {
+                        throw new ArgumentException("receive size invalid!");
+                    }
                     if (ValidateCRC)
                     {
                         packageSize = size - MAX_BUFFER_SIZE - 4;

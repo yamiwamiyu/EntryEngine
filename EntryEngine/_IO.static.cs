@@ -111,5 +111,13 @@ namespace EntryEngine
             _iO.WriteByte(file, content);
             #endif
         }
+        public static void FileBrowser(string[] suffix, bool multiple, System.Action<EntryEngine.SelectFile[]> onSelect)
+        {
+            #if EntryBuilder
+            throw new System.NotImplementedException();
+            #else
+            _iO.FileBrowser(suffix, multiple, onSelect);
+            #endif
+        }
     }
 }

@@ -40,6 +40,8 @@ namespace EntryEngine.UI
         /// <summary>惯性移动量，拖拽时会自动维护，也可以自定义设置这个值</summary>
         public VECTOR2 Inertia;
         private float dragFriction = 0.95f;
+        /// <summary>鼠标滑轮的滑动像素，0则不能使用鼠标滑轮</summary>
+        public float ScrollWheelSpeed = 100;
 		public event DUpdate<Panel> Scroll;
 		public event DUpdate<Panel> ScrollBarChanged;
 
@@ -257,9 +259,24 @@ namespace EntryEngine.UI
 		{
 			ContentSizeChanged += InternalContentSizeChanged;
 			Drag += DoDrag;
+            Hover += new DUpdate<UIElement>(PanelMouseScroll);
             //IsClip = true;
 		}
 
+        protected void PanelMouseScroll(UIElement sender, Entry e)
+        {
+            if (e.INPUT.Mouse != null && ScrollWheelSpeed != 0 && DragMode == EDragMode.Drag)
+            {
+                float value = e.INPUT.Mouse.ScrollWheelValue;
+                if (value != 0 
+                    // 鼠标悬浮在某个可滑动的窗口时，滑倒边界也不触发其它面板的滑动
+                    && offsetScope.Y != 0)
+                {
+                    this.OffsetY += value * ScrollWheelSpeed;
+                    Handled = true;
+                }
+            }
+        }
 		public RECT GetOffsetView(RECT baseView)
 		{
 			baseView.X -= offset.X;
@@ -369,6 +386,7 @@ namespace EntryEngine.UI
 		}
 		private void OnScroll()
 		{
+            Handled = true;
 			NeedUpdateLocalToWorld = true;
 			if (scrollBarHorizontal != null && CanScrollHorizontal)
 			{
@@ -403,6 +421,7 @@ namespace EntryEngine.UI
                         case EDragMode.Move:
                             bool bx, by;
                             DoMove(delta.X, delta.Y, out bx, out by);
+                            Handled = true;
                             break;
                     }
                     if (DragInertia != 0)
@@ -410,7 +429,6 @@ namespace EntryEngine.UI
                         Inertia = delta * DragInertia;
                     }
                 }
-                Handled = true;
 			}
 		}
         /// <summary>移动面板</summary>
@@ -579,7 +597,7 @@ namespace EntryEngine.UI
         public event Func<UIElement> OnCreateElement;
         public event Action<UIElement, int, T> OnSetData;
         public event Action<UIElement> OnCloseElement;
-        public float ScrollWheelSpeed = 100;
+        //public float ScrollWheelSpeed = 100;
 
         public IList<T> Datas
         {
@@ -600,14 +618,14 @@ namespace EntryEngine.UI
                 if (panel != null)
                 {
                     panel.Scroll -= Scroll;
-                    panel.Hover -= HoverScroll;
+                    //panel.Hover -= HoverScroll;
                     Dispose();
                 }
 
                 this.panel = value;
 
                 panel.Scroll += Scroll;
-                panel.Hover += HoverScroll;
+                //panel.Hover += HoverScroll;
                 var datas = Datas;
                 Datas = null;
                 SetDataSource(datas);
@@ -619,17 +637,17 @@ namespace EntryEngine.UI
             this.Panel = panel;
         }
 
-        private void HoverScroll(UIElement sender, Entry e)
-        {
-            if (e.INPUT.Mouse != null)
-            {
-                float value = e.INPUT.Mouse.ScrollWheelValue;
-                if (value != 0)
-                {
-                    Panel.OffsetY += value * ScrollWheelSpeed;
-                }
-            }
-        }
+        //private void HoverScroll(UIElement sender, Entry e)
+        //{
+        //    if (e.INPUT.Mouse != null)
+        //    {
+        //        float value = e.INPUT.Mouse.ScrollWheelValue;
+        //        if (value != 0)
+        //        {
+        //            Panel.OffsetY += value * ScrollWheelSpeed;
+        //        }
+        //    }
+        //}
         private void Scroll(Panel sender, Entry e)
         {
             float offset = Panel.OffsetY;

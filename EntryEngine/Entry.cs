@@ -2694,7 +2694,7 @@ namespace EntryEngine
         {
             throw new NotImplementedException();
         }
-        protected internal virtual bool Processable(ref string file)
+        public virtual bool Processable(ref string file)
         {
             string suffix = file.Substring(file.LastIndexOf(".") + 1);
 
@@ -2944,31 +2944,31 @@ namespace EntryEngine
     }
     public abstract class ContentPipelineBinary : ContentPipeline
     {
-        protected internal override Content Load(string file)
+        protected internal sealed override Content Load(string file)
         {
-            return InternalLoad(Manager.IODevice.ReadByte(file));
+            return LoadFromBytes(Manager.IODevice.ReadByte(file));
         }
-        protected internal override void LoadAsync(AsyncLoadContent async)
+        protected internal sealed override void LoadAsync(AsyncLoadContent async)
         {
             var read = Manager.IODevice.ReadAsync(async.File);
             if (read.IsEnd)
             {
-                async.SetData(InternalLoad(read.Data));
+                async.SetData(LoadFromBytes(read.Data));
             }
             else
             {
                 Wait(async, read,
                     (result) =>
                     {
-                        return InternalLoad(result.Data);
+                        return LoadFromBytes(result.Data);
                     });
             }
         }
-        protected internal abstract Content InternalLoad(byte[] bytes);
+        public abstract Content LoadFromBytes(byte[] bytes);
     }
     public abstract class ContentPipelineText : ContentPipelineBinary
     {
-        protected internal sealed override Content InternalLoad(byte[] bytes)
+        public sealed override Content LoadFromBytes(byte[] bytes)
         {
             return InternalLoad(Manager.IODevice.ReadPreambleText(bytes));
         }
@@ -4528,7 +4528,7 @@ namespace EntryEngine
                     return map.Substring(len + 1);
             }
         }
-        protected internal override bool Processable(ref string file)
+        public override bool Processable(ref string file)
         {
             if (Pieces == null || Pieces.Count == 0)
                 return false;

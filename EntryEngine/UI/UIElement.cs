@@ -53,7 +53,19 @@ namespace EntryEngine.UI
     [Code(ECode.ToBeContinue)]
     public abstract class UIElement : Tree<UIElement>, IDisposable
     {
-        public static bool Handled { get; protected internal set; }
+        private static bool __handled;
+        public static bool Handled
+        {
+            get { return __handled; }
+            protected internal set
+            {
+                __handled = value;
+                // DEBUG
+                if (__handled)
+                {
+                }
+            }
+        }
         protected internal static UIElement FocusedElement { get; private set; }
         public static DUpdateGlobal GlobalEnter;
         public static DUpdateGlobal GlobalHover;

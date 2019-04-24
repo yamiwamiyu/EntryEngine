@@ -170,6 +170,10 @@ namespace EntryEngine
         {
             get { return __instance.Touch.ComboClick; }
         }
+        public static EntryEngine.Pointer<EntryEngine.ITouchState> TouchGetTouch(int index)
+        {
+            return __instance.Touch.GetTouch(index);
+        }
         public static bool TouchIsClick(int key)
         {
             return __instance.Touch.IsClick(key);

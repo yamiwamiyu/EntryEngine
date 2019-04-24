@@ -112,6 +112,10 @@ namespace EntryEngine
         {
             return __instance.ToPixelCeiling(pixel);
         }
+        public static void Begin(EntryEngine.MATRIX transform, EntryEngine.RECT graphics, EntryEngine.SHADER shader)
+        {
+            __instance.Begin(transform, graphics, shader);
+        }
         public static void Begin()
         {
             __instance.Begin();
@@ -263,6 +267,10 @@ namespace EntryEngine
         public static void DrawPrimitives(EntryEngine.TEXTURE texture, EntryEngine.TextureVertex[] vertices, int offset, int count, short[] indexes, int indexOffset, int primitiveCount)
         {
             __instance.DrawPrimitives(texture, vertices, offset, count, indexes, indexOffset, primitiveCount);
+        }
+        public static void DrawPrimitives(EntryEngine.TEXTURE texture, EntryEngine.EPrimitiveType ptype, EntryEngine.TextureVertex[] vertices, int offset, int count, short[] indexes, int indexOffset, int primitiveCount)
+        {
+            __instance.DrawPrimitives(texture, ptype, vertices, offset, count, indexes, indexOffset, primitiveCount);
         }
     }
 }
