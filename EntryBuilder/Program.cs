@@ -517,6 +517,8 @@ namespace EntryBuilder
             //}
 
             //PublishToWebGL(@"..\..\..\", @"D:\Project\xss\xss\Code\Client", @"D:\Project\xss\xss\Code\Protocol\Protocol", @"D:\Project\xss\xss\Launch\Client\index.html", false, 5);
+            //BuildTableTranslate("", "");
+            //BuildDatabaseMysql(@"D:\Project\xss\xss\Code\Protocol\Protocol\bin\Debug\Protocol.dll", "Server._DB", @"D:\Project\xss\xss\Code\Server\Server\_DB.cs", "", "", true);
             //Console.ReadKey();
             //return;
 
@@ -785,7 +787,7 @@ namespace EntryBuilder
         {
             special = false;
             if (type == typeof(bool))
-                return "BIT";
+                return "TINYINT(1)";
             else if (type == typeof(sbyte))
                 return "TINYINT";
             else if (type == typeof(byte))
@@ -5073,6 +5075,24 @@ namespace EntryBuilder
                 });
             }
 
+            // 外键生成打平类型，后面生成连接查询的代码
+            //tree.ForeachParentPriority(
+            //    field => field.ChildCount == 0,
+            //    field =>
+            //    {
+            //        if (field == tree)
+            //            return;
+            //        builder.AppendLine("public class JOIN_{0}", field.Table.Name);
+            //        builder.AppendBlock(() =>
+            //        {
+            //            TreeField.ForParentPriority(field, null,
+            //                foreign =>
+            //                {
+            //                    builder.AppendLine("public {0} {1};", foreign.Table.Name, foreign.Field.Name);
+            //                });
+            //        });
+            //    });
+
             // build mysql structure
             if (string.IsNullOrEmpty(mysqlClassOrEmpty))
             {
@@ -5777,7 +5797,7 @@ namespace EntryBuilder
                     else
                     {
                         //if (!isStatic)
-                            tableMapperName = table.Name;
+                        tableMapperName = table.Name;
                     }
 
                     #endregion
@@ -5828,6 +5848,7 @@ namespace EntryBuilder
                         });
                         builderOP.AppendLine("return list.ToArray();");
                     });
+                    builderOP.AppendLine("public static int FieldCount { get { return FIELD_ALL.Length; } }");
                     builderOP.AppendLine();
 
                     // 键
@@ -5862,6 +5883,23 @@ namespace EntryBuilder
                         }
                     }
 
+                    // 读取方法
+                    builderOP.AppendLine("public static {0} Read(IDataReader reader)", tableMapperName);
+                    builderOP.AppendBlock(() =>
+                    {
+                        builderOP.AppendLine("return Read(reader, 0, FieldCount);");
+                    });
+                    builderOP.AppendLine("public static {0} Read(IDataReader reader, int offset)", tableMapperName);
+                    builderOP.AppendBlock(() =>
+                    {
+                        builderOP.AppendLine("return Read(reader, offset, FieldCount);");
+                    });
+                    builderOP.AppendLine("public static {0} Read(IDataReader reader, int offset, int fieldCount)", tableMapperName);
+                    builderOP.AppendBlock(() =>
+                    {
+                        builderOP.AppendLine("return _DATABASE.ReadObject<{0}>(reader, offset, fieldCount);", tableMapperName);
+                    });
+
                     // 增
                     builderOP.AppendLine("public {1}void GetInsertSQL({0} target, StringBuilder builder, List<object> values)", table.Name, _static);
                     builderOP.AppendBlock(() =>
@@ -5891,7 +5929,7 @@ namespace EntryBuilder
                             }
 
                             if (i != offset)
-                                builderOP.Append(", ", field.Name);    
+                                builderOP.Append(", ", field.Name);
                             builderOP.Append("`{0}`", field.Name);
                             temp1.AppendLine("values.Add({0}.{1});", target, field.Name);
                         }
@@ -5936,7 +5974,7 @@ namespace EntryBuilder
                             var field = primaryFields[i];
                             builderOP.Append("{0} {1}", field.FieldType.CodeName(), field.Name);
                             //if (i != n)
-                                builderOP.Append(", ");
+                            builderOP.Append(", ");
                         }
                         builderOP.AppendLine("StringBuilder builder, List<object> values)");
                         builderOP.AppendBlock(() =>
@@ -6097,6 +6135,26 @@ namespace EntryBuilder
                     }
 
                     // 查
+                    builderOP.AppendLine("public static void GetSelectField(string tableName, StringBuilder builder, params E{0}[] fields)", table.Name);
+                    builderOP.AppendBlock(() =>
+                    {
+                        // 连接查询用
+                        builderOP.AppendLine("if (string.IsNullOrEmpty(tableName)) tableName = \"{0}\";", table.Name);
+                        builderOP.AppendLine("int count = fields == null ? 0 : fields.Length;");
+                        builderOP.AppendLine("if (count == 0)");
+                        builderOP.AppendBlock(() =>
+                        {
+                            builderOP.AppendLine("builder.Append(\"{0}.*\", tableName);");
+                            builderOP.AppendLine("return;");
+                        });
+                        builderOP.AppendLine("count--;");
+                        builderOP.AppendLine("for (int i = 0; i <= count; i++)");
+                        builderOP.AppendBlock(() =>
+                        {
+                            builderOP.AppendLine("builder.Append(\"{0}.{1}\", tableName, fields[i].ToString());");
+                            builderOP.AppendLine("if (i != count) builder.Append(\",\");");
+                        });
+                    });
                     builderOP.AppendLine("public {0}StringBuilder GetSelectSQL(params E{1}[] fields)", _static, table.Name);
                     builderOP.AppendBlock(() =>
                     {
@@ -6220,6 +6278,107 @@ namespace EntryBuilder
                         }
                     }
 
+                    var foreignFields = fields.Where(f => f.HasAttribute<ForeignAttribute>()).ToArray();
+                    {
+                        ForeignAttribute[] foreigns = new ForeignAttribute[foreignFields.Length];
+                        for (int i = 0; i < foreigns.Length; i++)
+                            foreigns[i] = foreignFields[i].GetAttribute<ForeignAttribute>();
+
+                        int foreignCount = foreigns.Length;
+                        builderOP.Append("public {0}List<Join> SelectJoin(", _static);
+                        int e = foreignCount - 1;
+
+                        // 生成外包类型
+                        builder.AppendLine("public class Join");
+                        builder.AppendBlock(() =>
+                        {
+                            builder.AppendLine("public {0} {0};", table.Name);
+                            for (int i = 0; i <= e; i++)
+                            {
+                                builder.AppendLine("public {0} {1};", foreigns[i].ForeignTable.Name, foreignFields[i].Name);
+                                //if (i != e)
+                                //    builderOP.Append(", ");
+                            }
+                        });
+
+                        builderOP.Append("E{0}[] f{0}", table.Name);
+                        for (int i = 0; i <= e; i++)
+                        {
+                            builderOP.Append(", E{0}[] f{1}", foreigns[i].ForeignTable.Name, foreignFields[i].Name);
+                            //if (i != e)
+                            //    builderOP.Append(", ");
+                        }
+                        //builderOP.Append(", out List<{0}> r{0}", table.Name);
+                        //for (int i = 0; i <= e; i++)
+                        //{
+                        //    builderOP.Append(", out List<{0}> r{1}", foreigns[i].ForeignTable.Name, foreignFields[i].Name);
+                        //    //if (i != e)
+                        //    //builderOP.Append(", ");
+                        //}
+                        builderOP.AppendLine(", string condition, params object[] param)");
+                        builderOP.AppendBlock(() =>
+                        {
+                            builderOP.AppendLine("StringBuilder builder = new StringBuilder();");
+                            builderOP.AppendLine("builder.Append(\"SELECT \");");
+                            builderOP.AppendLine("_{0}.GetSelectField(\"t0\", builder, f{0});", table.Name);
+                            builderOP.AppendLine("if (f{0} == null || f{0}.Length == 0) f{0} = FIELD_ALL;", table.Name);
+                            // 构造查询的字段
+                            builderOP.AppendLine("List<Join> results = new List<Join>();", table.Name);
+                            //builderOP.AppendLine("List<{0}> t{0} = new List<{0}>();", table.Name);
+                            for (int i = 0; i <= e; i++)
+                            {
+                                //builderOP.AppendLine("List<{0}> t{1};", foreigns[i].ForeignTable.Name, foreignFields[i].Name);
+                                builderOP.AppendLine("if (f{0} != null)", foreignFields[i].Name);
+                                builderOP.AppendBlock(() =>
+                                {
+                                    builderOP.AppendLine("builder.Append(\", \");");
+                                    builderOP.AppendLine("_{0}.GetSelectField(\"t{2}\", builder, f{1});", foreigns[i].ForeignTable.Name, foreignFields[i].Name, (i + 1));
+                                    //builderOP.AppendLine("t{0} = new List<{1}>();", foreignFields[i].Name, foreigns[i].ForeignTable.Name);
+                                });
+                                //builderOP.AppendLine("else t{0} = null;", foreignFields[i].Name);
+                            }
+                            builderOP.AppendLine("builder.Append(\" FROM `{0}` as t0\");", table.Name);
+                            for (int i = 0; i <= e; i++)
+                            {
+                                builderOP.AppendLine("if (f{1} != null) builder.Append(\" LEFT JOIN `{0}` as t{2} ON (t0.{1} = t{2}.{3})\");", foreigns[i].ForeignTable.Name, foreignFields[i].Name, (i + 1), string.IsNullOrEmpty(foreigns[i].ForeignField) ? foreignFields[i].Name : foreigns[i].ForeignField);
+                            }
+
+                            // 查询读取数据
+                            builderOP.AppendLine("if (!string.IsNullOrEmpty(condition)) builder.Append(\" {0}\", condition);");
+                            builderOP.AppendLine("_DB._DAO.ExecuteReader((reader) =>");
+                            builderOP.AppendBlock(() =>
+                            {
+                                builderOP.AppendLine("int offset;");
+                                builderOP.AppendLine("while (reader.Read())");
+                                builderOP.AppendBlock(() =>
+                                {
+                                    builderOP.AppendLine("Join join = new Join();");
+                                    builderOP.AppendLine("results.Add(join);");
+                                    //builderOP.AppendLine("t{0}.Add(_{0}.Read(reader, 0, f{0}.Length));", table.Name);
+                                    builderOP.AppendLine("join.{0} = _{0}.Read(reader, 0, f{0}.Length);", table.Name);
+                                    builderOP.AppendLine("offset = f{0}.Length;", table.Name);
+                                    for (int i = 0; i <= e; i++)
+                                    {
+                                        builderOP.AppendLine("if (f{0} != null)", foreignFields[i].Name);
+                                        builderOP.AppendBlock(() =>
+                                        {
+                                            //builderOP.AppendLine("t{0}.Add(_{1}.Read(reader, offset, f{0}.Length));", foreignFields[i].Name, foreigns[i].ForeignTable.Name);
+                                            builderOP.AppendLine("join.{0} = _{1}.Read(reader, offset, f{0}.Length);", foreignFields[i].Name, foreigns[i].ForeignTable.Name);
+                                            builderOP.AppendLine("offset += f{0}.Length;", foreignFields[i].Name);
+                                        });
+                                    }
+                                });
+                            });
+                            builderOP.AppendLine(", builder.ToString(), param);");
+
+                            // 最后out赋值
+                            //builderOP.AppendLine("r{0} = t{0};", table.Name);
+                            //for (int i = 0; i <= e; i++)
+                            //    builderOP.AppendLine("r{0} = t{0};", foreignFields[i].Name);
+                            builderOP.AppendLine("return results;");
+                        });
+                    }
+                    
                     // ___类型结束
                     if (!isStatic)
                         builderOP.AppendLine("}");
@@ -6240,6 +6399,7 @@ namespace EntryBuilder
             builder.AppendLine("}");
 
             SaveCode(outputCS, builder);
+            Console.WriteLine("Build mysql completed.");
         }
         public static void BuildLinkStruct(string dllAndType, string className, string outputCS, byte modifierLevel)
 		{

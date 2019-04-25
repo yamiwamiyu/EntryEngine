@@ -255,7 +255,7 @@ namespace EntryEngine.Network
                         if (reader.Read())
                         {
                             instance = Activator.CreateInstance<T>();
-                            Read(reader, type, count, instance);
+                            Read(reader, type, 0, count, instance);
                         }
                     }, sql, parameters);
                 return instance;
@@ -272,7 +272,7 @@ namespace EntryEngine.Network
                         while (reader.Read())
                         {
                             T instance = Activator.CreateInstance<T>();
-                            Read(reader, type, count, instance);
+                            Read(reader, type, 0, count, instance);
                             list.Add(instance);
                         }
                     }, sql, parameters);
@@ -302,7 +302,7 @@ namespace EntryEngine.Network
             while (reader.Read())
             {
                 T instance = new T();
-                Read(reader, typeof(T), reader.FieldCount, instance);
+                Read(reader, typeof(T), 0, reader.FieldCount, instance);
                 yield return instance;
             }
         }
@@ -311,21 +311,43 @@ namespace EntryEngine.Network
             if (reader.Read())
             {
                 T instance = new T();
-                Read(reader, typeof(T), reader.FieldCount, instance);
+                Read(reader, typeof(T), 0, reader.FieldCount, instance);
                 return instance;
             }
             return default(T);
         }
-        public static void Read(IDataReader reader, object instance)
+        public static T ReadObject<T>(IDataReader reader, int offset) where T : new()
         {
-            Read(reader, instance.GetType(), reader.FieldCount, instance);
+            Type type = typeof(T);
+            T instance = new T();
+            Read(reader, type, offset, type.GetFields().Length, instance);
+            return instance;
         }
-        private static void Read(IDataReader reader, Type type, int count, object instance)
+        public static T ReadObject<T>(IDataReader reader, int offset, int fieldCount) where T : new()
+        {
+            T instance = new T();
+            Read(reader, typeof(T), offset, fieldCount, instance);
+            return instance;
+        }
+        public static void ReadObject(IDataReader reader, object instance)
+        {
+            Read(reader, instance.GetType(), 0, reader.FieldCount, instance);
+        }
+        public static void ReadObject(IDataReader reader, object instance, int offset)
+        {
+            Type type = instance.GetType();
+            Read(reader, type, offset, type.GetFields().Length, instance);
+        }
+        public static void ReadObject(IDataReader reader, object instance, int offset, int fieldCount)
+        {
+            Read(reader, instance.GetType(), offset, fieldCount, instance);
+        }
+        private static void Read(IDataReader reader, Type type, int offset, int count, object instance)
         {
             SerializeSetting setting = SerializeSetting.DefaultSerializeAll;
             var properties = setting.GetProperties(type);
             var fields = setting.GetFields(type);
-            for (int i = 0; i < count; i++)
+            for (int i = offset, e = offset + count; i < e; i++)
             {
                 object value = reader[i];
 

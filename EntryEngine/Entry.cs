@@ -3533,6 +3533,55 @@ namespace EntryEngine
         {
             return InternalLoadAsync(key, FilePathUnify(file), callback, null);
         }
+        private AsyncLoadContent InternalReplaceAsync<T>(string key, string file, Action<T> callback, Action<Exception> exCallback) where T : Content
+        {
+            AsyncLoadContent async;
+            if (asyncs.TryGetValue(key, out async))
+            {
+                // 正在加载时，异步加载内部会生成加载队列
+                async = async.Load(callback, exCallback);
+                if (async == null)
+                    throw new ArgumentNullException("AsyncLoadContentQueue");
+                return async;
+            }
+
+            ContentPipeline pipeline = FindPipeline(ref file);
+            async = new AsyncLoadContent(pipeline, key, file);
+            async.Load(callback, exCallback);
+
+            Content content;
+            if (IsLoaded(key, out content))
+            {
+                // 已加载则卸载掉之前的资源
+                content.Dispose();
+            }
+            //else
+            // 未加载则交由管道加载
+            pipeline.LoadAsync(async);
+
+            // 已加载完成则不进入队列
+            if (!async.IsEnd)
+                asyncs.Add(key, async);
+            return async;
+        }
+        public AsyncLoadContent ReplaceAsync<T>(string key, string file, Action<T> callback, Action<Exception> exCallback) where T : Content
+        {
+            return InternalReplaceAsync<T>(key, FilePathUnify(file), callback, exCallback);
+        }
+        public AsyncLoadContent ReplaceAsync<T>(string file, Action<T> callback) where T : Content
+        {
+            file = FilePathUnify(file);
+            return InternalReplaceAsync(file, file, callback, null);
+        }
+        public AsyncLoadContent ReplaceAsync<T>(string file, Action<T> callback, Action<Exception> exCallback) where T : Content
+        {
+            file = FilePathUnify(file);
+            return InternalReplaceAsync(file, file, callback, exCallback);
+        }
+        public AsyncLoadContent ReplaceAsync<T>(string key, string file, Action<T> callback) where T : Content
+        {
+            return InternalReplaceAsync(key, FilePathUnify(file), callback, null);
+        }
         public T New<T>(string key, string file, out string _key) where T : Content
         {
             _key = IdentityKey(key);
