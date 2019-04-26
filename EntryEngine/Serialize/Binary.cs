@@ -774,8 +774,10 @@ namespace EntryEngine.Serialize
                 int count = array.Length;
                 Write(count);
                 EnsureCapacity(count);
-                for (int i = 0; i < count; i++)
-                    buffer[index++] = array[i];
+                //for (int i = 0; i < count; i++)
+                //    buffer[index++] = array[i];
+                Array.Copy(array, 0, this.buffer, index, array.Length);
+                index += array.Length;
             }
         }
         public void WriteBytes(byte[] buffer, int offset, int size)
@@ -1600,8 +1602,10 @@ namespace EntryEngine.Serialize
             else
             {
                 array = new byte[count];
-                for (int i = 0; i < count; i++)
-                    array[i] = buffer[index++];
+                //for (int i = 0; i < count; i++)
+                //    array[i] = buffer[index++];
+                Array.Copy(buffer, index, array, 0, count);
+                index += count;
             }
         }
         public void Read(out short[] array)

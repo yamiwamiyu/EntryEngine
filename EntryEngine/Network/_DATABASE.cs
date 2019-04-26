@@ -162,14 +162,14 @@ namespace EntryEngine.Network
             public T ExecuteScalar<T>(string sql, params object[] parameters)
             {
                 object value = ExecuteScalar(sql, parameters);
-                if (value == DBNull.Value)
+                if (value == null || value == DBNull.Value)
                     return default(T);
                 return (T)Convert.ChangeType(value, typeof(T));
             }
             public T SelectValue<T>(string sql, params object[] parameters)
             {
                 object value = ExecuteScalar(sql, parameters);
-                if (value == null || value is DBNull)
+                if (value == null || value == DBNull.Value)
                     return default(T);
                 else
                     //return (T)value;
@@ -357,8 +357,14 @@ namespace EntryEngine.Network
                 if (property != null)
                 {
                     if (!(value is DBNull))
-                        //property.SetValue(instance, Convert.ChangeType(value, property.PropertyType), null);
-                        property.SetValue(instance, value, null);
+                        try
+                        {
+                            property.SetValue(instance, value, null);
+                        }
+                        catch
+                        {
+                            property.SetValue(instance, Convert.ChangeType(value, property.PropertyType), null);
+                        }
                     continue;
                 }
 
@@ -366,8 +372,14 @@ namespace EntryEngine.Network
                 if (field == null)
                     continue;
                 if (!(value is DBNull))
-                    //field.SetValue(instance, Convert.ChangeType(value, field.FieldType));
-                    field.SetValue(instance, value);
+                    try
+                    {
+                        field.SetValue(instance, value);
+                    }
+                    catch
+                    {
+                        field.SetValue(instance, Convert.ChangeType(value, field.FieldType));
+                    }
             }
         }
         //private static object ChangeType(object value, Type type)

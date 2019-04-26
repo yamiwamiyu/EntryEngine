@@ -268,12 +268,19 @@ namespace EntryEngine.UI
             if (e.INPUT.Mouse != null && ScrollWheelSpeed != 0 && DragMode == EDragMode.Drag)
             {
                 float value = e.INPUT.Mouse.ScrollWheelValue;
-                if (value != 0 
-                    // 鼠标悬浮在某个可滑动的窗口时，滑倒边界也不触发其它面板的滑动
-                    && offsetScope.Y != 0)
+                if (value != 0)
                 {
-                    this.OffsetY += value * ScrollWheelSpeed;
-                    Handled = true;
+                    // 鼠标悬浮在某个可滑动的窗口时，滑倒边界也不触发其它面板的滑动
+                    if (offsetScope.Y != 0)
+                    {
+                        this.OffsetY += value * ScrollWheelSpeed;
+                        Handled = true;
+                    }
+                    else if (offsetScope.X != 0)
+                    {
+                        this.OffsetX += value * ScrollWheelSpeed;
+                        Handled = true;
+                    }
                 }
             }
         }

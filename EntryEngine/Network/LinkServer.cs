@@ -1217,9 +1217,33 @@ namespace EntryEngine.Network
         }
         protected override int InternalRead(byte[] buffer, int offset, int size)
         {
-            int read = Peek.Request.InputStream.Read(buffer, offset, size);
-            dataLength -= read;
-            return read;
+            try
+            {
+                int read = 0;
+                int __size = size;
+                while (read < size)
+                {
+                    int tempRead = Peek.Request.InputStream.Read(buffer, offset, __size);
+                    read += tempRead;
+                    offset += tempRead;
+                    __size -= tempRead;
+                    if (tempRead == 0)
+                        break;
+                }
+                dataLength -= read;
+                //if (dataLength == 0)
+                //    requests.RemoveFirst();
+                return read;
+            }
+            catch (WebException ex)
+            {
+                _LOG.Error(ex, "Read http data error. ErrorCode: {0}", ex.Status);
+                throw ex;
+            }
+            catch (Exception)
+            {
+                throw;
+            }
         }
         protected override void InternalFlush(byte[] buffer)
         {

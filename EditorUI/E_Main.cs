@@ -1302,7 +1302,6 @@ public partial class {0}
 	}}
 	protected override IEnumerable<ICoroutine> Loading()
 	{{
-		ICoroutine async;
 		{3}
         var __loading = MyLoading();
         if (__loading != null)
@@ -1497,12 +1496,12 @@ public partial class {0}
                             if (name.EndsWith("]"))
                             {
                                 builder2.AppendLine("{0} = new {1}();", name, e.Name);
-                                builder3.AppendLine("Entry.ShowDialogScene({0}, EState.None);", name);
+                                builder3.AppendLine("Entry.ShowDialogScene({0}, EState.Break);", name);
                             }
                             else
                             {
-                                //builder3.AppendLine("{0} = Entry.ShowDialogScene<{1}>(EState.None);", name, e.Name);
-                                builder3.AppendLine("Entry.ShowDialogScene({0}, EState.None);", name);
+                                //builder3.AppendLine("{0} = Entry.ShowDialogScene<{1}>(EState.Break);", name, e.Name);
+                                builder3.AppendLine("Entry.ShowDialogScene({0}, EState.Break);", name);
                             }
                             builder2.AppendLine("{0}.X = {1}f;", name, e.X);
                             builder2.AppendLine("{0}.Y = {1}f;", name, e.Y);
@@ -1510,7 +1509,7 @@ public partial class {0}
                         }
                         else
                         {
-                            builder3.AppendLine("Entry.ShowDialogScene({0}, EState.None);", name);
+                            builder3.AppendLine("Entry.ShowDialogScene({0}, EState.Break);", name);
                         }
                     }
                 });

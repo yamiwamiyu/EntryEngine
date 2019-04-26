@@ -19,6 +19,7 @@ namespace EntryEngine.UI
 		public TEXTURE SourceUnable;
 		private bool hasClicked;
 		private UIText uitext = new UIText();
+        public event DUpdate<Button> OnChecked;
 		public event DUpdate<Button> CheckedChanged;
 
 		public UIText UIText
@@ -56,6 +57,10 @@ namespace EntryEngine.UI
                     if (CheckedChanged != null)
                     {
                         CheckedChanged(this, Entry.Instance);
+                    }
+                    if (value && OnChecked != null)
+                    {
+                        OnChecked(this, Entry.Instance);
                     }
                 }
             }
@@ -199,6 +204,20 @@ namespace EntryEngine.UI
 			this.Clicked += OnClicked;
 		}
 
+        public void DoCheck()
+        {
+            if (!Checked)
+            {
+                Checked = true;
+            }
+            else
+            {
+                if (OnChecked != null)
+                {
+                    OnChecked(this, Entry.Instance);
+                }
+            }
+        }
         public VECTOR2 CalcTextContentSize(string text)
         {
             VECTOR2 size;

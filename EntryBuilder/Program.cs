@@ -5830,11 +5830,11 @@ namespace EntryBuilder
                     }
 
                     // 字段对应枚举
-                    builderOP.AppendLine("private static E{0}[] FIELD_ALL = {{ {1} }};", table.Name,
+                    builderOP.AppendLine("public static E{0}[] FIELD_ALL = {{ {1} }};", table.Name,
                         string.Join(", ", fields.Select(f => string.Format("E{0}.{1}", table.Name, f.Name)).ToArray()));
                     //builderOP.AppendLine("private static E{0}[] FIELD_UPDATE = {{ {1} }};", table.Name,
                     //    string.Join(", ", fields.Where(field => !field.HasAttribute<IndexAttribute>() && !field.HasAttribute<ForeignAttribute>()).Select(f => string.Format("E{0}.{1}", table.Name, f.Name)).ToArray()));
-                    builderOP.AppendLine("private static E{0}[] FIELD_UPDATE = {{ {1} }};", table.Name,
+                    builderOP.AppendLine("public static E{0}[] FIELD_UPDATE = {{ {1} }};", table.Name,
                         string.Join(", ", fields.Where(FieldCanUpdate).Select(f => string.Format("E{0}.{1}", table.Name, f.Name)).ToArray()));
                     builderOP.AppendLine("public {0}E{1}[] NoNeedField(params E{1}[] noNeed)", _static, table.Name);
                     builderOP.AppendBlock(() =>
@@ -6016,7 +6016,7 @@ namespace EntryBuilder
                             for (int i = 0, n = primaryFields.Count - 1; i <= n; i++)
                             {
                                 var field = primaryFields[i];
-                                builderOP.Append("`{0}` = @p{{{1}}}", field.Name, i);
+                                builderOP.Append("`{0}` = @p{1}", field.Name, i);
                                 if (i != n)
                                     builderOP.Append(" AND ");
                             }
@@ -6158,7 +6158,7 @@ namespace EntryBuilder
                     builderOP.AppendLine("public {0}StringBuilder GetSelectSQL(params E{1}[] fields)", _static, table.Name);
                     builderOP.AppendBlock(() =>
                     {
-                        builderOP.AppendLine("int count = fields.Length;");
+                        builderOP.AppendLine("int count = fields == null ? 0 : fields.Length;");
                         builderOP.AppendLine("if (count == 0) return new StringBuilder(\"SELECT * FROM `{0}`\");", table.Name);
                         builderOP.AppendLine("StringBuilder builder = new StringBuilder();");
                         builderOP.AppendLine("builder.Append(\"SELECT\");");
@@ -6173,31 +6173,40 @@ namespace EntryBuilder
                         builderOP.AppendLine("return builder;");
                     });
 
-                    builderOP.Append("public {0}{1} Select(string condition, ", _static, tableMapperName);
-                    foreach (var field in primaryFields)
-                        builderOP.Append("{0} __{1}, ", field.FieldType.CodeName(), field.Name);
-                    builderOP.AppendLine("params E{0}[] fields)", table.Name);
+                    // 主键查询
+                    if (primaryFields.Count > 0)
+                    {
+                        builderOP.Append("public {0}{1} Select(", _static, tableMapperName);
+                        foreach (var field in primaryFields)
+                            builderOP.Append("{0} __{1}, ", field.FieldType.CodeName(), field.Name);
+                        builderOP.AppendLine("params E{0}[] fields)", table.Name);
+                        builderOP.AppendBlock(() =>
+                        {
+                            builderOP.AppendLine("StringBuilder builder = GetSelectSQL(fields);");
+                            if (primaryFields.Count > 0)
+                            {
+                                builderOP.Append("builder.Append(\" WHERE ");
+                                for (int i = 0, n = primaryFields.Count - 1; i <= n; i++)
+                                {
+                                    var field = primaryFields[i];
+                                    builderOP.Append("`{0}` = @p{1}", field.Name, i);
+                                    if (i != n)
+                                        builderOP.Append(" AND ");
+                                }
+                                builderOP.AppendLine(";\");");
+                            }
+                            //builderOP.AppendLine("builder.Append(';');");
+                            builderOP.Append("return _DAO.SelectObject<{0}>(builder.ToString()", tableMapperName);
+                            foreach (var field in primaryFields)
+                                builderOP.Append(", __{0}", field.Name);
+                            builderOP.AppendLine(");");
+                        });
+                    }
+                    // 条件查询
+                    builderOP.AppendLine("public {0}{1} Select(E{2}[] fields, string condition, params object[] param)", _static, tableMapperName, table.Name);
                     builderOP.AppendBlock(() =>
                     {
                         builderOP.AppendLine("StringBuilder builder = GetSelectSQL(fields);");
-                        if (primaryFields.Count > 0)
-                        {
-                            builderOP.Append("bool whereFlag = ");
-                            builderOP.Append("string.IsNullOrEmpty(condition)");
-                            foreach (var field in primaryFields)
-                                builderOP.Append(" || __{0} != default({1})", field.Name, field.FieldType.CodeName());
-                            //builderOP.Append(" || __p{0} != {1}", field.Name, _RH.CodeValue(field.FieldType.DefaultValue()));
-                            builderOP.AppendLine(";");
-                            builderOP.Append("if (whereFlag) builder.Append(\" WHERE ");
-                            for (int i = 0, n = primaryFields.Count - 1; i <= n; i++)
-                            {
-                                var field = primaryFields[i];
-                                builderOP.Append("`{0}` = @p{1}", field.Name, i);
-                                if (i != n)
-                                    builderOP.Append(" AND ");
-                            }
-                            builderOP.AppendLine("\");");
-                        }
                         builderOP.AppendLine("if (!string.IsNullOrEmpty(condition)) builder.Append(\" {0}\", condition);");
                         builderOP.AppendLine("builder.Append(\';\');");
                         //builderOP.AppendLine("if (count == 0) return _DAO.SelectObject<{1}>(string.Format(\"SELECT * FROM {0} {{0}};\", condition));", table.Name, tableMapperName);
@@ -6211,25 +6220,16 @@ namespace EntryBuilder
                         //    builderOP.AppendLine("if (i != count) builder.Append(\",\");");
                         //});
                         //builderOP.AppendLine("builder.AppendLine(\" FROM {0} {{0}};\", condition);", table.Name);
-                        if (primaryFields.Count > 0)
-                        {
-                            builderOP.Append("if (whereFlag) return _DAO.SelectObject<{0}>(builder.ToString()", tableMapperName);
-                            foreach (var field in primaryFields)
-                                builderOP.Append(", __{0}", field.Name);
-                            builderOP.AppendLine(");");
-                            builderOP.AppendLine("else return _DAO.SelectObject<{0}>(builder.ToString());", tableMapperName);
-                        }
-                        else
-                            builderOP.AppendLine("return _DAO.SelectObject<{0}>(builder.ToString());", tableMapperName);
+                        builderOP.AppendLine("return _DAO.SelectObject<{0}>(builder.ToString(), param);", tableMapperName);
                     });
 
-                    builderOP.AppendLine("public {1}List<{0}> SelectMultiple(string condition, params E{0}[] fields)", table.Name, _static);
+                    builderOP.AppendLine("public {1}List<{0}> SelectMultiple(E{0}[] fields, string condition, params object[] param)", table.Name, _static);
                     builderOP.AppendBlock(() =>
                     {
                         if (table.Name == tableMapperName)
-                            builderOP.AppendLine("if (fields.Length == 0) return _DAO.SelectObjects<{1}>(string.Format(\"SELECT * FROM {0} {{0}};\", condition));", table.Name, tableMapperName);
+                            builderOP.AppendLine("if (fields == null || fields.Length == 0) return _DAO.SelectObjects<{1}>(string.Format(\"SELECT * FROM {0} {{0}};\", condition), param);", table.Name, tableMapperName);
                         else
-                            builderOP.AppendLine("if (fields.Length == 0) return new List<{0}>(_DAO.SelectObjects<{1}>(string.Format(\"SELECT * FROM {0} {{0}};\", condition)).ToArray());", table.Name, tableMapperName);
+                            builderOP.AppendLine("if (fields == null || fields.Length == 0) return new List<{0}>(_DAO.SelectObjects<{1}>(string.Format(\"SELECT * FROM {0} {{0}};\", condition), param).ToArray());", table.Name, tableMapperName);
                         //builderOP.AppendLine("StringBuilder builder = new StringBuilder();");
                         //builderOP.AppendLine("builder.Append(\"SELECT\");");
                         //builderOP.AppendLine("count--;");
@@ -6242,7 +6242,7 @@ namespace EntryBuilder
                         //builderOP.AppendLine("builder.Append(\" FROM {0} {{0}};\", condition);", table.Name);
                         builderOP.AppendLine("StringBuilder builder = GetSelectSQL(fields);");
                         builderOP.AppendLine("if (!string.IsNullOrEmpty(condition)) builder.Append(\" {0}\", condition);");
-                        builderOP.AppendLine("builder.Append(\';\');");
+                        builderOP.AppendLine("builder.Append(';');");
                         if (table.Name == tableMapperName)
                             builderOP.AppendLine("return _DAO.SelectObjects<{0}>(builder.ToString());", tableMapperName);
                         else
@@ -6262,16 +6262,23 @@ namespace EntryBuilder
                             group = primaryFields;
                         foreach (var field in group)
                         {
-                            builderOP.AppendLine("public {1}List<{0}> SelectMultipleBy{2}({3} {2}, params E{0}[] fields)", table.Name, _static, field.Name, field.FieldType.CodeName());
+                            builderOP.AppendLine("public {1}List<{0}> SelectMultipleBy{2}(E{0}[] fields, {3} {2}, string conditionAfterWhere, params object[] param)", table.Name, _static, field.Name, field.FieldType.CodeName());
                             builderOP.AppendBlock(() =>
                             {
                                 builderOP.AppendLine("StringBuilder builder = GetSelectSQL(fields);");
-                                builderOP.AppendLine("builder.Append(\"WHERE `{0}` = @p0;\");", field.Name);
+                                builderOP.AppendLine("builder.Append(\" WHERE `{0}` = @p{{0}}\", param.Length);", field.Name);
+                                builderOP.AppendLine("if (!string.IsNullOrEmpty(conditionAfterWhere)) builder.Append(\" {0}\", conditionAfterWhere);");
+                                builderOP.AppendLine("builder.Append(';');");
                                 if (table.Name == tableMapperName)
-                                    builderOP.AppendLine("return _DAO.SelectObjects<{0}>(builder.ToString(), {1});", tableMapperName, field.Name);
+                                {
+                                    builderOP.AppendLine("if (param.Length == 0) return _DAO.SelectObjects<{0}>(builder.ToString(), {1});", tableMapperName, field.Name);
+                                    builderOP.AppendLine("else return _DAO.SelectObjects<{0}>(builder.ToString(), param.Add({1}));", tableMapperName, field.Name);
+                                }
                                 else
                                 {
-                                    builderOP.AppendLine("List<{0}> __temp = _DAO.SelectObjects<{0}>(builder.ToString(), {1});", tableMapperName, field.Name);
+                                    builderOP.AppendLine("List<{0}> __temp;", tableMapperName);
+                                    builderOP.AppendLine("if (param.Length == 0) __temp = _DAO.SelectObjects<{0}>(builder.ToString(), {1});", tableMapperName, field.Name);
+                                    builderOP.AppendLine("else __temp = _DAO.SelectObjects<{0}>(builder.ToString(), param.Add({1}));", tableMapperName, field.Name);
                                     builderOP.AppendLine("return new List<{0}>(__temp.ToArray());", table.Name);
                                 }
                             });
@@ -6334,6 +6341,7 @@ namespace EntryBuilder
                                     builderOP.AppendLine("builder.Append(\", \");");
                                     builderOP.AppendLine("_{0}.GetSelectField(\"t{2}\", builder, f{1});", foreigns[i].ForeignTable.Name, foreignFields[i].Name, (i + 1));
                                     //builderOP.AppendLine("t{0} = new List<{1}>();", foreignFields[i].Name, foreigns[i].ForeignTable.Name);
+                                    builderOP.AppendLine("if (f{0}.Length == 0) f{0} = _{1}.FIELD_ALL;", foreignFields[i].Name, foreigns[i].ForeignTable.Name);
                                 });
                                 //builderOP.AppendLine("else t{0} = null;", foreignFields[i].Name);
                             }
@@ -6345,6 +6353,7 @@ namespace EntryBuilder
 
                             // 查询读取数据
                             builderOP.AppendLine("if (!string.IsNullOrEmpty(condition)) builder.Append(\" {0}\", condition);");
+                            builderOP.AppendLine("builder.Append(';');");
                             builderOP.AppendLine("_DB._DAO.ExecuteReader((reader) =>");
                             builderOP.AppendBlock(() =>
                             {

@@ -1245,8 +1245,8 @@ namespace EntryEngine.Network
             //if (count > MaxBuffer)
             //    throw new ArgumentOutOfRangeException("package size");
             // cache full, flush the cache
-            if (writer.Position + count > MaxBuffer)
-                Flush();
+            //if (writer.Position + count > MaxBuffer)
+            //    Flush();
             // write package size
             writer.Write(count);
             // write package content
@@ -1254,12 +1254,12 @@ namespace EntryEngine.Network
             // write crc valid while package has length
             if (size != 0 && ValidateCRC)
                 writer.Write(_IO.Crc32(buffer, offset, size));
-            if (writer.Position > MaxBuffer)
-            {
-                // big data
-                Flush();
-                writer = new ByteWriter(MaxBuffer);
-            }
+            //if (writer.Position > MaxBuffer)
+            //{
+            //    // big data
+            //    Flush();
+            //    writer = new ByteWriter(MaxBuffer);
+            //}
         }
         protected internal sealed override void WriteBytes(byte[] buffer, int offset, int size)
         {
@@ -1415,6 +1415,8 @@ namespace EntryEngine.Network
             writer.Reset();
             if (IsConnected)
                 InternalFlush(buffer);
+            if (writer.Position > MaxBuffer)
+                writer = new ByteWriter(MaxBuffer);
             return buffer;
         }
         protected virtual int PeekSize(byte[] buffer, out int peek)
