@@ -8,9 +8,9 @@ namespace EntryEngine.UI
 {
     public class TabPage : CheckBox
     {
-        private Panel page;
+        private UIElement page;
 
-        public Panel Page
+        public UIElement Page
         {
             get { return page; }
             set
@@ -18,13 +18,14 @@ namespace EntryEngine.UI
                 if (page == value)
                     return;
 
-                if (page != null)
+                if (page != null && page.Parent == this)
                     Remove(page);
 
                 page = value;
                 if (value != null)
                 {
-                    Add(page);
+                    if (page.Parent == null)
+                        Add(page);
                     page.Visible = base.Checked;
                     //page.IsClip = false;
                 }
@@ -33,6 +34,7 @@ namespace EntryEngine.UI
 
         public TabPage()
         {
+            this.IsClip = false;
             this.IsRadioButton = true;
             this.UIText.TextAlignment = EPivot.MiddleCenter;
         }
@@ -106,13 +108,14 @@ namespace EntryEngine.UI
 
                 if (dropDownText != null)
                 {
-                    Remove(dropDownText);
+                    if (dropDownList.Parent == this)
+                        Remove(dropDownText);
                     if (value == null)
                         base.Text = dropDownText.Text;
                 }
 
                 dropDownText = value;
-                if (value != null)
+                if (value != null && value.Parent == null)
                     Add(dropDownText);
             }
         }
@@ -129,13 +132,15 @@ namespace EntryEngine.UI
                     dropDownList.SelectHandle -= OnSelectHandle;
                     dropDownList.Select -= OnSelect;
                     dropDownList.UnHover -= OnCancelHandle;
-                    Remove(dropDownList);
+                    if (dropDownList.Parent == this)
+                        Remove(dropDownList);
                 }
 
                 dropDownList = value;
                 if (value != null)
                 {
-                    Add(dropDownList);
+                    if (dropDownList.Parent == null)
+                        Add(dropDownList);
                     //dropDownList.IsClip = false;
                     dropDownList.DragMode = EDragMode.Drag;
                     dropDownList.SelectHandle += OnSelectHandle;
@@ -263,10 +268,9 @@ namespace EntryEngine.UI
         public event Action<Selectable, int> Select;
         public event Action<Selectable> SelectedIndexChanged;
         public event Action<UIElement, float> ResetLayout;
-        /// <summary>
-        /// 返回true时会选中Hover的项
-        /// </summary>
+        /// <summary>返回true时会选中Hover的项</summary>
         public event Func<bool> SelectHandle;
+        public event Func<string, Button> CreateItem;
         private float maxHeight;
 
         public override float Height
@@ -335,6 +339,11 @@ namespace EntryEngine.UI
 
         public Button AddItem(string text)
         {
+            if (CreateItem != null)
+            {
+                Button create = CreateItem(text);
+                if (create != null) return create;
+            }
             Button button = new Button();
             button.Width = this.Width;
             button.Text = text;

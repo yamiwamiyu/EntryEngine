@@ -268,25 +268,66 @@ namespace EditorUI
             if (element == null)
                 writer.Write(-1);
             else
-                writer.Write(element.Parent.IndexOf(element));
+            {
+                int index = WritingProperty.IndexOf(element);
+                if (index == -1)
+                {
+                    // 写入控件在场景中的索引
+                    writer.Write(-2);
+                    Stack<int> stack = new Stack<int>();
+                    UIElement temp = element;
+                    while (temp != Instance.EditingScene && temp.Parent != null)
+                    {
+                        index = temp.Parent.IndexOf(temp);
+                        stack.Push(index);
+                        temp = temp.Parent;
+                    }
+                    writer.Write(stack);
+                }
+                else
+                    // 属性的值是当前控件的子控件
+                    writer.Write(index);
+            }
 
             return true;
         }
-        public static Func<Type, Func<ByteRefReader, object>> UIDeserializer(UIElement[] childs)
+        private static Queue<Action> asyncLoads = new Queue<Action>();
+        public static Func<Type, VariableObject, Func<ByteRefReader, object>> UIDeserializer(UIElement[] childs)
         {
-            return (type) =>
+            return (type, field) =>
                 {
-                    if (type == typeof(UIElement))
+                    if (field == null)
                         return null;
+                    //if (type == typeof(UIElement))
+                    //    return null;
 
                     if (type.Is(typeof(UIElement)))
                     {
+                        string stack = Environment.StackTrace;
                         return (reader) =>
                         {
                             int index;
                             reader.Read(out index);
                             if (index == -1)
                                 return null;
+                            else if (index == -2)
+                            {
+                                int[] indices;
+                                reader.Read(out indices);
+
+                                AsyncData<object> async = new AsyncData<object>();
+                                asyncLoads.Enqueue(() =>
+                                {
+                                    UIElement temp = ((UIElement)field.Instance).SceneIsRunning;
+                                    // 拷贝控件时最顶层是当前场景
+                                    if (temp == null) temp = Instance.EditingScene;
+                                    for (int i = 0; i < indices.Length; i++)
+                                        temp = temp[indices[i]];
+                                    async.SetData(temp);
+                                });
+
+                                return async;
+                            }
                             else
                                 return childs[index];
                         };
@@ -360,6 +401,9 @@ namespace EditorUI
             string type;
             reader.Read(out type);
             UIElement target = InternalLoadUI(reader, reff);
+            while (asyncLoads.Count > 0)
+                asyncLoads.Dequeue()();
+            reader.AsyncIsComplete();
             return target;
         }
         public static Type LoadElementType(string file)
@@ -1166,18 +1210,18 @@ namespace EditorUI
                     button.Text = element.Name;
             }
         }
-        protected override void InternalUpdate(Entry e)
-        {
-            base.InternalUpdate(e);
-            if (VariableValue != null)
-            {
-                UIElement value = (UIElement)VariableValue;
-                if (value.Parent != Variable.Instance)
-                {
-                    VariableValue = null;
-                }
-            }
-        }
+        //protected override void InternalUpdate(Entry e)
+        //{
+        //    base.InternalUpdate(e);
+        //    if (VariableValue != null)
+        //    {
+        //        UIElement value = (UIElement)VariableValue;
+        //        if (value.Parent != Variable.Instance)
+        //        {
+        //            VariableValue = null;
+        //        }
+        //    }
+        //}
     }
     /// <summary>UIElement.Clip可以点击Width和Height设置成自动尺寸</summary>
     public class EditorClip : EditorAllObject
@@ -1336,6 +1380,8 @@ public partial class {0}
 
             // fields
             StringBuilder builder1 = new StringBuilder();
+            // 生成创建控件代码时，控件属性是控件时赋值代码应该往后放，例如TabPage.Page = Child;
+            StringBuilder builderChildGenerate = new StringBuilder();
             // initialize code
             StringBuilder builder2 = new StringBuilder();
             // load code
@@ -1562,16 +1608,21 @@ public partial class {0}
                         UIElement element = editor.Instance as UIElement;
                         instance = BuildInstance(elements, element);
 
+                        // 创建控件的子控件
                         bool generated2 = generating != null && generating.Find(u => u == e) != null;
                         if (!generated2 && generating != null)
                         {
+                            builder1.AppendLine(builderChildGenerate.ToString());
+                            builderChildGenerate = new StringBuilder();
                             builder1.AppendLine("return {0};", generating.Name.Trim());
                             builder1.AppendLine("}");
                             generating = null;
                         }
+                        // 创建控件
                         bool generated = e.Name.StartsWith("  ");
                         if (generated && generated2)
                             throw new ArgumentException("只能同时构建一个元素");
+                        // 创建控件
                         generated |= generated2;
                         if (generated)
                         {
@@ -1600,6 +1651,7 @@ public partial class {0}
                                 continue;
                             else if (value1.Equals(value2))
                                 continue;
+                            // todo: 深度判断对象是否相等
 
                             Dictionary<EGenerateTime, string> generate = GenerateCode(instance, item);
                             foreach (var code in generate)
@@ -1624,7 +1676,11 @@ public partial class {0}
                                         throw new ArgumentException("item.GenerateTime");
                                 }
                                 if (generated)
-                                    builder1.AppendLine(code.Value);
+                                    // 生成创建控件的代码时，属性是UIElement的赋值代码应该在后面，因为值可能后面生成的子对象
+                                    if (item is EditorUIElement)
+                                        builderChildGenerate.AppendLine(code.Value);
+                                    else
+                                        builder1.AppendLine(code.Value);
                             }
                         }
 
@@ -1639,6 +1695,8 @@ public partial class {0}
 
             if (generating != null)
             {
+                builder1.AppendLine(builderChildGenerate.ToString());
+                builderChildGenerate = new StringBuilder();
                 builder1.AppendLine("return {0};", generating.Name.Trim());
                 builder1.AppendLine("}");
             }

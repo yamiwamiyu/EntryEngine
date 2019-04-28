@@ -4229,9 +4229,9 @@ namespace EntryEngine
 
             return true;
         }
-        public static Func<Type, Func<ByteRefReader, object>> Deserializer(ContentManager content, List<AsyncLoadContent> list)
+        public static Func<Type, VariableObject, Func<ByteRefReader, object>> Deserializer(ContentManager content, List<AsyncLoadContent> list)
         {
-            return (type) =>
+            return (type, field) =>
             {
                 if (type.Is(typeof(ParticleEmitter)) || type.Is(typeof(ParticleSystem)))
                     return null;
@@ -5543,9 +5543,9 @@ namespace EntryEngine
         protected internal abstract float CharWidth(char c);
         protected internal abstract void Draw(GRAPHICS spriteBatch, string text, VECTOR2 location, COLOR color, float scale);
 
-        public static Func<Type, Func<ByteRefReader, object>> Deserializer(ContentManager content, List<AsyncLoadContent> list)
+        public static Func<Type, VariableObject, Func<ByteRefReader, object>> Deserializer(ContentManager content, List<AsyncLoadContent> list)
         {
-            return (type) =>
+            return (type, field) =>
             {
                 if (type.Is(typeof(FONT)))
                     return (reader) =>

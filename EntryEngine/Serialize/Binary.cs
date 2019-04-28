@@ -2132,120 +2132,45 @@ namespace EntryEngine.Serialize
     }
     public class ByteRefReader : IReader
     {
+        class AsyncReadField
+        {
+            public VariableObject Field;
+            public AsyncData<object> Async;
+            public Type ValueType;
+            public AsyncReadField()
+            {
+            }
+            public AsyncReadField(VariableObject field, AsyncData<object> async)
+            {
+                this.Field = field;
+                this.Async = async;
+            }
+            public void SetValue()
+            {
+                try
+                {
+                    object value = Async.Data;
+                    if (ValueType != null && ValueType != Field.Type)
+                    {
+                        value = Convert.ChangeType(value, Field.Type);
+                    }
+                    Field.SetValue(value);
+                }
+                catch (Exception ex)
+                {
+                    _LOG.Warning("AsyncReadField set value error. Type = {0}, Field = {1}, Ex = {2}", Field.Type.FullName, Field.VariableName, ex.Message);
+                }
+            }
+        }
         class INNER_READER : ByteReader
         {
+            internal VariableObject ReadingField;
             internal ByteRefReader PARENT;
             private Dictionary<int, object> objs = new Dictionary<int, object>();
             private Dictionary<int, Type> types = new Dictionary<int, Type>();
 
             public INNER_READER(byte[] buffer) : base(buffer) { }
 
-            private string ReadKey(out Type type)
-            {
-                type = null;
-                byte length;
-                Read(out length);
-                if (length == 0)
-                    return null;
-                char[] chars = new char[length];
-                for (int i = 0; i < length; i++)
-                    chars[i] = (char)buffer[index++];
-
-                int refIndex;
-                Read(out refIndex);
-                if (refIndex > 0)
-                {
-                    if (!types.TryGetValue(refIndex, out type))
-                        throw new KeyNotFoundException("Type ref can't be found.");
-                }
-                else
-                {
-                    //string typeName;
-                    //Read(out typeName);
-                    byte[] bytes;
-                    Read(out bytes);
-                    string typeName = Encoding.UTF8.GetString(bytes);
-                    type = _SERIALIZE.LoadSimpleAQName(typeName);
-                    types[-refIndex] = type;
-                }
-
-                return new string(chars);
-            }
-            private bool ReadObject(out object value, ref Type type)
-            {
-                value = null;
-                int index;
-                Read(out index);
-                if (index == -1)
-                {
-                    return true;
-                }
-                else if (index == -2)
-                {
-                    // struct
-                }
-                else
-                {
-                    if (index >= 0)
-                    {
-                        // index：对象引用
-                        if (objs.TryGetValue(index, out value))
-                            return true;
-                    }
-                    else
-                    {
-                        // -index：特殊特性
-                        string typeName;
-                        Read(out typeName);
-                        type = _SERIALIZE.LoadSimpleAQName(typeName);
-                        // TYPE_DELETED: 此类型已经不存在
-                    }
-                }
-
-                // TYPE_DELETED
-                if (type == null)
-                {
-                    if (index != -1 && index != -2)
-                        objs[_MATH.Abs(index)] = value;
-
-                    // 读取完所有遗失类型的数据
-                    while (true)
-                    {
-                        Type valueType;
-                        string key = ReadKey(out valueType);
-                        if (key == null)
-                            break;
-
-                        if (valueType == null)
-                        {
-                            // 递归读取丢失的类型数据
-                            ReadObject(out value, ref type);
-                        }
-                        else
-                        {
-                            ReadObject(valueType);
-                        }
-                    }
-                    return true;
-                }
-
-                // 类型未丢失
-                if (type.IsStatic())
-                {
-                    value = null;
-                }
-                else
-                {
-                    value = Activator.CreateInstance(type);
-                    //if (value == null)
-                    //    throw new NotImplementedException(string.Format("can not create instance of {0}", type.FullName));
-                }
-
-                if (index != -1 && index != -2)
-                    objs[_MATH.Abs(index)] = value;
-
-                return false;
-            }
             /// <summary>由于读取数组不一样，需要先读取引用，所以封装成内部类，仅允许ReadObject操作</summary>
             public override object ReadObject(Type type)
             {
@@ -2254,7 +2179,7 @@ namespace EntryEngine.Serialize
                     Func<ByteRefReader, object> _read = null;
                     for (int i = 0; i < PARENT.onDeserialize.Count; i++)
                     {
-                        _read = PARENT.onDeserialize[i](type);
+                        _read = PARENT.onDeserialize[i](type, ReadingField);
                         if (_read != null)
                             return _read(PARENT);
                     }
@@ -2330,6 +2255,113 @@ namespace EntryEngine.Serialize
                         }
                     }
                 }
+                //return InternalReadObject(type, null);
+            }
+            private string ReadKey(out Type type)
+            {
+                type = null;
+                byte length;
+                Read(out length);
+                if (length == 0)
+                    return null;
+                char[] chars = new char[length];
+                for (int i = 0; i < length; i++)
+                    chars[i] = (char)buffer[index++];
+
+                int refIndex;
+                Read(out refIndex);
+                if (refIndex > 0)
+                {
+                    if (!types.TryGetValue(refIndex, out type))
+                        throw new KeyNotFoundException("Type ref can't be found.");
+                }
+                else
+                {
+                    //string typeName;
+                    //Read(out typeName);
+                    byte[] bytes;
+                    Read(out bytes);
+                    string typeName = Encoding.UTF8.GetString(bytes);
+                    type = _SERIALIZE.LoadSimpleAQName(typeName);
+                    types[-refIndex] = type;
+                }
+
+                return new string(chars);
+            }
+            internal bool ReadObject(out object value, ref Type type)
+            {
+                value = null;
+                int index;
+                Read(out index);
+                if (index == -1)
+                {
+                    return true;
+                }
+                else if (index == -2)
+                {
+                    // struct
+                }
+                else
+                {
+                    if (index >= 0)
+                    {
+                        // index：对象引用
+                        if (objs.TryGetValue(index, out value))
+                            return true;
+                    }
+                    else
+                    {
+                        // -index：特殊特性
+                        string typeName;
+                        Read(out typeName);
+                        type = _SERIALIZE.LoadSimpleAQName(typeName);
+                        // TYPE_DELETED: 此类型已经不存在
+                    }
+                }
+
+                // TYPE_DELETED
+                if (type == null)
+                {
+                    if (index != -1 && index != -2)
+                        objs[_MATH.Abs(index)] = value;
+
+                    // 读取完所有遗失类型的数据
+                    while (true)
+                    {
+                        Type valueType;
+                        string key = ReadKey(out valueType);
+                        if (key == null)
+                            break;
+
+                        if (valueType == null)
+                        {
+                            // 递归读取丢失的类型数据
+                            ReadObject(out value, ref type);
+                        }
+                        else
+                        {
+                            ReadObject(valueType);
+                        }
+                    }
+                    return true;
+                }
+
+                // 类型未丢失
+                if (type.IsStatic())
+                {
+                    value = null;
+                }
+                else
+                {
+                    value = Activator.CreateInstance(type);
+                    //if (value == null)
+                    //    throw new NotImplementedException(string.Format("can not create instance of {0}", type.FullName));
+                }
+
+                if (index != -1 && index != -2)
+                    objs[_MATH.Abs(index)] = value;
+
+                return false;
             }
             internal void ReadTo(Type type, object value)
             {
@@ -2352,47 +2384,74 @@ namespace EntryEngine.Serialize
                     FieldInfo field = fields.FirstOrDefault(f => f.Name == key);
                     if (field == null)
                     {
-                        object result = ReadObject(valueType);
+                        object result;
                         if (properties == null)
+                        {
+                            ReadingField = null;
+                            ReadObject(valueType);
                             continue;
+                        }
                         PropertyInfo property = properties.FirstOrDefault(p => p.Name == key);
                         if (property != null)
                         {
-                            try
+                            ReadingField = new VariableObject(value, property);
+                            result = ReadObject(valueType);
+                            if (result is AsyncData<object>)
                             {
-                                if (valueType != property.PropertyType)
-                                    result = Convert.ChangeType(result, property.PropertyType);
-                                property.SetValue(value, result, _SERIALIZE.EmptyObjects);
+                                PARENT.AsyncRead((AsyncData<object>)result);
+                                PARENT.async[PARENT.async.Count - 1].ValueType = valueType;
                             }
-                            catch
+                            else
                             {
-                                // 类型转换失败时不赋值
+                                try
+                                {
+                                    if (valueType != property.PropertyType)
+                                        result = Convert.ChangeType(result, property.PropertyType);
+                                    property.SetValue(value, result, _SERIALIZE.EmptyObjects);
+                                }
+                                catch (Exception ex)
+                                {
+                                    // 类型转换失败时不赋值
+                                    _LOG.Warning("Property set value error. Type = {0}, Field = {1}, Ex = {2}", property.PropertyType.FullName, property.Name, ex.Message);
+                                }
                             }
                         }
                     }
                     else
                     {
+                        ReadingField = new VariableObject(value, field);
                         object result = ReadObject(valueType);
-                        try
+                        if (result is AsyncData<object>)
                         {
-                            if (valueType != field.FieldType)
-                                result = Convert.ChangeType(result, field.FieldType);
-                            field.SetValue(value, result);
+                            PARENT.AsyncRead((AsyncData<object>)result);
+                            PARENT.async[PARENT.async.Count - 1].ValueType = valueType;
                         }
-                        catch
+                        else
                         {
-                            // 类型转换失败时不赋值
+                            try
+                            {
+                                if (valueType != field.FieldType)
+                                    result = Convert.ChangeType(result, field.FieldType);
+                                field.SetValue(value, result);
+                            }
+                            catch (Exception ex)
+                            {
+                                // 类型转换失败时不赋值
+                                _LOG.Warning("Field set value error. Type = {0}, Field = {1}, Ex = {2}", field.FieldType.FullName, field.Name, ex.Message);
+                            }
                         }
                     }
                 }
+                ReadingField = null;
             }
         }
 
         //public Func<Type, Func<ByteRefReader, object>> OnDeserialize;
-        private List<Func<Type, Func<ByteRefReader, object>>> onDeserialize = new List<Func<Type, Func<ByteRefReader, object>>>();
+        private List<AsyncReadField> async = new List<AsyncReadField>();
+        private List<Func<Type, VariableObject, Func<ByteRefReader, object>>> onDeserialize = new List<Func<Type, VariableObject, Func<ByteRefReader, object>>>();
         private INNER_READER reader;
 
-        public List<Func<Type, Func<ByteRefReader, object>>> OnDeserialize { get { return onDeserialize; } }
+        public List<Func<Type, VariableObject, Func<ByteRefReader, object>>> OnDeserialize { get { return onDeserialize; } }
 
         public ByteRefReader(byte[] buffer)
         {
@@ -2404,7 +2463,34 @@ namespace EntryEngine.Serialize
             reader.Setting = setting;
         }
 
-        public void AddOnDeserialize(Func<Type, Func<ByteRefReader, object>> method)
+        public void AsyncRead(AsyncData<object> data)
+        {
+            if (reader.ReadingField == null) throw new InvalidOperationException("No reading field can't invoke async read.");
+            for (int i = 0; i < async.Count; i++)
+                if (async[i].Async == data)
+                    return;
+            this.async.Add(new AsyncReadField(reader.ReadingField, data));
+        }
+        public bool AsyncIsComplete()
+        {
+            if (async.Count == 0)
+                return true;
+            else
+            {
+                for (int i = async.Count - 1; i >= 0; i--)
+                {
+                    if (async[i].Async.IsEnd)
+                    {
+                        if (async[i].Async.IsSuccess)
+                            async[i].SetValue();
+                        async.RemoveAt(i);
+                    }
+                }
+                return async.Count == 0;
+            }
+        }
+
+        public void AddOnDeserialize(Func<Type, VariableObject, Func<ByteRefReader, object>> method)
         {
             if (method == null) return;
             if (!onDeserialize.Contains(method))
@@ -2412,12 +2498,12 @@ namespace EntryEngine.Serialize
                 onDeserialize.Add(method);
             }
         }
-        public void SetOnDeserialize(Func<Type, Func<ByteRefReader, object>> method)
+        public void SetOnDeserialize(Func<Type, VariableObject, Func<ByteRefReader, object>> method)
         {
             onDeserialize.Clear();
             onDeserialize.Add(method);
         }
-        public void RemoveOnDeserialize(Func<Type, Func<ByteRefReader, object>> method)
+        public void RemoveOnDeserialize(Func<Type, VariableObject, Func<ByteRefReader, object>> method)
         {
             onDeserialize.Remove(method);
         }
@@ -2436,20 +2522,23 @@ namespace EntryEngine.Serialize
         }
         public void ReadTo<T>(ref T value)
         {
-            int index;
-            reader.Read(out index);
-            reader.ReadTo(typeof(T), value);
+            Type type = typeof(T);
+            object obj;
+            if (reader.ReadObject(out obj, ref type))
+                return;
+            //reader.Read(out index);
+            reader.ReadTo(type, value);
         }
 
         public static object Deserialize(byte[] buffer, Type type)
         {
             return Deserialize(buffer, type, SerializeSetting.DefaultSerializeProperty, null);
         }
-        public static object Deserialize(byte[] buffer, Type type, Func<Type, Func<ByteRefReader, object>> onDeserialize)
+        public static object Deserialize(byte[] buffer, Type type, Func<Type, VariableObject, Func<ByteRefReader, object>> onDeserialize)
         {
             return Deserialize(buffer, type, SerializeSetting.DefaultSerializeProperty, onDeserialize);
         }
-        public static object Deserialize(byte[] buffer, Type type, SerializeSetting setting, Func<Type, Func<ByteRefReader, object>> onDeserialize)
+        public static object Deserialize(byte[] buffer, Type type, SerializeSetting setting, Func<Type, VariableObject, Func<ByteRefReader, object>> onDeserialize)
         {
             if (buffer == null)
                 return null;
@@ -2464,11 +2553,11 @@ namespace EntryEngine.Serialize
         {
             return (T)Deserialize(buffer, typeof(T));
         }
-        public static T Deserialize<T>(byte[] buffer, Func<Type, Func<ByteRefReader, object>> onDeserialize)
+        public static T Deserialize<T>(byte[] buffer, Func<Type, VariableObject, Func<ByteRefReader, object>> onDeserialize)
         {
             return (T)Deserialize(buffer, typeof(T), onDeserialize);
         }
-        public static T Deserialize<T>(byte[] buffer, SerializeSetting setting, Func<Type, Func<ByteRefReader, object>> onDeserialize)
+        public static T Deserialize<T>(byte[] buffer, SerializeSetting setting, Func<Type, VariableObject, Func<ByteRefReader, object>> onDeserialize)
         {
             return (T)Deserialize(buffer, typeof(T), setting, onDeserialize);
         }
