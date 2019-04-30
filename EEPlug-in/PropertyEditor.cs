@@ -666,7 +666,7 @@ namespace EntryEditor
             if (array == null)
                 throw new ArgumentNullException("array");
             this.array = array;
-            comboBox.Clear();
+            comboBox.DropDownList.Clear();
             for (int i = 0; i < array.Length; i++)
             {
                 var item = comboBox.DropDownList.AddItem(ShowValue(array.GetValue(i)));
