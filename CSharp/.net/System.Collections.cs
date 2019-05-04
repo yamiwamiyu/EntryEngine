@@ -5,11 +5,11 @@ using System.Text;
 
 namespace __System.Collections
 {
-    public interface IEnumerable
+    [AInvariant]public interface IEnumerable
     {
         [AInvariant]IEnumerator GetEnumerator();
     }
-    public interface IEnumerator
+    [AInvariant]public interface IEnumerator
     {
         [AInvariant]object Current { get; }
         [AInvariant]bool MoveNext();

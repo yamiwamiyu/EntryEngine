@@ -920,6 +920,8 @@ public class Uint8Array : ArrayBuffer
     public int length;
     public int byteLength;
     public extern byte this[int index] { get; set; }
+    public Uint8Array() { }
+    public Uint8Array(ArrayBuffer buffer) { }
 }
 public class Float32Array : ArrayBuffer
 {

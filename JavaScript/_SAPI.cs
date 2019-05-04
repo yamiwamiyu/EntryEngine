@@ -212,7 +212,7 @@ namespace __System.Net
                     callback();
                 }
             };
-            request.responseType = "text";
+            request.responseType = "arraybuffer";
             request.open(method, url, true);
             //request.setRequestHeader("content-length", data.Length.ToString());
             if (headers.Count > 0)
@@ -231,7 +231,8 @@ namespace __System.Net
         public static object Provide(object requestPrivode) { return requestPrivode; }
         public static int GetContentLength(object provide)
         {
-            return ((XMLHttpRequest)provide).responseText.Length;
+            return ((ArrayBuffer)((XMLHttpRequest)provide).response).byteLength;
+            //return ((XMLHttpRequest)provide).responseText.Length;
         }
         public static int GetStatusCode(object provide)
         {
@@ -239,7 +240,13 @@ namespace __System.Net
         }
         public static byte[] GetResponse(object provide)
         {
-            return Encoding.UTF8.GetBytes(((XMLHttpRequest)provide).responseText);
+            ArrayBuffer buffer = ((ArrayBuffer)((XMLHttpRequest)provide).response);
+            Uint8Array array = new Uint8Array(buffer);
+            byte[] ret = new byte[buffer.byteLength];
+            for (int i = 0; i < buffer.byteLength; i++)
+                ret[i] = array[i];
+            return ret;
+            //return SingleEncoding.Single.GetBytes(((XMLHttpRequest)provide).responseText);
         }
     }
 }
@@ -266,7 +273,7 @@ public class SingleEncoding : Encoding
         int bc = 0;
         for (int i = index, n = index + count; i < n; i++)
         {
-            if (chars[i] > char.MaxValue)
+            if (chars[i] > byte.MaxValue)
             {
                 throw new ArgumentException();
             }
@@ -280,7 +287,7 @@ public class SingleEncoding : Encoding
     public override int GetBytes(char[] chars, int charIndex, int charCount, byte[] bytes, int byteIndex)
     {
         for (int i = 0; i < charCount; i++)
-            bytes[byteIndex + i] = (byte)chars[charIndex + i];
+            bytes[byteIndex + i] = (byte)(chars[charIndex + i]);
         return charCount;
     }
     public override int GetCharCount(byte[] bytes, int index, int count)

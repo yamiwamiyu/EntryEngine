@@ -446,25 +446,44 @@ namespace __System
     {
         // 1970年1月1日的毫秒数
         public const long TIMESPAN_OFFSET = 62135596800000L;
+        public const long KIND_1 = 1125899906842624L;
+        public const long KIND_2 = 2251799813685248L;
+        public const long KIND_3 = 3377699720527872L;
+        private static readonly long[] KINDS = new long[] { 0L, KIND_1, KIND_2, KIND_3 };
         public static readonly DateTime MinValue = new DateTime(0L, DateTimeKind.Unspecified);
         public static readonly DateTime MaxValue = new DateTime(1125899906842623L, DateTimeKind.Unspecified);
         public static readonly int[] DaysToMonth365 = new int[] { 0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334, 365 };
         public static readonly int[] DaysToMonth366 = new int[] { 0, 31, 60, 91, 121, 152, 182, 213, 244, 274, 305, 335, 366 };
-        private DateTimeKind kind; 
+        //private DateTimeKind kind; 
         private long dateData;
         internal long InternalTicks
         {
             get
             {
-                return this.dateData;
+                return dateData - KINDS[dateData / 1125899906842623L];
+                //switch (v)
+                //{
+                //    case 0: return dateData;
+                //    case 1: return dateData - KIND_1;
+                //    case 2: return dateData - KIND_2;
+                //    case 3: return dateData - KIND_3;
+                //}
+                //throw new NotImplementedException();
+                //return this.dateData & 1125899906842623L;
             }
         }
         private ulong InternalKind
         {
             get
             {
-                return (ulong)kind;
+                //return (ulong)(dateData >> 50);
+                return (ulong)(dateData / 1125899906842623L);
             }
+        }
+        public DateTimeKind Kind
+        {
+            //get { return (DateTimeKind)(dateData >> 50); }
+            get { return (DateTimeKind)(dateData / 1125899906842623L); }
         }
         public DateTime Date
         {
@@ -472,7 +491,7 @@ namespace __System
             {
                 long expr_06 = this.InternalTicks;
                 //return new DateTime((ulong)(expr_06 - expr_06 % 86400000L | (long)this.InternalKind));
-                return new DateTime((expr_06 - expr_06 % 86400000L), kind);
+                return new DateTime((expr_06 - expr_06 % 86400000L), Kind);
             }
         }
         public int Day
@@ -580,11 +599,11 @@ namespace __System
         }
         public DateTime(long ticks)
         {
-            if (ticks < 0L || ticks > 1125899906842623L)
-            {
-                throw new Exception("ArgumentOutOfRange_DateTimeBadTicks");
-            }
-            this.kind = DateTimeKind.Unspecified;
+            //if (ticks < 0L || ticks > 1125899906842623L)
+            //{
+            //    throw new Exception("ArgumentOutOfRange_DateTimeBadTicks");
+            //}
+            //this.kind = DateTimeKind.Unspecified;
             this.dateData = ticks;
         }
         public DateTime(long ticks, DateTimeKind kind)
@@ -597,22 +616,22 @@ namespace __System
             {
                 throw new ArgumentException("Argument_InvalidDateTimeKind");
             }
-            this.kind = kind;
-            this.dateData = ticks;
+            //this.kind = kind;
+            this.dateData = ticks + KINDS[(int)kind];
         }
         private DateTime(ulong dateData)
         {
-            this.kind = DateTimeKind.Unspecified;
+            //this.kind = DateTimeKind.Unspecified;
             this.dateData = (long)dateData;
         }
         public DateTime(int year, int month, int day)
         {
-            this.kind = DateTimeKind.Unspecified;
+            //this.kind = DateTimeKind.Unspecified;
             this.dateData = DateTime.DateToTicks(year, month, day);
         }
         public DateTime(int year, int month, int day, int hour, int minute, int second)
         {
-            this.kind = DateTimeKind.Unspecified;
+            //this.kind = DateTimeKind.Unspecified;
             this.dateData = (DateTime.DateToTicks(year, month, day) + DateTime.TimeToTicks(hour, minute, second));
         }
         public DateTime(int year, int month, int day, int hour, int minute, int second, int millisecond)
@@ -628,7 +647,7 @@ namespace __System
             {
                 throw new Exception("Arg_DateTimeRange");
             }
-            this.kind = DateTimeKind.Unspecified;
+            //this.kind = DateTimeKind.Unspecified;
             this.dateData = num;
         }
         public DateTime(int year, int month, int day, int hour, int minute, int second, int millisecond, DateTimeKind kind)
@@ -644,9 +663,9 @@ namespace __System
             {
                 throw new Exception("Arg_DateTimeRange");
             }
-            this.kind = kind;
-            //this.dateData = (num | (long)kind << 50);
-            this.dateData = num;
+            //this.kind = kind;
+            //this.dateData = num;
+            this.dateData = (num | (long)kind << 50);
         }
         public DateTime Add(TimeSpan value)
         {
@@ -980,7 +999,7 @@ namespace __System
         }
         public static bool TryParse(string s, out DateTime result)
         {
-            result.kind = DateTimeKind.Unspecified;
+            //result.kind = DateTimeKind.Unspecified;
             int year = 0;
             int month = 0;
             int day = 0;
@@ -991,10 +1010,12 @@ namespace __System
             int digit = 0;
             bool sep = false;
             result.dateData = 0;
-            for (int i = 0, n = s.Length; i < n; i++)
+            char c = '0';
+            for (int i = 0, n = s.Length; i <= n; i++)
             {
-                char c = s[i];
-                if (c >= '0' && c <= '9')
+                if (i < n)
+                    c = s[i];
+                if (i != n && c >= '0' && c <= '9')
                 {
                     digit = digit * 10 + (c - '0');
                     sep = false;
@@ -1030,7 +1051,8 @@ namespace __System
                         if (c == ':')
                             continue;
                     }
-                    return false;
+                    if (i < n)
+                        return false;
                 }
             }
             result = new DateTime(year, month, day, hour, minute, second);
@@ -1564,7 +1586,7 @@ namespace __System
     {
         public static Type GetUnderlyingType(Type enumType)
         {
-            throw new Exception();
+            return enumType.GetEnumUnderlyingType();
         }
         public static Array GetValues(Type enumType)
         {
@@ -1680,6 +1702,9 @@ namespace __System
     {
     }
     public class Flags : Attribute
+    {
+    }
+    public class Serializable : Attribute
     {
     }
     public class AttributeUsage : Attribute
@@ -2300,7 +2325,7 @@ namespace __System
         }
         public static int ToInt32(byte[] bytes, int index)
         {
-            return (bytes[index] | bytes[index + 1] << 8 | bytes[index + 2] << 16 | bytes[index + 3] << 24) & int.MaxValue;
+            return (bytes[index] | bytes[index + 1] << 8 | bytes[index + 2] << 16 | bytes[index + 3] << 24);
         }
         public static uint ToUInt32(byte[] bytes, int index)
         {

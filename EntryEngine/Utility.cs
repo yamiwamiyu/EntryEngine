@@ -34,6 +34,7 @@ namespace EntryEngine
 				return ((int)value).ToString();
 			string v = value.ToString();
 			int sep = v.IndexOf('.') + 1;
+            if (sep == 0) return value.ToString();
 			return LengthString(v, sep + length);
 		}
 		/// <summary>

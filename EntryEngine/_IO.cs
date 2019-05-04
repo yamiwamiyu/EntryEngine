@@ -26,7 +26,7 @@ namespace EntryEngine
             int bc = 0;
             for (int i = index, n = index + count; i < n; i++)
             {
-                if (chars[i] > char.MaxValue)
+                if (chars[i] > byte.MaxValue)
                 {
                     throw new ArgumentException();
                 }
@@ -345,34 +345,36 @@ namespace EntryEngine
         {
             return ReadStream(stream, 128);
         }
-        public static byte[] ReadStream(Stream stream, int initCapacity)
+        public static int ReadStream(ref byte[] buffer, Stream stream)
         {
-            byte[] buffer = new byte[initCapacity];
             int offset = 0;
             while (true)
             {
                 int length = buffer.Length - offset;
                 int read = stream.Read(buffer, offset, length);
                 offset += read;
-                if (read <= length)
+                if (read == 0)
                 {
-                    byte[] result = new byte[offset];
-                    Array.Copy(buffer, result, offset);
-                    buffer = result;
+                    //if (offset < buffer.Length)
+                    //{
+                    //    Array.Resize(ref buffer, offset);
+                    //}
                     break;
                 }
-                else
+                if (offset == buffer.Length)
                 {
-                    // 尝试是否已读取完毕
-                    read = stream.Read(STREAM_BUFFER, offset, 1);
-                    if (read == 0)
-                        break;
                     // 扩容继续读取
                     Array.Resize(ref buffer, offset * 2);
-                    // 将尝试读取的那个字节数据复制到扩容后的缓冲
-                    buffer[offset++] = STREAM_BUFFER[0];
                 }
             }
+            return offset;
+        }
+        public static byte[] ReadStream(Stream stream, int initCapacity)
+        {
+            byte[] buffer = new byte[initCapacity];
+            int read = ReadStream(ref buffer, stream);
+            if (read < buffer.Length)
+                Array.Resize(ref buffer, read);
             return buffer;
         }
         public static void SetDecrypt(iO io)

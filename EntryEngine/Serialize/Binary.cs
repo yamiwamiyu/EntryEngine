@@ -12,6 +12,13 @@ namespace EntryEngine.Serialize
         //internal static Type COLLECTION = typeof(ICollection);
         //internal static Type NULLABLE = typeof(Nullable<>);
 
+#if HTML5
+        public bool Long52Bit = true;
+#else
+        /// <summary>Long类型采用52位长度</summary>
+        public bool Long52Bit = false;
+#endif
+
         protected byte[] buffer;
         protected int index;
 		public byte[] Buffer
@@ -276,8 +283,8 @@ namespace EntryEngine.Serialize
         }
         public static long ToInt64(byte[] bytes, int index)
         {
-            return (bytes[index] | bytes[index + 1] << 8 | bytes[index + 1] << 16 | bytes[index + 1] << 24
-                | (long)(bytes[index + 4] << 32 | bytes[index + 5] << 40 | bytes[index + 6] << 48 | bytes[index + 7] << 56));
+            return (long)bytes[index] | (long)bytes[index + 1] << 8 | (long)bytes[index + 2] << 16 | (long)bytes[index + 3] << 24
+                | (long)bytes[index + 4] << 32 | (long)bytes[index + 5] << 40 | (long)bytes[index + 6] << 48 | (long)bytes[index + 7] << 56;
         }
         public static ulong ToUInt64(byte[] bytes, int index)
         {
@@ -688,33 +695,87 @@ namespace EntryEngine.Serialize
         }
         public void Write(long value)
         {
-            int length = 8;
-            EnsureCapacity(length);
-            //byte[] result = BitConverter.GetBytes(value);
-            buffer[index] = (byte)value;
-            buffer[index + 1] = (byte)(value >> 8);
-            buffer[index + 2] = (byte)(value >> 16);
-            buffer[index + 3] = (byte)(value >> 24);
-            buffer[index + 4] = (byte)(value >> 32);
-            buffer[index + 5] = (byte)(value >> 40);
-            buffer[index + 6] = (byte)(value >> 48);
-            buffer[index + 7] = (byte)(value >> 56);
-            index += length;
+            if (Long52Bit)
+            {
+                int length = 7;
+                EnsureCapacity(length);
+                //byte[] result = BitConverter.GetBytes(value);
+#if HTML5
+                buffer[index] = (byte)value;
+                buffer[index + 1] = (byte)((value & 65280) >> 8);
+                buffer[index + 2] = (byte)((value & 16711680) >> 16);
+                buffer[index + 3] = (byte)((value / 16777216) & 255);
+                buffer[index + 4] = (byte)((value / 4294967296L) & 255);
+                buffer[index + 5] = (byte)((value / 1099511627776L) & 255);
+                buffer[index + 6] = (byte)((value / 281474976710656L) & 15);
+#else
+                buffer[index] = (byte)value;
+                buffer[index + 1] = (byte)(value >> 8);
+                buffer[index + 2] = (byte)(value >> 16);
+                buffer[index + 3] = (byte)(value >> 24);
+                buffer[index + 4] = (byte)(value >> 32);
+                buffer[index + 5] = (byte)(value >> 40);
+                buffer[index + 6] = (byte)(value >> 48 & 15);
+#endif
+                index += length;
+            }
+            else
+            {
+                int length = 8;
+                EnsureCapacity(length);
+                //byte[] result = BitConverter.GetBytes(value);
+                buffer[index] = (byte)value;
+                buffer[index + 1] = (byte)(value >> 8);
+                buffer[index + 2] = (byte)(value >> 16);
+                buffer[index + 3] = (byte)(value >> 24);
+                buffer[index + 4] = (byte)(value >> 32);
+                buffer[index + 5] = (byte)(value >> 40);
+                buffer[index + 6] = (byte)(value >> 48);
+                buffer[index + 7] = (byte)(value >> 56);
+                index += length;
+            }
         }
         public void Write(ulong value)
         {
-            int length = 8;
-            EnsureCapacity(length);
-            //byte[] result = BitConverter.GetBytes(value);
-            buffer[index] = (byte)value;
-            buffer[index + 1] = (byte)(value >> 8);
-            buffer[index + 2] = (byte)(value >> 16);
-            buffer[index + 3] = (byte)(value >> 24);
-            buffer[index + 4] = (byte)(value >> 32);
-            buffer[index + 5] = (byte)(value >> 40);
-            buffer[index + 6] = (byte)(value >> 48);
-            buffer[index + 7] = (byte)(value >> 56);
-            index += length;
+            if (Long52Bit)
+            {
+                int length = 7;
+                EnsureCapacity(length);
+                //byte[] result = BitConverter.GetBytes(value);
+#if HTML5
+                buffer[index] = (byte)value;
+                buffer[index + 1] = (byte)((value & 65280) >> 8);
+                buffer[index + 2] = (byte)((value & 16711680) >> 16);
+                buffer[index + 3] = (byte)((value / 16777216) & 255);
+                buffer[index + 4] = (byte)((value / 4294967296L) & 255);
+                buffer[index + 5] = (byte)((value / 1099511627776L) & 255);
+                buffer[index + 6] = (byte)((value / 281474976710656L) & 15);
+#else
+                buffer[index] = (byte)value;
+                buffer[index + 1] = (byte)(value >> 8);
+                buffer[index + 2] = (byte)(value >> 16);
+                buffer[index + 3] = (byte)(value >> 24);
+                buffer[index + 4] = (byte)(value >> 32);
+                buffer[index + 5] = (byte)(value >> 40);
+                buffer[index + 6] = (byte)(value >> 48 & 15);
+#endif
+                index += length;
+            }
+            else
+            {
+                int length = 8;
+                EnsureCapacity(length);
+                //byte[] result = BitConverter.GetBytes(value);
+                buffer[index] = (byte)value;
+                buffer[index + 1] = (byte)(value >> 8);
+                buffer[index + 2] = (byte)(value >> 16);
+                buffer[index + 3] = (byte)(value >> 24);
+                buffer[index + 4] = (byte)(value >> 32);
+                buffer[index + 5] = (byte)(value >> 40);
+                buffer[index + 6] = (byte)(value >> 48);
+                buffer[index + 7] = (byte)(value >> 56);
+                index += length;
+            }
         }
         public void Write(double value)
         {
@@ -727,11 +788,52 @@ namespace EntryEngine.Serialize
         }
         public void Write(TimeSpan value)
         {
-            Write(value.Ticks);
+            if (Long52Bit)
+            {
+#if HTML5
+                Write(value.Ticks);
+#else
+                Write(value.Ticks / 10000);
+#endif
+            }
+            else
+            {
+                Write(value.Ticks);
+            }
         }
         public void Write(DateTime value)
         {
-            Write(value.Ticks);
+            if (Long52Bit)
+            {
+                int length = 7;
+                EnsureCapacity(length);
+                //byte[] result = BitConverter.GetBytes(value);
+
+#if HTML5
+                long v = value.Ticks;
+                buffer[index] = (byte)v;
+                buffer[index + 1] = (byte)((v & 65280) >> 8);
+                buffer[index + 2] = (byte)((v & 16711680) >> 16);
+                buffer[index + 3] = (byte)((v / 16777216) & 255);
+                buffer[index + 4] = (byte)((v / 4294967296L) & 255);
+                buffer[index + 5] = (byte)((v / 1099511627776L) & 255);
+                buffer[index + 6] = (byte)((v / 281474976710656L) & 15);
+#else
+                long v = value.Ticks / 10000;
+                buffer[index] = (byte)v;
+                buffer[index + 1] = (byte)(v >> 8);
+                buffer[index + 2] = (byte)(v >> 16);
+                buffer[index + 3] = (byte)(v >> 24);
+                buffer[index + 4] = (byte)(v >> 32);
+                buffer[index + 5] = (byte)(v >> 40);
+                buffer[index + 6] = (byte)((byte)(v >> 48 & 3) | ((int)value.Kind << 2));
+#endif
+                index += length;
+            }
+            else
+            {
+                Write(value.Ticks);
+            }
         }
         public void Write(bool[] array)
         {
@@ -946,19 +1048,37 @@ namespace EntryEngine.Serialize
             else
             {
                 int count = array.Length;
-                int length = 8;
                 Write(count);
-                EnsureCapacity(count * length);
-                for (int i = 0; i < count; i++)
+                if (Long52Bit)
                 {
-                    buffer[index++] = (byte)array[i];
-                    buffer[index++] = (byte)(array[i] >> 8);
-                    buffer[index++] = (byte)(array[i] >> 16);
-                    buffer[index++] = (byte)(array[i] >> 24);
-                    buffer[index++] = (byte)(array[i] >> 32);
-                    buffer[index++] = (byte)(array[i] >> 40);
-                    buffer[index++] = (byte)(array[i] >> 48);
-                    buffer[index++] = (byte)(array[i] >> 56);
+                    int length = 7;
+                    EnsureCapacity(count * length);
+                    for (int i = 0; i < count; i++)
+                    {
+                        buffer[index++] = (byte)array[i];
+                        buffer[index++] = (byte)(array[i] >> 8);
+                        buffer[index++] = (byte)(array[i] >> 16);
+                        buffer[index++] = (byte)(array[i] >> 24);
+                        buffer[index++] = (byte)(array[i] >> 32);
+                        buffer[index++] = (byte)(array[i] >> 40);
+                        buffer[index++] = (byte)(array[i] >> 48 & 15);
+                    }
+                }
+                else
+                {
+                    int length = 8;
+                    EnsureCapacity(count * length);
+                    for (int i = 0; i < count; i++)
+                    {
+                        buffer[index++] = (byte)array[i];
+                        buffer[index++] = (byte)(array[i] >> 8);
+                        buffer[index++] = (byte)(array[i] >> 16);
+                        buffer[index++] = (byte)(array[i] >> 24);
+                        buffer[index++] = (byte)(array[i] >> 32);
+                        buffer[index++] = (byte)(array[i] >> 40);
+                        buffer[index++] = (byte)(array[i] >> 48);
+                        buffer[index++] = (byte)(array[i] >> 56);
+                    }
                 }
             }
         }
@@ -971,19 +1091,37 @@ namespace EntryEngine.Serialize
             else
             {
                 int count = array.Length;
-                int length = 8;
                 Write(count);
-                EnsureCapacity(count * length);
-                for (int i = 0; i < count; i++)
+                if (Long52Bit)
                 {
-                    buffer[index++] = (byte)array[i];
-                    buffer[index++] = (byte)(array[i] >> 8);
-                    buffer[index++] = (byte)(array[i] >> 16);
-                    buffer[index++] = (byte)(array[i] >> 24);
-                    buffer[index++] = (byte)(array[i] >> 32);
-                    buffer[index++] = (byte)(array[i] >> 40);
-                    buffer[index++] = (byte)(array[i] >> 48);
-                    buffer[index++] = (byte)(array[i] >> 56);
+                    int length = 7;
+                    EnsureCapacity(count * length);
+                    for (int i = 0; i < count; i++)
+                    {
+                        buffer[index++] = (byte)array[i];
+                        buffer[index++] = (byte)(array[i] >> 8);
+                        buffer[index++] = (byte)(array[i] >> 16);
+                        buffer[index++] = (byte)(array[i] >> 24);
+                        buffer[index++] = (byte)(array[i] >> 32);
+                        buffer[index++] = (byte)(array[i] >> 40);
+                        buffer[index++] = (byte)(array[i] >> 48 & 15);
+                    }
+                }
+                else
+                {
+                    int length = 8;
+                    EnsureCapacity(count * length);
+                    for (int i = 0; i < count; i++)
+                    {
+                        buffer[index++] = (byte)array[i];
+                        buffer[index++] = (byte)(array[i] >> 8);
+                        buffer[index++] = (byte)(array[i] >> 16);
+                        buffer[index++] = (byte)(array[i] >> 24);
+                        buffer[index++] = (byte)(array[i] >> 32);
+                        buffer[index++] = (byte)(array[i] >> 40);
+                        buffer[index++] = (byte)(array[i] >> 48);
+                        buffer[index++] = (byte)(array[i] >> 56);
+                    }
                 }
             }
         }
@@ -1016,20 +1154,50 @@ namespace EntryEngine.Serialize
             else
             {
                 int count = array.Length;
-                int length = 4;
                 Write(count);
-                EnsureCapacity(count * length);
-                for (int i = 0; i < count; i++)
+                if (Long52Bit)
                 {
-                    var value = array[i].Ticks;
-                    buffer[index++] = (byte)value;
-                    buffer[index++] = (byte)(value >> 8);
-                    buffer[index++] = (byte)(value >> 16);
-                    buffer[index++] = (byte)(value >> 24);
-                    buffer[index++] = (byte)(value >> 32);
-                    buffer[index++] = (byte)(value >> 40);
-                    buffer[index++] = (byte)(value >> 48);
-                    buffer[index++] = (byte)(value >> 56);
+                    int length = 7;
+                    EnsureCapacity(count * length);
+                    for (int i = 0; i < count; i++)
+                    {
+#if HTML5
+                        var value = array[i].Ticks;
+                        buffer[index] = (byte)value;
+                        buffer[index + 1] = (byte)((value & 65280) >> 8);
+                        buffer[index + 2] = (byte)((value & 16711680) >> 16);
+                        buffer[index + 3] = (byte)((value / 16777216) & 255);
+                        buffer[index + 4] = (byte)((value / 4294967296L) & 255);
+                        buffer[index + 5] = (byte)((value / 1099511627776L) & 255);
+                        buffer[index + 6] = (byte)((value / 281474976710656L) & 15);
+#else
+                        var value = array[i].Ticks / 10000;
+                        buffer[index++] = (byte)value;
+                        buffer[index++] = (byte)(value >> 8);
+                        buffer[index++] = (byte)(value >> 16);
+                        buffer[index++] = (byte)(value >> 24);
+                        buffer[index++] = (byte)(value >> 32);
+                        buffer[index++] = (byte)(value >> 40);
+                        buffer[index++] = (byte)(value >> 48 & 15);
+#endif
+                    }
+                }
+                else
+                {
+                    int length = 8;
+                    EnsureCapacity(count * length);
+                    for (int i = 0; i < count; i++)
+                    {
+                        var value = array[i].Ticks;
+                        buffer[index++] = (byte)value;
+                        buffer[index++] = (byte)(value >> 8);
+                        buffer[index++] = (byte)(value >> 16);
+                        buffer[index++] = (byte)(value >> 24);
+                        buffer[index++] = (byte)(value >> 32);
+                        buffer[index++] = (byte)(value >> 40);
+                        buffer[index++] = (byte)(value >> 48);
+                        buffer[index++] = (byte)(value >> 56);
+                    }
                 }
             }
         }
@@ -1042,20 +1210,50 @@ namespace EntryEngine.Serialize
             else
             {
                 int count = array.Length;
-                int length = 4;
                 Write(count);
-                EnsureCapacity(count * length);
-                for (int i = 0; i < count; i++)
+                if (Long52Bit)
                 {
-                    var value = array[i].Ticks;
-                    buffer[index++] = (byte)value;
-                    buffer[index++] = (byte)(value >> 8);
-                    buffer[index++] = (byte)(value >> 16);
-                    buffer[index++] = (byte)(value >> 24);
-                    buffer[index++] = (byte)(value >> 32);
-                    buffer[index++] = (byte)(value >> 40);
-                    buffer[index++] = (byte)(value >> 48);
-                    buffer[index++] = (byte)(value >> 56);
+                    int length = 7;
+                    EnsureCapacity(count * length);
+                    for (int i = 0; i < count; i++)
+                    {
+#if HTML5
+                        var value = array[i].Ticks;
+                        buffer[index] = (byte)value;
+                        buffer[index + 1] = (byte)((value & 65280) >> 8);
+                        buffer[index + 2] = (byte)((value & 16711680) >> 16);
+                        buffer[index + 3] = (byte)((value / 16777216) & 255);
+                        buffer[index + 4] = (byte)((value / 4294967296L) & 255);
+                        buffer[index + 5] = (byte)((value / 1099511627776L) & 255);
+                        buffer[index + 6] = (byte)((value / 281474976710656L) & 15);
+#else
+                        var value = array[i].Ticks / 10000;
+                        buffer[index++] = (byte)value;
+                        buffer[index++] = (byte)(value >> 8);
+                        buffer[index++] = (byte)(value >> 16);
+                        buffer[index++] = (byte)(value >> 24);
+                        buffer[index++] = (byte)(value >> 32);
+                        buffer[index++] = (byte)(value >> 40);
+                        buffer[index++] = (byte)((byte)(value >> 48 & 3) | ((int)array[i].Kind << 3));
+#endif
+                    }
+                }
+                else
+                {
+                    int length = 8;
+                    EnsureCapacity(count * length);
+                    for (int i = 0; i < count; i++)
+                    {
+                        var value = array[i].Ticks;
+                        buffer[index++] = (byte)value;
+                        buffer[index++] = (byte)(value >> 8);
+                        buffer[index++] = (byte)(value >> 16);
+                        buffer[index++] = (byte)(value >> 24);
+                        buffer[index++] = (byte)(value >> 32);
+                        buffer[index++] = (byte)(value >> 40);
+                        buffer[index++] = (byte)(value >> 48);
+                        buffer[index++] = (byte)(value >> 56);
+                    }
                 }
             }
         }
@@ -1529,13 +1727,57 @@ namespace EntryEngine.Serialize
         }
         public void Read(out long value)
         {
-            value = BitConverter.ToInt64(buffer, index);
-            index += 8;
+            if (Long52Bit)
+            {
+                //long l0 = buffer[index];
+                //long l1 = buffer[index + 1] << 8;
+                //long l2 = buffer[index + 2] << 16;
+                //long l3 = (long)buffer[index + 3] << 24;
+                //long l4 = (long)buffer[index + 4] << 32;
+                //long l5 = (long)buffer[index + 5] << 40;
+                //long l6 = (long)buffer[index + 6] << 48;
+                //value = l0 | l1 | l2 | l3 | l4 | l5 | l6;
+#if HTML5
+                value = buffer[index] + (buffer[index + 1] << 8) + (buffer[index + 2] << 16) + buffer[index + 3] * 16777216L
+                    + buffer[index + 4] * 4294967296L + buffer[index + 5] * 1099511627776L + buffer[index + 6] * 281474976710656L;
+#else
+                value = (long)buffer[index] | (long)buffer[index + 1] << 8 | (long)buffer[index + 2] << 16 | (long)buffer[index + 3] << 24
+                    | (long)buffer[index + 4] << 32 | (long)buffer[index + 5] << 40 | (long)buffer[index + 6] << 48;
+#endif
+                index += 7;
+            }
+            else
+            {
+                value = BitConverter.ToInt64(buffer, index);
+                index += 8;
+            }
         }
         public void Read(out ulong value)
         {
-            value = BitConverter.ToUInt64(buffer, index);
-            index += 8;
+            if (Long52Bit)
+            {
+                //long l0 = buffer[index];
+                //long l1 = buffer[index + 1] << 8;
+                //long l2 = buffer[index + 2] << 16;
+                //long l3 = (long)buffer[index + 3] << 24;
+                //long l4 = (long)buffer[index + 4] << 32;
+                //long l5 = (long)buffer[index + 5] << 40;
+                //long l6 = (long)buffer[index + 6] << 48;
+                //value = (ulong)(l0 | l1 | l2 | l3 | l4 | l5 | l6);
+#if HTML5
+                value = (ulong)(buffer[index] + (buffer[index + 1] << 8) + (buffer[index + 2] << 16) + buffer[index + 3] * 16777216L
+                    + buffer[index + 4] * 4294967296L + buffer[index + 5] * 1099511627776L + buffer[index + 6] * 281474976710656L);
+#else
+                value = (ulong)((long)buffer[index] | (long)buffer[index + 1] << 8 | (long)buffer[index + 2] << 16 | (long)buffer[index + 3] << 24
+                    | (long)buffer[index + 4] << 32 | (long)buffer[index + 5] << 40 | (long)buffer[index + 6] << 48);
+#endif
+                index += 7;
+            }
+            else
+            {
+                value = BitConverter.ToUInt64(buffer, index);
+                index += 8;
+            }
         }
         public void Read(out double value)
         {
@@ -1552,13 +1794,31 @@ namespace EntryEngine.Serialize
         {
             long ticks;
             Read(out ticks);
-            value = new TimeSpan(ticks);
+            if (Long52Bit)
+            {
+#if HTML5
+                value = new TimeSpan(ticks);
+#else
+                value = new TimeSpan(ticks * 10000);
+#endif
+            }
+            else
+                value = new TimeSpan(ticks);
         }
         public void Read(out DateTime value)
         {
             long ticks;
             Read(out ticks);
-            value = new DateTime(ticks);
+            if (Long52Bit)
+            {
+#if HTML5
+                value = new DateTime(ticks);
+#else
+                value = new DateTime(((ticks & 1125899906842623L) * 10000), (DateTimeKind)(ticks >> 50));
+#endif
+            }
+            else
+                value = new DateTime(ticks);
         }
         public void Read(out bool[] array)
         {
@@ -2044,6 +2304,7 @@ namespace EntryEngine.Serialize
         public ByteRefWriter()
         {
             writer = new INNER_WRITER();
+            writer.Long52Bit = false;
             writer.PARENT = this;
         }
         public ByteRefWriter(SerializeSetting setting) : this()
@@ -2456,6 +2717,7 @@ namespace EntryEngine.Serialize
         public ByteRefReader(byte[] buffer)
         {
             reader = new INNER_READER(buffer);
+            reader.Long52Bit = false;
             reader.PARENT = this;
         }
         public ByteRefReader(byte[] buffer, SerializeSetting setting): this(buffer)

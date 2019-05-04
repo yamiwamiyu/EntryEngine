@@ -61,3 +61,26 @@ Action<TEXTURE> setTexture(int index)
 {
 	return (t) => target[index].Texture = t;
 }
+
+)17
+_Request.GetServicesByRequestID((int)Request.ID, (res) =>
+    {
+        Accepts = res;
+        if (Accepts != null)
+        {
+            for (int i = 0; i < Accepts.Count; i++)
+            {
+                var item = ___TBItemFlag1();
+                item.X = item.X + (item.Width + 10) * TBList1.ChildCount;
+                SEmployer accept = new SEmployer();
+				// 这里代码解析是DUpdate<UIElement>要求sender,e两个参数，accept_Click算一个参数，导致解析错误
+				//accept.Click += new DUpdate<UIElement>(accept_Click);
+				// 改成下面这样就好了
+                accept.Click += accept_Click;
+                accept.X = item.X;
+                accept.Y = item.Y;
+                accept.show(Accepts[i].Service);
+                TBList1.Add(accept);
+            }
+        }
+    });

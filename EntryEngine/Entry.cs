@@ -6563,6 +6563,7 @@ namespace EntryEngine
         }
         public void RequestString(string text)
         {
+            if (text == null) return;
             foreach (char c in text)
                 GetBuffer(c);
         }

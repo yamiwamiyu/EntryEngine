@@ -552,7 +552,7 @@ namespace EntryEngine.Serialize
 			}
 			if (type.IsEnum)
 			{
-				WriteEnum(value);
+				WriteEnum(value, type);
 			}
 			else if (value is bool)
 			{
@@ -584,7 +584,7 @@ namespace EntryEngine.Serialize
 			{
 				WriteDateTime((DateTime)value);
 			}
-			else if (value is IEnumerable)
+			else if (type.IsArray || value is IEnumerable)
 			{
 				Type childType;
 				if (type.IsGenericType)
@@ -610,9 +610,10 @@ namespace EntryEngine.Serialize
 			builder.Append(_XML.NULL);
 			return true;
 		}
-		protected void WriteEnum(object value)
+		protected void WriteEnum(object value, Type type)
 		{
-			builder.Append(Convert.ChangeType(value, Enum.GetUnderlyingType(value.GetType())));
+            //builder.Append(Convert.ChangeType(value, Enum.GetUnderlyingType(value.GetType())));
+            builder.Append(Convert.ChangeType(value, Enum.GetUnderlyingType(type)));
 		}
 		protected virtual void WriteBool(bool value)
 		{

@@ -648,7 +648,7 @@ namespace EntryBuilder.CodeAnalysis.Syntax
             if (IsPrimitiveFlag(c))
             {
                 //string number = r.Next("),; }]:<>!+-*/%^&|=");
-                string number = r.Next("),; }]:<>!*/%^&|=");
+                string number = r.Next("),; }]:<>!*/%^&|=").Trim();
                 if (number.Contains("0x"))
                     if (c == '-')
                     {
@@ -717,6 +717,7 @@ namespace EntryBuilder.CodeAnalysis.Syntax
         }
         void ParseDefineNamespace(DefineFile code, DefineNamespace obj)
         {
+            obj.File = code;
             // 不定义namespace时为默认namespace
             //if (r.IsNextSign('{'))
             //    r.Read();
@@ -754,6 +755,11 @@ namespace EntryBuilder.CodeAnalysis.Syntax
                 var s3 = ParseDefineType();
                 if (s3 != null)
                 {
+                    DefineType dtype = s3 as DefineType;
+                    if (dtype != null)
+                    {
+                        dtype.Namespace = obj;
+                    }
                     obj.DefineTypes.Add(s3);
                     continue;
                 }
@@ -2291,6 +2297,7 @@ namespace EntryBuilder.CodeAnalysis.Syntax
 
     public class DefineNamespace : Define
     {
+        internal DefineFile File;
         public List<UsingNamespace> UsingNamespaces = new List<UsingNamespace>();
         public List<DefineNamespace> DefineNamespaces = new List<DefineNamespace>();
         public List<DefineMember> DefineTypes = new List<DefineMember>();
@@ -2350,6 +2357,7 @@ namespace EntryBuilder.CodeAnalysis.Syntax
     }
     public class DefineType : DefineMember
     {
+        internal DefineNamespace Namespace;
         public DefineGeneric Generic = new DefineGeneric();
         public List<ReferenceMember> Inherits = new List<ReferenceMember>();
         public List<DefineField> Fields = new List<DefineField>();
@@ -2925,6 +2933,31 @@ namespace EntryBuilder.CodeAnalysis.Syntax
                     GenericTypes[i].InternalToAvailableName(builder);
                 }
             }
+        }
+        public string GetNamespaceName()
+        {
+            StringBuilder builder = new StringBuilder();
+            Stack<string> stack = new Stack<string>();
+            var parent = this;
+            while (true)
+            {
+                stack.Push(parent.Name.Name);
+                if (parent.Target != null)
+                {
+                    parent = parent.Base;
+                    if (parent == null)
+                        break;
+                }
+                else
+                    break;
+            }
+            while (stack.Count > 0)
+            {
+                builder.Append(stack.Pop());
+                if (stack.Count > 0)
+                    builder.Append('.');
+            }
+            return builder.ToString();
         }
     }
     //public class CodeArray : ReferenceMember { }
@@ -5961,7 +5994,7 @@ namespace EntryBuilder.CodeAnalysis.Refactoring
             if (processor.types.TryGetValue(node, out define))
             {
                 CSharpType type = define.Type;
-                if (processor.HasType(type) && (all || (type.Assembly.IsProject && type.Attributes.Any(a => a.Type.Name.Name.StartsWith(AReflexible.Name)))))
+                if (processor.HasType(type) && (all || (type.Assembly.IsProject && type.Attributes.Any(a => a.Type.Name.Name == AReflexible.Name || a.Type.Name.Name == "Serializable"))))
                     reflexibleTypes.Add(type);
             }
         }
@@ -6819,6 +6852,7 @@ namespace EntryBuilder.CodeAnalysis.Refactoring
             if (DefiningType.ContainingType == null)
                 builder.Append("window.");
             builder.AppendLine("{0} = function(v,n){{this.v=v;this.n=n;}};", TypeName);
+            WriteReflectionInfo(null, false);
             builder.AppendLine("{0}.{2} = {1};", TypeName, GetStructSize(DefiningType.UnderlyingType), ENUM);
             int value = 0;
             foreach (var item in node.Fields)
@@ -7383,7 +7417,9 @@ namespace EntryBuilder.CodeAnalysis.Refactoring
                 builder.AppendLine("catch({0})", ANONYMOUS_EX);
                 builder.AppendBlock(() =>
                 {
+                    // 让网页抛出异常，可以看到行号等，调试用
                     builder.AppendLine("if ({0}.message) {{ throw {0}; }}", ANONYMOUS_EX);
+                    // todo: BUG $is(exception) 判断不出异常类型
                     for (int i = 0, n = node.Count - 1; i <= n; i++)
                     {
                         var item = node[i];
@@ -9113,6 +9149,8 @@ namespace EntryBuilder.CodeAnalysis.Refactoring
             builder.AppendBlockWithEnd(() =>
             {
                 builder.AppendLine("if (v == null) return false;");
+                // Number特殊类型
+                builder.AppendLine("if (v.constructor.name && v.constructor.name == \"Number\" && (t == byte || t == sbyte || t == ushort || t == short || t == char || t == uint || t == int || t == float || t == ulong || t == long || t == double)) return true;");
                 // 一层继承关系可直接拿到
                 builder.AppendLine("if (v.constructor.prototype.constructor == t) return true;");
                 builder.AppendLine("var t1 = v.GetType();");
@@ -9729,7 +9767,7 @@ namespace EntryBuilder.CodeAnalysis.Refactoring
                     case "long": name = "System.Int64"; break;
                     case "ulong": name = "System.UInt64"; break;
                     case "double": name = "System.Double"; break;
-                    case "String": name = "System.String"; break;
+                    case "String": if (type == CSharpType.STRING) name = "System.String"; else name = type.Name.Name; break;
                     default: name = type.Name.Name; break;
                 }
             }
@@ -10359,6 +10397,16 @@ namespace EntryBuilder.CodeAnalysis.Refactoring
                         rootRefs.Add(type);
                         return 1;
                     }
+                    // 可序列化的类型成员也全都不能优化掉
+                    else if (type.Attributes.Any(a => a.Type.Name.Name == AReflexible.Name || a.Type.Name.Name == "Serializable"))
+                    {
+                        rootRefs.Add(type);
+                        foreach (var item in type.MemberDefinitions)
+                        {
+                            rootRefs.Add(item);
+                        }
+                        return 1;
+                    }
                 }
                 else
                 {
@@ -10366,6 +10414,16 @@ namespace EntryBuilder.CodeAnalysis.Refactoring
                     if (member.Attributes.Any(a => a.Type.Name.Name == ANonOptimize.Name))
                     {
                         rootRefs.Add(member);
+                        return 1;
+                    }
+                    // 可序列化的类型成员也全都不能优化掉
+                    else if (member.ContainingType.Attributes.Any(a => a.Type.Name.Name == AReflexible.Name || a.Type.Name.Name == "Serializable"))
+                    {
+                        rootRefs.Add(member.ContainingType);
+                        foreach (var item in member.ContainingType.MemberDefinitions)
+                        {
+                            rootRefs.Add(item);
+                        }
                         return 1;
                     }
                     // 静态构造函数只要类型被引用就算被引用
@@ -10900,6 +10958,7 @@ namespace EntryBuilder.CodeAnalysis.Refactoring
 
         public override void Visit(DefineFile node)
         {
+            //_LOG.Debug(node.Name);
             FileType = CodeFileHelper.ParseFileType(node.Name);
             foreach (var item in node.DefineNamespaces) CreateOrFindNamespace(item);
             fileUsing.Clear();
@@ -10960,7 +11019,6 @@ namespace EntryBuilder.CodeAnalysis.Refactoring
             return nsName;
         }
     }
-    // BUG: 合并掉类型时，DefineFile.UsingNamespaces可能缺少，导致解析类型时报错
     /// <summary>构建命名空间，合并分布类</summary>
     internal class _BuildNamespace : _BuildTypeSystem
     {
@@ -11071,11 +11129,26 @@ namespace EntryBuilder.CodeAnalysis.Refactoring
                 {
                     /*
                      * 合并partial类
-                     * 1. 合并特性
-                     * 2. 合并继承，注意继承和实现接口的顺序
-                     * 3. 合并泛型约束
-                     * 4. 合并内部定义的成员
+                     * 1. 合并引用的命名空间（文件 | 命名空间）
+                     * 2. 合并特性
+                     * 3. 合并继承，注意继承和实现接口的顺序
+                     * 4. 合并泛型约束
+                     * 5. 合并内部定义的成员
                      */
+                    foreach (var item in node.Namespace.File.UsingNamespaces)
+                    {
+                        string name = item.Reference.GetNamespaceName();
+                        if (t.Namespace.File.UsingNamespaces.Any(n => n.Reference.GetNamespaceName() == name))
+                            continue;
+                        t.Namespace.File.UsingNamespaces.Add(item);
+                    }
+                    foreach (var item in node.Namespace.UsingNamespaces)
+                    {
+                        string name = item.Reference.GetNamespaceName();
+                        if (t.Namespace.UsingNamespaces.Any(n => n.Reference.GetNamespaceName() == name))
+                            continue;
+                        t.Namespace.UsingNamespaces.Add(item);
+                    }
                     t.Attributes.AddRange(node.Attributes);
                     t.Generic.Constraints.AddRange(node.Generic.Constraints);
                     //if (!isReplace && node.Inherits.Count > 0)
@@ -12907,7 +12980,7 @@ namespace EntryBuilder.CodeAnalysis.Refactoring
                     {
                         var current = parents.Pop();
                         // todo: test
-                        if (current.Name.Name == "Protocol" && definingMember != null && definingMember.Name.Name == "IAccountProxy")
+                        if (current.Name.Name == "GetServicesByRequestID" && definingMember != null && definingMember.Name.Name == "MyLoading")
                         //if (current.Name.Name == "IndexOf" && definingMember != null && definingMember.Name.Name == "IndexOf" && definingType.Name.Name == "Utility")
                         {
                             CSharpMember member2 = definingType.Members.FirstOrDefault(f => f.Name.Name == current.Name.Name);

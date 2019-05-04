@@ -1380,7 +1380,30 @@ namespace EntryEngine.UI
         {
             if (!child.Visible)
                 return RECT.Empty;
-            return child.InParentClip;
+            RECT rect = child.InParentClip;
+            if (!child.isClip)
+            {
+                RECT clip = child.ChildClip;
+                if (clip.X < 0)
+                {
+                    rect.X += clip.X;
+                    rect.Width -= clip.X;
+                }
+                if (clip.Y < 0)
+                {
+                    rect.Y += clip.Y;
+                    rect.Height -= clip.Y;
+                }
+                if (clip.Right > rect.Width)
+                {
+                    rect.Width = clip.Right;
+                }
+                if (clip.Bottom > rect.Height)
+                {
+                    rect.Height = clip.Bottom;
+                }
+            }
+            return rect;
             //return RECT.Union(child.Clip, child.InParentChildClip);
         }
         public static VECTOR2 CalcPivotPoint(VECTOR2 size, EPivot pivot)
