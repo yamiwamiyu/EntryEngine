@@ -279,20 +279,27 @@ namespace EditorUI
         }
 		private void ResavePreviewCode(UIElement sender, Entry e)
 		{
-			if (string.IsNullOrEmpty(Project.TranslateTable) ||
-					string.IsNullOrEmpty(C.EntryBuilder))
-			{
-				UtilityEditor.Message("请先配置翻译文件和工具");
-				return;
-			}
+            //if (string.IsNullOrEmpty(Project.TranslateTable) ||
+            //        string.IsNullOrEmpty(C.EntryBuilder))
+            //{
+            //    UtilityEditor.Message("请先配置翻译文件和工具");
+            //    return;
+            //}
 
-			string dir = DIR_PREVIEW + "\\UIScene";
+            if (string.IsNullOrEmpty(C.EntryBuilder))
+            {
+                UtilityEditor.Message("请先配置生成工具");
+                return;
+            }
+
+            string dir = DIR_PREVIEW;
 			if (Directory.Exists(dir))
 			{
 				string[] scenes = Directory.GetFiles(dir, "*." + SUFFIX_ELEMENT, SearchOption.AllDirectories);
 				foreach (var item in scenes)
 				{
 					UIElement load = LoadUI(item);
+                    if (!(load is UIScene)) continue;
 					Widget widget = SetElement(load);
                     //byte[] content = SaveUI(widget);
                     //File.WriteAllBytes(widget.FilePath, content);

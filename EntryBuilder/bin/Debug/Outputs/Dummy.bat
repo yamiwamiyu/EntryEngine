@@ -1,5 +1,5 @@
 del fmodex.dll
-..\EntryBuilder.exe BuildDll ..\..\..\..\EntryEngine\ Dummy\EntryEngine.dll 3.5 "" true CLIENT;SERVER;
+..\EntryBuilder.exe BuildDll ..\..\..\..\EntryEngine\ Dummy\EntryEngine.dll 3.5 "" true CLIENT;SERVER;DEBUG;
 
 copy ..\..\..\..\Xna\bin\Debug\*.dll Xna\
 ..\EntryBuilder.exe BuildDll ..\..\..\..\Xna\ Dummy\Xna.dll 3.5 "System.Drawing.dll|System.Windows.Forms.dll|Xna\EntryEngine.dll|..\..\..\..\Xna\Microsoft.Xna.Framework.dll|..\..\..\..\Xna\Microsoft.Xna.Framework.Game.dll" true ""

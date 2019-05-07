@@ -161,6 +161,10 @@ namespace EntryEngine.HTML5
             {
                 fileSelector = (HTMLFileSelector)window.document.getElementById("file");
             }
+            if (multiple)
+                fileSelector.multiple = "multiple";
+            else
+                fileSelector.multiple = "";
             fileSelector.onchange = () =>
             {
                 int len = fileSelector.files.length;
@@ -205,6 +209,14 @@ namespace EntryEngine.HTML5
             };
             fileReader.readAsArrayBuffer((Blob)select.SelectObject);
             return result;
+        }
+        public override void FileBrowserSave(string file, string[] suffix, Action<SelectFile> onSelect)
+        {
+            // 直接下载文件，可能无法弹出文件选择
+            AElement a = (AElement)window.document.createElement("a");
+            a.href = file;
+            a.download = "";
+            a.click();
         }
     }
     public class IOJSWeb : IOJSLocal

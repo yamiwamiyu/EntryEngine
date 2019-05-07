@@ -1302,6 +1302,7 @@ namespace EntryEngine.Xna
     public class IOWinform : _IO.iO
     {
         private static OpenFileDialog openFile = new OpenFileDialog();
+        private static SaveFileDialog saveFile = new SaveFileDialog();
         private static string GetFilters(string[] suffix)
         {
             string filter = GetFilter(suffix);      // 全部
@@ -1363,6 +1364,27 @@ namespace EntryEngine.Xna
                         result[i] = CreateSelectFile(files[i], null);
                     onSelect(result);
                 }
+            }
+        }
+        public override void FileBrowserSave(string file, string[] suffix, Action<SelectFile> onSelect)
+        {
+            saveFile.Filter = GetFilter(suffix);
+            saveFile.FileName = file;
+            if (saveFile.ShowDialog() == DialogResult.OK)
+            {
+                if (onSelect != null)
+                {
+                    onSelect(CreateSelectFile(saveFile.FileName, null));
+                }
+                //else
+                //{
+                //    // 默认读取文件保存到目标位置
+                //    if (!string.IsNullOrEmpty(file) && file != saveFile.FileName)
+                //    {
+                //        byte[] read = ReadByte(file);
+                //        WriteByte(saveFile.FileName, read);
+                //    }
+                //}
             }
         }
     }

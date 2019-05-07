@@ -1,6 +1,10 @@
 ﻿using System;
 using System.IO;
 using System.Text;
+using System.Collections.Generic;
+using System.Net;
+using System.Diagnostics;
+using System.Linq;
 
 namespace EntryEngine
 {
@@ -178,6 +182,10 @@ namespace EntryEngine
                 File.WriteAllBytes(file, content);
             }
             public virtual void FileBrowser(string[] suffix, bool multiple, Action<SelectFile[]> onSelect)
+            {
+                throw new NotImplementedException();
+            }
+            public virtual void FileBrowserSave(string file, string[] suffix, Action<SelectFile> onSelect)
             {
                 throw new NotImplementedException();
             }
@@ -466,6 +474,192 @@ namespace EntryEngine
                 Utility.Swap(ref bytes[i], ref bytes[random.Next(len)]);
         }
     }
+
+#if DEBUG
+    public static class HotFix
+    {
+        class Filelist
+        {
+            public string File;
+            public string Time;
+            public long Length;
+        }
+
+        internal const string FIX_TEMP = "HotFix/";
+        internal const string HOT_FIX_BAT = "__hotfix.bat";
+        internal const string VERSION = "__version.txt";
+        internal const string FILE_LIST = "__filelist.txt";
+        internal const int PARALLEL = 10;
+        public static readonly string[] SPLIT = new string[] { "\r\n" };
+        public static string ServerURL;
+
+        public static string ProcessText { get; private set; }
+
+        static string ReadString(byte[] bytes)
+        {
+            using (MemoryStream stream = new MemoryStream(bytes))
+            {
+                using (StreamReader reader = new StreamReader(stream))
+                {
+                    return reader.ReadToEnd();
+                }
+            }
+        }
+
+        public static IEnumerable<ICoroutine> Update()
+        {
+            if (string.IsNullOrEmpty(ServerURL))
+                yield break;
+
+            ProcessText = "正在检测最新版本号";
+
+            // 新版本号
+            WebRequest request = HttpWebRequest.Create(ServerURL + VERSION);
+            WebResponse response = request.GetResponse();
+            byte[] newVersionBuffer = _IO.ReadStream(response.GetResponseStream(), 8);
+
+            // 旧版本号
+            byte[] oldVersionBuffer = File.ReadAllBytes(VERSION);
+
+            // 新旧版本比对
+            if (oldVersionBuffer != null)
+            {
+                bool needUpdate = false;
+                for (int i = 0; i < newVersionBuffer.Length; i++)
+                {
+                    if (newVersionBuffer[i] != oldVersionBuffer[i])
+                    {
+                        needUpdate = true;
+                        break;
+                    }
+                }
+
+                if (!needUpdate)
+                    yield break;
+            }
+
+            ProcessText = "正在计算更新内容大小";
+            yield return null;
+
+            // 新文件列表
+            request = WebRequest.Create(ServerURL + FILE_LIST);
+            response = request.GetResponse();
+            byte[] newFileListBuffer = _IO.ReadStream(response.GetResponseStream(), 65535);
+
+            // 旧文件列表
+            byte[] oldFileListBuffer = File.ReadAllBytes(FILE_LIST);
+            string[] oldList = ReadString(oldFileListBuffer).Split(SPLIT, StringSplitOptions.RemoveEmptyEntries);
+            string[] newList = ReadString(newFileListBuffer).Split(SPLIT, StringSplitOptions.RemoveEmptyEntries);
+
+            // 暂时不删除不需要了的文件，只列出需要下载的新文件或者需要更新的文件
+            Dictionary<string, Filelist> oldFilelist = new Dictionary<string, Filelist>();
+            foreach (var item in oldList)
+            {
+                string[] splits = item.Split('\t');
+                Filelist file = new Filelist();
+                file.File = splits[0];
+                file.Time = splits[1];
+                file.Length = long.Parse(splits[2]);
+                oldFilelist.Add(splits[0], file);
+            }
+
+            List<Filelist> newFilelist = new List<Filelist>();
+            foreach (var item in newList)
+            {
+                string[] splits = item.Split('\t');
+                Filelist file;
+                if (oldFilelist.TryGetValue(splits[0], out file))
+                {
+                    // 时间不一致需要更新
+                    if (file.Time != splits[1])
+                    {
+                        file.Length = long.Parse(splits[2]);
+                        newFilelist.Add(file);
+                    }
+                }
+                else
+                {
+                    // 需要下载的新文件
+                    file = new Filelist();
+                    file.File = splits[0];
+                    file.Time = splits[1];
+                    file.Length = long.Parse(splits[2]);
+                    newFilelist.Add(file);
+                }
+            }
+
+            // 可能只是删除了文件，导致没有需要更新的文件
+            bool withDLL = false;
+            if (newFilelist.Count > 0)
+            {
+                long needDownload = newFilelist.Sum(f => f.Length) >> 10;
+                long download = 0;
+                int parallel = 0;
+                foreach (var item in newFilelist)
+                {
+                    while (parallel >= PARALLEL)
+                    {
+                        yield return null;
+                    }
+                    parallel++;
+                    request = WebRequest.Create(ServerURL + item.File);
+                    Filelist fileListItem = item;
+                    request.BeginGetResponse(ar =>
+                    {
+                        WebResponse _response = ((WebRequest)ar.AsyncState).EndGetResponse(ar);
+                        byte[] result = _IO.ReadStream(_response.GetResponseStream(), (int)fileListItem.Length);
+
+                        string dir = Path.GetDirectoryName(fileListItem.File);
+                        if (!string.IsNullOrEmpty(dir) && !Directory.Exists(dir))
+                            Directory.CreateDirectory(dir);
+
+                        if (fileListItem.File.EndsWith(".dll") || fileListItem.File.EndsWith(".exe") || fileListItem.File.EndsWith(".pdb"))
+                        {
+                            if (!Directory.Exists(FIX_TEMP))
+                                Directory.CreateDirectory(FIX_TEMP);
+                            // 写入程序到临时文件夹，重启时通过临时文件夹拷贝程序覆盖原来的程序
+                            withDLL = true;
+                            _LOG.Debug("下载DLL:" + FIX_TEMP + fileListItem.File);
+                            File.WriteAllBytes(FIX_TEMP + fileListItem.File, result);
+                        }
+                        else
+                        {
+                            _IO.WriteByte(fileListItem.File, result);
+                        }
+
+                        // todo:每完成一个下载都写入旧文件列表，这样中途退出下次也能接着上次中断的文件开始下载
+                        download += fileListItem.Length >> 10;
+                        ProcessText = string.Format("正在更新：{0}kb / {1}kb", download, needDownload);
+                        parallel--;
+                    }, request);
+                }
+                while (parallel > 0)
+                    yield return null;
+                // 写入新文件列表
+                File.WriteAllBytes(FILE_LIST, newFileListBuffer);
+            }
+
+            // 写入新版本列表
+            File.WriteAllBytes(VERSION, newVersionBuffer);
+
+            if (withDLL)
+            {
+                string update_bat =
+@"taskkill /PID {0}
+cd {1}
+xcopy /Y *.* ..\
+cd ..\
+del {2}
+start Xna.exe
+";
+                // 关闭程序并启动批处理来启动程序
+                File.WriteAllText(HOT_FIX_BAT,
+                    string.Format(update_bat, Process.GetCurrentProcess().Id, FIX_TEMP, HOT_FIX_BAT));
+                Process.Start(HOT_FIX_BAT);
+            }
+        }
+    }
+#endif
 
     #region old implements
 

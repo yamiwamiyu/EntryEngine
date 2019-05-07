@@ -516,6 +516,7 @@ namespace EntryBuilder
             //    gaussImage.Save("Test1.png");
             //}
 
+            //PublishToPC(@"D:\Project\xss\xss\Launch\Client", @"D:\Project\xss\xss\Launch\Client");
             //PublishToWebGL(@"..\..\..\", @"D:\Project\xss\xss\Code\Client", @"D:\Project\xss\xss\Code\Protocol\Protocol", @"D:\Project\xss\xss\Launch\Client\index.html", false, 5);
             //BuildTableTranslate("", "");
             //BuildDatabaseMysql(@"D:\Project\xss\xss\Code\Protocol\Protocol\bin\Debug\Protocol.dll", "Server._DB", @"D:\Project\xss\xss\Code\Server\Server\_DB.cs", "", "", true);
@@ -8346,6 +8347,89 @@ namespace EntryBuilder
         //{
 
         //}
+        public static void PublishToPC(string xnaDir, string outputDir)
+        {
+            BuildDir(ref xnaDir);
+            BuildDir(ref outputDir);
+            bool isDirDifference = xnaDir != outputDir;
+
+            // 将dll转为.bytes 文件放入StreamingAssets文件夹，并生成列表供Unity加载
+            StringBuilder builder = new StringBuilder();
+
+            HashSet<string> filter = new HashSet<string>();
+
+            foreach (var file in 
+                GetFiles(xnaDir, "*.dll")
+                .Concat(GetFiles(xnaDir, "*.pdb")
+                .Concat(GetFiles(xnaDir, "*.exe"))))
+            {
+                string name = Path.GetFileName(file);
+                //if (name.EndsWith("fmodex"))
+                //    continue;
+                FileInfo info = new FileInfo(file);
+                builder.AppendLine("{0}\t{1}\t{2}", name, info.LastWriteTime.Ticks, info.Length);
+                if (isDirDifference)
+                    File.Copy(file, outputDir + name, true);
+            }
+            Console.WriteLine("复制dll列表完成");
+
+            string fileList = outputDir + "__filelist.txt";
+            string fileListVersion = outputDir + "__version.txt";
+
+            // 复制资源文件到StreamingAssets文件夹
+            string originDLL = xnaDir;
+            xnaDir = _IO.PathCombine(Path.GetFullPath(xnaDir), "Content\\");
+            outputDir = _IO.PathCombine(Path.GetFullPath(outputDir), "Content\\");
+            DirectoryInfo target = new DirectoryInfo(outputDir);
+            if (!target.Exists)
+                target.Create();
+            // 筛选去除TexPiece,Pack命令已打包的图片源文件
+            foreach (var meta in Directory.GetFiles(xnaDir, "*.pcsv", SearchOption.AllDirectories))
+            {
+                PipelinePiece.Piece[] pieces = new CSVReader(File.ReadAllText(meta)).ReadObject<PipelinePiece.Piece[]>();
+                foreach (var piece in pieces)
+                    filter.Add(piece.File);
+            }
+            Action<DirectoryInfo> copy = null;
+            copy = (directory) =>
+            {
+                string targetDirName = directory.FullName.Substring(xnaDir.Length);
+                string temp = outputDir + targetDirName;
+                Console.WriteLine(targetDirName);
+                target = new DirectoryInfo(temp);
+                if (isDirDifference && target.Exists && !string.IsNullOrEmpty(targetDirName))
+                    target.Delete(true);
+                bool createFlag = true;
+                foreach (var file in directory.GetFiles())
+                {
+                    string fileName = ContentManager.FilePathUnify(file.FullName.Substring(originDLL.Length));
+                    if (filter.Contains(fileName))
+                        continue;
+                    if (createFlag)
+                    {
+                        // 没有文件的文件夹不创建
+                        target.Create();
+                        createFlag = false;
+                    }
+                    // 一些批处理之类的文件
+                    if (file.Name.StartsWith("#"))
+                        continue;
+                    // 文件名\t最后修改时间\t文件大小(字节)
+                    builder.AppendLine("{0}\t{1}\t{2}", fileName, file.LastWriteTime.Ticks, file.Length);
+                    if (isDirDifference)
+                        file.CopyTo(Path.Combine(temp, file.Name), true);
+                }
+                foreach (var dirc in directory.GetDirectories())
+                    if (!dirc.Name.StartsWith("#"))
+                        //ForeachDirectory(dirc, copy);
+                        copy(dirc);
+            };
+            copy(new DirectoryInfo(xnaDir));
+            //ForeachDirectory(xnaDir, copy);
+            File.WriteAllText(fileList, builder.ToString(), Encoding.UTF8);
+            File.WriteAllBytes(fileListVersion, BitConverter.GetBytes(new FileInfo(fileList).LastWriteTime.Ticks));
+            Console.WriteLine("复制资源完成");
+        }
         public static void PublishToUnity(string xnaDir, string unityAssetsDir)
         {
             BuildDir(ref xnaDir);
@@ -8446,9 +8530,9 @@ namespace EntryBuilder
             }
             resolves[0] = new CodeResolve(".net", "CLIENT;SERVER", Directory.GetFiles(entryEngineRootDir + @"CSharp\.net\", "*.cs", SearchOption.AllDirectories)
                     .Concat(Directory.GetFiles(entryEngineRootDir + @"JavaScript\", "*.cs", SearchOption.TopDirectoryOnly)).ToArray());
-            resolves[1] = new CodeResolve("EntryEngine", "CLIENT", Directory.GetFiles(entryEngineRootDir + @"EntryEngine\", "*.cs", SearchOption.AllDirectories));
+            resolves[1] = new CodeResolve("EntryEngine", "CLIENT;HTML5", Directory.GetFiles(entryEngineRootDir + @"EntryEngine\", "*.cs", SearchOption.AllDirectories));
             resolves[resolves.Length - 3] = new CodeResolve("HTML5", "", Directory.GetFiles(entryEngineRootDir + @"HTML5\", "*.cs", SearchOption.AllDirectories));
-            resolves[resolves.Length - 2] = new CodeResolve("Client", "HTML5", Directory.GetFiles(projectCodeClientDir + @"Client\", "*.cs", SearchOption.AllDirectories));
+            resolves[resolves.Length - 2] = new CodeResolve("Client", "HTML5;DEBUG", Directory.GetFiles(projectCodeClientDir + @"Client\", "*.cs", SearchOption.AllDirectories));
             resolves[resolves.Length - 1] = new CodeResolve("Entry", "HTML5", Directory.GetFiles(projectCodeClientDir + @"PCRun\", "*.cs", SearchOption.AllDirectories));
 
             Stopwatch watch = Stopwatch.StartNew();
@@ -8459,6 +8543,7 @@ namespace EntryBuilder
                 project.AddSymbols(item.Symbols);
                 try
                 {
+                    _LOG.Debug("Begin Parse [{0}]", item.Name);
                     project.ParseFromFile(item.Files);
                     _LOG.Debug("Parse [{0}] Time Elapsed: {1}", item.Name, watch.ElapsedMilliseconds.ToString());
                 }

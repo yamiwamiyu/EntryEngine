@@ -189,6 +189,7 @@ public static class window
     public static string btoa(string str) { return null; }
     /// <summary>base64编码转换为原先的字符串</summary>
     public static string atob(string str) { return null; }
+    public static extern void open(string url);
 }
 public abstract class Storage
 {
@@ -361,7 +362,13 @@ public abstract class HTMLElement : Element
 }
 public abstract class HTMLFileSelector : HTMLElement
 {
+    public string multiple;
     public FileList files;
+}
+public abstract class AElement : HTMLElement
+{
+    public string href;
+    public string download;
 }
 public abstract class FileList
 {
