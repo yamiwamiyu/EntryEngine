@@ -71,7 +71,8 @@ namespace EntryEngine.UI
 
         void TextBox_Clicked(UIElement sender, Entry e)
         {
-            Handled = true;
+            //Handled = true;
+            Handle();
         }
 		public override void ResetDisplay()
 		{

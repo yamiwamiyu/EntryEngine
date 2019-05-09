@@ -424,7 +424,7 @@ namespace EditorUI
                 string file = sender.Tag.ToString();
                 BuildView(LoadUI(file) as UIScene);
                 SelectedElement = null;
-                Handled = true;
+                Handle();
             }
             else
             {

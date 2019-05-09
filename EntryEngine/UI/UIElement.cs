@@ -53,19 +53,17 @@ namespace EntryEngine.UI
     [Code(ECode.ToBeContinue)]
     public abstract class UIElement : Tree<UIElement>, IDisposable
     {
-        private static bool __handled;
-        public static bool Handled
+        internal static UIElement __PrevHandledElement;
+        internal static UIElement __HandledElement;
+        public bool Handled
         {
-            get { return __handled; }
-            protected internal set
-            {
-                __handled = value;
-                // DEBUG
-                if (__handled)
-                {
-                }
-            }
+            get { return __HandledElement != null; }
         }
+        public void Handle()
+        {
+            __HandledElement = this;
+        }
+
         protected internal static UIElement FocusedElement { get; private set; }
         public static DUpdateGlobal GlobalEnter;
         public static DUpdateGlobal GlobalHover;
@@ -614,12 +612,12 @@ namespace EntryEngine.UI
             RegistEvent(DoExit);
             RegistEvent(DoHover);
             RegistEvent(DoUnHover);
+            RegistEvent(DoDoubleClick);
             RegistEvent(DoClick);
             RegistEvent(DoPressed);
             RegistEvent(DoDrag);
             RegistEvent(DoClicked);
             RegistEvent(DoReleased);
-            RegistEvent(DoDoubleClick);
             RegistEvent(DoKeyboard);
         }
 
@@ -681,9 +679,16 @@ namespace EntryEngine.UI
 
             if (isClick)
             {
-                isClick = pointer.IsPressed(pointer.DefaultKey) ||
-                    // Invoke "IsClick" is true in parent InternalEvent
-                    pointer.IsRelease(pointer.DefaultKey);
+                //if ((__HandledElement != null && __HandledElement != this) || (__PrevHandledElement != null && __PrevHandledElement != this))
+                //{
+                //    isClick = false;
+                //}
+                //else
+                {
+                    isClick = pointer.IsPressed(pointer.DefaultKey) ||
+                        // Invoke "IsClick" is true in parent InternalEvent
+                        pointer.IsRelease(pointer.DefaultKey);
+                }
             }
 
             needUpdateHover = true;
@@ -1278,10 +1283,12 @@ namespace EntryEngine.UI
             if (Click != null && flag)
             {
                 Click(this, e);
+                Handle();
             }
             if (GlobalClick != null && flag)
             {
                 GlobalClick(this, Click != null, e);
+                Handle();
             }
         }
         protected bool OnPressed(Entry e)
@@ -1317,10 +1324,12 @@ namespace EntryEngine.UI
             if (Clicked != null && flag)
             {
                 Clicked(this, e);
+                Handle();
             }
             if (GlobalClicked != null && flag)
             {
                 GlobalClicked(this, Clicked != null, e);
+                Handle();
             }
         }
         protected bool OnReleased(Entry e)
@@ -1332,6 +1341,7 @@ namespace EntryEngine.UI
             if (Released != null && OnReleased(e))
             {
                 Released(this, e);
+                Handle();
             }
         }
         protected bool OnDoubleClick(Entry e)
@@ -1343,6 +1353,7 @@ namespace EntryEngine.UI
             if (DoubleClick != null && OnDoubleClick(e))
             {
                 DoubleClick(this, e);
+                Handle();
             }
         }
         protected bool OnKeyboard(Entry e)
@@ -1815,9 +1826,9 @@ namespace EntryEngine.UI
             }
             base.InternalUpdate(e);
         }
-        private void DoKeyboard(UIElement sender, Entry e)
+        private  void DoKeyboard(UIElement sender, Entry e)
         {
-            if (Parent == null && e.INPUT.Keyboard.IsClick(FocusNextKey))
+            if (Parent == null && IsInStage && Entry.Scene == this && e.INPUT.Keyboard.IsClick(FocusNextKey))
             {
                 UIElement next = FocusedElement;
                 if (next == null)

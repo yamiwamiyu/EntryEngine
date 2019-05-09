@@ -274,12 +274,12 @@ namespace EntryEngine.UI
                     if (offsetScope.Y != 0)
                     {
                         this.OffsetY += value * ScrollWheelSpeed;
-                        Handled = true;
+                        Handle();
                     }
                     else if (offsetScope.X != 0)
                     {
                         this.OffsetX += value * ScrollWheelSpeed;
-                        Handled = true;
+                        Handle();
                     }
                 }
             }
@@ -393,7 +393,7 @@ namespace EntryEngine.UI
 		}
 		private void OnScroll()
 		{
-            Handled = true;
+            //Handle();
 			NeedUpdateLocalToWorld = true;
 			if (scrollBarHorizontal != null && CanScrollHorizontal)
 			{
@@ -423,12 +423,13 @@ namespace EntryEngine.UI
                             if (offsetScope.X == 0 && offsetScope.Y == 0)
                                 return;
                             Offset = VECTOR2.Subtract(Offset, delta);
+                            Handle();
                             break;
 
                         case EDragMode.Move:
                             bool bx, by;
                             DoMove(delta.X, delta.Y, out bx, out by);
-                            Handled = true;
+                            Handle();
                             break;
                     }
                     if (DragInertia != 0)

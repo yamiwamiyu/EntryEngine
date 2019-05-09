@@ -446,7 +446,7 @@ namespace EntryEngine.UI
 		}
 		protected override void ValueDrag(UIElement sender, Entry e)
 		{
-            Handled = true;
+            Handle();
 			if (barClip.Width != 0)
 			{
                 float position = ConvertGraphicsToLocal(e.INPUT.Pointer.Position).X - dragOffset;
@@ -561,7 +561,7 @@ namespace EntryEngine.UI
 		}
 		protected override void ValueDrag(UIElement sender, Entry e)
 		{
-            Handled = true;
+            Handle();
 			if (barClip.Height != 0)
 			{
                 float position = ConvertGraphicsToLocal(e.INPUT.Pointer.Position).Y - dragOffset;

@@ -226,7 +226,7 @@ namespace EntryEngine
             scene.Show(this);
             scene.OnPhaseLoading();
             scene.State = dialogState;
-            UIElement.Handled = true;
+            UIElement.__HandledElement = scene;
         }
         public void ShowDesktop(EState state)
         {
@@ -291,7 +291,8 @@ namespace EntryEngine
         }
         protected override void InternalUpdate()
         {
-            UIElement.Handled = false;
+            UIElement.__PrevHandledElement = UIElement.__HandledElement;
+            UIElement.__HandledElement = null;
             if (IPlatform.IsActive)
                 InputUpdate();
             if (AUDIO != null)
@@ -848,7 +849,12 @@ namespace EntryEngine
             {
                 InputDevice.Update(entry);
                 if (InputDevice.IsActive && Pointer != null && Pointer.IsPressed(Pointer.DefaultKey))
-                    UIElement.Handled = true;
+                {
+                    if (InputDevice.Typist is UIElement)
+                    {
+                        UIElement.__HandledElement = (UIElement)InputDevice.Typist;
+                    }
+                }
             }
         }
     }

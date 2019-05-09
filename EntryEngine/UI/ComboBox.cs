@@ -193,7 +193,7 @@ namespace EntryEngine.UI
             {
                 // 点击面板以外收起面板
                 Checked = false;
-                Handled = true;
+                Handle();
             }
         }
         private bool OnSelectHandle()
@@ -337,6 +337,11 @@ namespace EntryEngine.UI
             }
         }
 
+        public Selectable()
+        {
+            RegistEvent(DoSelectHandle);
+        }
+
         public Button AddItem(string text)
         {
             if (CreateItem != null)
@@ -432,10 +437,8 @@ namespace EntryEngine.UI
         {
             return this.Where(i => i is T).Select(i => i as T);
         }
-        protected override void InternalEvent(Entry e)
+        private void DoSelectHandle(Entry e)
         {
-            base.InternalEvent(e);
-
             if (isHover)
             {
                 // block
@@ -444,7 +447,7 @@ namespace EntryEngine.UI
                     handle = SelectHandle();
                 if (e.INPUT.Pointer.IsClick(0))
                 {
-                    Handled = true;
+                    Handle();
                     return;
                 }
                 else if (e.INPUT.Pointer.IsTap() || handle)
@@ -455,7 +458,7 @@ namespace EntryEngine.UI
                     {
                         if (item.IsHover)
                         {
-                            Handled = true;
+                            Handle();
                             SelectedIndex = index;
                             return;
                         }
@@ -464,6 +467,38 @@ namespace EntryEngine.UI
                 }
             }
         }
+        //protected override void InternalEvent(Entry e)
+        //{
+        //    base.InternalEvent(e);
+
+        //    if (isHover)
+        //    {
+        //        // block
+        //        bool handle = false;
+        //        if (SelectHandle != null)
+        //            handle = SelectHandle();
+        //        if (e.INPUT.Pointer.IsClick(0))
+        //        {
+        //            Handled = true;
+        //            return;
+        //        }
+        //        else if (e.INPUT.Pointer.IsTap() || handle)
+        //        {
+        //            // select
+        //            int index = 0;
+        //            foreach (var item in this)
+        //            {
+        //                if (item.IsHover)
+        //                {
+        //                    Handled = true;
+        //                    SelectedIndex = index;
+        //                    return;
+        //                }
+        //                index++;
+        //            }
+        //        }
+        //    }
+        //}
         protected override void InternalUpdate(Entry e)
         {
             base.InternalUpdate(e);

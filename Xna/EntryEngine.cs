@@ -99,7 +99,7 @@ namespace EntryEngine.Xna
             v.Width = (int)viewport.Width;
             v.Height = (int)viewport.Height;
             Device.Viewport = v;
-            Device.RenderState.ScissorTestEnable = true;
+            //Device.RenderState.ScissorTestEnable = true;
         }
         protected override void InternalBegin(bool threeD, ref MATRIX matrix, ref RECT graphics, SHADER shader)
         {
@@ -156,6 +156,8 @@ namespace EntryEngine.Xna
                 graphics.Location = VECTOR2.Zero;
             else
                 graphics = AreaToScreen(graphics);
+            // 窗体缩小后，这个值会变为false
+            Device.RenderState.ScissorTestEnable = true;
             Device.ScissorRectangle = graphics.GetRect();
         }
         protected override void Ending(GRAPHICS.RenderState render)

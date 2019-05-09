@@ -185,7 +185,8 @@ namespace EntryEngine.UI
             if (!Focused && CanSelect)
             {
                 SetFocus(true);
-                Handled = true;
+                //Handled = true;
+                Handle();
             }
         }
 		public bool OverLength(int length)
