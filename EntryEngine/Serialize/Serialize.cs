@@ -617,7 +617,10 @@ namespace EntryEngine.Serialize
 		}
 		protected virtual void WriteBool(bool value)
 		{
-			builder.Append(value);
+            if (value)
+			    builder.Append("true");
+            else
+                builder.Append("false");
 		}
 		protected virtual void WriteNumber(object value)
 		{
@@ -1632,6 +1635,10 @@ namespace EntryEngine.Serialize
             if ((type == null && target != null) || (type != null && target == null))
                 return false;
             return target.IsAssignableFrom(type);
+        }
+        public static bool IsDelegate(this Type type)
+        {
+            return type.Is(typeof(Delegate));
         }
         public static Type[] GetAllInterfaces(this Type type)
         {

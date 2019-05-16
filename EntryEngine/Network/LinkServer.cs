@@ -6,6 +6,7 @@ using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using EntryEngine.Serialize;
+using System.Text;
 
 namespace EntryEngine.Network
 {
@@ -1476,7 +1477,20 @@ namespace EntryEngine.Network
         private Queue<HttpListenerContext> queue = new Queue<HttpListenerContext>();
         /// <summary>一次OnProtocol处理完一个请求时触发</summary>
         public Action OnReset;
-        public HttpListenerContext Context;
+        private HttpListenerContext context;
+        public Action<HttpListenerContext> OnChangeContext;
+        public HttpListenerContext Context
+        {
+            get { return context; }
+            set
+            {
+                if (value == null)
+                    throw new ArgumentNullException("context");
+                context = value;
+                if (OnChangeContext != null)
+                    OnChangeContext(value);
+            }
+        }
 
         protected bool IsPost
         {
@@ -1498,6 +1512,11 @@ namespace EntryEngine.Network
                 AddAgent(stub);
         }
 
+        public static void ResponseCrossDomainAndCharset(HttpListenerContext context)
+        {
+            context.Response.AppendHeader("Access-Control-Allow-Origin", "*");
+            context.Response.ContentType = "text/plain; charset=gb2312";
+        }
         public void AddAgent(StubHttp stub)
         {
             if (stub == null)
@@ -1529,10 +1548,31 @@ namespace EntryEngine.Network
 
             IsPost = Context.Request.HttpMethod == "POST";
 
-            string path = Context.Request.Url.LocalPath.Substring(1);
+            StubHttp agent = null;
             try
             {
-                StubHttp agent = null;
+                int splitIndex = -1;
+                string localPath = Context.Request.Url.LocalPath;
+                bool flag = false;
+                for (int i = localPath.Length - 1; i >= 0; i--)
+                {
+                    if (localPath[i] == '/')
+                    {
+                        if (flag)
+                        {
+                            splitIndex = i;
+                            break;
+                        }
+                        else
+                            flag = true;
+                    }
+                }
+                if (splitIndex == -1)
+                {
+                    throw new ArgumentException("错误的请求地址");
+                }
+                string path = Context.Request.Url.LocalPath.Substring(splitIndex + 1);
+
                 foreach (var protocol in protocols)
                 {
                     if (path.StartsWith(protocol.Key))
@@ -1557,7 +1597,16 @@ namespace EntryEngine.Network
             }
             catch (Exception ex)
             {
-                _LOG.Error(ex, "协议处理错误！URL: {0}", path);
+                _LOG.Error(ex, "协议处理错误！URL: {0}", Context.Request.Url.LocalPath);
+                if (agent != null)
+                {
+                    agent.Response(new HttpError(500, ex.Message));
+                }
+                else
+                {
+                    Context.Response.StatusCode = 500;
+                    Context.Response.Close();
+                }
             }
             finally
             {
@@ -1598,6 +1647,7 @@ namespace EntryEngine.Network
     public abstract class StubHttp
     {
         private Dictionary<string, Action<HttpListenerContext>> stubs = new Dictionary<string, Action<HttpListenerContext>>();
+        private bool hasResponsed;
         protected internal string Protocol
         {
             get;
@@ -1616,11 +1666,16 @@ namespace EntryEngine.Network
         {
             get
             {
+                hasResponsed = false;
                 Action<HttpListenerContext> result;
                 if (!stubs.TryGetValue(name, out result))
                     throw new NotImplementedException("no stub: " + name);
                 return result;
             }
+        }
+        public bool HasResponsed
+        {
+            get { return hasResponsed; }
         }
         protected StubHttp()
         {
@@ -1644,7 +1699,11 @@ namespace EntryEngine.Network
         public void Response(string text)
         {
             if (Context.Response.ContentEncoding == null)
+            {
                 Context.Response.ContentEncoding = Context.Request.ContentEncoding;
+                if (Context.Response.ContentEncoding == null)
+                    Context.Response.ContentEncoding = Encoding.UTF8;
+            }
             Response(Context.Response.ContentEncoding.GetBytes(text));
         }
         public void Response(byte[] buffer)
@@ -1653,6 +1712,7 @@ namespace EntryEngine.Network
         }
         public void Response(byte[] buffer, int offset, int count)
         {
+            hasResponsed = true;
             Context.Response.OutputStream.BeginWrite(buffer, offset, count, EndResponse, Context);
         }
         public void EndResponse(IAsyncResult ar)
@@ -1660,6 +1720,17 @@ namespace EntryEngine.Network
             var context = (HttpListenerContext)ar.AsyncState;
             context.Response.OutputStream.EndWrite(ar);
             context.Response.Close();
+        }
+    }
+    public class HttpError
+    {
+        public int errCode;
+        public string errMsg;
+        public HttpError() { }
+        public HttpError(int code, string msg)
+        {
+            this.errCode = code;
+            this.errMsg = msg;
         }
     }
 

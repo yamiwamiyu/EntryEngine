@@ -249,10 +249,12 @@ namespace EntryEngine.UI
             if (IsHover && e.INPUT.Pointer.IsClick(0))
             {
                 Checked = !Checked;
+                Handle();
             }
             else if (dropDownText != null && dropDownText.IsHover && e.INPUT.Pointer.IsClick(0))
             {
                 Checked = !Checked;
+                Handle();
             }
         }
         public override IEnumerator<UIElement> GetEnumerator()

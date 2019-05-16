@@ -23,7 +23,7 @@ namespace EntryEngine.Serialize
 			};
 		public static string ARRAY_NODE = "e";
 		public static string INDENT_SPACE = "\t";
-		public static string NULL = "NULL";
+		public static string NULL = "null";
 		public static string ROOT = "root";
 
 		public static XmlNode BuildRoot(IEnumerable<XmlNode> nodes)

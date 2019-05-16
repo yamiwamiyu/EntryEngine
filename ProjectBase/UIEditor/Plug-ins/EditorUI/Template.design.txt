@@ -13,6 +13,7 @@ public partial class {0}
 	}}
 	protected override IEnumerable<ICoroutine> Loading()
 	{{
+		ICoroutine async;
 		{3}
         var __loading = MyLoading();
         if (__loading != null)

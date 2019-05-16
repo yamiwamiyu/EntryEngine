@@ -402,6 +402,30 @@ namespace EntryEngine
             return crc;
         }
     }
+    public class IO_NET : _IO.iO
+    {
+        protected override AsyncReadFile _ReadAsync(string file)
+        {
+            HttpWebRequest request = (HttpWebRequest)HttpWebRequest.Create(file);
+            AsyncReadFile async = new AsyncReadFile(this, file);
+            request.BeginGetResponse((ar) =>
+            {
+                try
+                {
+                    var response = request.EndGetResponse(ar);
+                    int size = (int)response.ContentLength;
+                    if (size == -1) size = 65535;
+                    byte[] buffer = _IO.ReadStream(response.GetResponseStream(), size);
+                    async.SetData(buffer);
+                }
+                catch (Exception ex)
+                {
+                    async.Error(ex);
+                }
+            }, null);
+            return async;
+        }
+    }
     public class AsyncReadFile : AsyncData<byte[]>
     {
         public _IO.iO IO

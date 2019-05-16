@@ -520,6 +520,7 @@ namespace EntryBuilder
             //PublishToWebGL(@"..\..\..\", @"D:\Project\xss\xss\Code\Client", @"D:\Project\xss\xss\Code\Protocol\Protocol", @"D:\Project\xss\xss\Launch\Client\index.html", false, 5);
             //BuildTableTranslate("", "");
             //BuildDatabaseMysql(@"D:\Project\xss\xss\Code\Protocol\Protocol\bin\Debug\Protocol.dll", "Server._DB", @"D:\Project\xss\xss\Code\Server\Server\_DB.cs", "", "", true);
+            //BuildProtocolAgentHttp(@"D:\Project\xss\xssServer\xssServer\IAccount.cs", @"D:\Project\xss\xssServer\xssProtocol\bin\Debug\xssProtocol.dll\xssProtocol.IAccount");
             //Console.ReadKey();
             //return;
 
@@ -1640,6 +1641,84 @@ namespace EntryBuilder
                     });
                 });
             }
+        }
+
+        protected static void WSCallbackType(Type type, StringBuilder builder, MethodInfo[] call, Dictionary<int, Type> asyncCB)
+        {
+            foreach (var item in asyncCB)
+            {
+                string name = string.Format("CB{0}_{1}", type.Name, call[item.Key].Name);
+                builder.AppendLine("public class {0} : IDisposable", name);
+                builder.AppendBlock(() =>
+                {
+                    builder.AppendLine("private StubHttp __link;");
+                    //builder.AppendLine("\tinternal int? Delay;");
+                    builder.AppendLine("internal bool IsCallback { get; private set; }");
+                    builder.AppendLine("public {0}(StubHttp link)", name);
+                    builder.AppendBlock(() =>
+                    {
+                        builder.AppendLine("this.__link = link;");
+                    });
+
+                    // 回调方法头
+                    builder.Append("\tpublic void Callback(");
+                    var parameters = item.Value.GetMethod("Invoke").GetParameters();
+                    if (parameters.Length > 1)
+                    {
+                        throw new ArgumentException("委托参数不能大于1个");
+                    }
+                    var parameter = parameters[0];
+                    builder.AppendFormat("{0} {1}", parameter.ParameterType.CodeName(), parameter.Name);
+                    builder.AppendLine(") // INDEX = {0}", item.Key);
+                    // 具体实现
+                    builder.AppendBlock(() =>
+                    {
+                        builder.AppendLine("if (IsCallback) return;");
+                        // 参数
+                        builder.AppendLine("string __ret = JsonWriter.Serialize({0});", parameter.Name);
+                        // 记录日志
+                        builder.AppendLine("#if DEBUG");
+                        builder.AppendLine("_LOG.Debug(\"{0} {{0}}\", __ret);", name);
+                        builder.AppendLine("#endif");
+                        // 回调
+                        builder.AppendLine("__link.Response(__ret);");
+                        builder.AppendLine("IsCallback = true;");
+                    });
+
+                    // 请求错误
+                    builder.AppendLine("public void Error(int ret, string msg)");
+                    builder.AppendBlock(() =>
+                    {
+                        builder.AppendLine("if (IsCallback) return;");
+                        // 协议及参数信息
+                        builder.AppendLine("string __ret = JsonWriter.Serialize(new HttpError(ret, msg));");
+                        // 日志
+                        builder.AppendLine("#if DEBUG");
+                        builder.AppendLine("_LOG.Debug(\"{0} Error ret={{0}} msg={{1}}\", ret, msg);", name);
+                        builder.AppendLine("#endif");
+                        // 回调
+                        builder.AppendLine("__link.Response(__ret);");
+                        builder.AppendLine("IsCallback = true;");
+                    });
+
+                    // async callback
+                    // 接口的处理方法涉及异步（例如登录，需要查询数据库）
+                    // 不能立刻进行回调
+                    // 需要延迟回调，当延迟时间过后仍未回调
+                    // 再自动调用callback.Error
+                    //builder.AppendLine("\tpublic void DelayCallback(int ms)");
+                    //builder.AppendLine("\t{");
+                    //builder.AppendLine("\t\tif (IsCallback) return;");
+                    //builder.AppendLine("\t\tDelay = ms;");
+                    //builder.AppendLine("\t}");
+                    builder.AppendLine("public void Dispose()");
+                    builder.AppendBlock(() =>
+                    {
+                        builder.AppendLine("if (!IsCallback) Error(-2, \"no callback\");");
+                    });
+                });
+            }
+            builder.AppendLine();
         }
 
 		private static void Sleep(int ms)
@@ -3045,6 +3124,26 @@ namespace EntryBuilder
 
             MethodInfo[] call = type.GetInterfaceMethods().ToArray();
 
+            Dictionary<int, Type> asyncDic = new Dictionary<int, Type>();
+            for (int i = 0; i < call.Length; i++)
+            {
+                ParameterInfo delegateParameter = null;
+                if (call[i].GetParameters().Any(p => 
+                    {
+                        if (p.ParameterType.Is(typeof(Delegate)))
+                        {
+                            delegateParameter = p;
+                            return true;
+                        }
+                        else
+                        {
+                            return false;
+                        }
+                    }))
+                    asyncDic[i] = delegateParameter.ParameterType;
+            }
+            WSCallbackType(type, builder, call, asyncDic);
+
             #region interface
 
             builder.AppendLine("interface _{0}", type.Name);
@@ -3063,14 +3162,51 @@ namespace EntryBuilder
                     else
                     {
                         // 没有返回类型追加HttpListenerContext参数手动回调
-                        if (item.GetParameters().Length > 0)
+                        var parameters = item.GetParameters();
+                        ParameterInfo delegateParameter = null;
+                        bool hasDelegate = parameters.Any(p =>
+                            {
+                                if (p.ParameterType.Is(typeof(Delegate)))
+                                {
+                                    delegateParameter = p;
+                                    return true;
+                                }
+                                else
+                                {
+                                    return false;
+                                }
+                            });
+                        if (hasDelegate)
                         {
-                            builder.Append("void {0}(HttpListenerContext __context, ", item.Name);
-                            builder.AppendMethodParametersOnly(item);
+                            builder.Append("void {0}(", item.Name);
+                            for (int i = 0, n = parameters.Length - 1; i <= n; i++)
+                            {
+                                var parameter = parameters[i];
+                                if (parameter == delegateParameter)
+                                {
+                                    builder.Append("CB{0}_{1} callback", type.Name, item.Name);
+                                }
+                                else
+                                {
+                                    builder.Append("{0} {1}", parameter.ParameterType.CodeName(false), parameter.Name);
+                                }
+
+                                if (i != n)
+                                    builder.Append(", ");
+                            }
                             builder.AppendLine(");");
                         }
                         else
-                            builder.AppendLine("void {0}(HttpListenerContext __context);", item.Name);
+                        {
+                            if (item.GetParameters().Length > 0)
+                            {
+                                builder.Append("void {0}(HttpListenerContext __context, ", item.Name);
+                                builder.AppendMethodParametersOnly(item);
+                                builder.AppendLine(");");
+                            }
+                            else
+                                builder.AppendLine("void {0}(HttpListenerContext __context);", item.Name);
+                        }
                     }
                 }
             });
@@ -3097,14 +3233,16 @@ namespace EntryBuilder
                         builder.AppendLine("AddMethod(\"{0}\", {0});", method.Name);
                 });
 
-                foreach (var method in call)
+                for (int i = 0; i < call.Length; i++)
+                //foreach (var method in call)
                 {
+                    var method = call[i];
                     builder.AppendLine("void {0}(HttpListenerContext __context)", method.Name);
                     builder.AppendBlock(() =>
                     {
                         builder.AppendLine("var agent = __Agent;");
-                        builder.AppendLine("if (__GetAgent != null) agent = __GetAgent();");
-                        builder.AppendLine("if (__ReadAgent != null) agent = __ReadAgent(__context);");
+                        builder.AppendLine("if (__GetAgent != null) { var temp = __GetAgent(); if (temp != null) agent = temp; }");
+                        builder.AppendLine("if (__ReadAgent != null) { var temp = __ReadAgent(__context); if (temp != null) agent = temp; }");
 
                         // 参数
                         var parameters = method.GetParameters();
@@ -3115,12 +3253,40 @@ namespace EntryBuilder
                             //builder.AppendLine("var __query = __context.Request.QueryString;");
                             foreach (var param in parameters)
                             {
-                                //builder.AppendLine("__temp = __query[\"{0}\"];", param.Name);
+                                if (param.ParameterType.Is(typeof(Delegate)))
+                                    continue;
+                                string typeCodeName = param.ParameterType.CodeName();
                                 builder.AppendLine("__temp = GetParam(\"{0}\");", param.Name);
-                                //if (param.ParameterType == typeof(string))
-                                //    builder.AppendLine("{0} {1} = __temp;", param.ParameterType.CodeName(), param.Name);
-                                //else
-                                builder.AppendLine("{0} {1} = __temp == null ? default({0}) : ({0})Convert.ChangeType(__temp, typeof({0}));", param.ParameterType.CodeName(), param.Name);
+                                if (param.ParameterType == typeof(string))
+                                    builder.AppendLine("{0} {1} = __temp;", typeCodeName, param.Name);
+                                else
+                                {
+                                    //builder.AppendLine("{0} {1} = __temp == null ? default({0}) : ({0})Convert.ChangeType(__temp, typeof({0}));", param.ParameterType.CodeName(), param.Name);
+                                    builder.Append("{0} {1} = __temp == null ? default({0}) : ", typeCodeName, param.Name);
+                                    if (param.ParameterType == typeof(byte)
+                                        || param.ParameterType == typeof(sbyte)
+                                        || param.ParameterType == typeof(ushort)
+                                        || param.ParameterType == typeof(short)
+                                        || param.ParameterType == typeof(char)
+                                        || param.ParameterType == typeof(uint)
+                                        || param.ParameterType == typeof(int)
+                                        || param.ParameterType == typeof(float)
+                                        || param.ParameterType == typeof(ulong)
+                                        || param.ParameterType == typeof(long)
+                                        || param.ParameterType == typeof(double)
+                                        || param.ParameterType == typeof(DateTime))
+                                    {
+                                        builder.AppendLine("{0}.Parse(__temp);", typeCodeName);
+                                    }
+                                    else if (param.ParameterType.IsEnum)
+                                    {
+                                        builder.AppendLine("({0}){1}.Parse(__temp);", typeCodeName, Enum.GetUnderlyingType(param.ParameterType).CodeName());
+                                    }
+                                    else
+                                    {
+                                        builder.AppendLine("JsonReader.Deserialize<{0}>(__temp);", typeCodeName);
+                                    }
+                                }
                             }
                             // 日志
                             builder.AppendLine("#if DEBUG");
@@ -3128,6 +3294,8 @@ namespace EntryBuilder
                             for (int j = 0, n = parameters.Length - 1; j <= n; j++)
                             {
                                 ParameterInfo param = parameters[j];
+                                if (param.ParameterType.Is(typeof(Delegate)))
+                                    continue;
                                 builder.Append(" {0}: {{{1}}}", param.Name, j);
                                 if (j != n)
                                     builder.Append(",");
@@ -3136,6 +3304,8 @@ namespace EntryBuilder
                             for (int j = 0; j < parameters.Length; j++)
                             {
                                 ParameterInfo param = parameters[j];
+                                if (param.ParameterType.Is(typeof(Delegate)))
+                                    continue;
                                 //if (param.ParameterType.Is(dt))
                                 //    builder.AppendFormat(", \"{0}\"", param.ParameterType.CodeName());
                                 if (!param.ParameterType.IsCustomType())
@@ -3165,7 +3335,27 @@ namespace EntryBuilder
                         }
                         else
                         {
-                            builder.AppendMethodInvoke(method, "agent", "__context", null);
+                            if (asyncDic.ContainsKey(i))
+                            {
+                                // 有委托类型用于回调
+                                builder.AppendLine("var callback = new CB{0}_{1}(this);", type.Name, method.Name);
+                                builder.Append("agent.{0}(", method.Name);
+                                for (int j = 0, n = parameters.Length - 1; j <= n; j++)
+                                {
+                                    ParameterInfo param = parameters[j];
+                                    if (param.ParameterType.Is(typeof(Delegate)))
+                                        builder.Append("callback");
+                                    else
+                                        builder.Append(param.Name);
+                                    if (j != n)
+                                        builder.Append(", ");
+                                }
+                                builder.AppendLine(");");
+                            }
+                            else
+                            {
+                                builder.AppendMethodInvoke(method, "agent", "__context", null);
+                            }
                         }
                     });
                 }
@@ -3176,6 +3366,7 @@ namespace EntryBuilder
             if (string.IsNullOrEmpty(Path.GetExtension(outputServerPathOrCSFile)))
                 outputServerPathOrCSFile = Path.Combine(outputServerPathOrCSFile, type.Name + "Stub.cs");
             File.WriteAllText(outputServerPathOrCSFile, _RH.Indent(builder.ToString()), Encoding.UTF8);
+            Console.WriteLine("生成完毕");
         }
         public static void BuildEncrypt(string dirOrFile, string outputDir)
         {
@@ -5190,7 +5381,7 @@ namespace EntryBuilder
                 });
                 // update database structure
                 builder.AppendSummary("Set this to the _DATABASE.Database.OnTestConnection event");
-                builder.AppendLine("public static void UPDATE_DATABASE_STRUCTURE(System.Data.IDbConnection conn, _DATABASE.Database database)");
+                builder.AppendLine("public {0}void UPDATE_DATABASE_STRUCTURE(System.Data.IDbConnection conn, _DATABASE.Database database)", _static);
                 builder.AppendBlock(() =>
                 {
                     builder.AppendLine("var cmd = conn.CreateCommand();");
@@ -5741,6 +5932,34 @@ namespace EntryBuilder
 
                 #region 针对每张表的其它操作
 
+                // Join类型
+                foreach (var table in types)
+                {
+                    var fields = table.GetFields(flag);
+                    var foreignFields = fields.Where(f => f.HasAttribute<ForeignAttribute>()).ToArray();
+                    {
+                        ForeignAttribute[] foreigns = new ForeignAttribute[foreignFields.Length];
+                        for (int i = 0; i < foreigns.Length; i++)
+                            foreigns[i] = foreignFields[i].GetAttribute<ForeignAttribute>();
+
+                        int foreignCount = foreigns.Length;
+                        int e = foreignCount - 1;
+
+                        // 生成外包类型
+                        builder.AppendLine("public class Join{0}", table.Name);
+                        builder.AppendBlock(() =>
+                        {
+                            builder.AppendLine("public {0} {0};", table.Name);
+                            for (int i = 0; i <= e; i++)
+                            {
+                                builder.AppendLine("public {0} {1};", foreigns[i].ForeignTable.Name, foreignFields[i].Name);
+                                //if (i != e)
+                                //    builderOP.Append(", ");
+                            }
+                        });
+                    }
+                }
+
                 foreach (var table in types)
                 {
                     if (!isStatic)
@@ -5809,6 +6028,7 @@ namespace EntryBuilder
                     // 静态就将操作方法直接写入类型中，否则将生成新实例类型来存放操作方法
                     // 以保持静态和非静态的操作代码相同，在静态和非静态改动时可以比较方便
                     // 例如：静态_DB._TUser.Insert => 非静态db._TUser.Insert（仅需要替换静态类型=>实例）
+                    string dbInstanceName = isStatic ? "" : string.Format("_{0}.", nsOrEmptyDotDBnameOrEmpty);
                     if (!isStatic)
                     {
                         // 创建实例类型来操作表
@@ -5831,12 +6051,12 @@ namespace EntryBuilder
                     }
 
                     // 字段对应枚举
-                    builderOP.AppendLine("public static E{0}[] FIELD_ALL = {{ {1} }};", table.Name,
-                        string.Join(", ", fields.Select(f => string.Format("E{0}.{1}", table.Name, f.Name)).ToArray()));
+                    builderOP.AppendLine("public {2}E{0}[] FIELD_ALL = {{ {1} }};", table.Name,
+                        string.Join(", ", fields.Select(f => string.Format("E{0}.{1}", table.Name, f.Name)).ToArray()), _static);
                     //builderOP.AppendLine("private static E{0}[] FIELD_UPDATE = {{ {1} }};", table.Name,
                     //    string.Join(", ", fields.Where(field => !field.HasAttribute<IndexAttribute>() && !field.HasAttribute<ForeignAttribute>()).Select(f => string.Format("E{0}.{1}", table.Name, f.Name)).ToArray()));
-                    builderOP.AppendLine("public static E{0}[] FIELD_UPDATE = {{ {1} }};", table.Name,
-                        string.Join(", ", fields.Where(FieldCanUpdate).Select(f => string.Format("E{0}.{1}", table.Name, f.Name)).ToArray()));
+                    builderOP.AppendLine("public {2}E{0}[] FIELD_UPDATE = {{ {1} }};", table.Name,
+                        string.Join(", ", fields.Where(FieldCanUpdate).Select(f => string.Format("E{0}.{1}", table.Name, f.Name)).ToArray()), _static);
                     builderOP.AppendLine("public {0}E{1}[] NoNeedField(params E{1}[] noNeed)", _static, table.Name);
                     builderOP.AppendBlock(() =>
                     {
@@ -5849,7 +6069,7 @@ namespace EntryBuilder
                         });
                         builderOP.AppendLine("return list.ToArray();");
                     });
-                    builderOP.AppendLine("public static int FieldCount { get { return FIELD_ALL.Length; } }");
+                    builderOP.AppendLine("public {0}int FieldCount {{ get {{ return FIELD_ALL.Length; }} }}", _static);
                     builderOP.AppendLine();
 
                     // 键
@@ -5885,17 +6105,17 @@ namespace EntryBuilder
                     }
 
                     // 读取方法
-                    builderOP.AppendLine("public static {0} Read(IDataReader reader)", tableMapperName);
+                    builderOP.AppendLine("public {1}{0} Read(IDataReader reader)", tableMapperName, _static);
                     builderOP.AppendBlock(() =>
                     {
                         builderOP.AppendLine("return Read(reader, 0, FieldCount);");
                     });
-                    builderOP.AppendLine("public static {0} Read(IDataReader reader, int offset)", tableMapperName);
+                    builderOP.AppendLine("public {1}{0} Read(IDataReader reader, int offset)", tableMapperName, _static);
                     builderOP.AppendBlock(() =>
                     {
                         builderOP.AppendLine("return Read(reader, offset, FieldCount);");
                     });
-                    builderOP.AppendLine("public static {0} Read(IDataReader reader, int offset, int fieldCount)", tableMapperName);
+                    builderOP.AppendLine("public {1}{0} Read(IDataReader reader, int offset, int fieldCount)", tableMapperName, _static);
                     builderOP.AppendBlock(() =>
                     {
                         builderOP.AppendLine("return _DATABASE.ReadObject<{0}>(reader, offset, fieldCount);", tableMapperName);
@@ -6136,7 +6356,7 @@ namespace EntryBuilder
                     }
 
                     // 查
-                    builderOP.AppendLine("public static void GetSelectField(string tableName, StringBuilder builder, params E{0}[] fields)", table.Name);
+                    builderOP.AppendLine("public {1}void GetSelectField(string tableName, StringBuilder builder, params E{0}[] fields)", table.Name, _static);
                     builderOP.AppendBlock(() =>
                     {
                         // 连接查询用
@@ -6293,21 +6513,21 @@ namespace EntryBuilder
                             foreigns[i] = foreignFields[i].GetAttribute<ForeignAttribute>();
 
                         int foreignCount = foreigns.Length;
-                        builderOP.Append("public {0}List<Join> SelectJoin(", _static);
+                        builderOP.Append("public {0}List<Join{1}> SelectJoin(", _static, table.Name);
                         int e = foreignCount - 1;
 
                         // 生成外包类型
-                        builder.AppendLine("public class Join");
-                        builder.AppendBlock(() =>
-                        {
-                            builder.AppendLine("public {0} {0};", table.Name);
-                            for (int i = 0; i <= e; i++)
-                            {
-                                builder.AppendLine("public {0} {1};", foreigns[i].ForeignTable.Name, foreignFields[i].Name);
-                                //if (i != e)
-                                //    builderOP.Append(", ");
-                            }
-                        });
+                        //builder.AppendLine("public class Join{0}", table.Name);
+                        //builder.AppendBlock(() =>
+                        //{
+                        //    builder.AppendLine("public {0} {0};", table.Name);
+                        //    for (int i = 0; i <= e; i++)
+                        //    {
+                        //        builder.AppendLine("public {0} {1};", foreigns[i].ForeignTable.Name, foreignFields[i].Name);
+                        //        //if (i != e)
+                        //        //    builderOP.Append(", ");
+                        //    }
+                        //});
 
                         builderOP.Append("E{0}[] f{0}", table.Name);
                         for (int i = 0; i <= e; i++)
@@ -6328,10 +6548,10 @@ namespace EntryBuilder
                         {
                             builderOP.AppendLine("StringBuilder builder = new StringBuilder();");
                             builderOP.AppendLine("builder.Append(\"SELECT \");");
-                            builderOP.AppendLine("_{0}.GetSelectField(\"t0\", builder, f{0});", table.Name);
+                            builderOP.AppendLine("{1}_{0}.GetSelectField(\"t0\", builder, f{0});", table.Name, dbInstanceName);
                             builderOP.AppendLine("if (f{0} == null || f{0}.Length == 0) f{0} = FIELD_ALL;", table.Name);
                             // 构造查询的字段
-                            builderOP.AppendLine("List<Join> results = new List<Join>();", table.Name);
+                            builderOP.AppendLine("List<Join{0}> results = new List<Join{0}>();", table.Name);
                             //builderOP.AppendLine("List<{0}> t{0} = new List<{0}>();", table.Name);
                             for (int i = 0; i <= e; i++)
                             {
@@ -6340,9 +6560,9 @@ namespace EntryBuilder
                                 builderOP.AppendBlock(() =>
                                 {
                                     builderOP.AppendLine("builder.Append(\", \");");
-                                    builderOP.AppendLine("_{0}.GetSelectField(\"t{2}\", builder, f{1});", foreigns[i].ForeignTable.Name, foreignFields[i].Name, (i + 1));
+                                    builderOP.AppendLine("{3}_{0}.GetSelectField(\"t{2}\", builder, f{1});", foreigns[i].ForeignTable.Name, foreignFields[i].Name, (i + 1), dbInstanceName);
                                     //builderOP.AppendLine("t{0} = new List<{1}>();", foreignFields[i].Name, foreigns[i].ForeignTable.Name);
-                                    builderOP.AppendLine("if (f{0}.Length == 0) f{0} = _{1}.FIELD_ALL;", foreignFields[i].Name, foreigns[i].ForeignTable.Name);
+                                    builderOP.AppendLine("if (f{0}.Length == 0) f{0} = {2}_{1}.FIELD_ALL;", foreignFields[i].Name, foreigns[i].ForeignTable.Name, dbInstanceName);
                                 });
                                 //builderOP.AppendLine("else t{0} = null;", foreignFields[i].Name);
                             }
@@ -6355,17 +6575,17 @@ namespace EntryBuilder
                             // 查询读取数据
                             builderOP.AppendLine("if (!string.IsNullOrEmpty(condition)) builder.Append(\" {0}\", condition);");
                             builderOP.AppendLine("builder.Append(';');");
-                            builderOP.AppendLine("_DB._DAO.ExecuteReader((reader) =>");
+                            builderOP.AppendLine("_DAO.ExecuteReader((reader) =>");
                             builderOP.AppendBlock(() =>
                             {
                                 builderOP.AppendLine("int offset;");
                                 builderOP.AppendLine("while (reader.Read())");
                                 builderOP.AppendBlock(() =>
                                 {
-                                    builderOP.AppendLine("Join join = new Join();");
+                                    builderOP.AppendLine("Join{0} join = new Join{0}();", table.Name);
                                     builderOP.AppendLine("results.Add(join);");
                                     //builderOP.AppendLine("t{0}.Add(_{0}.Read(reader, 0, f{0}.Length));", table.Name);
-                                    builderOP.AppendLine("join.{0} = _{0}.Read(reader, 0, f{0}.Length);", table.Name);
+                                    builderOP.AppendLine("join.{0} = {1}_{0}.Read(reader, 0, f{0}.Length);", table.Name, dbInstanceName);
                                     builderOP.AppendLine("offset = f{0}.Length;", table.Name);
                                     for (int i = 0; i <= e; i++)
                                     {
@@ -6373,7 +6593,7 @@ namespace EntryBuilder
                                         builderOP.AppendBlock(() =>
                                         {
                                             //builderOP.AppendLine("t{0}.Add(_{1}.Read(reader, offset, f{0}.Length));", foreignFields[i].Name, foreigns[i].ForeignTable.Name);
-                                            builderOP.AppendLine("join.{0} = _{1}.Read(reader, offset, f{0}.Length);", foreignFields[i].Name, foreigns[i].ForeignTable.Name);
+                                            builderOP.AppendLine("join.{0} = {2}_{1}.Read(reader, offset, f{0}.Length);", foreignFields[i].Name, foreigns[i].ForeignTable.Name, dbInstanceName);
                                             builderOP.AppendLine("offset += f{0}.Length;", foreignFields[i].Name);
                                         });
                                     }

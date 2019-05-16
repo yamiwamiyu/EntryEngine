@@ -28,13 +28,13 @@ namespace EntryEngine.Serialize
         {
             bool first = true;
             builder.Append('{');
-            foreach (var e in obj.Keys)
+            foreach (var e in obj)
             {
                 if (!first)
                     builder.Append(',');
-                WriteString(e);
+                WriteString(e.Key);
                 builder.Append(':');
-                WriteString(e);
+                WriteString(e.Value);
                 first = false;
             }
             builder.Append('}');
@@ -548,7 +548,7 @@ namespace EntryEngine.Serialize
 											if (word == _XML.NULL)
 												dic[name] = null;
 											else
-												dic[name] = string.Format("\"word\"", word);
+												dic[name] = string.Format("\"{0}\"", word);
 											break;
 									}
 									break;

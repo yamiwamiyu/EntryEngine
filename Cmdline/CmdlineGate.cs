@@ -16,7 +16,7 @@ namespace EntryEngine.Cmdline
             public MethodInfo[] Methods;
         }
 
-        private TimeSpan frameRate = TimeSpan.FromMilliseconds(1.0 / 60);
+        private TimeSpan frameRate = TimeSpan.FromSeconds(1.0 / 60);
         private byte overheatFrameCount = 10;
         /// <summary>
         /// 程序Update用时超过FrameRate连续超过OverheatFrameCount时触发
@@ -107,6 +107,10 @@ namespace EntryEngine.Cmdline
 
             this.commands.Add(cmd);
         }
+        public void ClearCommand()
+        {
+            this.commands.Clear();
+        }
         private void ListenCommand()
         {
             string cmdline;
@@ -120,7 +124,7 @@ namespace EntryEngine.Cmdline
                 ExecuteCommand(cmdline);
             }
         }
-        private void Execute(string cmdline)
+        public void ExecuteImmediately(string cmdline)
         {
             try
             {
@@ -180,11 +184,11 @@ namespace EntryEngine.Cmdline
 
             if (Running)
             {
-                return Entry.Synchronize(() => Execute(cmdline));
+                return Entry.Synchronize(() => ExecuteImmediately(cmdline));
             }
             else
             {
-                Execute(cmdline);
+                ExecuteImmediately(cmdline);
                 return null;
             }
         }

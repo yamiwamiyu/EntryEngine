@@ -6497,7 +6497,7 @@ namespace EntryEngine
     public abstract class FontDynamic : FontStatic
     {
         /// <summary>字体大小相差不大时，采用静态字体缩放</summary>
-        public static byte StaticStep = 8;
+        public static byte StaticStep = 0;
         private static Dictionary<int, FontDynamic> fonts = new Dictionary<int, FontDynamic>();
         private static AsyncDrawDynamicChar async1 = new AsyncDrawDynamicChar();
 

@@ -1,5 +1,6 @@
 copy Dummy\EntryEngine.dll ..\..\..\..\ProjectBase\Code\
-::copy Dummy\Xna.dll ..\..\..\..\ProjectBase\Code\Client\
+copy Dummy\Xna.dll ..\..\..\..\ProjectBase\Code\Client\
+copy Dummy\Cmdline.dll ..\..\..\..\ProjectBase\Code\Server\
 
 copy EntryBuilder.exe ..\..\..\..\ProjectBase\
 
