@@ -1515,7 +1515,7 @@ namespace EntryEngine.Network
         public static void ResponseCrossDomainAndCharset(HttpListenerContext context)
         {
             context.Response.AppendHeader("Access-Control-Allow-Origin", "*");
-            context.Response.ContentType = "text/plain; charset=gb2312";
+            context.Response.ContentType = "text/plain; charset=utf-8";
         }
         public void AddAgent(StubHttp stub)
         {
@@ -1634,7 +1634,8 @@ namespace EntryEngine.Network
             if (Param == null)
             {
                 byte[] data = _IO.ReadStream(Context.Request.InputStream, (int)Context.Request.ContentLength64);
-                Param = _NETWORK.ParseQueryString(_NETWORK.UrlDecode(data, Context.Request.ContentEncoding));
+                string str = _NETWORK.UrlDecode(data, Context.Request.ContentEncoding);
+                Param = _NETWORK.ParseQueryString(str);
             }
             return Param[paramName];
         }

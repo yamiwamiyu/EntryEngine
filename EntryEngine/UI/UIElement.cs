@@ -62,6 +62,7 @@ namespace EntryEngine.UI
         public void Handle()
         {
             __HandledElement = this;
+            //_LOG.Debug("Handle {0} Stack: {1}", this.GetType().Name, Environment.StackTrace);
         }
 
         protected internal static UIElement FocusedElement { get; private set; }

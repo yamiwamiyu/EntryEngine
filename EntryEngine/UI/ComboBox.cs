@@ -200,7 +200,7 @@ namespace EntryEngine.UI
         {
             return Checked && dropDownList.IsHover
                     && __INPUT.PointerIsRelease(0)
-                    && (IsClick || (dropDownText != null && dropDownText.IsClick));
+                    && (dropDownList.IsClick || this.IsClick || (dropDownText != null && dropDownText.IsClick));
         }
         private void OnSelect(Selectable selectable, int index)
         {
@@ -356,6 +356,8 @@ namespace EntryEngine.UI
             button.Text = text;
             button.Height = button.UIText.Font.LineHeight;
             button.UIText.TextAlignment = EPivot.MiddleLeft;
+            //button.Clicked -= button.OnClicked;
+            button.Eventable = false;
             Add(button);
             return button;
         }

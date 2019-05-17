@@ -1654,6 +1654,7 @@ namespace EntryEngine.Network
         public event Action<HttpWebResponse> OnReceived;
         /// <summary>异步</summary>
         public event Action<HttpRequestPost, WebException, byte[]> OnError;
+        public object Tag;
         private Uri uri;
 
         public bool IsConnected

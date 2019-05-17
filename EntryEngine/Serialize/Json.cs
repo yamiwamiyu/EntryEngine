@@ -14,13 +14,13 @@ namespace EntryEngine.Serialize
 		{
 			bool first = true;
 			builder.Append('{');
-			foreach (var e in obj.Keys)
+			foreach (var e in obj)
 			{
 				if (!first)
 					builder.Append(',');
-				WriteString(e);
+				WriteString(e.Key);
 				builder.Append(':');
-				this.WriteObject(obj[e]);
+				this.WriteObject(e.Value);
 			}
 			builder.Append('}');
 		}
@@ -298,35 +298,35 @@ namespace EntryEngine.Serialize
             switch (token)
             {
                 case EJson.VALUE:
-                    	char c = PeekChar;
-						switch (c)
-						{
-							case '\"':
-								return ReadString();
+                    char c = PeekChar;
+					switch (c)
+					{
+						case '\"':
+							return ReadString();
 
-                            case '0':
-                            case '1':
-                            case '2':
-                            case '3':
-                            case '4':
-                            case '5':
-                            case '6':
-                            case '7':
-                            case '8':
-                            case '9':
-                            case '-':
-                                return ReadNumber(NextWord);
+                        case '0':
+                        case '1':
+                        case '2':
+                        case '3':
+                        case '4':
+                        case '5':
+                        case '6':
+                        case '7':
+                        case '8':
+                        case '9':
+                        case '-':
+                            return ReadNumber(NextWord);
 
-							default:
-								string word = NextWord;
-                                switch (word)
-                                {
-                                    case "true": return true;
-                                    case "false": return false;
-                                    case "null": return null;
-                                    default: throw new NotImplementedException();
-                                }
-						}
+						default:
+							string word = NextWord;
+                            switch (word)
+                            {
+                                case "true": return true;
+                                case "false": return false;
+                                case "null": return null;
+                                default: throw new NotImplementedException();
+                            }
+					}
                 case EJson.CURLY_OPEN:
                     return ReadDictionary();
                 case EJson.SQUARED_OPEN:
