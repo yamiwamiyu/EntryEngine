@@ -60,6 +60,10 @@ namespace EntryEngine.UI
         //{
         //    get { return !Readonly; }
         //}
+        public override EUIType UIType
+        {
+            get { return EUIType.TextBox; }
+        }
 
 		public TextBox()
 		{

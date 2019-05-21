@@ -5631,7 +5631,7 @@ namespace EntryBuilder
                 builder.AppendLine("public enum E{0}", table.Name);
                 builder.AppendBlock(() =>
                 {
-                    var fields = table.GetFields(flag);
+                    var fields = table.GetFields(flag).Where(f => !f.HasAttribute<IgnoreAttribute>());
                     foreach (var field in fields)
                     {
                         builder.AppendSummary(field);
@@ -5773,7 +5773,7 @@ namespace EntryBuilder
                         builder.AppendLine("CREATE TABLE IF NOT EXISTS `{0}`", table.Name);
                         builder.AppendLine("(");
                         // fields
-                        var fields = table.GetFields(flag);
+                        var fields = table.GetFields(flag).Where(f => !f.HasAttribute<IgnoreAttribute>());
                         var primary = fields.Where(f =>
                         {
                             var index = f.GetAttribute<IndexAttribute>();
@@ -5847,7 +5847,7 @@ namespace EntryBuilder
 
                         // 不支持：字段改名；
                         // 支持：增删字段，修改字段类型；增删索引
-                        var fields = table.GetFields(flag);
+                        var fields = table.GetFields(flag).Where(f => !f.HasAttribute<IgnoreAttribute>()).ToArray();
                         var primary = fields.Where(f =>
                         {
                             var index = f.GetAttribute<IndexAttribute>();
@@ -6062,7 +6062,7 @@ namespace EntryBuilder
                             {
                                 if (a1 != null) a1();
                                 builder.Append("builder.Append(\"INSERT INTO {0}.{1} SELECT ");
-                                var fields = type.GetFields();
+                                var fields = type.GetFields(flag).Where(f => !f.HasAttribute<IgnoreAttribute>()).ToArray();
                                 for (int i = 0, n = fields.Length - 1; i <= n; i++)
                                 {
                                     builder.Append("{{1}}.`{0}`", fields[i].Name);
@@ -6308,7 +6308,7 @@ namespace EntryBuilder
                 // Join类型
                 foreach (var table in types)
                 {
-                    var fields = table.GetFields(flag);
+                    var fields = table.GetFields(flag).Where(f => !f.HasAttribute<IgnoreAttribute>()).ToArray();
                     var foreignFields = fields.Where(f => f.HasAttribute<ForeignAttribute>()).ToArray();
                     {
                         ForeignAttribute[] foreigns = new ForeignAttribute[foreignFields.Length];
@@ -6337,7 +6337,7 @@ namespace EntryBuilder
                 {
                     if (!isStatic)
                         builder.AppendLine();
-                    var fields = table.GetFields(flag);
+                    var fields = table.GetFields(flag).Where(f => !f.HasAttribute<IgnoreAttribute>()).ToArray();
 
                     string tableMapperName = "_" + table.Name;
 
@@ -6838,10 +6838,10 @@ namespace EntryBuilder
                         builderOP.AppendLine("if (!string.IsNullOrEmpty(condition)) builder.Append(\" {0}\", condition);");
                         builderOP.AppendLine("builder.Append(';');");
                         if (table.Name == tableMapperName)
-                            builderOP.AppendLine("return _DAO.SelectObjects<{0}>(builder.ToString());", tableMapperName);
+                            builderOP.AppendLine("return _DAO.SelectObjects<{0}>(builder.ToString(), param);", tableMapperName);
                         else
                         {
-                            builderOP.AppendLine("List<{0}> __temp = _DAO.SelectObjects<{0}>(builder.ToString());", tableMapperName);
+                            builderOP.AppendLine("List<{0}> __temp = _DAO.SelectObjects<{0}>(builder.ToString(), param);", tableMapperName);
                             builderOP.AppendLine("return new List<{0}>(__temp.ToArray());", table.Name);
                         }
                     });

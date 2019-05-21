@@ -1610,7 +1610,7 @@ namespace EntryEngine.Network
             }
             finally
             {
-                Context = null;
+                context = null;
                 Param = null;
                 if (OnReset != null)
                     OnReset();

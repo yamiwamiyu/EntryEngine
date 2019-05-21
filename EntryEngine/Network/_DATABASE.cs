@@ -811,7 +811,6 @@ namespace EntryEngine.Network
     }
     /// <summary>数据库不生成标记此特性的字段</summary>
     [AttributeUsage(AttributeTargets.Field)]
-    [Code(ECode.ToBeContinue)]
     public class IgnoreAttribute : Attribute { }
     [AttributeUsage(AttributeTargets.Class | AttributeTargets.Struct)]
     public class MemoryTableAttribute : Attribute

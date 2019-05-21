@@ -145,6 +145,10 @@ namespace EntryEngine.UI
                 return clip;
             }
         }
+        public override EUIType UIType
+        {
+            get { return EUIType.CheckBox; }
+        }
 
 		public CheckBox()
 		{

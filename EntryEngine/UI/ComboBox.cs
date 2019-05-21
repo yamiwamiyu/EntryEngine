@@ -31,6 +31,10 @@ namespace EntryEngine.UI
                 }
             }
         }
+        public override EUIType UIType
+        {
+            get { return EUIType.TabPage; }
+        }
 
         public TabPage()
         {
@@ -179,6 +183,10 @@ namespace EntryEngine.UI
                 else
                     base.Text = value;
             }
+        }
+        public override EUIType UIType
+        {
+            get { return EUIType.DropDown; }
         }
 
         public DropDown()
@@ -337,6 +345,10 @@ namespace EntryEngine.UI
                     return null;
                 return GetItem<UIElement>(selectedIndex);
             }
+        }
+        public override EUIType UIType
+        {
+            get { return EUIType.Selectable; }
         }
 
         public Selectable()

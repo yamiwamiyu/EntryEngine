@@ -156,6 +156,10 @@ namespace EntryEngine.UI
             get { return UIText.GetTextClip(ViewClip); }
             //get { return ViewClip; }
 		}
+        public override EUIType UIType
+        {
+            get { return EUIType.Button; }
+        }
 
 		protected TEXTURE this[EButtonState state]
 		{

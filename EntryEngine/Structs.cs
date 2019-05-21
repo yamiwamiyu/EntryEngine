@@ -8446,6 +8446,25 @@ namespace EntryEngine
             return Grids.GetArray(x, y, w, h, Col);
         }
     }
+
+    public enum EDirection4
+    {
+        Right = 0,
+        Down = 1,
+        Left = 2,
+        Up = 3
+    }
+    public enum EDirection8
+    {
+        Right = 0,
+        RightDown = 1,
+        Down = 2,
+        DownLeft = 3,
+        Left = 4,
+        LeftUp = 5,
+        Up = 6,
+        UpRight = 7
+    }
 }
 
 #endif

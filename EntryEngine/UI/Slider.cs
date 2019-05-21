@@ -4,24 +4,6 @@ using System;
 
 namespace EntryEngine.UI
 {
-	public enum EDirection4
-	{
-		Right = 0,
-		Down = 1,
-		Left = 2,
-		Up = 3
-	}
-	public enum EDirection8
-	{
-		Right = 0,
-		RightDown = 1,
-		Down = 2,
-		DownLeft = 3,
-		Left = 4,
-		LeftUp = 5,
-		Up = 6,
-		UpRight = 7
-	}
 	public abstract class Slider : UIElement
 	{
 		private float curValue;
@@ -91,6 +73,10 @@ namespace EntryEngine.UI
 				Value = value * (maxValue - minValue) + minValue;
 			}
 		}
+        //public override EUIType UIType
+        //{
+        //    get { return EUIType.Slider; }
+        //}
 
 		protected virtual void OnValueChanging(ref float value)
 		{
@@ -240,6 +226,10 @@ namespace EntryEngine.UI
 		{
 			get { return barViewClip; }
 		}
+        public override EUIType UIType
+        {
+            get { return EUIType.ScrollBar; }
+        }
 
 		public ScrollBarBase()
 		{

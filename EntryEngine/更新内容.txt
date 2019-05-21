@@ -1,4 +1,10 @@
-﻿2019/05/16
+﻿2019/05/21
+1. 修复数据库生成的SelectMultiple方法没有使用param参数的BUG
+2. 数据库类型字段标记IgnoreAttribute可忽略生成该字段，但可用于传输
+3. 新增UIStyle对UI控件设置默认样式
+4. 修复AgentHttp.OnProtocol.finally设置Context = null的报错
+
+2019/05/16
 1. IO新增IO_NET可以下载网络文件
 2. AgentHttp新增对Context的配置委托，可以设置跨域，跨域Header，返回编码等
 3. FontDynamic.StaticStep默认设置为0

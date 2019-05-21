@@ -254,6 +254,10 @@ namespace EntryEngine.UI
 				return clip.X < 0 || clip.Y < 0;
 			}
 		}
+        public override EUIType UIType
+        {
+            get { return EUIType.Panel; }
+        }
 
 		public Panel()
 		{

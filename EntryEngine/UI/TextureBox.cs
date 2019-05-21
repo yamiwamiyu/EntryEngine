@@ -9,6 +9,10 @@ namespace EntryEngine.UI
         public event DUpdate<TextureBox> TextureChanged;
         public EFlip Flip;
 
+        public override EUIType UIType
+        {
+            get { return EUIType.TextureBox; }
+        }
         public TEXTURE Texture
         {
 			get { return texture; }
@@ -114,6 +118,10 @@ namespace EntryEngine.UI
     }
 	public class AnimationBox : TextureBox
 	{
+        public override EUIType UIType
+        {
+            get { return EUIType.AnimationBox; }
+        }
 		public ANIMATION Animation
 		{
 			get

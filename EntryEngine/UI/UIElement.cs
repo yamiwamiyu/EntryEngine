@@ -32,6 +32,72 @@ namespace EntryEngine.UI
     public delegate void DDraw<T>(T sender, GRAPHICS spriteBatch, Entry e) where T : UIElement;
     public delegate void DUpdateGlobal(UIElement sender, bool senderEventInvoke, Entry e);
 
+    /// <summary>子类控件会默认采用父类样式，例如0x11会采用0x10的样式</summary>
+    public enum EUIType
+    {
+        UIElement = 0,
+
+        TextureBox = 0x10,
+        AnimationBox = 0x11,
+
+        Panel = 0x20,
+        UIScene = 0x21,
+        Selectable = 0x22,
+
+        Button = 0x30,
+        
+        Label = 0x40,
+
+        TextBox = 0x50,
+
+        CheckBox = 0x60,
+        TabPage = 0x61,
+
+        DropDown = 0x70,
+
+        //Slider = 0x80,
+        ScrollBar = 0x80,
+    }
+    public class UIStyle
+    {
+        public static UIStyle Style;
+
+        internal Dictionary<EUIType, List<Action<UIElement>>> styles = new Dictionary<EUIType, List<Action<UIElement>>>();
+        /// <summary>添加某类UI控件的默认样式</summary>
+        /// <param name="uiType">UI控件类型</param>
+        /// <param name="setStyle">设置UI样式的方法，返回true则设置了样式（例如CheckBox的单选框和复选框就可能类型都是CheckBox但是样式不同）</param>
+        public void AddStyle(EUIType uiType, Action<UIElement> setStyle)
+        {
+            List<Action<UIElement>> sets;
+            if (!styles.TryGetValue(uiType, out sets))
+            {
+                sets = new List<Action<UIElement>>();
+                styles.Add(uiType, sets);
+            }
+            sets.Add(setStyle);
+        }
+        public bool FitStyle(UIElement element)
+        {
+            int uiType = (int)element.UIType;
+            int value = uiType & 15;
+
+            List<Action<UIElement>> sets;
+            for (int v = 0; v <= value; v++)
+            {
+                EUIType type = (EUIType)((uiType >> 4 << 4) | v);
+                if (styles.TryGetValue(type, out sets))
+                {
+                    for (int i = 0; i < sets.Count; i++)
+                    {
+                        sets[i](element);
+                    }
+                }
+            }
+
+            return false;
+        }
+    }
+
     /// <summary>
     /// 简单，高性能绘制
     /// 1. 不用支持旋转、镜像
@@ -605,9 +671,14 @@ namespace EntryEngine.UI
         {
             get { return finalViewClip; }
         }
+        public virtual EUIType UIType { get { return EUIType.UIElement; } }
 
         public UIElement()
         {
+            if (UIStyle.Style != null)
+            {
+                UIStyle.Style.FitStyle(this);
+            }
             RegistEvent(DoEnter);
             RegistEvent(DoMove);
             RegistEvent(DoExit);
@@ -1601,6 +1672,10 @@ namespace EntryEngine.UI
         public bool IsInStage
         {
             get { return Entry != null; }
+        }
+        public override EUIType UIType
+        {
+            get { return EUIType.UIScene; }
         }
 
         public UIScene()
