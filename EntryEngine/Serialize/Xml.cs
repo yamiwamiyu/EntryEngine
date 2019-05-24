@@ -24,6 +24,7 @@ namespace EntryEngine.Serialize
 		public static string ARRAY_NODE = "e";
 		public static string INDENT_SPACE = "\t";
 		public static string NULL = "null";
+        public static string NULL2 = "NULL";
 		public static string ROOT = "root";
 
 		public static XmlNode BuildRoot(IEnumerable<XmlNode> nodes)
@@ -564,7 +565,7 @@ namespace EntryEngine.Serialize
                             // value only
                             node = new XmlNode();
                         }
-						if (word == _XML.NULL)
+						if (word == _XML.NULL || word == _XML.NULL2)
 							node.Value = null;
 						else
 							node.Value = _XML.UnEscape(word);

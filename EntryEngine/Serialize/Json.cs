@@ -545,7 +545,7 @@ namespace EntryEngine.Serialize
 
 										default:
 											string word = NextWord;
-											if (word == _XML.NULL)
+											if (word == _XML.NULL || word == _XML.NULL2)
 												dic[name] = null;
 											else
 												dic[name] = string.Format("\"{0}\"", word);
@@ -671,7 +671,7 @@ namespace EntryEngine.Serialize
 
                                 default:
                                     string word = NextWord;
-                                    if (word == _XML.NULL)
+                                    if (word == _XML.NULL || word == _XML.NULL2)
                                         node.Value = null;
                                     else
                                         node.Value = word;

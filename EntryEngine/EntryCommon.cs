@@ -1807,6 +1807,10 @@ namespace EntryEngine
             foreach (var node in nodes)
                 Add(node);
         }
+        public T[] GetAllChilds()
+        {
+            return Childs.ToArray();
+        }
         public void ForeachParentPriority(Func<T, bool> skip, Action<T> func)
         {
             ForParentPriority((T)this, skip, func);

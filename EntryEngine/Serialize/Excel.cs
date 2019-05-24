@@ -338,7 +338,7 @@ namespace EntryEngine.Serialize
                 {
                     Read();
                 }
-				if (value == _XML.NULL)
+				if (value == _XML.NULL || value == _XML.NULL2)
 				{
 					return null;
 				}

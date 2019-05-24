@@ -1,0 +1,7 @@
+﻿LauncherManager: LM
+LauncherClient: LC
+LauncherServer: LS
+
+LM <- LauncherManagerProtocol -> LS
+LC <- LauncherProtocol -> LS
+LM 调用-> LS 获取-> LC 处理-> LS 处理展示-> LM

@@ -444,6 +444,8 @@ namespace EditorUI
                         childs[i] = InternalLoadUI(reader, true);
                 }
             }
+            else
+                childs = reference.GetAllChilds();
 
             var deserializer = UIDeserializer(childs);
             reader.AddOnDeserialize(deserializer);

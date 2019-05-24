@@ -3396,21 +3396,21 @@ namespace EntryEngine
                     return pipeline;
             throw new NotImplementedException(string.Format("Not found the fixed ContentPipeline for \"{0}\".", file));
         }
-        internal bool IsLoaded(string key)
+        public bool IsLoaded(string key)
         {
             Content value;
             if (contents.TryGetValue(key, out value))
                 return !value.IsDisposed;
             return false;
         }
-        internal bool IsLoaded(string key, out Content content)
+        public bool IsLoaded(string key, out Content content)
         {
             content = null;
             if (contents.TryGetValue(key, out content))
                 return !content.IsDisposed;
             return false;
         }
-        internal void AddContent(string key, Content content)
+        public void AddContent(string key, Content content)
         {
             content.IsMain = true;
             content._Key = key;
