@@ -599,6 +599,9 @@ namespace EntryEngine
                 UIScene scene = node.Value;
                 node = node.Previous;
 
+                // 更新UI的流布局
+                scene.FlowLayout();
+
                 // 场景不能是在其它场景中的部件
                 // 否则需要等待父场景加载完成
                 //if (scene.Parent == null)

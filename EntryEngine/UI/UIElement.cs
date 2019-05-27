@@ -387,6 +387,17 @@ namespace EntryEngine.UI
         }
     }
 
+    public struct UIFlowLayout
+    {
+        public float MaginLeft;
+        public float MaginTop;
+        public float MaginRight;
+        public float MaginBottom;
+        /// <summary>占满一行</summary>
+        public bool Line;
+        internal float Y;
+        internal float Bottom;
+    }
     /// <summary>
     /// 简单，高性能绘制
     /// 1. 不用支持旋转、镜像
@@ -428,6 +439,7 @@ namespace EntryEngine.UI
         public static DUpdateGlobal GlobalClicked;
 
         public string Name;
+        public UIFlowLayout Flow;
         private RECT clip;
 		private MATRIX2x3 model = MATRIX2x3.Identity;
         public SHADER Shader;
@@ -1116,6 +1128,20 @@ namespace EntryEngine.UI
 					DrawFocus(this, spriteBatch, e);
 				}
             }
+
+            //var scene2 = SceneIsRunning;
+            //if (scene2 != null && scene2.IsInStage && scene2.UseFlowLayout)
+            //{
+            //    var clip = ViewClip;
+            //    clip.Width += Flow.MaginLeft + Flow.MaginRight;
+            //    clip.X -= Flow.MaginLeft;
+            //    if (Flow.Line)
+            //        clip.Width = Parent.Width - clip.X;
+            //    clip.Height += Flow.MaginTop + Flow.MaginBottom;
+            //    clip.Y -= Flow.MaginTop;
+
+            //    spriteBatch.Draw(patch, clip);
+            //}
         }
         protected virtual void OnUpdateBegin(Entry e)
         {
@@ -1268,6 +1294,7 @@ namespace EntryEngine.UI
         protected virtual void InternalDraw(GRAPHICS spriteBatch, Entry e)
         {
         }
+        static PATCH patch = PATCH.GetNinePatch(new COLOR(235, 32, 32, 64), COLOR.Aqua, 1);
         protected virtual void InternalDrawAfter(GRAPHICS spriteBatch, Entry e)
         {
         }
@@ -1752,6 +1779,8 @@ namespace EntryEngine.UI
         {
             if (!child.Visible)
                 return RECT.Empty;
+            if (child is UIScene && ((UIScene)child).IsInStage)
+                return RECT.Empty;
             RECT rect = child.InParentClip;
             if (!child.isClip)
             {
@@ -1913,6 +1942,7 @@ namespace EntryEngine.UI
         internal Queue<UIElement> TopMost = new Queue<UIElement>();
         private List<AsyncLoadContent> loadings = new List<AsyncLoadContent>();
         internal bool IsDrawable;
+        public bool UseFlowLayout;
 
         internal override bool IsScene
         {
@@ -2054,6 +2084,111 @@ namespace EntryEngine.UI
             Entry = null;
         }
 
+        public void ChangeFlowLayout(bool useFlowLayout)
+        {
+            if (UseFlowLayout == useFlowLayout) return;
+            this.UseFlowLayout = useFlowLayout;
+            if (useFlowLayout)
+            {
+                // 原本的xy坐标自动转换成相应的magin值
+                ForParentPriority(this, e => e.ChildCount < 2,
+                    e =>
+                    {
+                        // 按Bottom排序
+                        Utility.SortOrderAsc(e.Childs, s => (int)s.Clip.Bottom);
+                    });
+                UIElement pre = null;
+                float y = 0;
+                ForRootToLeaf(this, e =>
+                    {
+                        if (pre != null)
+                        {
+                            if (e.X <= pre.X || pre.Flow.Line)
+                            {
+                                pre.Flow.Line = true;
+                                e.Flow.MaginLeft = e.X;
+                                e.Flow.MaginTop = e.Y - pre.Flow.MaginTop - pre.Height - y;
+                                y += pre.Flow.MaginTop + pre.Height;
+                            }
+                            else
+                            {
+                                e.Flow.MaginLeft = (e.X - pre.X - pre.Width);
+                                e.Flow.MaginTop = (e.Y - pre.Y) + pre.Flow.MaginTop;
+                            }
+                        }
+                        else
+                        {
+                            e.Flow.MaginLeft = e.X;
+                            e.Flow.MaginTop = e.Y;
+                        }
+                        pre = e;
+                    },
+                    e =>
+                    {
+                        pre = null;
+                        y = 0;
+                    });
+            }
+            else
+            {
+                // 取消所有已经计算好的Flow.Y和Flow.Bottom
+                ForRootToLeaf(this, e =>
+                {
+                    e.Flow.Y = 0;
+                    e.Flow.Bottom = 0;
+                });
+            }
+            NeedUpdateLocalToWorld = true;
+        }
+        internal void FlowLayout()
+        {
+            if (!UseFlowLayout || Parent != null || Entry == null)
+                return;
+
+            float x = 0;
+            float preY = 0;
+            float breaklineWidth = 0;
+            UIElement.ForRootToLeaf(this,
+                e =>
+                {
+                    x += e.Flow.MaginLeft;
+                    if (breaklineWidth > 0)
+                    {
+                        // 自动换行
+                        if (x + e.Width + e.Flow.MaginRight > breaklineWidth)
+                        {
+                            x = e.Flow.MaginLeft;
+                            preY = e.Parent.Flow.Bottom;
+                        }
+                    }
+                    float y = preY + e.Flow.MaginTop;
+                    e.X = x;
+                    e.Y = y;
+                    x += e.Width + e.Flow.MaginRight;
+                    y += e.Height + e.Flow.MaginBottom;
+                    if (y >= e.Parent.Flow.Bottom)
+                        e.Parent.Flow.Bottom = y;
+                    // 换行
+                    if (e.Flow.Line)
+                    {
+                        x = 0;
+                        preY = e.Parent.Flow.Bottom;
+                    }
+                },
+                e =>
+                {
+                    x = 0;
+                    e.Flow.Bottom = 0;
+                    if (e.Parent != null)
+                    {
+                        e.Flow.Y = e.Parent.Flow.Bottom;
+                        preY = e.Flow.Y;
+                    }
+                    // 父容器是固定宽度则自动换行
+                    if (e.IsAutoWidth) breaklineWidth = 0;
+                    else breaklineWidth = e.Width;
+                });
+        }
         protected internal virtual IEnumerable<ICoroutine> Ending()
         {
             return null;
@@ -2191,7 +2326,7 @@ namespace EntryEngine.UI
             }
             base.InternalUpdate(e);
         }
-        private  void DoKeyboard(UIElement sender, Entry e)
+        private void DoKeyboard(UIElement sender, Entry e)
         {
             if (Parent == null && IsInStage && Entry.Scene == this && e.INPUT.Keyboard.IsClick(FocusNextKey))
             {

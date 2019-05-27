@@ -76,7 +76,7 @@ namespace EntryEngine.UI
                 return -1;
             }
         }
-		public sealed override bool Checked
+		public override bool Checked
 		{
 			get
 			{

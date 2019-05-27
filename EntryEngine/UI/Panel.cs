@@ -22,7 +22,7 @@ namespace EntryEngine.UI
 	}
 	public class Panel : UIElement
 	{
-        public const float INERTIA_STOP = 0.05f;
+        private const float INERTIA_STOP = 0.05f;
 
 		private EScrollOrientation scrollOrientation = EScrollOrientation.VerticalAuto | EScrollOrientation.HorizontalAuto;
 		private ScrollBarBase scrollBarHorizontal;
@@ -512,6 +512,11 @@ namespace EntryEngine.UI
 			base.UpdateClip(ref finalClip, ref finalViewClip, ref transform, ref localToWorld);
 			localToWorld.M31 -= OffsetX;
 			localToWorld.M32 -= OffsetY;
+            UIScene scene = SceneIsRunning;
+            if (scene != null && scene.UseFlowLayout)
+            {
+                finalClip.Height += Flow.Bottom - finalClip.Bottom;
+            }
 		}
         protected override void InternalUpdate(Entry e)
         {

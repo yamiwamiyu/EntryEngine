@@ -1734,7 +1734,7 @@ namespace EntryEngine
     // 树
     public abstract class Tree<T> : IEnumerable<T> where T : Tree<T>
     {
-        protected List<T> Childs
+        protected internal List<T> Childs
         {
             get;
             private set;
@@ -1926,9 +1926,7 @@ namespace EntryEngine
             else
                 return null;
         }
-        /// <summary>
-        /// For：Childs里的所有元素
-        /// </summary>
+        /// <summary>For：Childs里的所有元素</summary>
         public static void ForParentPriority(T parent, Func<T, bool> skip, Action<T> func)
         {
             if (skip != null && skip(parent))
@@ -1982,9 +1980,7 @@ namespace EntryEngine
             else
                 return null;
         }
-        /// <summary>
-        /// Foreach：可以重写GetEnumerator影响此结果
-        /// </summary>
+        /// <summary>Foreach：可以重写GetEnumerator影响此结果</summary>
         public static void ForeachParentPriority(T parent, Func<T, bool> skip, Action<T> func)
         {
             if (skip != null && skip(parent))
@@ -2020,6 +2016,20 @@ namespace EntryEngine
             for (T i = element; i != null; i = i.Parent)
                 parents.Push(i);
             return parents;
+        }
+        public static void ForRootToLeaf(T parent, Action<T> func)
+        {
+            ForRootToLeaf(parent, func, null);
+        }
+        /// <summary>父节点全部循环完后，再循环父节点的</summary>
+        public static void ForRootToLeaf(T parent, Action<T> func, Action<T> newNode)
+        {
+            if (newNode != null) newNode(parent);
+            if (func != null)
+                for (int i = 0; i < parent.Childs.Count; i++)
+                    func(parent.Childs[i]);
+            for (int i = 0; i < parent.Childs.Count; i++)
+                ForRootToLeaf(parent.Childs[i], func, newNode);
         }
     }
     public class BTree<T> : IEnumerable<T>

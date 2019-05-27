@@ -55,8 +55,8 @@ namespace LauncherManagerEntry
             obj.GRAPHICS.ScreenSize = new VECTOR2(1280, 720);
             obj.GRAPHICS.GraphicsSize = obj.GRAPHICS.ScreenSize;
             FONT.Default = obj.NewFONT("黑体", 16);
-            obj.ShowMainScene(new SEntryPoint());
-            //obj.ShowMainScene<TestScene>();
+            //obj.ShowMainScene(new SEntryPoint());
+            obj.ShowMainScene<TestScene>();
         }
     }
 
@@ -64,40 +64,9 @@ namespace LauncherManagerEntry
     {
         protected override IEnumerable<ICoroutine> Loading()
         {
-            //this.Background = TEXTURE.Pixel;
-            //this.Color = COLOR.Black;
-
-            //Button _1圆角框_内部透明 = new Button();
-            //_1圆角框_内部透明.Clip = new RECT(100, 100, 100, 40);
-            ////_1圆角框_内部透明.SourceNormal = new PATCH(Content.Load<TEXTURE>("圆角框_内部透明.png"), new RECT(2, 3, 1, 1), COLOR.TransparentWhite, COLOR.White);
-            //_1圆角框_内部透明.SourceNormal = PATCH.GetNinePatch(COLOR.TransparentWhite, new COLOR(220, 223, 230), 1);
-            //_1圆角框_内部透明.SourceHover = PATCH.GetNinePatch(COLOR.TransparentWhite, new COLOR(64, 158, 255), 1);
-            //_1圆角框_内部透明.SourceClick = PATCH.GetNinePatch(COLOR.TransparentWhite, new COLOR(58, 142, 230), 1);
-            //_1圆角框_内部透明.Text = "默认按钮";
-            //_1圆角框_内部透明.UIText.FontColor = new COLOR(96, 98, 102);
-            //_1圆角框_内部透明.UnHover += (sender, e) =>
-            //{
-            //    _1圆角框_内部透明.UIText.FontColor = new COLOR(96, 98, 102);
-            //};
-            //_1圆角框_内部透明.Hover += (sender, e) =>
-            //{
-            //    if (sender.IsClick)
-            //    {
-            //        _1圆角框_内部透明.UIText.FontColor = new COLOR(58, 142, 230);
-            //    }
-            //    else
-            //    {
-            //        _1圆角框_内部透明.UIText.FontColor = new COLOR(64, 158, 255);
-            //    }
-            //};
-            //Add(_1圆角框_内部透明);
-
-            //this.Hover += (sender, e) =>
-            //{
-            //    var position = e.INPUT.Pointer.Position;
-            //    _1圆角框_内部透明.Width = position.X - 100;
-            //    _1圆角框_内部透明.Height = position.Y - 100;
-            //};
+            this.Background = PATCH.GetNinePatch(PATCH.NullColor, COLOR.Black, 2);
+            this.DragMode = EDragMode.Drag;
+            this.Height = 0;
 
             //UIStyle.Style = new UIStyle();
             //UIStyle.Style.AddStyle(EUIType.Button,
@@ -108,87 +77,106 @@ namespace LauncherManagerEntry
             //    });
 
             #region Button
-            //Button button = new Button();
-            //button.X = 100;
-            //button.Y = 100;
-            //button.Text = "默认按钮";
-            //StyleButtonPatchBorder(button, new COLOR(220, 223, 230), new COLOR(103, 194, 58), 1, new COLOR(96, 98, 102));
-            //Add(button);
+            Button button = new Button();
+            button.Flow.MaginLeft = 75;
+            button.Flow.MaginTop = 50;
+            button.Flow.Line = true;
+            button.Text = "默认按钮";
+            StyleButtonPatchBorder(button, new COLOR(220, 223, 230), new COLOR(103, 194, 58), 1, new COLOR(96, 98, 102));
+            Add(button);
 
-            //button = new Button();
-            //button.X = 100;
-            //button.Y = 160;
-            //button.Text = "朴素按钮";
-            //StyleButtonPatchBody(button, new COLOR(220, 223, 230), new COLOR(103, 194, 58), 1, new COLOR(96, 98, 102));
-            //Add(button);
+            button = new Button();
+            button.Flow.MaginLeft = 75;
+            button.Flow.MaginTop = 50;
+            button.Flow.Line = true;
+            button.Text = "朴素按钮";
+            StyleButtonPatchBody(button, new COLOR(220, 223, 230), new COLOR(103, 194, 58), 1, new COLOR(96, 98, 102));
+            Add(button);
 
-            //button = new Button();
-            //button.X = 220;
-            //button.Y = 100;
-            //button.Text = "成功按钮";
-            //StyleButtonPatchBody2(button, new COLOR(103, 194, 58), COLOR.White);
-            //Add(button);
+            button = new Button();
+            button.Flow.MaginLeft = 75;
+            button.Flow.MaginTop = 50;
+            button.Text = "成功按钮";
+            StyleButtonPatchBody2(button, new COLOR(103, 194, 58), COLOR.White);
+            Add(button);
 
-            //button = new Button();
-            //button.X = 220;
-            //button.Y = 160;
-            //button.Text = "成功按钮";
-            //StyleButtonPatchBody3(button, new COLOR(103, 194, 58), COLOR.White, 1);
-            //Add(button);
+            button = new Button();
+            button.Text = "成功按钮";
+            button.Flow.MaginLeft = 75;
+            button.Flow.MaginTop = 50;
+            StyleButtonPatchBody3(button, new COLOR(103, 194, 58), COLOR.White, 1);
+            Add(button);
 
-            //button = new Button();
-            //button.X = 160;
-            //button.Y = 280;
-            //button.Text = "文字按钮";
-            //StyleButtonLabel(button, new COLOR(103, 194, 58));
-            //Add(button);
+            button = new Button();
+            button.Flow.MaginLeft = 75;
+            button.Flow.MaginTop = 50;
+            button.Text = "文字按钮";
+            StyleButtonLabel(button, new COLOR(103, 194, 58));
+            Add(button);
 
-            //TextBox textBox = new TextBox();
-            //textBox.X = 160;
-            //textBox.Y = 340;
-            //textBox.DefaultText.Text = "文字按钮";
-            //StyleTextBox(textBox, new COLOR(220, 223, 230), new COLOR(17, 131, 238), 1);
-            //textBox.UIText.FontColor = COLOR.Black;
-            //Add(textBox);
+            TextBox textBox = new TextBox();
+            textBox.Flow.MaginLeft = 75;
+            textBox.Flow.MaginTop = 150;
+            textBox.Flow.Line = true;
+            textBox.DefaultText.Text = "文字按钮";
+            StyleTextBox(textBox, new COLOR(220, 223, 230), new COLOR(17, 131, 238), 1);
+            textBox.UIText.FontColor = COLOR.Black;
+            Add(textBox);
             #endregion
 
             #region CheckBox
 
             //CheckBox item = new CheckBox();
+            //item.Text = "备选项";
+            //item.UIText.FontColor = COLOR.Black;
             //item.X = 100;
             //item.Y = 100;
-            //item.Text = "备选项";
-            //item.UIText.FontColor = COLOR.Black;
             //StyleCheckBox(item, new COLOR(220, 223, 230), new COLOR(17, 131, 238));
             //Add(item);
 
             //item = new CheckBox();
-            //item.X = 200;
+            //item.Text = "备选项";
+            ////item.Flow.MaginLeft = 75;
+            ////item.Flow.MaginTop = 50;
+            //item.X = 180;
             //item.Y = 100;
-            //item.Text = "备选项";
             //item.UIText.FontColor = COLOR.Black;
             //StyleCheckBox(item, new COLOR(220, 223, 230), new COLOR(17, 131, 238));
             //Add(item);
 
             //item = new CheckBox();
+            //item.Text = "备选项";
+            ////item.Flow.MaginLeft = 75;
+            ////item.Flow.MaginTop = 50;
             //item.X = 100;
             //item.Y = 150;
-            //item.Text = "备选项";
             //item.IsRadioButton = true;
             //item.UIText.FontColor = COLOR.Black;
             //StyleCheckBox(item, new COLOR(220, 223, 230), new COLOR(17, 131, 238));
             //Add(item);
 
             //item = new CheckBox();
-            //item.X = 200;
-            //item.Y = 150;
             //item.Text = "备选项";
+            //item.X = 180;
+            //item.Y = 150;
             //item.IsRadioButton = true;
             //item.UIText.FontColor = COLOR.Black;
             //StyleCheckBox(item, new COLOR(220, 223, 230), new COLOR(17, 131, 238));
             //Add(item);
 
             #endregion
+
+            UseFlowLayout = true;
+            this.Clicked += (sender, e) => ChangeFlowLayout(!UseFlowLayout);
+            this.Pressed += (sender, e) =>
+            {
+                if (UseFlowLayout)
+                {
+                    var position = this.ConvertGraphicsToLocal(e.INPUT.Pointer.Position);
+                    textBox.Flow.MaginLeft = (position.X - textBox.X);
+                    textBox.Flow.MaginTop = (position.Y - textBox.Y);
+                }
+            };
 
             return base.Loading();
         }

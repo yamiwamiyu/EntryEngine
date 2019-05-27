@@ -56,7 +56,7 @@ namespace EntryEngine.UI
                     yield return item;
         }
     }
-    public class DropDown : Button
+    public class DropDown : CheckBox
     {
         private Button dropDownText;
         private Selectable dropDownList;
@@ -193,6 +193,8 @@ namespace EntryEngine.UI
         {
             this.IsClip = false;
             Clicked -= OnClicked;
+            IsRadioButton = true;
+            UIText.TextAlignment = EPivot.MiddleCenter;
         }
 
         private void OnCancelHandle(UIElement sender, Entry e)
@@ -272,6 +274,21 @@ namespace EntryEngine.UI
                     yield return item;
         }
     }
+    //public class MenuStrip : DropDown
+    //{
+    //    public MenuStrip()
+    //    {
+    //        this.Hover += MenuStrip_Hover;
+    //    }
+
+    //    void MenuStrip_Hover(UIElement sender, Entry e)
+    //    {
+    //        if (!this.Checked && this.Group.Any(c => c.Checked))
+    //        {
+    //            this.Checked = true;
+    //        }
+    //    }
+    //}
     public class Selectable : UIScene
     {
         private int selectedIndex = -1;
