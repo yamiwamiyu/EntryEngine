@@ -31,18 +31,20 @@ public partial class S服务器面板
         B全选.Clip = B全选_Clip;
         
         B全选.UIText = new EntryEngine.UI.UIText();
+        B全选.UIText.Text = "全选";
         B全选.UIText.FontColor = new COLOR()
         {
-            R = 0,
-            G = 0,
             B = 0,
+            G = 0,
+            R = 0,
             A = 255,
         };
         B全选.UIText.TextAlignment = (EPivot)17;
         B全选.UIText.TextShader = null;
         B全选.UIText.Padding.X = 0f;
         B全选.UIText.Padding.Y = 0f;
-        B全选.UIText.FontSize = 22f;
+        B全选.UIText.FontSize = 16f;
+        B全选.Text = "全选";
         this.Add(B全选);
         P服务器信息面板.Name = "P服务器信息面板";
         EntryEngine.RECT P服务器信息面板_Clip = new EntryEngine.RECT();
@@ -80,30 +82,39 @@ public partial class S服务器面板
         
         B数据统计.Anchor = (EAnchor)9;
         B数据统计.UIText = new EntryEngine.UI.UIText();
+        B数据统计.UIText.Text = "数据统计";
         B数据统计.UIText.FontColor = new COLOR()
         {
-            R = 0,
-            G = 0,
             B = 0,
+            G = 0,
+            R = 0,
             A = 255,
         };
         B数据统计.UIText.TextAlignment = (EPivot)17;
         B数据统计.UIText.TextShader = null;
         B数据统计.UIText.Padding.X = 0f;
         B数据统计.UIText.Padding.Y = 0f;
-        B数据统计.UIText.FontSize = 20f;
+        B数据统计.UIText.FontSize = 16f;
+        B数据统计.Text = "数据统计";
         this.Add(B数据统计);
         
         this.PhaseShowing += Show;
     }
     protected override IEnumerable<ICoroutine> Loading()
     {
-        LoadAsync(Content.LoadAsync<EntryEngine.TEXTURE>(@"LM_0000_登陆全选-6.png", ___c => B全选.SourceNormal = ___c));
+        ICoroutine async;
+        ICoroutine ___async;
+        ___async = LoadAsync(Content.LoadAsync<EntryEngine.TEXTURE>(@"LM_0000_登陆全选-6.png", ___c => B全选.SourceNormal = ___c));
+        if (___async != null && !___async.IsEnd) yield return ___async;
         
-        LoadAsync(Content.LoadAsync<EntryEngine.TEXTURE>(@"Frame1.mtpatch", ___c => P服务器信息面板.Background = ___c));
-        LoadAsync(Content.LoadAsync<EntryEngine.TEXTURE>(@"Frame1.mtpatch", ___c =>  TB服务器单选1.Texture = ___c));
-        LoadAsync(Content.LoadAsync<EntryEngine.TEXTURE>(@"Frame1.mtpatch", ___c =>  TB服务器单选2.Texture = ___c));
-        LoadAsync(Content.LoadAsync<EntryEngine.TEXTURE>(@"LM_0000_登陆全选-6.png", ___c => B数据统计.SourceNormal = ___c));
+        ___async = LoadAsync(Content.LoadAsync<EntryEngine.TEXTURE>(@"Frame1.mtpatch", ___c => P服务器信息面板.Background = ___c));
+        if (___async != null && !___async.IsEnd) yield return ___async;
+        ___async = LoadAsync(Content.LoadAsync<EntryEngine.TEXTURE>(@"Frame1.mtpatch", ___c =>  TB服务器单选1.Texture = ___c));
+        if (___async != null && !___async.IsEnd) yield return ___async;
+        ___async = LoadAsync(Content.LoadAsync<EntryEngine.TEXTURE>(@"Frame1.mtpatch", ___c =>  TB服务器单选2.Texture = ___c));
+        if (___async != null && !___async.IsEnd) yield return ___async;
+        ___async = LoadAsync(Content.LoadAsync<EntryEngine.TEXTURE>(@"LM_0000_登陆全选-6.png", ___c => B数据统计.SourceNormal = ___c));
+        if (___async != null && !___async.IsEnd) yield return ___async;
         
         
         var __loading = MyLoading();
@@ -111,12 +122,8 @@ public partial class S服务器面板
         foreach (var item in __loading)
         yield return item;
     }
-    public void Show(UIScene __scene)
+    private void Show(EntryEngine.UI.UIScene __scene)
     {
-        B全选.UIText.Text = _LANGUAGE.GetString("27");
-        B全选.Text = _LANGUAGE.GetString("27");
-        B数据统计.UIText.Text = _LANGUAGE.GetString("23");
-        B数据统计.Text = _LANGUAGE.GetString("23");
         
     }
 }

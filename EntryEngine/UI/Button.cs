@@ -75,7 +75,7 @@ namespace EntryEngine.UI
 				TEXTURE source;
 				if (Checked && SourceClicked != null)
 				{
-					source = SourceClicked;
+					return SourceClicked;
 				}
 				else
 				{

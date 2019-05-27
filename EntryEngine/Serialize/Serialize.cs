@@ -638,7 +638,7 @@ namespace EntryEngine.Serialize
 		protected void WriteDateTime(DateTime value)
 		{
 			//WriteNumber(Utility.ToUnixTimestamp(value));
-			WriteString(value.ToString());
+			WriteString(value.ToString("yyyy-MM-dd HH:mm:ss"));
 		}
 		protected virtual void WriteArray(IEnumerable value, Type type)
 		{

@@ -58,11 +58,12 @@ public partial class S日志
         CBDebug.Clip = CBDebug_Clip;
         
         CBDebug.UIText = new EntryEngine.UI.UIText();
+        CBDebug.UIText.Text = "调试";
         CBDebug.UIText.FontColor = new COLOR()
         {
-            R = 0,
-            G = 0,
             B = 0,
+            G = 0,
+            R = 0,
             A = 255,
         };
         CBDebug.UIText.TextAlignment = (EPivot)18;
@@ -70,6 +71,7 @@ public partial class S日志
         CBDebug.UIText.Padding.X = 0f;
         CBDebug.UIText.Padding.Y = 0f;
         CBDebug.UIText.FontSize = 16f;
+        CBDebug.Text = "调试";
         this.Add(CBDebug);
         CBInfo.Name = "CBInfo";
         EntryEngine.RECT CBInfo_Clip = new EntryEngine.RECT();
@@ -81,11 +83,12 @@ public partial class S日志
         
         CBInfo.Checked = true;
         CBInfo.UIText = new EntryEngine.UI.UIText();
+        CBInfo.UIText.Text = "信息";
         CBInfo.UIText.FontColor = new COLOR()
         {
-            R = 0,
-            G = 0,
             B = 0,
+            G = 0,
+            R = 0,
             A = 255,
         };
         CBInfo.UIText.TextAlignment = (EPivot)18;
@@ -93,6 +96,7 @@ public partial class S日志
         CBInfo.UIText.Padding.X = 0f;
         CBInfo.UIText.Padding.Y = 0f;
         CBInfo.UIText.FontSize = 16f;
+        CBInfo.Text = "信息";
         this.Add(CBInfo);
         CBWarning.Name = "CBWarning";
         EntryEngine.RECT CBWarning_Clip = new EntryEngine.RECT();
@@ -104,11 +108,12 @@ public partial class S日志
         
         CBWarning.Checked = true;
         CBWarning.UIText = new EntryEngine.UI.UIText();
+        CBWarning.UIText.Text = "警告";
         CBWarning.UIText.FontColor = new COLOR()
         {
-            R = 0,
-            G = 0,
             B = 0,
+            G = 0,
+            R = 0,
             A = 255,
         };
         CBWarning.UIText.TextAlignment = (EPivot)18;
@@ -116,6 +121,7 @@ public partial class S日志
         CBWarning.UIText.Padding.X = 0f;
         CBWarning.UIText.Padding.Y = 0f;
         CBWarning.UIText.FontSize = 16f;
+        CBWarning.Text = "警告";
         this.Add(CBWarning);
         CBError.Name = "CBError";
         EntryEngine.RECT CBError_Clip = new EntryEngine.RECT();
@@ -127,11 +133,12 @@ public partial class S日志
         
         CBError.Checked = true;
         CBError.UIText = new EntryEngine.UI.UIText();
+        CBError.UIText.Text = "错误";
         CBError.UIText.FontColor = new COLOR()
         {
-            R = 0,
-            G = 0,
             B = 0,
+            G = 0,
+            R = 0,
             A = 255,
         };
         CBError.UIText.TextAlignment = (EPivot)18;
@@ -139,6 +146,7 @@ public partial class S日志
         CBError.UIText.Padding.X = 0f;
         CBError.UIText.Padding.Y = 0f;
         CBError.UIText.FontSize = 16f;
+        CBError.Text = "错误";
         this.Add(CBError);
         B查询.Name = "B查询";
         EntryEngine.RECT B查询_Clip = new EntryEngine.RECT();
@@ -149,11 +157,12 @@ public partial class S日志
         B查询.Clip = B查询_Clip;
         
         B查询.UIText = new EntryEngine.UI.UIText();
+        B查询.UIText.Text = "查询";
         B查询.UIText.FontColor = new COLOR()
         {
-            R = 0,
-            G = 0,
             B = 0,
+            G = 0,
+            R = 0,
             A = 255,
         };
         B查询.UIText.TextAlignment = (EPivot)17;
@@ -161,6 +170,7 @@ public partial class S日志
         B查询.UIText.Padding.X = 0f;
         B查询.UIText.Padding.Y = 0f;
         B查询.UIText.FontSize = 16f;
+        B查询.Text = "查询";
         this.Add(B查询);
         B整合.Name = "B整合";
         EntryEngine.RECT B整合_Clip = new EntryEngine.RECT();
@@ -171,11 +181,12 @@ public partial class S日志
         B整合.Clip = B整合_Clip;
         
         B整合.UIText = new EntryEngine.UI.UIText();
+        B整合.UIText.Text = "整合";
         B整合.UIText.FontColor = new COLOR()
         {
-            R = 0,
-            G = 0,
             B = 0,
+            G = 0,
+            R = 0,
             A = 255,
         };
         B整合.UIText.TextAlignment = (EPivot)17;
@@ -183,6 +194,7 @@ public partial class S日志
         B整合.UIText.Padding.X = 0f;
         B整合.UIText.Padding.Y = 0f;
         B整合.UIText.FontSize = 16f;
+        B整合.Text = "整合";
         this.Add(B整合);
         B退出.Name = "B退出";
         EntryEngine.RECT B退出_Clip = new EntryEngine.RECT();
@@ -193,11 +205,12 @@ public partial class S日志
         B退出.Clip = B退出_Clip;
         
         B退出.UIText = new EntryEngine.UI.UIText();
+        B退出.UIText.Text = "退出";
         B退出.UIText.FontColor = new COLOR()
         {
-            R = 0,
-            G = 0,
             B = 0,
+            G = 0,
+            R = 0,
             A = 255,
         };
         B退出.UIText.TextAlignment = (EPivot)17;
@@ -205,6 +218,7 @@ public partial class S日志
         B退出.UIText.Padding.X = 0f;
         B退出.UIText.Padding.Y = 0f;
         B退出.UIText.FontSize = 16f;
+        B退出.Text = "退出";
         this.Add(B退出);
         P日志.Name = "P日志";
         EntryEngine.RECT P日志_Clip = new EntryEngine.RECT();
@@ -224,11 +238,12 @@ public partial class S日志
         B末页.Clip = B末页_Clip;
         
         B末页.UIText = new EntryEngine.UI.UIText();
+        B末页.UIText.Text = "> >";
         B末页.UIText.FontColor = new COLOR()
         {
-            R = 0,
-            G = 0,
             B = 0,
+            G = 0,
+            R = 0,
             A = 255,
         };
         B末页.UIText.TextAlignment = (EPivot)17;
@@ -236,6 +251,7 @@ public partial class S日志
         B末页.UIText.Padding.X = 0f;
         B末页.UIText.Padding.Y = 0f;
         B末页.UIText.FontSize = 16f;
+        B末页.Text = "> >";
         P日志.Add(B末页);
         B下一页.Name = "B下一页";
         EntryEngine.RECT B下一页_Clip = new EntryEngine.RECT();
@@ -246,11 +262,12 @@ public partial class S日志
         B下一页.Clip = B下一页_Clip;
         
         B下一页.UIText = new EntryEngine.UI.UIText();
+        B下一页.UIText.Text = ">";
         B下一页.UIText.FontColor = new COLOR()
         {
-            R = 0,
-            G = 0,
             B = 0,
+            G = 0,
+            R = 0,
             A = 255,
         };
         B下一页.UIText.TextAlignment = (EPivot)17;
@@ -258,6 +275,7 @@ public partial class S日志
         B下一页.UIText.Padding.X = 0f;
         B下一页.UIText.Padding.Y = 0f;
         B下一页.UIText.FontSize = 16f;
+        B下一页.Text = ">";
         P日志.Add(B下一页);
         B前一页.Name = "B前一页";
         EntryEngine.RECT B前一页_Clip = new EntryEngine.RECT();
@@ -268,11 +286,12 @@ public partial class S日志
         B前一页.Clip = B前一页_Clip;
         
         B前一页.UIText = new EntryEngine.UI.UIText();
+        B前一页.UIText.Text = "<";
         B前一页.UIText.FontColor = new COLOR()
         {
-            R = 0,
-            G = 0,
             B = 0,
+            G = 0,
+            R = 0,
             A = 255,
         };
         B前一页.UIText.TextAlignment = (EPivot)17;
@@ -280,6 +299,7 @@ public partial class S日志
         B前一页.UIText.Padding.X = 0f;
         B前一页.UIText.Padding.Y = 0f;
         B前一页.UIText.FontSize = 16f;
+        B前一页.Text = "<";
         P日志.Add(B前一页);
         LPage[0].Name = "LPage";
         EntryEngine.RECT LPage_0__Clip = new EntryEngine.RECT();
@@ -293,9 +313,9 @@ public partial class S日志
         LPage[0].UIText.Text = "#99999";
         LPage[0].UIText.FontColor = new COLOR()
         {
-            R = 0,
-            G = 0,
             B = 0,
+            G = 0,
+            R = 0,
             A = 255,
         };
         LPage[0].UIText.TextAlignment = (EPivot)17;
@@ -317,9 +337,9 @@ public partial class S日志
         LPage[1].UIText.Text = "#99999";
         LPage[1].UIText.FontColor = new COLOR()
         {
-            R = 0,
-            G = 0,
             B = 0,
+            G = 0,
+            R = 0,
             A = 255,
         };
         LPage[1].UIText.TextAlignment = (EPivot)17;
@@ -341,9 +361,9 @@ public partial class S日志
         LPage[2].UIText.Text = "#99999";
         LPage[2].UIText.FontColor = new COLOR()
         {
-            R = 0,
-            G = 0,
             B = 0,
+            G = 0,
+            R = 0,
             A = 255,
         };
         LPage[2].UIText.TextAlignment = (EPivot)17;
@@ -365,9 +385,9 @@ public partial class S日志
         LPage[3].UIText.Text = "#99999";
         LPage[3].UIText.FontColor = new COLOR()
         {
-            R = 255,
+            B = 255,
             G = 26,
-            B = 26,
+            R = 26,
             A = 255,
         };
         LPage[3].UIText.TextAlignment = (EPivot)17;
@@ -389,9 +409,9 @@ public partial class S日志
         LPage[4].UIText.Text = "#99999";
         LPage[4].UIText.FontColor = new COLOR()
         {
-            R = 0,
-            G = 0,
             B = 0,
+            G = 0,
+            R = 0,
             A = 255,
         };
         LPage[4].UIText.TextAlignment = (EPivot)17;
@@ -413,9 +433,9 @@ public partial class S日志
         LPage[5].UIText.Text = "#99999";
         LPage[5].UIText.FontColor = new COLOR()
         {
-            R = 0,
-            G = 0,
             B = 0,
+            G = 0,
+            R = 0,
             A = 255,
         };
         LPage[5].UIText.TextAlignment = (EPivot)17;
@@ -437,9 +457,9 @@ public partial class S日志
         LPage[6].UIText.Text = "#99999";
         LPage[6].UIText.FontColor = new COLOR()
         {
-            R = 0,
-            G = 0,
             B = 0,
+            G = 0,
+            R = 0,
             A = 255,
         };
         LPage[6].UIText.TextAlignment = (EPivot)17;
@@ -458,18 +478,20 @@ public partial class S日志
         L160810124416[0].Clip = L160810124416_0__Clip;
         
         L160810124416[0].UIText = new EntryEngine.UI.UIText();
+        L160810124416[0].UIText.Text = "时间";
         L160810124416[0].UIText.FontColor = new COLOR()
         {
-            R = 0,
-            G = 0,
             B = 0,
+            G = 0,
+            R = 0,
             A = 255,
         };
         L160810124416[0].UIText.TextAlignment = (EPivot)0;
         L160810124416[0].UIText.TextShader = null;
         L160810124416[0].UIText.Padding.X = 0f;
         L160810124416[0].UIText.Padding.Y = 0f;
-        L160810124416[0].UIText.FontSize = 24f;
+        L160810124416[0].UIText.FontSize = 16f;
+        L160810124416[0].Text = "时间";
         P日志.Add(L160810124416[0]);
         L160810124416[1].Name = "L160810124416";
         EntryEngine.RECT L160810124416_1__Clip = new EntryEngine.RECT();
@@ -480,18 +502,20 @@ public partial class S日志
         L160810124416[1].Clip = L160810124416_1__Clip;
         
         L160810124416[1].UIText = new EntryEngine.UI.UIText();
+        L160810124416[1].UIText.Text = "内容";
         L160810124416[1].UIText.FontColor = new COLOR()
         {
-            R = 0,
-            G = 0,
             B = 0,
+            G = 0,
+            R = 0,
             A = 255,
         };
         L160810124416[1].UIText.TextAlignment = (EPivot)0;
         L160810124416[1].UIText.TextShader = null;
         L160810124416[1].UIText.Padding.X = 0f;
         L160810124416[1].UIText.Padding.Y = 0f;
-        L160810124416[1].UIText.FontSize = 24f;
+        L160810124416[1].UIText.FontSize = 16f;
+        L160810124416[1].Text = "内容";
         P日志.Add(L160810124416[1]);
         L160810124416[2].Name = "L160810124416";
         EntryEngine.RECT L160810124416_2__Clip = new EntryEngine.RECT();
@@ -502,18 +526,20 @@ public partial class S日志
         L160810124416[2].Clip = L160810124416_2__Clip;
         
         L160810124416[2].UIText = new EntryEngine.UI.UIText();
+        L160810124416[2].UIText.Text = "相同内容条目";
         L160810124416[2].UIText.FontColor = new COLOR()
         {
-            R = 0,
-            G = 0,
             B = 0,
+            G = 0,
+            R = 0,
             A = 255,
         };
         L160810124416[2].UIText.TextAlignment = (EPivot)0;
         L160810124416[2].UIText.TextShader = null;
         L160810124416[2].UIText.Padding.X = 0f;
         L160810124416[2].UIText.Padding.Y = 0f;
-        L160810124416[2].UIText.FontSize = 24f;
+        L160810124416[2].UIText.FontSize = 16f;
+        L160810124416[2].Text = "相同内容条目";
         P日志.Add(L160810124416[2]);
         P日志消息.Name = "P日志消息";
         EntryEngine.RECT P日志消息_Clip = new EntryEngine.RECT();
@@ -534,11 +560,12 @@ public partial class S日志
         B首页.Clip = B首页_Clip;
         
         B首页.UIText = new EntryEngine.UI.UIText();
+        B首页.UIText.Text = "< <";
         B首页.UIText.FontColor = new COLOR()
         {
-            R = 0,
-            G = 0,
             B = 0,
+            G = 0,
+            R = 0,
             A = 255,
         };
         B首页.UIText.TextAlignment = (EPivot)17;
@@ -546,6 +573,7 @@ public partial class S日志
         B首页.UIText.Padding.X = 0f;
         B首页.UIText.Padding.Y = 0f;
         B首页.UIText.FontSize = 16f;
+        B首页.Text = "< <";
         P日志.Add(B首页);
         TB起始时间.Name = "TB起始时间";
         EntryEngine.RECT TB起始时间_Clip = new EntryEngine.RECT();
@@ -557,18 +585,25 @@ public partial class S日志
         
         TB起始时间.Color = new COLOR()
         {
-            R = 0,
-            G = 0,
             B = 0,
+            G = 0,
+            R = 0,
+            A = 255,
+        };
+        TB起始时间.CursorAreaColor = new COLOR()
+        {
+            B = 51,
+            G = 153,
+            R = 255,
             A = 255,
         };
         TB起始时间.DefaultText = new EntryEngine.UI.UIText();
         TB起始时间.DefaultText.Text = "起始时间";
         TB起始时间.DefaultText.FontColor = new COLOR()
         {
-            R = 130,
-            G = 130,
             B = 130,
+            G = 130,
+            R = 130,
             A = 255,
         };
         TB起始时间.DefaultText.TextAlignment = (EPivot)17;
@@ -580,9 +615,9 @@ public partial class S日志
         TB起始时间.UIText.Text = "";
         TB起始时间.UIText.FontColor = new COLOR()
         {
-            R = 0,
-            G = 0,
             B = 0,
+            G = 0,
+            R = 0,
             A = 255,
         };
         TB起始时间.UIText.TextAlignment = (EPivot)17;
@@ -601,18 +636,25 @@ public partial class S日志
         
         TB结束时间.Color = new COLOR()
         {
-            R = 0,
-            G = 0,
             B = 0,
+            G = 0,
+            R = 0,
+            A = 255,
+        };
+        TB结束时间.CursorAreaColor = new COLOR()
+        {
+            B = 51,
+            G = 153,
+            R = 255,
             A = 255,
         };
         TB结束时间.DefaultText = new EntryEngine.UI.UIText();
         TB结束时间.DefaultText.Text = "结束时间";
         TB结束时间.DefaultText.FontColor = new COLOR()
         {
-            R = 130,
-            G = 130,
             B = 130,
+            G = 130,
+            R = 130,
             A = 255,
         };
         TB结束时间.DefaultText.TextAlignment = (EPivot)17;
@@ -624,9 +666,9 @@ public partial class S日志
         TB结束时间.UIText.Text = "";
         TB结束时间.UIText.FontColor = new COLOR()
         {
-            R = 0,
-            G = 0,
             B = 0,
+            G = 0,
+            R = 0,
             A = 255,
         };
         TB结束时间.UIText.TextAlignment = (EPivot)17;
@@ -645,18 +687,25 @@ public partial class S日志
         
         TB内容筛选.Color = new COLOR()
         {
-            R = 0,
-            G = 0,
             B = 0,
+            G = 0,
+            R = 0,
+            A = 255,
+        };
+        TB内容筛选.CursorAreaColor = new COLOR()
+        {
+            B = 51,
+            G = 153,
+            R = 255,
             A = 255,
         };
         TB内容筛选.DefaultText = new EntryEngine.UI.UIText();
         TB内容筛选.DefaultText.Text = "内容筛选";
         TB内容筛选.DefaultText.FontColor = new COLOR()
         {
-            R = 130,
-            G = 130,
             B = 130,
+            G = 130,
+            R = 130,
             A = 255,
         };
         TB内容筛选.DefaultText.TextAlignment = (EPivot)17;
@@ -668,9 +717,9 @@ public partial class S日志
         TB内容筛选.UIText.Text = "";
         TB内容筛选.UIText.FontColor = new COLOR()
         {
-            R = 0,
-            G = 0,
             B = 0,
+            G = 0,
+            R = 0,
             A = 255,
         };
         TB内容筛选.UIText.TextAlignment = (EPivot)17;
@@ -689,18 +738,25 @@ public partial class S日志
         
         TB参数筛选.Color = new COLOR()
         {
-            R = 0,
-            G = 0,
             B = 0,
+            G = 0,
+            R = 0,
+            A = 255,
+        };
+        TB参数筛选.CursorAreaColor = new COLOR()
+        {
+            B = 51,
+            G = 153,
+            R = 255,
             A = 255,
         };
         TB参数筛选.DefaultText = new EntryEngine.UI.UIText();
         TB参数筛选.DefaultText.Text = "参数筛选";
         TB参数筛选.DefaultText.FontColor = new COLOR()
         {
-            R = 130,
-            G = 130,
             B = 130,
+            G = 130,
+            R = 130,
             A = 255,
         };
         TB参数筛选.DefaultText.TextAlignment = (EPivot)17;
@@ -712,9 +768,9 @@ public partial class S日志
         TB参数筛选.UIText.Text = "";
         TB参数筛选.UIText.FontColor = new COLOR()
         {
-            R = 0,
-            G = 0,
             B = 0,
+            G = 0,
+            R = 0,
             A = 255,
         };
         TB参数筛选.UIText.TextAlignment = (EPivot)17;
@@ -728,102 +784,89 @@ public partial class S日志
     }
     protected override IEnumerable<ICoroutine> Loading()
     {
+        ICoroutine async;
         ICoroutine ___async;
         ___async = LoadAsync(Content.LoadAsync<EntryEngine.TEXTURE>(@"LM_0001_单选未选中.png", ___c => CBDebug.SourceNormal = ___c));
-        if (___async != null) yield return ___async;
+        if (___async != null && !___async.IsEnd) yield return ___async;
         ___async = LoadAsync(Content.LoadAsync<EntryEngine.TEXTURE>(@"LM_0001_登陆单选.png", ___c => CBDebug.SourceClicked = ___c));
-        if (___async != null) yield return ___async;
+        if (___async != null && !___async.IsEnd) yield return ___async;
         
         ___async = LoadAsync(Content.LoadAsync<EntryEngine.TEXTURE>(@"LM_0001_单选未选中.png", ___c => CBInfo.SourceNormal = ___c));
-        if (___async != null) yield return ___async;
+        if (___async != null && !___async.IsEnd) yield return ___async;
         ___async = LoadAsync(Content.LoadAsync<EntryEngine.TEXTURE>(@"LM_0001_登陆单选.png", ___c => CBInfo.SourceClicked = ___c));
-        if (___async != null) yield return ___async;
+        if (___async != null && !___async.IsEnd) yield return ___async;
         
         ___async = LoadAsync(Content.LoadAsync<EntryEngine.TEXTURE>(@"LM_0001_单选未选中.png", ___c => CBWarning.SourceNormal = ___c));
-        if (___async != null) yield return ___async;
+        if (___async != null && !___async.IsEnd) yield return ___async;
         ___async = LoadAsync(Content.LoadAsync<EntryEngine.TEXTURE>(@"LM_0001_登陆单选.png", ___c => CBWarning.SourceClicked = ___c));
-        if (___async != null) yield return ___async;
+        if (___async != null && !___async.IsEnd) yield return ___async;
         
         ___async = LoadAsync(Content.LoadAsync<EntryEngine.TEXTURE>(@"LM_0001_单选未选中.png", ___c => CBError.SourceNormal = ___c));
-        if (___async != null) yield return ___async;
+        if (___async != null && !___async.IsEnd) yield return ___async;
         ___async = LoadAsync(Content.LoadAsync<EntryEngine.TEXTURE>(@"LM_0001_登陆单选.png", ___c => CBError.SourceClicked = ___c));
-        if (___async != null) yield return ___async;
+        if (___async != null && !___async.IsEnd) yield return ___async;
         
         ___async = LoadAsync(Content.LoadAsync<EntryEngine.TEXTURE>(@"LM_0000_登陆全选-6.png", ___c => B查询.SourceNormal = ___c));
-        if (___async != null) yield return ___async;
+        if (___async != null && !___async.IsEnd) yield return ___async;
         
         ___async = LoadAsync(Content.LoadAsync<EntryEngine.TEXTURE>(@"LM_0000_登陆全选-6.png", ___c => B整合.SourceNormal = ___c));
-        if (___async != null) yield return ___async;
+        if (___async != null && !___async.IsEnd) yield return ___async;
         
         ___async = LoadAsync(Content.LoadAsync<EntryEngine.TEXTURE>(@"LM_0000_登陆全选-6.png", ___c => B退出.SourceNormal = ___c));
-        if (___async != null) yield return ___async;
+        if (___async != null && !___async.IsEnd) yield return ___async;
         
         ___async = LoadAsync(Content.LoadAsync<EntryEngine.TEXTURE>(@"Frame1.mtpatch", ___c => P日志.Background = ___c));
-        if (___async != null) yield return ___async;
+        if (___async != null && !___async.IsEnd) yield return ___async;
         ___async = LoadAsync(Content.LoadAsync<EntryEngine.TEXTURE>(@"LM_0000_登陆全选-6.png", ___c => B末页.SourceNormal = ___c));
-        if (___async != null) yield return ___async;
+        if (___async != null && !___async.IsEnd) yield return ___async;
         
         ___async = LoadAsync(Content.LoadAsync<EntryEngine.TEXTURE>(@"LM_0000_登陆全选-6.png", ___c => B下一页.SourceNormal = ___c));
-        if (___async != null) yield return ___async;
+        if (___async != null && !___async.IsEnd) yield return ___async;
         
         ___async = LoadAsync(Content.LoadAsync<EntryEngine.TEXTURE>(@"LM_0000_登陆全选-6.png", ___c => B前一页.SourceNormal = ___c));
-        if (___async != null) yield return ___async;
+        if (___async != null && !___async.IsEnd) yield return ___async;
         
         ___async = LoadAsync(Content.LoadAsync<EntryEngine.TEXTURE>(@"LM_页签.png", ___c => LPage[0].SourceNormal = ___c));
-        if (___async != null) yield return ___async;
-        
+        if (___async != null && !___async.IsEnd) yield return ___async;
         
         ___async = LoadAsync(Content.LoadAsync<EntryEngine.TEXTURE>(@"LM_页签.png", ___c => LPage[1].SourceNormal = ___c));
-        if (___async != null) yield return ___async;
-        
+        if (___async != null && !___async.IsEnd) yield return ___async;
         
         ___async = LoadAsync(Content.LoadAsync<EntryEngine.TEXTURE>(@"LM_页签.png", ___c => LPage[2].SourceNormal = ___c));
-        if (___async != null) yield return ___async;
-        
+        if (___async != null && !___async.IsEnd) yield return ___async;
         
         ___async = LoadAsync(Content.LoadAsync<EntryEngine.TEXTURE>(@"LM_页签.png", ___c => LPage[3].SourceNormal = ___c));
-        if (___async != null) yield return ___async;
-        
+        if (___async != null && !___async.IsEnd) yield return ___async;
         
         ___async = LoadAsync(Content.LoadAsync<EntryEngine.TEXTURE>(@"LM_页签.png", ___c => LPage[4].SourceNormal = ___c));
-        if (___async != null) yield return ___async;
-        
+        if (___async != null && !___async.IsEnd) yield return ___async;
         
         ___async = LoadAsync(Content.LoadAsync<EntryEngine.TEXTURE>(@"LM_页签.png", ___c => LPage[5].SourceNormal = ___c));
-        if (___async != null) yield return ___async;
-        
+        if (___async != null && !___async.IsEnd) yield return ___async;
         
         ___async = LoadAsync(Content.LoadAsync<EntryEngine.TEXTURE>(@"LM_页签.png", ___c => LPage[6].SourceNormal = ___c));
-        if (___async != null) yield return ___async;
-        
-        
-        
-        
+        if (___async != null && !___async.IsEnd) yield return ___async;
         
         
         
         
         ___async = LoadAsync(Content.LoadAsync<EntryEngine.TEXTURE>(@"LM_0000_登陆全选-6.png", ___c => B首页.SourceNormal = ___c));
-        if (___async != null) yield return ___async;
+        if (___async != null && !___async.IsEnd) yield return ___async;
         
         ___async = LoadAsync(Content.LoadAsync<EntryEngine.TEXTURE>(@"Frame1.mtpatch", ___c => TB起始时间.SourceNormal = ___c));
-        if (___async != null) yield return ___async;
-        
+        if (___async != null && !___async.IsEnd) yield return ___async;
         
         
         ___async = LoadAsync(Content.LoadAsync<EntryEngine.TEXTURE>(@"Frame1.mtpatch", ___c => TB结束时间.SourceNormal = ___c));
-        if (___async != null) yield return ___async;
-        
+        if (___async != null && !___async.IsEnd) yield return ___async;
         
         
         ___async = LoadAsync(Content.LoadAsync<EntryEngine.TEXTURE>(@"Frame1.mtpatch", ___c => TB内容筛选.SourceNormal = ___c));
-        if (___async != null) yield return ___async;
-        
+        if (___async != null && !___async.IsEnd) yield return ___async;
         
         
         ___async = LoadAsync(Content.LoadAsync<EntryEngine.TEXTURE>(@"Frame1.mtpatch", ___c => TB参数筛选.SourceNormal = ___c));
-        if (___async != null) yield return ___async;
-        
+        if (___async != null && !___async.IsEnd) yield return ___async;
         
         
         
@@ -832,36 +875,8 @@ public partial class S日志
         foreach (var item in __loading)
         yield return item;
     }
-    public void Show(UIScene __scene)
+    private void Show(EntryEngine.UI.UIScene __scene)
     {
-        CBDebug.UIText.Text = _LANGUAGE.GetString("89");
-        CBDebug.Text = _LANGUAGE.GetString("89");
-        CBInfo.UIText.Text = _LANGUAGE.GetString("90");
-        CBInfo.Text = _LANGUAGE.GetString("90");
-        CBWarning.UIText.Text = _LANGUAGE.GetString("91");
-        CBWarning.Text = _LANGUAGE.GetString("91");
-        CBError.UIText.Text = _LANGUAGE.GetString("92");
-        CBError.Text = _LANGUAGE.GetString("92");
-        B查询.UIText.Text = _LANGUAGE.GetString("93");
-        B查询.Text = _LANGUAGE.GetString("93");
-        B整合.UIText.Text = _LANGUAGE.GetString("94");
-        B整合.Text = _LANGUAGE.GetString("94");
-        B退出.UIText.Text = _LANGUAGE.GetString("99");
-        B退出.Text = _LANGUAGE.GetString("99");
-        B末页.UIText.Text = _LANGUAGE.GetString("97");
-        B末页.Text = _LANGUAGE.GetString("97");
-        B下一页.UIText.Text = _LANGUAGE.GetString("98");
-        B下一页.Text = _LANGUAGE.GetString("98");
-        B前一页.UIText.Text = _LANGUAGE.GetString("96");
-        B前一页.Text = _LANGUAGE.GetString("96");
-        L160810124416[0].UIText.Text = _LANGUAGE.GetString("78");
-        L160810124416[0].Text = _LANGUAGE.GetString("78");
-        L160810124416[1].UIText.Text = _LANGUAGE.GetString("103");
-        L160810124416[1].Text = _LANGUAGE.GetString("103");
-        L160810124416[2].UIText.Text = _LANGUAGE.GetString("104");
-        L160810124416[2].Text = _LANGUAGE.GetString("104");
-        B首页.UIText.Text = _LANGUAGE.GetString("95");
-        B首页.Text = _LANGUAGE.GetString("95");
         
     }
 }

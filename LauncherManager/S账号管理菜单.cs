@@ -90,11 +90,11 @@ public partial class S账号管理菜单 : UIScene
     {
         if (!scenes.Any(s => s.CB单选.Checked))
         {
-            S确认对话框.Hint(Text.ETextID.SelectionEmpty);
+            S确认对话框.Hint("必须选中至少一项");
             return;
         }
 
-        S确认对话框.Confirm(Text.ETextID.DeleteConfirm,
+        S确认对话框.Confirm("确认要删除选中的项吗？",
             (result) =>
             {
                 if (!result)

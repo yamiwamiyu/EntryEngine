@@ -59,18 +59,20 @@ public partial class S服务类型管理
         
         B新建.Anchor = (EAnchor)9;
         B新建.UIText = new EntryEngine.UI.UIText();
+        B新建.UIText.Text = "新建";
         B新建.UIText.FontColor = new COLOR()
         {
-            R = 0,
-            G = 0,
             B = 0,
+            G = 0,
+            R = 0,
             A = 255,
         };
         B新建.UIText.TextAlignment = (EPivot)17;
         B新建.UIText.TextShader = null;
         B新建.UIText.Padding.X = 0f;
         B新建.UIText.Padding.Y = 0f;
-        B新建.UIText.FontSize = 20f;
+        B新建.UIText.FontSize = 16f;
+        B新建.Text = "新建";
         this.Add(B新建);
         B关闭.Name = "B关闭";
         EntryEngine.RECT B关闭_Clip = new EntryEngine.RECT();
@@ -82,31 +84,41 @@ public partial class S服务类型管理
         
         B关闭.Anchor = (EAnchor)9;
         B关闭.UIText = new EntryEngine.UI.UIText();
+        B关闭.UIText.Text = "关闭";
         B关闭.UIText.FontColor = new COLOR()
         {
-            R = 0,
-            G = 0,
             B = 0,
+            G = 0,
+            R = 0,
             A = 255,
         };
         B关闭.UIText.TextAlignment = (EPivot)17;
         B关闭.UIText.TextShader = null;
         B关闭.UIText.Padding.X = 0f;
         B关闭.UIText.Padding.Y = 0f;
-        B关闭.UIText.FontSize = 20f;
+        B关闭.UIText.FontSize = 16f;
+        B关闭.Text = "关闭";
         this.Add(B关闭);
         
         this.PhaseShowing += Show;
     }
     protected override IEnumerable<ICoroutine> Loading()
     {
-        LoadAsync(Content.LoadAsync<EntryEngine.TEXTURE>(@"Frame1半透明.mtpatch", ___c => this.Background = ___c));
-        LoadAsync(Content.LoadAsync<EntryEngine.TEXTURE>(@"Frame1.mtpatch", ___c => P服务类型信息面板.Background = ___c));
-        LoadAsync(Content.LoadAsync<EntryEngine.TEXTURE>(@"Frame1.mtpatch", ___c =>  TB服务类管理信息.Texture = ___c));
-        LoadAsync(Content.LoadAsync<EntryEngine.TEXTURE>(@"Frame1.mtpatch", ___c =>  TB服务类管理信息2.Texture = ___c));
-        LoadAsync(Content.LoadAsync<EntryEngine.TEXTURE>(@"LM_0005_删除-1.png", ___c => B新建.SourceNormal = ___c));
+        ICoroutine async;
+        ICoroutine ___async;
+        ___async = LoadAsync(Content.LoadAsync<EntryEngine.TEXTURE>(@"Frame1半透明.mtpatch", ___c => this.Background = ___c));
+        if (___async != null && !___async.IsEnd) yield return ___async;
+        ___async = LoadAsync(Content.LoadAsync<EntryEngine.TEXTURE>(@"Frame1.mtpatch", ___c => P服务类型信息面板.Background = ___c));
+        if (___async != null && !___async.IsEnd) yield return ___async;
+        ___async = LoadAsync(Content.LoadAsync<EntryEngine.TEXTURE>(@"Frame1.mtpatch", ___c =>  TB服务类管理信息.Texture = ___c));
+        if (___async != null && !___async.IsEnd) yield return ___async;
+        ___async = LoadAsync(Content.LoadAsync<EntryEngine.TEXTURE>(@"Frame1.mtpatch", ___c =>  TB服务类管理信息2.Texture = ___c));
+        if (___async != null && !___async.IsEnd) yield return ___async;
+        ___async = LoadAsync(Content.LoadAsync<EntryEngine.TEXTURE>(@"LM_0005_删除-1.png", ___c => B新建.SourceNormal = ___c));
+        if (___async != null && !___async.IsEnd) yield return ___async;
         
-        LoadAsync(Content.LoadAsync<EntryEngine.TEXTURE>(@"LM_0005_删除-1.png", ___c => B关闭.SourceNormal = ___c));
+        ___async = LoadAsync(Content.LoadAsync<EntryEngine.TEXTURE>(@"LM_0005_删除-1.png", ___c => B关闭.SourceNormal = ___c));
+        if (___async != null && !___async.IsEnd) yield return ___async;
         
         
         var __loading = MyLoading();
@@ -114,12 +126,8 @@ public partial class S服务类型管理
         foreach (var item in __loading)
         yield return item;
     }
-    public void Show(UIScene __scene)
+    private void Show(EntryEngine.UI.UIScene __scene)
     {
-        B新建.UIText.Text = _LANGUAGE.GetString("37");
-        B新建.Text = _LANGUAGE.GetString("37");
-        B关闭.UIText.Text = _LANGUAGE.GetString("39");
-        B关闭.Text = _LANGUAGE.GetString("39");
         
     }
 }

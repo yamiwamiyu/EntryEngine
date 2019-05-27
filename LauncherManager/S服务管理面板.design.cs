@@ -45,18 +45,20 @@ public partial class S服务管理面板
         B执行命令.Clip = B执行命令_Clip;
         
         B执行命令.UIText = new EntryEngine.UI.UIText();
+        B执行命令.UIText.Text = "执行命令";
         B执行命令.UIText.FontColor = new COLOR()
         {
-            R = 0,
-            G = 0,
             B = 0,
+            G = 0,
+            R = 0,
             A = 255,
         };
         B执行命令.UIText.TextAlignment = (EPivot)17;
         B执行命令.UIText.TextShader = null;
         B执行命令.UIText.Padding.X = 0f;
         B执行命令.UIText.Padding.Y = 0f;
-        B执行命令.UIText.FontSize = 18f;
+        B执行命令.UIText.FontSize = 16f;
+        B执行命令.Text = "执行命令";
         this.Add(B执行命令);
         B开启服务.Name = "B开启服务";
         EntryEngine.RECT B开启服务_Clip = new EntryEngine.RECT();
@@ -67,18 +69,20 @@ public partial class S服务管理面板
         B开启服务.Clip = B开启服务_Clip;
         
         B开启服务.UIText = new EntryEngine.UI.UIText();
+        B开启服务.UIText.Text = "开启服务";
         B开启服务.UIText.FontColor = new COLOR()
         {
-            R = 0,
-            G = 0,
             B = 0,
+            G = 0,
+            R = 0,
             A = 255,
         };
         B开启服务.UIText.TextAlignment = (EPivot)17;
         B开启服务.UIText.TextShader = null;
         B开启服务.UIText.Padding.X = 0f;
         B开启服务.UIText.Padding.Y = 0f;
-        B开启服务.UIText.FontSize = 18f;
+        B开启服务.UIText.FontSize = 16f;
+        B开启服务.Text = "开启服务";
         this.Add(B开启服务);
         B关闭服务.Name = "B关闭服务";
         EntryEngine.RECT B关闭服务_Clip = new EntryEngine.RECT();
@@ -89,18 +93,20 @@ public partial class S服务管理面板
         B关闭服务.Clip = B关闭服务_Clip;
         
         B关闭服务.UIText = new EntryEngine.UI.UIText();
+        B关闭服务.UIText.Text = "关闭服务";
         B关闭服务.UIText.FontColor = new COLOR()
         {
-            R = 0,
-            G = 0,
             B = 0,
+            G = 0,
+            R = 0,
             A = 255,
         };
         B关闭服务.UIText.TextAlignment = (EPivot)17;
         B关闭服务.UIText.TextShader = null;
         B关闭服务.UIText.Padding.X = 0f;
         B关闭服务.UIText.Padding.Y = 0f;
-        B关闭服务.UIText.FontSize = 18f;
+        B关闭服务.UIText.FontSize = 16f;
+        B关闭服务.Text = "关闭服务";
         this.Add(B关闭服务);
         B更新服务.Name = "B更新服务";
         EntryEngine.RECT B更新服务_Clip = new EntryEngine.RECT();
@@ -111,18 +117,20 @@ public partial class S服务管理面板
         B更新服务.Clip = B更新服务_Clip;
         
         B更新服务.UIText = new EntryEngine.UI.UIText();
+        B更新服务.UIText.Text = "更新服务";
         B更新服务.UIText.FontColor = new COLOR()
         {
-            R = 0,
-            G = 0,
             B = 0,
+            G = 0,
+            R = 0,
             A = 255,
         };
         B更新服务.UIText.TextAlignment = (EPivot)17;
         B更新服务.UIText.TextShader = null;
         B更新服务.UIText.Padding.X = 0f;
         B更新服务.UIText.Padding.Y = 0f;
-        B更新服务.UIText.FontSize = 18f;
+        B更新服务.UIText.FontSize = 16f;
+        B更新服务.Text = "更新服务";
         this.Add(B更新服务);
         B新设更改服务.Name = "B新设更改服务";
         EntryEngine.RECT B新设更改服务_Clip = new EntryEngine.RECT();
@@ -133,18 +141,20 @@ public partial class S服务管理面板
         B新设更改服务.Clip = B新设更改服务_Clip;
         
         B新设更改服务.UIText = new EntryEngine.UI.UIText();
+        B新设更改服务.UIText.Text = "新设/更改服务";
         B新设更改服务.UIText.FontColor = new COLOR()
         {
-            R = 0,
-            G = 0,
             B = 0,
+            G = 0,
+            R = 0,
             A = 255,
         };
         B新设更改服务.UIText.TextAlignment = (EPivot)17;
         B新设更改服务.UIText.TextShader = null;
         B新设更改服务.UIText.Padding.X = 0f;
         B新设更改服务.UIText.Padding.Y = 0f;
-        B新设更改服务.UIText.FontSize = 18f;
+        B新设更改服务.UIText.FontSize = 16f;
+        B新设更改服务.Text = "新设/更改服务";
         this.Add(B新设更改服务);
         B删除服务.Name = "B删除服务";
         EntryEngine.RECT B删除服务_Clip = new EntryEngine.RECT();
@@ -155,18 +165,20 @@ public partial class S服务管理面板
         B删除服务.Clip = B删除服务_Clip;
         
         B删除服务.UIText = new EntryEngine.UI.UIText();
+        B删除服务.UIText.Text = "删除服务";
         B删除服务.UIText.FontColor = new COLOR()
         {
-            R = 0,
-            G = 0,
             B = 0,
+            G = 0,
+            R = 0,
             A = 255,
         };
         B删除服务.UIText.TextAlignment = (EPivot)17;
         B删除服务.UIText.TextShader = null;
         B删除服务.UIText.Padding.X = 0f;
         B删除服务.UIText.Padding.Y = 0f;
-        B删除服务.UIText.FontSize = 18f;
+        B删除服务.UIText.FontSize = 16f;
+        B删除服务.Text = "删除服务";
         this.Add(B删除服务);
         L名字.Name = "L名字";
         EntryEngine.RECT L名字_Clip = new EntryEngine.RECT();
@@ -177,18 +189,20 @@ public partial class S服务管理面板
         L名字.Clip = L名字_Clip;
         
         L名字.UIText = new EntryEngine.UI.UIText();
+        L名字.UIText.Text = "名字";
         L名字.UIText.FontColor = new COLOR()
         {
-            R = 0,
-            G = 0,
             B = 0,
+            G = 0,
+            R = 0,
             A = 255,
         };
         L名字.UIText.TextAlignment = (EPivot)17;
         L名字.UIText.TextShader = null;
         L名字.UIText.Padding.X = 0f;
         L名字.UIText.Padding.Y = 0f;
-        L名字.UIText.FontSize = 22f;
+        L名字.UIText.FontSize = 16f;
+        L名字.Text = "名字";
         this.Add(L名字);
         L服务版本.Name = "L服务版本";
         EntryEngine.RECT L服务版本_Clip = new EntryEngine.RECT();
@@ -199,18 +213,20 @@ public partial class S服务管理面板
         L服务版本.Clip = L服务版本_Clip;
         
         L服务版本.UIText = new EntryEngine.UI.UIText();
+        L服务版本.UIText.Text = "服务-当前版本";
         L服务版本.UIText.FontColor = new COLOR()
         {
-            R = 0,
-            G = 0,
             B = 0,
+            G = 0,
+            R = 0,
             A = 255,
         };
         L服务版本.UIText.TextAlignment = (EPivot)17;
         L服务版本.UIText.TextShader = null;
         L服务版本.UIText.Padding.X = 0f;
         L服务版本.UIText.Padding.Y = 0f;
-        L服务版本.UIText.FontSize = 22f;
+        L服务版本.UIText.FontSize = 16f;
+        L服务版本.Text = "服务-当前版本";
         this.Add(L服务版本);
         L服务器端口版本.Name = "L服务器端口版本";
         EntryEngine.RECT L服务器端口版本_Clip = new EntryEngine.RECT();
@@ -221,18 +237,20 @@ public partial class S服务管理面板
         L服务器端口版本.Clip = L服务器端口版本_Clip;
         
         L服务器端口版本.UIText = new EntryEngine.UI.UIText();
+        L服务器端口版本.UIText.Text = "服务器:端口-最新版本";
         L服务器端口版本.UIText.FontColor = new COLOR()
         {
-            R = 0,
-            G = 0,
             B = 0,
+            G = 0,
+            R = 0,
             A = 255,
         };
         L服务器端口版本.UIText.TextAlignment = (EPivot)17;
         L服务器端口版本.UIText.TextShader = null;
         L服务器端口版本.UIText.Padding.X = 0f;
         L服务器端口版本.UIText.Padding.Y = 0f;
-        L服务器端口版本.UIText.FontSize = 22f;
+        L服务器端口版本.UIText.FontSize = 16f;
+        L服务器端口版本.Text = "服务器:端口-最新版本";
         this.Add(L服务器端口版本);
         L时间.Name = "L时间";
         EntryEngine.RECT L时间_Clip = new EntryEngine.RECT();
@@ -243,18 +261,20 @@ public partial class S服务管理面板
         L时间.Clip = L时间_Clip;
         
         L时间.UIText = new EntryEngine.UI.UIText();
+        L时间.UIText.Text = "时间";
         L时间.UIText.FontColor = new COLOR()
         {
-            R = 0,
-            G = 0,
             B = 0,
+            G = 0,
+            R = 0,
             A = 255,
         };
         L时间.UIText.TextAlignment = (EPivot)17;
         L时间.UIText.TextShader = null;
         L时间.UIText.Padding.X = 0f;
         L时间.UIText.Padding.Y = 0f;
-        L时间.UIText.FontSize = 22f;
+        L时间.UIText.FontSize = 16f;
+        L时间.Text = "时间";
         this.Add(L时间);
         L状态.Name = "L状态";
         EntryEngine.RECT L状态_Clip = new EntryEngine.RECT();
@@ -265,18 +285,20 @@ public partial class S服务管理面板
         L状态.Clip = L状态_Clip;
         
         L状态.UIText = new EntryEngine.UI.UIText();
+        L状态.UIText.Text = "状态";
         L状态.UIText.FontColor = new COLOR()
         {
-            R = 0,
-            G = 0,
             B = 0,
+            G = 0,
+            R = 0,
             A = 255,
         };
         L状态.UIText.TextAlignment = (EPivot)17;
         L状态.UIText.TextShader = null;
         L状态.UIText.Padding.X = 0f;
         L状态.UIText.Padding.Y = 0f;
-        L状态.UIText.FontSize = 22f;
+        L状态.UIText.FontSize = 16f;
+        L状态.Text = "状态";
         this.Add(L状态);
         L服务个数.Name = "L服务个数";
         EntryEngine.RECT L服务个数_Clip = new EntryEngine.RECT();
@@ -291,16 +313,16 @@ public partial class S服务管理面板
         L服务个数.UIText.Text = "#1/35";
         L服务个数.UIText.FontColor = new COLOR()
         {
-            R = 0,
-            G = 0,
             B = 0,
+            G = 0,
+            R = 0,
             A = 255,
         };
         L服务个数.UIText.TextAlignment = (EPivot)17;
         L服务个数.UIText.TextShader = null;
         L服务个数.UIText.Padding.X = 0f;
         L服务个数.UIText.Padding.Y = 0f;
-        L服务个数.UIText.FontSize = 20f;
+        L服务个数.UIText.FontSize = 16f;
         L服务个数.Text = "#1/35";
         this.Add(L服务个数);
         L服务.Name = "L服务";
@@ -313,18 +335,20 @@ public partial class S服务管理面板
         
         L服务.Anchor = (EAnchor)9;
         L服务.UIText = new EntryEngine.UI.UIText();
+        L服务.UIText.Text = "服务";
         L服务.UIText.FontColor = new COLOR()
         {
-            R = 0,
-            G = 0,
             B = 0,
+            G = 0,
+            R = 0,
             A = 255,
         };
         L服务.UIText.TextAlignment = (EPivot)17;
         L服务.UIText.TextShader = null;
         L服务.UIText.Padding.X = 0f;
         L服务.UIText.Padding.Y = 0f;
-        L服务.UIText.FontSize = 22f;
+        L服务.UIText.FontSize = 16f;
+        L服务.Text = "服务";
         this.Add(L服务);
         P服务信息面板.Name = "P服务信息面板";
         EntryEngine.RECT P服务信息面板_Clip = new EntryEngine.RECT();
@@ -363,18 +387,20 @@ public partial class S服务管理面板
         
         B同服务器.Anchor = (EAnchor)9;
         B同服务器.UIText = new EntryEngine.UI.UIText();
+        B同服务器.UIText.Text = "选择同服务器";
         B同服务器.UIText.FontColor = new COLOR()
         {
-            R = 0,
-            G = 0,
             B = 0,
+            G = 0,
+            R = 0,
             A = 255,
         };
         B同服务器.UIText.TextAlignment = (EPivot)17;
         B同服务器.UIText.TextShader = null;
         B同服务器.UIText.Padding.X = 0f;
         B同服务器.UIText.Padding.Y = 0f;
-        B同服务器.UIText.FontSize = 18f;
+        B同服务器.UIText.FontSize = 16f;
+        B同服务器.Text = "选择同服务器";
         this.Add(B同服务器);
         B同类型.Name = "B同类型";
         EntryEngine.RECT B同类型_Clip = new EntryEngine.RECT();
@@ -386,18 +412,20 @@ public partial class S服务管理面板
         
         B同类型.Anchor = (EAnchor)9;
         B同类型.UIText = new EntryEngine.UI.UIText();
+        B同类型.UIText.Text = "选择同类型";
         B同类型.UIText.FontColor = new COLOR()
         {
-            R = 0,
-            G = 0,
             B = 0,
+            G = 0,
+            R = 0,
             A = 255,
         };
         B同类型.UIText.TextAlignment = (EPivot)17;
         B同类型.UIText.TextShader = null;
         B同类型.UIText.Padding.X = 0f;
         B同类型.UIText.Padding.Y = 0f;
-        B同类型.UIText.FontSize = 18f;
+        B同类型.UIText.FontSize = 16f;
+        B同类型.Text = "选择同类型";
         this.Add(B同类型);
         B全选.Name = "B全选";
         EntryEngine.RECT B全选_Clip = new EntryEngine.RECT();
@@ -409,87 +437,83 @@ public partial class S服务管理面板
         
         B全选.Anchor = (EAnchor)9;
         B全选.UIText = new EntryEngine.UI.UIText();
+        B全选.UIText.Text = "全选";
         B全选.UIText.FontColor = new COLOR()
         {
-            R = 0,
-            G = 0,
             B = 0,
+            G = 0,
+            R = 0,
             A = 255,
         };
         B全选.UIText.TextAlignment = (EPivot)17;
         B全选.UIText.TextShader = null;
         B全选.UIText.Padding.X = 0f;
         B全选.UIText.Padding.Y = 0f;
-        B全选.UIText.FontSize = 18f;
+        B全选.UIText.FontSize = 16f;
+        B全选.Text = "全选";
         this.Add(B全选);
         
         this.PhaseShowing += Show;
     }
     protected override IEnumerable<ICoroutine> Loading()
     {
+        ICoroutine async;
         ICoroutine ___async;
         ___async = LoadAsync(Content.LoadAsync<EntryEngine.TEXTURE>(@"Frame1.mtpatch", ___c => this.Background = ___c));
-        if (___async != null) yield return ___async;
+        if (___async != null && !___async.IsEnd) yield return ___async;
         ___async = LoadAsync(Content.LoadAsync<EntryEngine.TEXTURE>(@"LM_0005_删除-1.png", ___c => B执行命令.SourceNormal = ___c));
-        if (___async != null) yield return ___async;
+        if (___async != null && !___async.IsEnd) yield return ___async;
         
         ___async = LoadAsync(Content.LoadAsync<EntryEngine.TEXTURE>(@"LM_0005_删除-1.png", ___c => B开启服务.SourceNormal = ___c));
-        if (___async != null) yield return ___async;
+        if (___async != null && !___async.IsEnd) yield return ___async;
         
         ___async = LoadAsync(Content.LoadAsync<EntryEngine.TEXTURE>(@"LM_0005_删除-1.png", ___c => B关闭服务.SourceNormal = ___c));
-        if (___async != null) yield return ___async;
+        if (___async != null && !___async.IsEnd) yield return ___async;
         
         ___async = LoadAsync(Content.LoadAsync<EntryEngine.TEXTURE>(@"LM_0005_删除-1.png", ___c => B更新服务.SourceNormal = ___c));
-        if (___async != null) yield return ___async;
+        if (___async != null && !___async.IsEnd) yield return ___async;
         
         ___async = LoadAsync(Content.LoadAsync<EntryEngine.TEXTURE>(@"LM_0005_删除-1.png", ___c => B新设更改服务.SourceNormal = ___c));
-        if (___async != null) yield return ___async;
+        if (___async != null && !___async.IsEnd) yield return ___async;
         
         ___async = LoadAsync(Content.LoadAsync<EntryEngine.TEXTURE>(@"LM_0005_删除-1.png", ___c => B删除服务.SourceNormal = ___c));
-        if (___async != null) yield return ___async;
+        if (___async != null && !___async.IsEnd) yield return ___async;
         
         ___async = LoadAsync(Content.LoadAsync<EntryEngine.TEXTURE>(@"Frame1.mtpatch", ___c => L名字.SourceNormal = ___c));
-        if (___async != null) yield return ___async;
-        
+        if (___async != null && !___async.IsEnd) yield return ___async;
         
         ___async = LoadAsync(Content.LoadAsync<EntryEngine.TEXTURE>(@"Frame1.mtpatch", ___c => L服务版本.SourceNormal = ___c));
-        if (___async != null) yield return ___async;
-        
+        if (___async != null && !___async.IsEnd) yield return ___async;
         
         ___async = LoadAsync(Content.LoadAsync<EntryEngine.TEXTURE>(@"Frame1.mtpatch", ___c => L服务器端口版本.SourceNormal = ___c));
-        if (___async != null) yield return ___async;
-        
+        if (___async != null && !___async.IsEnd) yield return ___async;
         
         ___async = LoadAsync(Content.LoadAsync<EntryEngine.TEXTURE>(@"Frame1.mtpatch", ___c => L时间.SourceNormal = ___c));
-        if (___async != null) yield return ___async;
-        
+        if (___async != null && !___async.IsEnd) yield return ___async;
         
         ___async = LoadAsync(Content.LoadAsync<EntryEngine.TEXTURE>(@"Frame1.mtpatch", ___c => L状态.SourceNormal = ___c));
-        if (___async != null) yield return ___async;
-        
+        if (___async != null && !___async.IsEnd) yield return ___async;
         
         ___async = LoadAsync(Content.LoadAsync<EntryEngine.TEXTURE>(@"Frame1.mtpatch", ___c => L服务个数.SourceNormal = ___c));
-        if (___async != null) yield return ___async;
-        
+        if (___async != null && !___async.IsEnd) yield return ___async;
         
         ___async = LoadAsync(Content.LoadAsync<EntryEngine.TEXTURE>(@"Frame1.mtpatch", ___c => L服务.SourceNormal = ___c));
-        if (___async != null) yield return ___async;
-        
+        if (___async != null && !___async.IsEnd) yield return ___async;
         
         ___async = LoadAsync(Content.LoadAsync<EntryEngine.TEXTURE>(@"Frame1.mtpatch", ___c => P服务信息面板.Background = ___c));
-        if (___async != null) yield return ___async;
+        if (___async != null && !___async.IsEnd) yield return ___async;
         ___async = LoadAsync(Content.LoadAsync<EntryEngine.TEXTURE>(@"Frame1.mtpatch", ___c =>  TB服务信息面板2.Texture = ___c));
-        if (___async != null) yield return ___async;
+        if (___async != null && !___async.IsEnd) yield return ___async;
         ___async = LoadAsync(Content.LoadAsync<EntryEngine.TEXTURE>(@"Frame1.mtpatch", ___c =>  TB服务信息面板.Texture = ___c));
-        if (___async != null) yield return ___async;
+        if (___async != null && !___async.IsEnd) yield return ___async;
         ___async = LoadAsync(Content.LoadAsync<EntryEngine.TEXTURE>(@"LM_0005_删除-1.png", ___c => B同服务器.SourceNormal = ___c));
-        if (___async != null) yield return ___async;
+        if (___async != null && !___async.IsEnd) yield return ___async;
         
         ___async = LoadAsync(Content.LoadAsync<EntryEngine.TEXTURE>(@"LM_0005_删除-1.png", ___c => B同类型.SourceNormal = ___c));
-        if (___async != null) yield return ___async;
+        if (___async != null && !___async.IsEnd) yield return ___async;
         
         ___async = LoadAsync(Content.LoadAsync<EntryEngine.TEXTURE>(@"LM_0005_删除-1.png", ___c => B全选.SourceNormal = ___c));
-        if (___async != null) yield return ___async;
+        if (___async != null && !___async.IsEnd) yield return ___async;
         
         
         var __loading = MyLoading();
@@ -497,38 +521,8 @@ public partial class S服务管理面板
         foreach (var item in __loading)
         yield return item;
     }
-    public void Show(UIScene __scene)
+    private void Show(EntryEngine.UI.UIScene __scene)
     {
-        B执行命令.UIText.Text = _LANGUAGE.GetString("12");
-        B执行命令.Text = _LANGUAGE.GetString("12");
-        B开启服务.UIText.Text = _LANGUAGE.GetString("32");
-        B开启服务.Text = _LANGUAGE.GetString("32");
-        B关闭服务.UIText.Text = _LANGUAGE.GetString("33");
-        B关闭服务.Text = _LANGUAGE.GetString("33");
-        B更新服务.UIText.Text = _LANGUAGE.GetString("34");
-        B更新服务.Text = _LANGUAGE.GetString("34");
-        B新设更改服务.UIText.Text = _LANGUAGE.GetString("35");
-        B新设更改服务.Text = _LANGUAGE.GetString("35");
-        B删除服务.UIText.Text = _LANGUAGE.GetString("75");
-        B删除服务.Text = _LANGUAGE.GetString("75");
-        L名字.UIText.Text = _LANGUAGE.GetString("6");
-        L名字.Text = _LANGUAGE.GetString("6");
-        L服务版本.UIText.Text = _LANGUAGE.GetString("80");
-        L服务版本.Text = _LANGUAGE.GetString("80");
-        L服务器端口版本.UIText.Text = _LANGUAGE.GetString("79");
-        L服务器端口版本.Text = _LANGUAGE.GetString("79");
-        L时间.UIText.Text = _LANGUAGE.GetString("78");
-        L时间.Text = _LANGUAGE.GetString("78");
-        L状态.UIText.Text = _LANGUAGE.GetString("30");
-        L状态.Text = _LANGUAGE.GetString("30");
-        L服务.UIText.Text = _LANGUAGE.GetString("16");
-        L服务.Text = _LANGUAGE.GetString("16");
-        B同服务器.UIText.Text = _LANGUAGE.GetString("107");
-        B同服务器.Text = _LANGUAGE.GetString("107");
-        B同类型.UIText.Text = _LANGUAGE.GetString("108");
-        B同类型.Text = _LANGUAGE.GetString("108");
-        B全选.UIText.Text = _LANGUAGE.GetString("27");
-        B全选.Text = _LANGUAGE.GetString("27");
         
     }
 }

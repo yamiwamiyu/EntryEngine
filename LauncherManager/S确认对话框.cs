@@ -71,29 +71,29 @@ public partial class S确认对话框 : UIScene
         }
     }
 
-    private static S确认对话框 Open(Text.ETextID id, params string[] param)
+    private static S确认对话框 Open(string id, params string[] param)
     {
         var scene = Entry.Instance.ShowDialogScene<S确认对话框>(EState.Block);
         scene.State = EState.Block;
-        scene.TBText.Text = string.Format(_TABLE._TextByID[id].Content, param);
+        scene.TBText.Text = string.Format(id, param);
         scene.TBText.Readonly = true;
         return scene;
     }
-    public static void Wait(Text.ETextID id, Func<bool> waitOver, params string[] param)
+    public static void Wait(string id, Func<bool> waitOver, params string[] param)
     {
         var scene = Open(id, param);
         scene.B确定.Visible = false;
         scene.B取消.Visible = false;
         scene.waitOver = waitOver;
     }
-    public static void Wait(Text.ETextID id, IEnumerable<ICoroutine> waitOver, params string[] param)
+    public static void Wait(string id, IEnumerable<ICoroutine> waitOver, params string[] param)
     {
         var scene = Open(id, param);
         scene.B确定.Visible = false;
         scene.B取消.Visible = false;
         scene.waitOver2 = new CorEnumerator<ICoroutine>(waitOver);
     }
-    public static void Hint(Text.ETextID id, params string[] param)
+    public static void Hint(string id, params string[] param)
     {
         var scene = Open(id, param);
         scene.B确定.Visible = true;
@@ -101,7 +101,7 @@ public partial class S确认对话框 : UIScene
         scene.waitOver = null;
         scene.waitOver2 = null;
     }
-    public static void Confirm(Text.ETextID id, Action<bool> callback, params string[] param)
+    public static void Confirm(string id, Action<bool> callback, params string[] param)
     {
         var scene = Open(id, param);
         scene.B确定.Visible = true;

@@ -31,9 +31,9 @@ public partial class S日志信息
         L时间.UIText.Text = "#2016/08/09 16:50:55";
         L时间.UIText.FontColor = new COLOR()
         {
-            R = 0,
-            G = 0,
             B = 0,
+            G = 0,
+            R = 0,
             A = 255,
         };
         L时间.UIText.TextAlignment = (EPivot)0;
@@ -55,9 +55,9 @@ public partial class S日志信息
         L整合条数.UIText.Text = "#99999";
         L整合条数.UIText.FontColor = new COLOR()
         {
-            R = 255,
+            B = 255,
             G = 32,
-            B = 32,
+            R = 32,
             A = 255,
         };
         L整合条数.UIText.TextAlignment = (EPivot)0;
@@ -79,9 +79,9 @@ public partial class S日志信息
         L日志内容.UIText.Text = "#日志文字内容";
         L日志内容.UIText.FontColor = new COLOR()
         {
-            R = 0,
-            G = 0,
             B = 0,
+            G = 0,
+            R = 0,
             A = 255,
         };
         L日志内容.UIText.TextAlignment = (EPivot)0;
@@ -97,12 +97,10 @@ public partial class S日志信息
     }
     protected override IEnumerable<ICoroutine> Loading()
     {
+        ICoroutine async;
         ICoroutine ___async;
         ___async = LoadAsync(Content.LoadAsync<EntryEngine.TEXTURE>(@"Frame1.mtpatch", ___c => this.Background = ___c));
-        if (___async != null) yield return ___async;
-        
-        
-        
+        if (___async != null && !___async.IsEnd) yield return ___async;
         
         
         
@@ -112,7 +110,7 @@ public partial class S日志信息
         foreach (var item in __loading)
         yield return item;
     }
-    public void Show(UIScene __scene)
+    private void Show(EntryEngine.UI.UIScene __scene)
     {
         
     }

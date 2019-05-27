@@ -47,9 +47,9 @@ public partial class S服务器信息
         CB单选.UIText.Text = "";
         CB单选.UIText.FontColor = new COLOR()
         {
-            R = 255,
-            G = 255,
             B = 255,
+            G = 255,
+            R = 255,
             A = 255,
         };
         CB单选.UIText.TextAlignment = (EPivot)18;
@@ -76,18 +76,20 @@ public partial class S服务器信息
         L160602101048[0].Clip = L160602101048_0__Clip;
         
         L160602101048[0].UIText = new EntryEngine.UI.UIText();
+        L160602101048[0].UIText.Text = "内存";
         L160602101048[0].UIText.FontColor = new COLOR()
         {
-            R = 0,
-            G = 0,
             B = 0,
+            G = 0,
+            R = 0,
             A = 255,
         };
         L160602101048[0].UIText.TextAlignment = (EPivot)17;
         L160602101048[0].UIText.TextShader = null;
         L160602101048[0].UIText.Padding.X = 0f;
         L160602101048[0].UIText.Padding.Y = 0f;
-        L160602101048[0].UIText.FontSize = 20f;
+        L160602101048[0].UIText.FontSize = 16f;
+        L160602101048[0].Text = "内存";
         P服务器信息面板.Add(L160602101048[0]);
         L160602101048[1].Name = "L160602101048";
         EntryEngine.RECT L160602101048_1__Clip = new EntryEngine.RECT();
@@ -98,18 +100,20 @@ public partial class S服务器信息
         L160602101048[1].Clip = L160602101048_1__Clip;
         
         L160602101048[1].UIText = new EntryEngine.UI.UIText();
+        L160602101048[1].UIText.Text = "CPU";
         L160602101048[1].UIText.FontColor = new COLOR()
         {
-            R = 0,
-            G = 0,
             B = 0,
+            G = 0,
+            R = 0,
             A = 255,
         };
         L160602101048[1].UIText.TextAlignment = (EPivot)17;
         L160602101048[1].UIText.TextShader = null;
         L160602101048[1].UIText.Padding.X = 0f;
         L160602101048[1].UIText.Padding.Y = 0f;
-        L160602101048[1].UIText.FontSize = 20f;
+        L160602101048[1].UIText.FontSize = 16f;
+        L160602101048[1].Text = "CPU";
         P服务器信息面板.Add(L160602101048[1]);
         L160602101048[2].Name = "L160602101048";
         EntryEngine.RECT L160602101048_2__Clip = new EntryEngine.RECT();
@@ -120,18 +124,20 @@ public partial class S服务器信息
         L160602101048[2].Clip = L160602101048_2__Clip;
         
         L160602101048[2].UIText = new EntryEngine.UI.UIText();
+        L160602101048[2].UIText.Text = "服务";
         L160602101048[2].UIText.FontColor = new COLOR()
         {
-            R = 0,
-            G = 0,
             B = 0,
+            G = 0,
+            R = 0,
             A = 255,
         };
         L160602101048[2].UIText.TextAlignment = (EPivot)17;
         L160602101048[2].UIText.TextShader = null;
         L160602101048[2].UIText.Padding.X = 0f;
         L160602101048[2].UIText.Padding.Y = 0f;
-        L160602101048[2].UIText.FontSize = 20f;
+        L160602101048[2].UIText.FontSize = 16f;
+        L160602101048[2].Text = "服务";
         P服务器信息面板.Add(L160602101048[2]);
         LIP.Name = "LIP";
         EntryEngine.RECT LIP_Clip = new EntryEngine.RECT();
@@ -145,16 +151,16 @@ public partial class S服务器信息
         LIP.UIText.Text = "#192.168.1.101";
         LIP.UIText.FontColor = new COLOR()
         {
-            R = 0,
-            G = 0,
             B = 0,
+            G = 0,
+            R = 0,
             A = 255,
         };
         LIP.UIText.TextAlignment = (EPivot)17;
         LIP.UIText.TextShader = null;
         LIP.UIText.Padding.X = 0f;
         LIP.UIText.Padding.Y = 0f;
-        LIP.UIText.FontSize = 20f;
+        LIP.UIText.FontSize = 16f;
         LIP.Text = "#192.168.1.101";
         P服务器信息面板.Add(LIP);
         BUpdate.Name = "BUpdate";
@@ -166,18 +172,20 @@ public partial class S服务器信息
         BUpdate.Clip = BUpdate_Clip;
         
         BUpdate.UIText = new EntryEngine.UI.UIText();
+        BUpdate.UIText.Text = "更新SVN";
         BUpdate.UIText.FontColor = new COLOR()
         {
-            R = 0,
-            G = 0,
             B = 0,
+            G = 0,
+            R = 0,
             A = 255,
         };
         BUpdate.UIText.TextAlignment = (EPivot)17;
         BUpdate.UIText.TextShader = null;
         BUpdate.UIText.Padding.X = 0f;
         BUpdate.UIText.Padding.Y = 0f;
-        BUpdate.UIText.FontSize = 22f;
+        BUpdate.UIText.FontSize = 16f;
+        BUpdate.Text = "更新SVN";
         P服务器信息面板.Add(BUpdate);
         L内存.Name = "L内存";
         EntryEngine.RECT L内存_Clip = new EntryEngine.RECT();
@@ -191,16 +199,16 @@ public partial class S服务器信息
         L内存.UIText.Text = "#3578MB/8192MB";
         L内存.UIText.FontColor = new COLOR()
         {
-            R = 0,
-            G = 0,
             B = 0,
+            G = 0,
+            R = 0,
             A = 255,
         };
         L内存.UIText.TextAlignment = (EPivot)17;
         L内存.UIText.TextShader = null;
         L内存.UIText.Padding.X = 0f;
         L内存.UIText.Padding.Y = 0f;
-        L内存.UIText.FontSize = 20f;
+        L内存.UIText.FontSize = 16f;
         L内存.Text = "#3578MB/8192MB";
         P服务器信息面板.Add(L内存);
         LCPU.Name = "LCPU";
@@ -215,16 +223,16 @@ public partial class S服务器信息
         LCPU.UIText.Text = "#35%";
         LCPU.UIText.FontColor = new COLOR()
         {
-            R = 0,
-            G = 0,
             B = 0,
+            G = 0,
+            R = 0,
             A = 255,
         };
         LCPU.UIText.TextAlignment = (EPivot)17;
         LCPU.UIText.TextShader = null;
         LCPU.UIText.Padding.X = 0f;
         LCPU.UIText.Padding.Y = 0f;
-        LCPU.UIText.FontSize = 20f;
+        LCPU.UIText.FontSize = 16f;
         LCPU.Text = "#35%";
         P服务器信息面板.Add(LCPU);
         L160602101048[3].Name = "L160602101048";
@@ -236,18 +244,20 @@ public partial class S服务器信息
         L160602101048[3].Clip = L160602101048_3__Clip;
         
         L160602101048[3].UIText = new EntryEngine.UI.UIText();
+        L160602101048[3].UIText.Text = "连接数";
         L160602101048[3].UIText.FontColor = new COLOR()
         {
-            R = 0,
-            G = 0,
             B = 0,
+            G = 0,
+            R = 0,
             A = 255,
         };
         L160602101048[3].UIText.TextAlignment = (EPivot)17;
         L160602101048[3].UIText.TextShader = null;
         L160602101048[3].UIText.Padding.X = 0f;
         L160602101048[3].UIText.Padding.Y = 0f;
-        L160602101048[3].UIText.FontSize = 20f;
+        L160602101048[3].UIText.FontSize = 16f;
+        L160602101048[3].Text = "连接数";
         P服务器信息面板.Add(L160602101048[3]);
         L人数.Name = "L人数";
         EntryEngine.RECT L人数_Clip = new EntryEngine.RECT();
@@ -261,16 +271,16 @@ public partial class S服务器信息
         L人数.UIText.Text = "#1254";
         L人数.UIText.FontColor = new COLOR()
         {
-            R = 0,
-            G = 0,
             B = 0,
+            G = 0,
+            R = 0,
             A = 255,
         };
         L人数.UIText.TextAlignment = (EPivot)17;
         L人数.UIText.TextShader = null;
         L人数.UIText.Padding.X = 0f;
         L人数.UIText.Padding.Y = 0f;
-        L人数.UIText.FontSize = 20f;
+        L人数.UIText.FontSize = 16f;
         L人数.Text = "#1254";
         P服务器信息面板.Add(L人数);
         L服务.Name = "L服务";
@@ -282,19 +292,19 @@ public partial class S服务器信息
         L服务.Clip = L服务_Clip;
         
         L服务.UIText = new EntryEngine.UI.UIText();
-        L服务.UIText.Text = "#4 / 5";
+        L服务.UIText.Text = "";
         L服务.UIText.FontColor = new COLOR()
         {
-            R = 0,
-            G = 0,
             B = 0,
+            G = 0,
+            R = 0,
             A = 255,
         };
         L服务.UIText.TextAlignment = (EPivot)17;
         L服务.UIText.TextShader = null;
         L服务.UIText.Padding.X = 0f;
         L服务.UIText.Padding.Y = 0f;
-        L服务.UIText.FontSize = 20f;
+        L服务.UIText.FontSize = 16f;
         P服务器信息面板.Add(L服务);
         L硬盘.Name = "L硬盘";
         EntryEngine.RECT L硬盘_Clip = new EntryEngine.RECT();
@@ -308,16 +318,16 @@ public partial class S服务器信息
         L硬盘.UIText.Text = "#3.2Mpbs/s";
         L硬盘.UIText.FontColor = new COLOR()
         {
-            R = 0,
-            G = 0,
             B = 0,
+            G = 0,
+            R = 0,
             A = 255,
         };
         L硬盘.UIText.TextAlignment = (EPivot)17;
         L硬盘.UIText.TextShader = null;
         L硬盘.UIText.Padding.X = 0f;
         L硬盘.UIText.Padding.Y = 0f;
-        L硬盘.UIText.FontSize = 20f;
+        L硬盘.UIText.FontSize = 16f;
         L硬盘.Text = "#3.2Mpbs/s";
         P服务器信息面板.Add(L硬盘);
         L160602101049.Name = "L160602101049";
@@ -329,18 +339,20 @@ public partial class S服务器信息
         L160602101049.Clip = L160602101049_Clip;
         
         L160602101049.UIText = new EntryEngine.UI.UIText();
+        L160602101049.UIText.Text = "硬盘";
         L160602101049.UIText.FontColor = new COLOR()
         {
-            R = 0,
-            G = 0,
             B = 0,
+            G = 0,
+            R = 0,
             A = 255,
         };
         L160602101049.UIText.TextAlignment = (EPivot)17;
         L160602101049.UIText.TextShader = null;
         L160602101049.UIText.Padding.X = 0f;
         L160602101049.UIText.Padding.Y = 0f;
-        L160602101049.UIText.FontSize = 20f;
+        L160602101049.UIText.FontSize = 16f;
+        L160602101049.Text = "硬盘";
         P服务器信息面板.Add(L160602101049);
         L160602101048[4].Name = "L160602101048";
         EntryEngine.RECT L160602101048_4__Clip = new EntryEngine.RECT();
@@ -351,18 +363,20 @@ public partial class S服务器信息
         L160602101048[4].Clip = L160602101048_4__Clip;
         
         L160602101048[4].UIText = new EntryEngine.UI.UIText();
+        L160602101048[4].UIText.Text = "网络";
         L160602101048[4].UIText.FontColor = new COLOR()
         {
-            R = 0,
-            G = 0,
             B = 0,
+            G = 0,
+            R = 0,
             A = 255,
         };
         L160602101048[4].UIText.TextAlignment = (EPivot)17;
         L160602101048[4].UIText.TextShader = null;
         L160602101048[4].UIText.Padding.X = 0f;
         L160602101048[4].UIText.Padding.Y = 0f;
-        L160602101048[4].UIText.FontSize = 20f;
+        L160602101048[4].UIText.FontSize = 16f;
+        L160602101048[4].Text = "网络";
         P服务器信息面板.Add(L160602101048[4]);
         L网络.Name = "L网络";
         EntryEngine.RECT L网络_Clip = new EntryEngine.RECT();
@@ -376,16 +390,16 @@ public partial class S服务器信息
         L网络.UIText.Text = "#3.2Mpbs/s";
         L网络.UIText.FontColor = new COLOR()
         {
-            R = 0,
-            G = 0,
             B = 0,
+            G = 0,
+            R = 0,
             A = 255,
         };
         L网络.UIText.TextAlignment = (EPivot)17;
         L网络.UIText.TextShader = null;
         L网络.UIText.Padding.X = 0f;
         L网络.UIText.Padding.Y = 0f;
-        L网络.UIText.FontSize = 20f;
+        L网络.UIText.FontSize = 16f;
         L网络.Text = "#3.2Mpbs/s";
         P服务器信息面板.Add(L网络);
         
@@ -393,50 +407,56 @@ public partial class S服务器信息
     }
     protected override IEnumerable<ICoroutine> Loading()
     {
-        LoadAsync(Content.LoadAsync<EntryEngine.TEXTURE>(@"LM_0001_单选未选中.png", ___c => CB单选.SourceNormal = ___c));
-        LoadAsync(Content.LoadAsync<EntryEngine.TEXTURE>(@"LM_0001_登陆单选.png", ___c => CB单选.SourceClicked = ___c));
+        ICoroutine async;
+        ICoroutine ___async;
+        ___async = LoadAsync(Content.LoadAsync<EntryEngine.TEXTURE>(@"LM_0001_单选未选中.png", ___c => CB单选.SourceNormal = ___c));
+        if (___async != null && !___async.IsEnd) yield return ___async;
+        ___async = LoadAsync(Content.LoadAsync<EntryEngine.TEXTURE>(@"LM_0001_登陆单选.png", ___c => CB单选.SourceClicked = ___c));
+        if (___async != null && !___async.IsEnd) yield return ___async;
         
-        LoadAsync(Content.LoadAsync<EntryEngine.TEXTURE>(@"Frame1.mtpatch", ___c => P服务器信息面板.Background = ___c));
-        LoadAsync(Content.LoadAsync<EntryEngine.TEXTURE>(@"Frame1.mtpatch", ___c => L160602101048[0].SourceNormal = ___c));
+        ___async = LoadAsync(Content.LoadAsync<EntryEngine.TEXTURE>(@"Frame1.mtpatch", ___c => P服务器信息面板.Background = ___c));
+        if (___async != null && !___async.IsEnd) yield return ___async;
+        ___async = LoadAsync(Content.LoadAsync<EntryEngine.TEXTURE>(@"Frame1.mtpatch", ___c => L160602101048[0].SourceNormal = ___c));
+        if (___async != null && !___async.IsEnd) yield return ___async;
         
+        ___async = LoadAsync(Content.LoadAsync<EntryEngine.TEXTURE>(@"Frame1.mtpatch", ___c => L160602101048[1].SourceNormal = ___c));
+        if (___async != null && !___async.IsEnd) yield return ___async;
         
-        LoadAsync(Content.LoadAsync<EntryEngine.TEXTURE>(@"Frame1.mtpatch", ___c => L160602101048[1].SourceNormal = ___c));
+        ___async = LoadAsync(Content.LoadAsync<EntryEngine.TEXTURE>(@"Frame1.mtpatch", ___c => L160602101048[2].SourceNormal = ___c));
+        if (___async != null && !___async.IsEnd) yield return ___async;
         
+        ___async = LoadAsync(Content.LoadAsync<EntryEngine.TEXTURE>(@"Frame1.mtpatch", ___c => LIP.SourceNormal = ___c));
+        if (___async != null && !___async.IsEnd) yield return ___async;
         
-        LoadAsync(Content.LoadAsync<EntryEngine.TEXTURE>(@"Frame1.mtpatch", ___c => L160602101048[2].SourceNormal = ___c));
+        ___async = LoadAsync(Content.LoadAsync<EntryEngine.TEXTURE>(@"LM_0005_删除-1.png", ___c => BUpdate.SourceNormal = ___c));
+        if (___async != null && !___async.IsEnd) yield return ___async;
         
+        ___async = LoadAsync(Content.LoadAsync<EntryEngine.TEXTURE>(@"Frame1.mtpatch", ___c => L内存.SourceNormal = ___c));
+        if (___async != null && !___async.IsEnd) yield return ___async;
         
-        LoadAsync(Content.LoadAsync<EntryEngine.TEXTURE>(@"Frame1.mtpatch", ___c => LIP.SourceNormal = ___c));
+        ___async = LoadAsync(Content.LoadAsync<EntryEngine.TEXTURE>(@"Frame1.mtpatch", ___c => LCPU.SourceNormal = ___c));
+        if (___async != null && !___async.IsEnd) yield return ___async;
         
+        ___async = LoadAsync(Content.LoadAsync<EntryEngine.TEXTURE>(@"Frame1.mtpatch", ___c => L160602101048[3].SourceNormal = ___c));
+        if (___async != null && !___async.IsEnd) yield return ___async;
         
-        LoadAsync(Content.LoadAsync<EntryEngine.TEXTURE>(@"LM_0005_删除-1.png", ___c => BUpdate.SourceNormal = ___c));
+        ___async = LoadAsync(Content.LoadAsync<EntryEngine.TEXTURE>(@"Frame1.mtpatch", ___c => L人数.SourceNormal = ___c));
+        if (___async != null && !___async.IsEnd) yield return ___async;
         
-        LoadAsync(Content.LoadAsync<EntryEngine.TEXTURE>(@"Frame1.mtpatch", ___c => L内存.SourceNormal = ___c));
+        ___async = LoadAsync(Content.LoadAsync<EntryEngine.TEXTURE>(@"Frame1.mtpatch", ___c => L服务.SourceNormal = ___c));
+        if (___async != null && !___async.IsEnd) yield return ___async;
         
+        ___async = LoadAsync(Content.LoadAsync<EntryEngine.TEXTURE>(@"Frame1.mtpatch", ___c => L硬盘.SourceNormal = ___c));
+        if (___async != null && !___async.IsEnd) yield return ___async;
         
-        LoadAsync(Content.LoadAsync<EntryEngine.TEXTURE>(@"Frame1.mtpatch", ___c => LCPU.SourceNormal = ___c));
+        ___async = LoadAsync(Content.LoadAsync<EntryEngine.TEXTURE>(@"Frame1.mtpatch", ___c => L160602101049.SourceNormal = ___c));
+        if (___async != null && !___async.IsEnd) yield return ___async;
         
+        ___async = LoadAsync(Content.LoadAsync<EntryEngine.TEXTURE>(@"Frame1.mtpatch", ___c => L160602101048[4].SourceNormal = ___c));
+        if (___async != null && !___async.IsEnd) yield return ___async;
         
-        LoadAsync(Content.LoadAsync<EntryEngine.TEXTURE>(@"Frame1.mtpatch", ___c => L160602101048[3].SourceNormal = ___c));
-        
-        
-        LoadAsync(Content.LoadAsync<EntryEngine.TEXTURE>(@"Frame1.mtpatch", ___c => L人数.SourceNormal = ___c));
-        
-        
-        LoadAsync(Content.LoadAsync<EntryEngine.TEXTURE>(@"Frame1.mtpatch", ___c => L服务.SourceNormal = ___c));
-        
-        
-        LoadAsync(Content.LoadAsync<EntryEngine.TEXTURE>(@"Frame1.mtpatch", ___c => L硬盘.SourceNormal = ___c));
-        
-        
-        LoadAsync(Content.LoadAsync<EntryEngine.TEXTURE>(@"Frame1.mtpatch", ___c => L160602101049.SourceNormal = ___c));
-        
-        
-        LoadAsync(Content.LoadAsync<EntryEngine.TEXTURE>(@"Frame1.mtpatch", ___c => L160602101048[4].SourceNormal = ___c));
-        
-        
-        LoadAsync(Content.LoadAsync<EntryEngine.TEXTURE>(@"Frame1.mtpatch", ___c => L网络.SourceNormal = ___c));
-        
+        ___async = LoadAsync(Content.LoadAsync<EntryEngine.TEXTURE>(@"Frame1.mtpatch", ___c => L网络.SourceNormal = ___c));
+        if (___async != null && !___async.IsEnd) yield return ___async;
         
         
         var __loading = MyLoading();
@@ -444,22 +464,8 @@ public partial class S服务器信息
         foreach (var item in __loading)
         yield return item;
     }
-    public void Show(UIScene __scene)
+    private void Show(EntryEngine.UI.UIScene __scene)
     {
-        L160602101048[0].UIText.Text = _LANGUAGE.GetString("17");
-        L160602101048[0].Text = _LANGUAGE.GetString("17");
-        L160602101048[1].UIText.Text = _LANGUAGE.GetString("18");
-        L160602101048[1].Text = _LANGUAGE.GetString("18");
-        L160602101048[2].UIText.Text = _LANGUAGE.GetString("16");
-        L160602101048[2].Text = _LANGUAGE.GetString("16");
-        BUpdate.UIText.Text = _LANGUAGE.GetString("83");
-        BUpdate.Text = _LANGUAGE.GetString("83");
-        L160602101048[3].UIText.Text = _LANGUAGE.GetString("84");
-        L160602101048[3].Text = _LANGUAGE.GetString("84");
-        L160602101049.UIText.Text = _LANGUAGE.GetString("85");
-        L160602101049.Text = _LANGUAGE.GetString("85");
-        L160602101048[4].UIText.Text = _LANGUAGE.GetString("19");
-        L160602101048[4].Text = _LANGUAGE.GetString("19");
         
     }
 }

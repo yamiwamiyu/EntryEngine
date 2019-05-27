@@ -269,7 +269,7 @@ namespace LauncherManager
             Logout();
             if (Maintainers.Count == 0)
                 Entry.Instance.ShowMainScene<S登陆菜单>();
-            S确认对话框.Hint(Text.ETextID.LoginAgain, Platform, Name);
+            S确认对话框.Hint("平台[{0}]的管理账号[{1}]再其它地方登陆", Platform, Name);
         }
         protected override void __OnLog(string name, Record record)
         {

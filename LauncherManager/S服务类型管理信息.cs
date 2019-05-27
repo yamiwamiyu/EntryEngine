@@ -17,7 +17,7 @@ public partial class S服务类型管理信息 : UIScene
 
     void B删除_Clicked(UIElement sender, Entry e)
     {
-        S确认对话框.Confirm(Text.ETextID.DeleteConfirm,
+        S确认对话框.Confirm("确认要删除选中的项吗？",
             (result) =>
             {
                 if (result)

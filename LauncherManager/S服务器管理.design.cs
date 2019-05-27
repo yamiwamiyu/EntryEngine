@@ -6,9 +6,9 @@ public partial class S服务器管理
 {
     public EntryEngine.UI.Panel P服务器管理面板 = new EntryEngine.UI.Panel();
     public EntryEngine.UI.DropDown DD用户名 = new EntryEngine.UI.DropDown();
-    public EntryEngine.UI.Selectable S160613103204 = new EntryEngine.UI.Selectable();
     public EntryEngine.UI.TextBox TB用户名 = new EntryEngine.UI.TextBox();
     public EntryEngine.UI.Button   B用户名1 = new EntryEngine.UI.Button();
+    public EntryEngine.UI.Selectable S160613103204 = new EntryEngine.UI.Selectable();
     public EntryEngine.UI.Button B160613103427 = new EntryEngine.UI.Button();
     public EntryEngine.UI.CheckBox CB服务 = new EntryEngine.UI.CheckBox();
     public EntryEngine.UI.CheckBox CB服务器 = new EntryEngine.UI.CheckBox();
@@ -33,16 +33,17 @@ public partial class S服务器管理
         B用户名1.UIText.Text = "";
         B用户名1.UIText.FontColor = new COLOR()
         {
-            R = 0,
-            G = 0,
             B = 0,
+            G = 0,
+            R = 0,
             A = 255,
         };
         B用户名1.UIText.TextAlignment = (EPivot)17;
         B用户名1.UIText.TextShader = null;
         B用户名1.UIText.Padding.X = 0f;
         B用户名1.UIText.Padding.Y = 0f;
-        B用户名1.UIText.FontSize = 22f;
+        B用户名1.UIText.FontSize = 16f;
+        
         
         return B用户名1;
     }
@@ -81,9 +82,9 @@ public partial class S服务器管理
         DD用户名.UIText.Text = "";
         DD用户名.UIText.FontColor = new COLOR()
         {
-            R = 255,
-            G = 255,
             B = 255,
+            G = 255,
+            R = 255,
             A = 255,
         };
         DD用户名.UIText.TextAlignment = (EPivot)17;
@@ -94,17 +95,6 @@ public partial class S服务器管理
         DD用户名.DropDownText = TB用户名;
         DD用户名.DropDownList = S160613103204;
         this.Add(DD用户名);
-        S160613103204.Name = "S160613103204";
-        EntryEngine.RECT S160613103204_Clip = new EntryEngine.RECT();
-        S160613103204_Clip.X = 0f;
-        S160613103204_Clip.Y = 46f;
-        S160613103204_Clip.Width = 373f;
-        S160613103204_Clip.Height = 90f;
-        S160613103204.Clip = S160613103204_Clip;
-        
-        S160613103204.Visible = false;
-        S160613103204.DragMode = (EDragMode)1;
-        DD用户名.Add(S160613103204);
         TB用户名.Name = "TB用户名";
         EntryEngine.RECT TB用户名_Clip = new EntryEngine.RECT();
         TB用户名_Clip.X = 3f;
@@ -115,18 +105,25 @@ public partial class S服务器管理
         
         TB用户名.Color = new COLOR()
         {
-            R = 0,
-            G = 0,
             B = 0,
+            G = 0,
+            R = 0,
+            A = 255,
+        };
+        TB用户名.CursorAreaColor = new COLOR()
+        {
+            B = 51,
+            G = 153,
+            R = 255,
             A = 255,
         };
         TB用户名.DefaultText = new EntryEngine.UI.UIText();
         TB用户名.DefaultText.Text = "";
         TB用户名.DefaultText.FontColor = new COLOR()
         {
-            R = 211,
-            G = 211,
             B = 211,
+            G = 211,
+            R = 211,
             A = 255,
         };
         TB用户名.DefaultText.TextAlignment = (EPivot)0;
@@ -138,17 +135,27 @@ public partial class S服务器管理
         TB用户名.UIText.Text = "";
         TB用户名.UIText.FontColor = new COLOR()
         {
-            R = 0,
-            G = 0,
             B = 0,
+            G = 0,
+            R = 0,
             A = 255,
         };
         TB用户名.UIText.TextAlignment = (EPivot)17;
         TB用户名.UIText.TextShader = null;
         TB用户名.UIText.Padding.X = 0f;
         TB用户名.UIText.Padding.Y = 0f;
-        TB用户名.UIText.FontSize = 22f;
+        TB用户名.UIText.FontSize = 16f;
         DD用户名.Add(TB用户名);
+        S160613103204.Name = "S160613103204";
+        EntryEngine.RECT S160613103204_Clip = new EntryEngine.RECT();
+        S160613103204_Clip.X = 0f;
+        S160613103204_Clip.Y = 46f;
+        S160613103204_Clip.Width = 373f;
+        S160613103204_Clip.Height = 90f;
+        S160613103204.Clip = S160613103204_Clip;
+        
+        S160613103204.DragMode = (EDragMode)1;
+        DD用户名.Add(S160613103204);
         B160613103427.Name = "B160613103427";
         EntryEngine.RECT B160613103427_Clip = new EntryEngine.RECT();
         B160613103427_Clip.X = 332.5f;
@@ -161,9 +168,9 @@ public partial class S服务器管理
         B160613103427.UIText.Text = "";
         B160613103427.UIText.FontColor = new COLOR()
         {
-            R = 255,
-            G = 255,
             B = 255,
+            G = 255,
+            R = 255,
             A = 255,
         };
         B160613103427.UIText.TextAlignment = (EPivot)17;
@@ -181,18 +188,20 @@ public partial class S服务器管理
         CB服务.Clip = CB服务_Clip;
         
         CB服务.UIText = new EntryEngine.UI.UIText();
+        CB服务.UIText.Text = "服务";
         CB服务.UIText.FontColor = new COLOR()
         {
-            R = 0,
-            G = 0,
             B = 0,
+            G = 0,
+            R = 0,
             A = 255,
         };
         CB服务.UIText.TextAlignment = (EPivot)17;
         CB服务.UIText.TextShader = null;
         CB服务.UIText.Padding.X = 0f;
         CB服务.UIText.Padding.Y = 0f;
-        CB服务.UIText.FontSize = 22f;
+        CB服务.UIText.FontSize = 16f;
+        CB服务.Text = "服务";
         CB服务.IsRadioButton = true;
         CB服务.CheckedOverlayNormal = true;
         this.Add(CB服务);
@@ -205,18 +214,20 @@ public partial class S服务器管理
         CB服务器.Clip = CB服务器_Clip;
         
         CB服务器.UIText = new EntryEngine.UI.UIText();
+        CB服务器.UIText.Text = "服务器";
         CB服务器.UIText.FontColor = new COLOR()
         {
-            R = 0,
-            G = 0,
             B = 0,
+            G = 0,
+            R = 0,
             A = 255,
         };
         CB服务器.UIText.TextAlignment = (EPivot)17;
         CB服务器.UIText.TextShader = null;
         CB服务器.UIText.Padding.X = 0f;
         CB服务器.UIText.Padding.Y = 0f;
-        CB服务器.UIText.FontSize = 22f;
+        CB服务器.UIText.FontSize = 16f;
+        CB服务器.Text = "服务器";
         CB服务器.IsRadioButton = true;
         CB服务器.CheckedOverlayNormal = true;
         this.Add(CB服务器);
@@ -229,18 +240,20 @@ public partial class S服务器管理
         B账号管理.Clip = B账号管理_Clip;
         
         B账号管理.UIText = new EntryEngine.UI.UIText();
+        B账号管理.UIText.Text = "账号管理";
         B账号管理.UIText.FontColor = new COLOR()
         {
-            R = 0,
-            G = 0,
             B = 0,
+            G = 0,
+            R = 0,
             A = 255,
         };
         B账号管理.UIText.TextAlignment = (EPivot)17;
         B账号管理.UIText.TextShader = null;
         B账号管理.UIText.Padding.X = 0f;
         B账号管理.UIText.Padding.Y = 0f;
-        B账号管理.UIText.FontSize = 20f;
+        B账号管理.UIText.FontSize = 16f;
+        B账号管理.Text = "账号管理";
         this.Add(B账号管理);
         B服务管理.Name = "B服务管理";
         EntryEngine.RECT B服务管理_Clip = new EntryEngine.RECT();
@@ -251,18 +264,20 @@ public partial class S服务器管理
         B服务管理.Clip = B服务管理_Clip;
         
         B服务管理.UIText = new EntryEngine.UI.UIText();
+        B服务管理.UIText.Text = "服务管理";
         B服务管理.UIText.FontColor = new COLOR()
         {
-            R = 0,
-            G = 0,
             B = 0,
+            G = 0,
+            R = 0,
             A = 255,
         };
         B服务管理.UIText.TextAlignment = (EPivot)17;
         B服务管理.UIText.TextShader = null;
         B服务管理.UIText.Padding.X = 0f;
         B服务管理.UIText.Padding.Y = 0f;
-        B服务管理.UIText.FontSize = 20f;
+        B服务管理.UIText.FontSize = 16f;
+        B服务管理.Text = "服务管理";
         this.Add(B服务管理);
         B中断连接.Name = "B中断连接";
         EntryEngine.RECT B中断连接_Clip = new EntryEngine.RECT();
@@ -273,18 +288,20 @@ public partial class S服务器管理
         B中断连接.Clip = B中断连接_Clip;
         
         B中断连接.UIText = new EntryEngine.UI.UIText();
+        B中断连接.UIText.Text = "中断连接";
         B中断连接.UIText.FontColor = new COLOR()
         {
-            R = 0,
-            G = 0,
             B = 0,
+            G = 0,
+            R = 0,
             A = 255,
         };
         B中断连接.UIText.TextAlignment = (EPivot)17;
         B中断连接.UIText.TextShader = null;
         B中断连接.UIText.Padding.X = 0f;
         B中断连接.UIText.Padding.Y = 0f;
-        B中断连接.UIText.FontSize = 20f;
+        B中断连接.UIText.FontSize = 16f;
+        B中断连接.Text = "中断连接";
         this.Add(B中断连接);
         B显示日志.Name = "B显示日志";
         EntryEngine.RECT B显示日志_Clip = new EntryEngine.RECT();
@@ -295,18 +312,20 @@ public partial class S服务器管理
         B显示日志.Clip = B显示日志_Clip;
         
         B显示日志.UIText = new EntryEngine.UI.UIText();
+        B显示日志.UIText.Text = "显示日志";
         B显示日志.UIText.FontColor = new COLOR()
         {
-            R = 0,
-            G = 0,
             B = 0,
+            G = 0,
+            R = 0,
             A = 255,
         };
         B显示日志.UIText.TextAlignment = (EPivot)17;
         B显示日志.UIText.TextShader = null;
         B显示日志.UIText.Padding.X = 0f;
         B显示日志.UIText.Padding.Y = 0f;
-        B显示日志.UIText.FontSize = 20f;
+        B显示日志.UIText.FontSize = 16f;
+        B显示日志.Text = "显示日志";
         this.Add(B显示日志);
         B更新管理器.Name = "B更新管理器";
         EntryEngine.RECT B更新管理器_Clip = new EntryEngine.RECT();
@@ -317,67 +336,69 @@ public partial class S服务器管理
         B更新管理器.Clip = B更新管理器_Clip;
         
         B更新管理器.UIText = new EntryEngine.UI.UIText();
+        B更新管理器.UIText.Text = "更新管理器";
         B更新管理器.UIText.FontColor = new COLOR()
         {
-            R = 0,
-            G = 0,
             B = 0,
+            G = 0,
+            R = 0,
             A = 255,
         };
         B更新管理器.UIText.TextAlignment = (EPivot)17;
         B更新管理器.UIText.TextShader = null;
         B更新管理器.UIText.Padding.X = 0f;
         B更新管理器.UIText.Padding.Y = 0f;
-        B更新管理器.UIText.FontSize = 20f;
+        B更新管理器.UIText.FontSize = 16f;
+        B更新管理器.Text = "更新管理器";
         this.Add(B更新管理器);
         
         this.PhaseShowing += Show;
     }
     protected override IEnumerable<ICoroutine> Loading()
     {
+        ICoroutine async;
         ICoroutine ___async;
-        Entry.ShowDialogScene(S160613103204);
+        Entry.ShowDialogScene(S160613103204, EState.Break);
         ___async = LoadAsync(Content.LoadAsync<EntryEngine.TEXTURE>(@"Frame1.mtpatch", ___c => this.Background = ___c));
-        if (___async != null) yield return ___async;
+        if (___async != null && !___async.IsEnd) yield return ___async;
         ___async = LoadAsync(Content.LoadAsync<EntryEngine.TEXTURE>(@"Frame1.mtpatch", ___c => P服务器管理面板.Background = ___c));
-        if (___async != null) yield return ___async;
+        if (___async != null && !___async.IsEnd) yield return ___async;
         
-        ___async = LoadAsync(Content.LoadAsync<EntryEngine.TEXTURE>(@"Frame1半透明.mtpatch", ___c => S160613103204.Background = ___c));
-        if (___async != null) yield return ___async;
         ___async = LoadAsync(Content.LoadAsync<EntryEngine.TEXTURE>(@"Frame1.mtpatch", ___c => TB用户名.SourceNormal = ___c));
-        if (___async != null) yield return ___async;
-        
+        if (___async != null && !___async.IsEnd) yield return ___async;
         
         
         LoadAsync(Content.LoadAsync<EntryEngine.TEXTURE>(@"Frame1半透明.mtpatch", ___c =>   B用户名1.SourceHover = ___c));
         
+        ___async = LoadAsync(Content.LoadAsync<EntryEngine.TEXTURE>(@"Frame1半透明.mtpatch", ___c => S160613103204.Background = ___c));
+        if (___async != null && !___async.IsEnd) yield return ___async;
         ___async = LoadAsync(Content.LoadAsync<EntryEngine.TEXTURE>(@"LM_0004_登陆下拉-2.png", ___c => B160613103427.SourceNormal = ___c));
-        if (___async != null) yield return ___async;
+        if (___async != null && !___async.IsEnd) yield return ___async;
         
         ___async = LoadAsync(Content.LoadAsync<EntryEngine.TEXTURE>(@"LM_页签.png", ___c => CB服务.SourceNormal = ___c));
-        if (___async != null) yield return ___async;
+        if (___async != null && !___async.IsEnd) yield return ___async;
         ___async = LoadAsync(Content.LoadAsync<EntryEngine.TEXTURE>(@"Frame2.mtpatch", ___c => CB服务.SourceClicked = ___c));
-        if (___async != null) yield return ___async;
+        if (___async != null && !___async.IsEnd) yield return ___async;
         
         ___async = LoadAsync(Content.LoadAsync<EntryEngine.TEXTURE>(@"LM_页签.png", ___c => CB服务器.SourceNormal = ___c));
-        if (___async != null) yield return ___async;
+        if (___async != null && !___async.IsEnd) yield return ___async;
         ___async = LoadAsync(Content.LoadAsync<EntryEngine.TEXTURE>(@"Frame2.mtpatch", ___c => CB服务器.SourceClicked = ___c));
-        if (___async != null) yield return ___async;
+        if (___async != null && !___async.IsEnd) yield return ___async;
         
         ___async = LoadAsync(Content.LoadAsync<EntryEngine.TEXTURE>(@"LM_中断连接.png", ___c => B账号管理.SourceNormal = ___c));
-        if (___async != null) yield return ___async;
+        if (___async != null && !___async.IsEnd) yield return ___async;
         
         ___async = LoadAsync(Content.LoadAsync<EntryEngine.TEXTURE>(@"LM_中断连接.png", ___c => B服务管理.SourceNormal = ___c));
-        if (___async != null) yield return ___async;
+        if (___async != null && !___async.IsEnd) yield return ___async;
         
         ___async = LoadAsync(Content.LoadAsync<EntryEngine.TEXTURE>(@"LM_中断连接.png", ___c => B中断连接.SourceNormal = ___c));
-        if (___async != null) yield return ___async;
+        if (___async != null && !___async.IsEnd) yield return ___async;
         
         ___async = LoadAsync(Content.LoadAsync<EntryEngine.TEXTURE>(@"LM_中断连接.png", ___c => B显示日志.SourceNormal = ___c));
-        if (___async != null) yield return ___async;
+        if (___async != null && !___async.IsEnd) yield return ___async;
         
         ___async = LoadAsync(Content.LoadAsync<EntryEngine.TEXTURE>(@"LM_中断连接.png", ___c => B更新管理器.SourceNormal = ___c));
-        if (___async != null) yield return ___async;
+        if (___async != null && !___async.IsEnd) yield return ___async;
         
         
         var __loading = MyLoading();
@@ -385,22 +406,8 @@ public partial class S服务器管理
         foreach (var item in __loading)
         yield return item;
     }
-    public void Show(UIScene __scene)
+    private void Show(EntryEngine.UI.UIScene __scene)
     {
-        CB服务.UIText.Text = _LANGUAGE.GetString("16");
-        CB服务.Text = _LANGUAGE.GetString("16");
-        CB服务器.UIText.Text = _LANGUAGE.GetString("13");
-        CB服务器.Text = _LANGUAGE.GetString("13");
-        B账号管理.UIText.Text = _LANGUAGE.GetString("20");
-        B账号管理.Text = _LANGUAGE.GetString("20");
-        B服务管理.UIText.Text = _LANGUAGE.GetString("21");
-        B服务管理.Text = _LANGUAGE.GetString("21");
-        B中断连接.UIText.Text = _LANGUAGE.GetString("22");
-        B中断连接.Text = _LANGUAGE.GetString("22");
-        B显示日志.UIText.Text = _LANGUAGE.GetString("110");
-        B显示日志.Text = _LANGUAGE.GetString("110");
-        B更新管理器.UIText.Text = _LANGUAGE.GetString("111");
-        B更新管理器.Text = _LANGUAGE.GetString("111");
         
     }
 }

@@ -30,9 +30,9 @@ public partial class S登陆平台信息
         CB单选.UIText.Text = "";
         CB单选.UIText.FontColor = new COLOR()
         {
-            R = 255,
-            G = 255,
             B = 255,
+            G = 255,
+            R = 255,
             A = 255,
         };
         CB单选.UIText.TextAlignment = (EPivot)18;
@@ -53,27 +53,31 @@ public partial class S登陆平台信息
         L平台信息.UIText.Text = "";
         L平台信息.UIText.FontColor = new COLOR()
         {
-            R = 0,
-            G = 0,
             B = 0,
+            G = 0,
+            R = 0,
             A = 255,
         };
         L平台信息.UIText.TextAlignment = (EPivot)16;
         L平台信息.UIText.TextShader = null;
         L平台信息.UIText.Padding.X = 0f;
         L平台信息.UIText.Padding.Y = 0f;
-        L平台信息.UIText.FontSize = 20f;
+        L平台信息.UIText.FontSize = 16f;
         this.Add(L平台信息);
         
         this.PhaseShowing += Show;
     }
     protected override IEnumerable<ICoroutine> Loading()
     {
-        LoadAsync(Content.LoadAsync<EntryEngine.TEXTURE>(@"LM_0001_单选未选中.png", ___c => CB单选.SourceNormal = ___c));
-        LoadAsync(Content.LoadAsync<EntryEngine.TEXTURE>(@"LM_0001_登陆单选.png", ___c => CB单选.SourceClicked = ___c));
+        ICoroutine async;
+        ICoroutine ___async;
+        ___async = LoadAsync(Content.LoadAsync<EntryEngine.TEXTURE>(@"LM_0001_单选未选中.png", ___c => CB单选.SourceNormal = ___c));
+        if (___async != null && !___async.IsEnd) yield return ___async;
+        ___async = LoadAsync(Content.LoadAsync<EntryEngine.TEXTURE>(@"LM_0001_登陆单选.png", ___c => CB单选.SourceClicked = ___c));
+        if (___async != null && !___async.IsEnd) yield return ___async;
         
-        LoadAsync(Content.LoadAsync<EntryEngine.TEXTURE>(@"Frame1.mtpatch", ___c => L平台信息.SourceNormal = ___c));
-        
+        ___async = LoadAsync(Content.LoadAsync<EntryEngine.TEXTURE>(@"Frame1.mtpatch", ___c => L平台信息.SourceNormal = ___c));
+        if (___async != null && !___async.IsEnd) yield return ___async;
         
         
         var __loading = MyLoading();
@@ -81,7 +85,7 @@ public partial class S登陆平台信息
         foreach (var item in __loading)
         yield return item;
     }
-    public void Show(UIScene __scene)
+    private void Show(EntryEngine.UI.UIScene __scene)
     {
         
     }

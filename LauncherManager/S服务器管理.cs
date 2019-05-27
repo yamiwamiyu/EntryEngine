@@ -54,7 +54,7 @@ public partial class S服务器管理 : UIScene
 
     void B更新管理器_Clicked(UIElement sender, Entry e)
     {
-        S确认对话框.Confirm(Text.ETextID.UpdateClose, (result) =>
+        S确认对话框.Confirm("更新管理器将关闭所有平台的管理器及其所有服务！是否确认此操作？", (result) =>
             {
                 if (!result)
                     return;
@@ -62,7 +62,7 @@ public partial class S服务器管理 : UIScene
                 foreach (var item in Maintainer.Maintainers)
                     item.Proxy.UpdateManager();
                 bool flag = true;
-                S确认对话框.Wait(Text.ETextID.Wait, () =>
+                S确认对话框.Wait("正在等待服务器操作", () =>
                     {
                         if (flag)
                         {
@@ -181,7 +181,7 @@ public partial class S服务器管理 : UIScene
         if (Maintainer.Maintainers.Count > 1)
         {
             var newItem = ___B用户名1();
-            newItem.Text = _TABLE._TextByID[Text.ETextID.All].Content;
+            newItem.Text = "全部";
             newItem.Width = DD用户名.DropDownList.Width;
             DD用户名.DropDownList.Add(newItem);
         }
@@ -202,7 +202,7 @@ public partial class S服务器管理 : UIScene
 
             // 等待获取服务器列表
             bool result = false;
-            S确认对话框.Wait(Text.ETextID.WaitConnect, () => result);
+            S确认对话框.Wait("正在连接服务器", () => result);
             foreach (var item in Maintainer.Maintainers)
                 item.Proxy.GetServers();
             while (!Maintainer.Maintainers.TrueForAll(m => m.Servers != null && m.ServiceTypes != null))

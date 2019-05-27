@@ -702,6 +702,9 @@ namespace EntryEngine.Serialize
 			{
                 if (string.IsNullOrEmpty(node.Value))
                     return default(DateTime);
+                int timestamp;
+                if (int.TryParse(node.Value, out timestamp))
+                    return Utility.ToTime(timestamp);
 				//return Utility.ToUnixTime(int.Parse(node.Value));
 				return DateTime.Parse(node.Value);
 			}

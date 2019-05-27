@@ -48,7 +48,7 @@ public partial class S服务管理面板 : UIScene
         if (!Selected.Any(s => s.Status != EServiceStatus.Stop))
         //if (!Selected.Contains(s => s.Status == EServiceStatus.Starting))
         {
-            S确认对话框.Hint(Text.ETextID.ServiceAvailable);
+            S确认对话框.Hint("必须选中正确的服务");
             return;
         }
 
@@ -81,11 +81,11 @@ public partial class S服务管理面板 : UIScene
         var selected = Selected.Where(s => s.Status != EServiceStatus.Stop).ToArrayAfterCount();
         if (selected.Length == 0)
         {
-            //S确认对话框.Hint(Text.ETextID.SelectionEmpty);
+            //S确认对话框.Hint("必须选中至少一项");
             return;
         }
 
-        S确认对话框.Confirm(Text.ETextID.Close,
+        S确认对话框.Confirm("是否确认要关闭[{0}]？",
             (result) =>
             {
                 if (!result)
@@ -183,7 +183,7 @@ public partial class S服务管理面板 : UIScene
     }
     void B删除服务_Clicked(UIElement sender, Entry e)
     {
-        S确认对话框.Confirm(Text.ETextID.DeleteConfirm,
+        S确认对话框.Confirm("确认要删除选中的项吗？",
             (result) =>
             {
                 if (!result)
@@ -208,7 +208,7 @@ public partial class S服务管理面板 : UIScene
         else
         {
             if (selected.Length > 1)
-                S确认对话框.Hint(Text.ETextID.Single);
+                S确认对话框.Hint("一次只能修改一个对象");
             else
                 Entry.ShowDialogScene<S新开服菜单>().Show(managed, selected[0]);
         }

@@ -21,9 +21,9 @@ public partial class SManagerLog
         LLog.UIText.Text = "#Label";
         LLog.UIText.FontColor = new COLOR()
         {
-            R = 0,
-            G = 0,
             B = 0,
+            G = 0,
+            R = 0,
             A = 255,
         };
         LLog.UIText.TextAlignment = (EPivot)0;
@@ -32,9 +32,9 @@ public partial class SManagerLog
         LLog.UIText.Padding.Y = 0f;
         LLog.UIText.FontSize = 16f;
         
-        
         LLog.Text = "#Label";
         LLog.BreakLine = true;
+        
         return LLog;
     }
     
@@ -55,9 +55,9 @@ public partial class SManagerLog
     }
     protected override IEnumerable<ICoroutine> Loading()
     {
+        ICoroutine async;
         ICoroutine ___async;
         LoadAsync(Content.LoadAsync<EntryEngine.TEXTURE>(@"Frame1.mtpatch", ___c =>   LLog.SourceNormal = ___c));
-        
         
         
         var __loading = MyLoading();
@@ -65,7 +65,7 @@ public partial class SManagerLog
         foreach (var item in __loading)
         yield return item;
     }
-    public void Show(UIScene __scene)
+    private void Show(EntryEngine.UI.UIScene __scene)
     {
         
     }

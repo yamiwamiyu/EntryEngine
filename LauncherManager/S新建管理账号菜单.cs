@@ -32,13 +32,13 @@ public partial class S新建管理账号菜单 : UIScene
     {
         if (string.IsNullOrEmpty(TB账号.Text))
         {
-            S确认对话框.Hint(Text.ETextID.NameEmpty);
+            S确认对话框.Hint("账号名不能为空");
             return;
         }
 
         if (string.IsNullOrEmpty(TB密码.Text))
         {
-            S确认对话框.Hint(Text.ETextID.PasswordEmpty);
+            S确认对话框.Hint("密码不能为空");
             return;
         }
 

@@ -21,7 +21,7 @@ public partial class S服务信息 : UIScene
     protected override void InternalUpdate(Entry e)
     {
         L服务版本.Text = string.Format("{0} - {1}", Service.Type,
-            (Service.Revision < 0 ? -Service.Revision + _TABLE._TextByID[Text.ETextID.HotFix].Content : Service.Revision.ToString()));
+            (Service.Revision < 0 ? -Service.Revision + "[hot]" : Service.Revision.ToString()));
         var maintainer = Maintainer.Find(Service);
         L服务器端口版本.Text = string.Format("{2} : {0} - {1}", maintainer.Link.EndPoint.ToString(), Service.RevisionOnServer, maintainer.Platform);
         L时间.Text = Service.LastStatusTime;

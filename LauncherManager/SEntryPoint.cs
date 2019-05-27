@@ -13,8 +13,8 @@ namespace LauncherManager
         protected override IEnumerable<ICoroutine> Loading()
         {
             _SAVE.Load();
-            _LANGUAGE.Load(_IO.ReadText("Content\\Language.csv"), "");
-            _TABLE.Load("Content\\");
+            //_LANGUAGE.Load(_IO.ReadText("Content\\Language.csv"), "");
+            //_TABLE.Load("Content\\");
 
             //Entry.ShowMainScene<S登陆菜单>();
             Entry.ShowMainScene<S登陆菜单>();

@@ -34,9 +34,9 @@ public partial class S服务信息
         CB单选.UIText.Text = "";
         CB单选.UIText.FontColor = new COLOR()
         {
-            R = 255,
-            G = 255,
             B = 255,
+            G = 255,
+            R = 255,
             A = 255,
         };
         CB单选.UIText.TextAlignment = (EPivot)18;
@@ -57,9 +57,9 @@ public partial class S服务信息
         L名字.UIText.Text = "#S1";
         L名字.UIText.FontColor = new COLOR()
         {
-            R = 0,
-            G = 0,
             B = 0,
+            G = 0,
+            R = 0,
             A = 255,
         };
         L名字.UIText.TextAlignment = (EPivot)17;
@@ -81,9 +81,9 @@ public partial class S服务信息
         L服务版本.UIText.Text = "#GameServer-1021";
         L服务版本.UIText.FontColor = new COLOR()
         {
-            R = 0,
-            G = 0,
             B = 0,
+            G = 0,
+            R = 0,
             A = 255,
         };
         L服务版本.UIText.TextAlignment = (EPivot)17;
@@ -105,9 +105,9 @@ public partial class S服务信息
         L服务器端口版本.UIText.Text = "#192.168.1.101:1008-1002";
         L服务器端口版本.UIText.FontColor = new COLOR()
         {
-            R = 0,
-            G = 0,
             B = 0,
+            G = 0,
+            R = 0,
             A = 255,
         };
         L服务器端口版本.UIText.TextAlignment = (EPivot)17;
@@ -129,9 +129,9 @@ public partial class S服务信息
         L服务状态.UIText.Text = "#运行中";
         L服务状态.UIText.FontColor = new COLOR()
         {
-            R = 0,
-            G = 0,
             B = 0,
+            G = 0,
+            R = 0,
             A = 255,
         };
         L服务状态.UIText.TextAlignment = (EPivot)17;
@@ -153,9 +153,9 @@ public partial class S服务信息
         L时间.UIText.Text = "#yyyy-MM-dd HH:mm:ss";
         L时间.UIText.FontColor = new COLOR()
         {
-            R = 0,
-            G = 0,
             B = 0,
+            G = 0,
+            R = 0,
             A = 255,
         };
         L时间.UIText.TextAlignment = (EPivot)17;
@@ -170,31 +170,27 @@ public partial class S服务信息
     }
     protected override IEnumerable<ICoroutine> Loading()
     {
+        ICoroutine async;
         ICoroutine ___async;
         ___async = LoadAsync(Content.LoadAsync<EntryEngine.TEXTURE>(@"LM_0001_单选未选中.png", ___c => CB单选.SourceNormal = ___c));
-        if (___async != null) yield return ___async;
+        if (___async != null && !___async.IsEnd) yield return ___async;
         ___async = LoadAsync(Content.LoadAsync<EntryEngine.TEXTURE>(@"LM_0001_登陆单选.png", ___c => CB单选.SourceClicked = ___c));
-        if (___async != null) yield return ___async;
+        if (___async != null && !___async.IsEnd) yield return ___async;
         
         ___async = LoadAsync(Content.LoadAsync<EntryEngine.TEXTURE>(@"Frame1.mtpatch", ___c => L名字.SourceNormal = ___c));
-        if (___async != null) yield return ___async;
-        
+        if (___async != null && !___async.IsEnd) yield return ___async;
         
         ___async = LoadAsync(Content.LoadAsync<EntryEngine.TEXTURE>(@"Frame1.mtpatch", ___c => L服务版本.SourceNormal = ___c));
-        if (___async != null) yield return ___async;
-        
+        if (___async != null && !___async.IsEnd) yield return ___async;
         
         ___async = LoadAsync(Content.LoadAsync<EntryEngine.TEXTURE>(@"Frame1.mtpatch", ___c => L服务器端口版本.SourceNormal = ___c));
-        if (___async != null) yield return ___async;
-        
+        if (___async != null && !___async.IsEnd) yield return ___async;
         
         ___async = LoadAsync(Content.LoadAsync<EntryEngine.TEXTURE>(@"Frame1.mtpatch", ___c => L服务状态.SourceNormal = ___c));
-        if (___async != null) yield return ___async;
-        
+        if (___async != null && !___async.IsEnd) yield return ___async;
         
         ___async = LoadAsync(Content.LoadAsync<EntryEngine.TEXTURE>(@"Frame1.mtpatch", ___c => L时间.SourceNormal = ___c));
-        if (___async != null) yield return ___async;
-        
+        if (___async != null && !___async.IsEnd) yield return ___async;
         
         
         var __loading = MyLoading();
@@ -202,7 +198,7 @@ public partial class S服务信息
         foreach (var item in __loading)
         yield return item;
     }
-    public void Show(UIScene __scene)
+    private void Show(EntryEngine.UI.UIScene __scene)
     {
         
     }

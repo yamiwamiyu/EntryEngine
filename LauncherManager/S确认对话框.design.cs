@@ -39,18 +39,20 @@ public partial class S确认对话框
         B取消.Clip = B取消_Clip;
         
         B取消.UIText = new EntryEngine.UI.UIText();
+        B取消.UIText.Text = "取消";
         B取消.UIText.FontColor = new COLOR()
         {
-            R = 0,
-            G = 0,
             B = 0,
+            G = 0,
+            R = 0,
             A = 255,
         };
         B取消.UIText.TextAlignment = (EPivot)17;
         B取消.UIText.TextShader = null;
         B取消.UIText.Padding.X = 0f;
         B取消.UIText.Padding.Y = 0f;
-        B取消.UIText.FontSize = 22f;
+        B取消.UIText.FontSize = 16f;
+        B取消.Text = "取消";
         P确认面板.Add(B取消);
         B确定.Name = "B确定";
         EntryEngine.RECT B确定_Clip = new EntryEngine.RECT();
@@ -61,18 +63,20 @@ public partial class S确认对话框
         B确定.Clip = B确定_Clip;
         
         B确定.UIText = new EntryEngine.UI.UIText();
+        B确定.UIText.Text = "确定";
         B确定.UIText.FontColor = new COLOR()
         {
-            R = 0,
-            G = 0,
             B = 0,
+            G = 0,
+            R = 0,
             A = 255,
         };
         B确定.UIText.TextAlignment = (EPivot)17;
         B确定.UIText.TextShader = null;
         B确定.UIText.Padding.X = 0f;
         B确定.UIText.Padding.Y = 0f;
-        B确定.UIText.FontSize = 22f;
+        B确定.UIText.FontSize = 16f;
+        B确定.Text = "确定";
         P确认面板.Add(B确定);
         TBText.Name = "TBText";
         EntryEngine.RECT TBText_Clip = new EntryEngine.RECT();
@@ -84,18 +88,25 @@ public partial class S确认对话框
         
         TBText.Color = new COLOR()
         {
-            R = 0,
-            G = 0,
             B = 0,
+            G = 0,
+            R = 0,
+            A = 255,
+        };
+        TBText.CursorAreaColor = new COLOR()
+        {
+            B = 51,
+            G = 153,
+            R = 255,
             A = 255,
         };
         TBText.DefaultText = new EntryEngine.UI.UIText();
         TBText.DefaultText.Text = "";
         TBText.DefaultText.FontColor = new COLOR()
         {
-            R = 211,
-            G = 211,
             B = 211,
+            G = 211,
+            R = 211,
             A = 255,
         };
         TBText.DefaultText.TextAlignment = (EPivot)0;
@@ -107,16 +118,16 @@ public partial class S确认对话框
         TBText.UIText.Text = "#Text";
         TBText.UIText.FontColor = new COLOR()
         {
-            R = 0,
-            G = 0,
             B = 0,
+            G = 0,
+            R = 0,
             A = 255,
         };
         TBText.UIText.TextAlignment = (EPivot)17;
         TBText.UIText.TextShader = null;
         TBText.UIText.Padding.X = 0f;
         TBText.UIText.Padding.Y = 0f;
-        TBText.UIText.FontSize = 22f;
+        TBText.UIText.FontSize = 16f;
         TBText.Text = "#Text";
         TBText.BreakLine = true;
         TBText.Multiple = true;
@@ -126,13 +137,18 @@ public partial class S确认对话框
     }
     protected override IEnumerable<ICoroutine> Loading()
     {
-        LoadAsync(Content.LoadAsync<EntryEngine.TEXTURE>(@"Frame1半透明.mtpatch", ___c => P确认面板.Background = ___c));
-        LoadAsync(Content.LoadAsync<EntryEngine.TEXTURE>(@"LM_0005_删除-1.png", ___c => B取消.SourceNormal = ___c));
+        ICoroutine async;
+        ICoroutine ___async;
+        ___async = LoadAsync(Content.LoadAsync<EntryEngine.TEXTURE>(@"Frame1半透明.mtpatch", ___c => P确认面板.Background = ___c));
+        if (___async != null && !___async.IsEnd) yield return ___async;
+        ___async = LoadAsync(Content.LoadAsync<EntryEngine.TEXTURE>(@"LM_0005_删除-1.png", ___c => B取消.SourceNormal = ___c));
+        if (___async != null && !___async.IsEnd) yield return ___async;
         
-        LoadAsync(Content.LoadAsync<EntryEngine.TEXTURE>(@"LM_0005_删除-1.png", ___c => B确定.SourceNormal = ___c));
+        ___async = LoadAsync(Content.LoadAsync<EntryEngine.TEXTURE>(@"LM_0005_删除-1.png", ___c => B确定.SourceNormal = ___c));
+        if (___async != null && !___async.IsEnd) yield return ___async;
         
-        LoadAsync(Content.LoadAsync<EntryEngine.TEXTURE>(@"Frame1.mtpatch", ___c => TBText.SourceNormal = ___c));
-        
+        ___async = LoadAsync(Content.LoadAsync<EntryEngine.TEXTURE>(@"Frame1.mtpatch", ___c => TBText.SourceNormal = ___c));
+        if (___async != null && !___async.IsEnd) yield return ___async;
         
         
         
@@ -141,12 +157,8 @@ public partial class S确认对话框
         foreach (var item in __loading)
         yield return item;
     }
-    public void Show(UIScene __scene)
+    private void Show(EntryEngine.UI.UIScene __scene)
     {
-        B取消.UIText.Text = _LANGUAGE.GetString("8");
-        B取消.Text = _LANGUAGE.GetString("8");
-        B确定.UIText.Text = _LANGUAGE.GetString("7");
-        B确定.Text = _LANGUAGE.GetString("7");
         
     }
 }

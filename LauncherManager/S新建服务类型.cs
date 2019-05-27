@@ -27,7 +27,7 @@ public partial class S新建服务类型 : UIScene
     {
         if (string.IsNullOrEmpty(TB名字.Text))
         {
-            S确认对话框.Hint(Text.ETextID.NameEmpty);
+            S确认对话框.Hint("账号名不能为空");
             return;
         }
 
@@ -35,19 +35,19 @@ public partial class S新建服务类型 : UIScene
             || string.IsNullOrEmpty(TBSVN账号.Text)
             || string.IsNullOrEmpty(TBSVN密码.Text))
         {
-            S确认对话框.Hint(Text.ETextID.SVNEmpty);
+            S确认对话框.Hint("SVN信息不能为空");
             return;
         }
 
         if (!TBSVN目录.Text.EndsWith("/"))
         {
-            S确认对话框.Hint(Text.ETextID.SVNPath);
+            S确认对话框.Hint("SVN路径必须以'/'结尾");
             return;
         }
 
         if (string.IsNullOrEmpty(TB启动文件.Text))
         {
-            S确认对话框.Hint(Text.ETextID.ExeEmpty);
+            S确认对话框.Hint("运行程序不能为空");
             return;
         }
 
@@ -59,9 +59,9 @@ public partial class S新建服务类型 : UIScene
         type.Exe = TB启动文件.Text;
         type.LaunchCommand = TB启动命令.Text;
         if (New)
-            S确认对话框.Wait(Text.ETextID.Wait, NewServiceType(type));
+            S确认对话框.Wait("正在等待服务器操作", NewServiceType(type));
         else
-            S确认对话框.Wait(Text.ETextID.Wait, ModifyServiceType(Type.Name, type));
+            S确认对话框.Wait("正在等待服务器操作", ModifyServiceType(Type.Name, type));
 
         Close(true);
     }

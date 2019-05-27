@@ -29,18 +29,20 @@ public partial class S服务类型管理信息
         B修改.Clip = B修改_Clip;
         
         B修改.UIText = new EntryEngine.UI.UIText();
+        B修改.UIText.Text = "修改";
         B修改.UIText.FontColor = new COLOR()
         {
-            R = 0,
-            G = 0,
             B = 0,
+            G = 0,
+            R = 0,
             A = 255,
         };
         B修改.UIText.TextAlignment = (EPivot)17;
         B修改.UIText.TextShader = null;
         B修改.UIText.Padding.X = 0f;
         B修改.UIText.Padding.Y = 0f;
-        B修改.UIText.FontSize = 20f;
+        B修改.UIText.FontSize = 16f;
+        B修改.Text = "修改";
         this.Add(B修改);
         B删除.Name = "B删除";
         EntryEngine.RECT B删除_Clip = new EntryEngine.RECT();
@@ -51,18 +53,20 @@ public partial class S服务类型管理信息
         B删除.Clip = B删除_Clip;
         
         B删除.UIText = new EntryEngine.UI.UIText();
+        B删除.UIText.Text = "删除";
         B删除.UIText.FontColor = new COLOR()
         {
-            R = 0,
-            G = 0,
             B = 0,
+            G = 0,
+            R = 0,
             A = 255,
         };
         B删除.UIText.TextAlignment = (EPivot)17;
         B删除.UIText.TextShader = null;
         B删除.UIText.Padding.X = 0f;
         B删除.UIText.Padding.Y = 0f;
-        B删除.UIText.FontSize = 20f;
+        B删除.UIText.FontSize = 16f;
+        B删除.Text = "删除";
         this.Add(B删除);
         L服务类型名字.Name = "L服务类型名字";
         EntryEngine.RECT L服务类型名字_Clip = new EntryEngine.RECT();
@@ -76,9 +80,9 @@ public partial class S服务类型管理信息
         L服务类型名字.UIText.Text = "#GameCrossServer";
         L服务类型名字.UIText.FontColor = new COLOR()
         {
-            R = 0,
-            G = 0,
             B = 0,
+            G = 0,
+            R = 0,
             A = 255,
         };
         L服务类型名字.UIText.TextAlignment = (EPivot)17;
@@ -100,16 +104,16 @@ public partial class S服务类型管理信息
         L服务地址.UIText.Text = "#Http://YamiwaStudio/svn/WWC";
         L服务地址.UIText.FontColor = new COLOR()
         {
-            R = 0,
-            G = 0,
             B = 0,
+            G = 0,
+            R = 0,
             A = 255,
         };
         L服务地址.UIText.TextAlignment = (EPivot)17;
         L服务地址.UIText.TextShader = null;
         L服务地址.UIText.Padding.X = 0f;
         L服务地址.UIText.Padding.Y = 0f;
-        L服务地址.UIText.FontSize = 14f;
+        L服务地址.UIText.FontSize = 16f;
         L服务地址.Text = "#Http://YamiwaStudio/svn/WWC";
         L服务地址.BreakLine = true;
         this.Add(L服务地址);
@@ -118,20 +122,19 @@ public partial class S服务类型管理信息
     }
     protected override IEnumerable<ICoroutine> Loading()
     {
+        ICoroutine async;
         ICoroutine ___async;
         ___async = LoadAsync(Content.LoadAsync<EntryEngine.TEXTURE>(@"LM_0005_删除-1.png", ___c => B修改.SourceNormal = ___c));
-        if (___async != null) yield return ___async;
+        if (___async != null && !___async.IsEnd) yield return ___async;
         
         ___async = LoadAsync(Content.LoadAsync<EntryEngine.TEXTURE>(@"LM_0005_删除-1.png", ___c => B删除.SourceNormal = ___c));
-        if (___async != null) yield return ___async;
+        if (___async != null && !___async.IsEnd) yield return ___async;
         
         ___async = LoadAsync(Content.LoadAsync<EntryEngine.TEXTURE>(@"Frame1.mtpatch", ___c => L服务类型名字.SourceNormal = ___c));
-        if (___async != null) yield return ___async;
-        
+        if (___async != null && !___async.IsEnd) yield return ___async;
         
         ___async = LoadAsync(Content.LoadAsync<EntryEngine.TEXTURE>(@"Frame1.mtpatch", ___c => L服务地址.SourceNormal = ___c));
-        if (___async != null) yield return ___async;
-        
+        if (___async != null && !___async.IsEnd) yield return ___async;
         
         
         var __loading = MyLoading();
@@ -139,12 +142,8 @@ public partial class S服务类型管理信息
         foreach (var item in __loading)
         yield return item;
     }
-    public void Show(UIScene __scene)
+    private void Show(EntryEngine.UI.UIScene __scene)
     {
-        B修改.UIText.Text = _LANGUAGE.GetString("40");
-        B修改.Text = _LANGUAGE.GetString("40");
-        B删除.UIText.Text = _LANGUAGE.GetString("38");
-        B删除.Text = _LANGUAGE.GetString("38");
         
     }
 }

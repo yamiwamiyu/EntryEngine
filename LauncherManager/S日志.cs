@@ -171,7 +171,7 @@ public partial class S日志 : UIScene
         }
         catch (Exception ex)
         {
-            S确认对话框.Hint(Text.ETextID.DateError);
+            S确认对话框.Hint("日期格式错误，正确格式[yyyy-MM-dd HH:mm:ss]");
             return false;
         }
 
@@ -187,7 +187,7 @@ public partial class S日志 : UIScene
 
         if (log.IsEmpty())
         {
-            S确认对话框.Hint(Text.ETextID.LogEmpty);
+            S确认对话框.Hint("没有日志");
             return;
         }
 

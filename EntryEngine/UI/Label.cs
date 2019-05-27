@@ -16,6 +16,17 @@ namespace EntryEngine.UI
         public event Action<Label> DisplayChanged;
         private VECTOR2 offset;
 
+        public override bool Checked
+        {
+            get
+            {
+                return this.Focused || base.Checked;
+            }
+            set
+            {
+                base.Checked = value;
+            }
+        }
 		public FONT Font
 		{
 			get { return UIText.Font; }

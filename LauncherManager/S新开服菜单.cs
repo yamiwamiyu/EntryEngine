@@ -77,19 +77,19 @@ public partial class S新开服菜单 : UIScene
         {
             if (string.IsNullOrEmpty(TB名字.Text))
             {
-                S确认对话框.Hint(Text.ETextID.NameEmpty);
+                S确认对话框.Hint("账号名不能为空");
                 return;
             }
 
             if (DD服务器.DropDownList.SelectedIndex == -1)
             {
-                S确认对话框.Hint(Text.ETextID.ServerEmpty);
+                S确认对话框.Hint("必须选择服务器");
                 return;
             }
 
             if (DD服务类型.DropDownList.SelectedIndex == -1)
             {
-                S确认对话框.Hint(Text.ETextID.STEmpty);
+                S确认对话框.Hint("必须选择服务类型");
                 return;
             }
 
