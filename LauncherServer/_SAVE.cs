@@ -26,6 +26,15 @@ namespace LauncherServer
             {
                 ByteRefReader reader = new ByteRefReader(_IO.ReadByte(SAVE_DATA), SerializeSetting.DefaultSerializeStatic);
                 reader.ReadObject(typeof(_SAVE));
+
+                foreach (var item in Managers)
+                {
+                    _LOG.Info("Load Manager [{0}] Susscess!", item.Name);
+                }
+                foreach (var item in ServiceTypes)
+                {
+                    _LOG.Info("Load ServiceType [{0}] Susscess!", item.Name);
+                }
             }
             catch (Exception ex)
             {

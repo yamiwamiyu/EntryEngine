@@ -46,6 +46,7 @@ namespace LauncherManager
             }
             catch (Exception ex)
             {
+                Save();
             }
         }
     }

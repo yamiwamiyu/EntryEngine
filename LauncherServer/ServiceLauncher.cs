@@ -22,6 +22,7 @@ namespace LauncherServer
     {
         public ServiceLauncher()
         {
+            this.Heartbeat = TimeSpan.FromMinutes(35);
             this.ClientDisconnect += new Action<EntryEngine.Network.Link>(ServiceLauncher_ClientDisconnect);
         }
 
@@ -48,7 +49,7 @@ namespace LauncherServer
                     && !(remote.StartsWith("192.168") && ip == "127.0.0.1")
                     && !(remote == "127.0.0.1" && ip.StartsWith("192.168")))
                 {
-                    _LOG.Error("异常的IP:{0}尝试连接管理器", link.EndPoint);
+                    _LOG.Error("异常的终端:{0}尝试连接管理器 IP:{1}", link.EndPoint, ip);
                     result.Result = EAcceptPermit.Block;
                     break;
                 }

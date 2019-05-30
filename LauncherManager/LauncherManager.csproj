@@ -110,8 +110,8 @@
   <PropertyGroup>
     <PreBuildEvent>IF $(ConfigurationName) == Debug GOTO end
 
-del $(ProjectDir)..\..\Launch\Maintainer\Content\*.csv
-$(ProjectDir)..\EntryBuilder\bin\Debug\EntryBuilder.exe BuildCSVFromExcel $(ProjectDir)Tables\ $(TargetDir)Content\ “” 12.0 $(ProjectDir)_TABLE.cs true
+::del $(ProjectDir)..\..\Launch\Maintainer\Content\*.csv
+::$(ProjectDir)..\EntryBuilder\bin\Debug\EntryBuilder.exe BuildCSVFromExcel $(ProjectDir)Tables\ $(TargetDir)Content\ “” 12.0 $(ProjectDir)_TABLE.cs true
 
 :end
 

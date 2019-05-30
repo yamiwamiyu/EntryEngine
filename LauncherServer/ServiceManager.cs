@@ -8,6 +8,7 @@ using EntryEngine.Network;
 using EntryEngine.Serialize;
 using LauncherManagerProtocol;
 using LauncherProtocolStructure;
+using System.IO;
 
 namespace LauncherServer
 {
@@ -68,6 +69,7 @@ namespace LauncherServer
         public ServiceManager()
         {
             Instance = this;
+            this.Heartbeat = TimeSpan.FromMinutes(35);
             this.ClientDisconnect += new Action<EntryEngine.Network.Link>(ServiceManager_ClientDisconnect);
         }
 
@@ -283,8 +285,23 @@ namespace LauncherServer
                 return;
             }
 
+            //if (old.SVNPath != type.SVNPath)
+            //{
+            //}
+
             if (CheckSvn(type))
             {
+                if (old.SVNPath != type.SVNPath)
+                {
+                    // 删除文件夹 -> 重新checkout
+                    _LOG.Warning("暂未能修改SVN Path");
+                    //if (SERVER.AllServices.Any(
+                    //if (Directory.Exists(old.Name))
+                    //{
+
+                    //}
+                }
+
                 _SAVE.ServiceTypes[_SAVE.ServiceTypes.IndexOf(s => s.Name == type.Name)] = type;
                 _SAVE.Save();
 
@@ -345,13 +362,16 @@ namespace LauncherServer
             IManagerCallbackProxy.OnGetServiceTypes(client.Link, _SAVE.ServiceTypes.ToArray());
             foreach (var item in SERVER.Servers)
             {
-                foreach (var r in item.Services.Distinct(s => s.Type))
+                if (item.Services != null)
                 {
-                    IManagerCallbackProxy.OnRevisionUpdate(client.Link, item.ID, new ServiceTypeRevision()
+                    foreach (var r in item.Services.Distinct(s => s.Type))
                     {
-                        Type = r.Type,
-                        Revision = r.RevisionOnServer,
-                    });
+                        IManagerCallbackProxy.OnRevisionUpdate(client.Link, item.ID, new ServiceTypeRevision()
+                        {
+                            Type = r.Type,
+                            Revision = r.RevisionOnServer,
+                        });
+                    }
                 }
             }
         }

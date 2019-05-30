@@ -27,6 +27,7 @@ public partial class S登陆菜单 : UIScene
 
         Background = TEXTURE.Pixel;
 
+        ((TextBox)DD用户名.DropDownText).TextEditOver += new Action<Label>(S登陆菜单_TextEditOver);
         DD用户名.DropDownList.SelectedIndexChanged += DD用户名_SelectedIndexChanged;
         B连接服务端.Clicked += new DUpdate<UIElement>(B连接服务端_Clicked);
         B用户名删除.Clicked += new DUpdate<UIElement>(B用户名删除_Clicked);
@@ -35,6 +36,12 @@ public partial class S登陆菜单 : UIScene
         B一键删除.Clicked += new DUpdate<UIElement>(B一键删除_Clicked);
     }
 
+    void S登陆菜单_TextEditOver(Label obj)
+    {
+        string name = DD用户名.Text;
+        user = _SAVE.Users.FirstOrDefault(u => u.Name == name);
+        RefreshPlatforms();
+    }
     void DD用户名_SelectedIndexChanged(Selectable sender)
     {
         if (sender.SelectedIndex != -1)
@@ -174,38 +181,8 @@ public partial class S登陆菜单 : UIScene
                 {
                     if (maintainer.Connected)
                     {
-                        bool save = false;
-                        // 连接成功
-                        user = _SAVE.Users.FirstOrDefault(u => u.Name == name);
-                        if (user == null)
-                        {
-                            user = new User();
-                            user.Name = name;
-                            _SAVE.Users.Add(user);
-                            save = true;
-
-                            DD用户名.DropDownList.AddItem(name);
-                        }
-
-                        if (!user.Managed.Any(p => p.IP == ip && p.Port == port))
-                        {
-                            Platform platform = new Platform();
-                            platform.IP = ip;
-                            platform.Port = port;
-                            platform.Name = maintainer.Platform;
-                            user.Managed.Add(platform);
-                            save = true;
-                            RefreshPlatforms();
-                        }
-
-                        if (save)
-                        {
-                            _SAVE.Save();
-                        }
-                        _LOG.Info("{0}连接平台服务器{1}成功", name, ip);
-
-                        // 切换至服务器管理
-                        Entry.ShowMainScene<S服务器管理>();
+                        SaveLoginInfo(name, ip, port, maintainer);
+                        LoginSuccess();
                         return true;
                     }
                     else
@@ -230,6 +207,39 @@ public partial class S登陆菜单 : UIScene
         }
     }
 
+    void SaveLoginInfo(string name, string ip, ushort port, Maintainer maintainer)
+    {
+        bool save = false;
+        // 连接成功
+        user = _SAVE.Users.FirstOrDefault(u => u.Name == name);
+        if (user == null)
+        {
+            user = new User();
+            user.Name = name;
+            _SAVE.Users.Add(user);
+            save = true;
+
+            DD用户名.DropDownList.AddItem(name);
+        }
+
+        if (!user.Managed.Any(p => p.IP == ip && p.Port == port))
+        {
+            Platform platform = new Platform();
+            platform.IP = ip;
+            platform.Port = port;
+            platform.Name = maintainer.Platform;
+            user.Managed.Add(platform);
+            save = true;
+            RefreshPlatforms();
+        }
+
+        if (save)
+        {
+            _SAVE.Save();
+        }
+        _LOG.Info("{0}连接平台服务器{1}成功", name, ip);
+    }
+
     void RefreshUsers()
     {
         DD用户名.DropDownList.Clear();
@@ -238,6 +248,7 @@ public partial class S登陆菜单 : UIScene
             var newItem = ___B用户名1();
             newItem.Text = item.Name;
             newItem.Width = DD用户名.DropDownList.Width;
+            newItem.Eventable = false;
             DD用户名.DropDownList.Add(newItem);
         }
     }
@@ -290,6 +301,15 @@ public partial class S登陆菜单 : UIScene
             bool result = Maintainer.Maintainers.TrueForAll(m => m.Connected);
             if (result)
             {
+                //string name = DD用户名.Text;
+                //int index = 0;
+                //foreach (var item in platforms)
+                //{
+                //    if (!item.CB单选.Checked)
+                //        continue;
+                //    Platform platform = item.CB单选.Tag as Platform;
+                //    SaveLoginInfo(name, platform.IP, platform.Port, Maintainer.Maintainers[index++]);
+                //}
                 break;
             }
             else
@@ -305,6 +325,20 @@ public partial class S登陆菜单 : UIScene
             }
         }
 
+        LoginSuccess();
+    }
+
+    void LoginSuccess()
+    {
+        string username = DD用户名.Text;
+        int index = _SAVE.Users.IndexOf(u => u.Name == username);
+        if (index != -1 && index != 0)
+        {
+            var user = _SAVE.Users[index];
+            _SAVE.Users.RemoveAt(index);
+            _SAVE.Users.Insert(0, user);
+            _SAVE.Save();
+        }
         // 切换至服务器管理
         Entry.ShowMainScene<S服务器管理>();
     }

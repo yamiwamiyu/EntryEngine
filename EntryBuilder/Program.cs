@@ -507,10 +507,10 @@ namespace EntryBuilder
 		static void Main(string[] args)
         {
             //_LOG._Logger = new LoggerConsole();
-            
+
+            //GaussianBlur gauss = new GaussianBlur(15);
             //using (Bitmap bitmap = new Bitmap("Test.png"))
             //{
-            //    GaussianBlur gauss = new GaussianBlur(15);
             //    gauss.BlurType = EBlurType.Both;
             //    Bitmap gaussImage = gauss.ProcessImage(bitmap);
             //    gaussImage.Save("Test1.png");

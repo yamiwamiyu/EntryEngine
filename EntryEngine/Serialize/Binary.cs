@@ -470,7 +470,7 @@ namespace EntryEngine.Serialize
                 {
                     if (type.IsClass || type.IsInterface)
                     {
-                        if (value == null)
+                        if (value == null && !type.IsStatic())
                         {
                             Write(false);
                             return;
@@ -2238,7 +2238,7 @@ namespace EntryEngine.Serialize
                             int refIndex = WriteRef(value);
                             if (refIndex == -1)
                             {
-                                if (value == null)
+                                if (value == null && !type.IsStatic())
                                 {
                                     Write(-1);
                                     return;

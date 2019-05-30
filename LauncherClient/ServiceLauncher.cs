@@ -40,6 +40,7 @@ namespace LauncherClient
                     item.Status = EServiceStatus.Stop;
                     item.LastStatusTime = null;
                     item.RevisionOnServer = ServiceTypes.FirstOrDefault(s => s.Type == item.Type).Revision;
+                    _LOG.Info("Load Service [{0}] Susscess!", item.Name);
                 }
             }
             catch (Exception ex)
@@ -59,22 +60,22 @@ namespace LauncherClient
             ServiceLauncher service;
             public LoggerToManager(ServiceLauncher service)
             {
-                Colors.Remove(0);
+                //Colors.Remove(0);
                 this.service = service;
             }
             protected override void InternalLog(Record record)
             {
-                if (service.Proxy != null)
-                    service.Proxy.LogServer(null, record);
                 base.InternalLog(record);
+                if (service.Proxy != null && record.Level > 0)
+                    service.Proxy.LogServer(null, record);
             }
         }
 
         int id;
-        StatisticCounter cNetwork;
-        StatisticCounter cCpu;
-        StatisticCounter cDisk;
-        StatisticCounter cMemory;
+        //StatisticCounter cNetwork;
+        //StatisticCounter cCpu;
+        //StatisticCounter cDisk;
+        //StatisticCounter cMemory;
 
         public LinkTcp Link
         {
@@ -99,17 +100,17 @@ namespace LauncherClient
 
         IEnumerable<ICoroutine> Initialize()
         {
-            _LOG._Logger = new LoggerToManager(this);
+            _LOG._Logger = new LoggerFile(new LoggerToManager(this));
 
             _LOG.Info("正在读取配置");
             _C.Load(_IO.ReadText("_C.xml"));
             _SAVE.Load();
 
             _LOG.Info("正在初始化服务器数据统计");
-            cNetwork = new StatisticCounter(ECounter.Network);
-            cCpu = new StatisticCounter(ECounter.CPU);
-            cDisk = new StatisticCounter(ECounter.Disk);
-            cMemory = new StatisticCounter(ECounter.Memory);
+            //cNetwork = new StatisticCounter(ECounter.Network);
+            //cCpu = new StatisticCounter(ECounter.CPU);
+            //cDisk = new StatisticCounter(ECounter.Disk);
+            //cMemory = new StatisticCounter(ECounter.Memory);
 
             this.SetCoroutine(ConnectManager());
 
@@ -140,8 +141,11 @@ namespace LauncherClient
 
                         _LOG.Info("成功连接管理服务器{0}", endpoint);
                         ByteWriter writer = new ByteWriter();
-                        writer.Write(_NETWORK.HostIP);
-                        writer.Write(_NETWORK.ValidMD5toBase64(_NETWORK.HostIP + _C.LauncherPublicKey));
+                        string ip = _NETWORK.HostIP;
+                        if (_C.IP == "127.0.0.1")
+                            ip = "127.0.0.1";
+                        writer.Write(ip);
+                        writer.Write(_NETWORK.ValidMD5toBase64(ip + _C.LauncherPublicKey));
                         Link.Write(writer.Buffer, 0, writer.Position);
                         Link.Flush();
 
@@ -198,7 +202,17 @@ namespace LauncherClient
                 Link.Flush();
                 foreach (var item in Agent.Receive())
                 {
-                    Agent.OnProtocol(item);
+                    try
+                    {
+                        Agent.OnProtocol(item);
+                    }
+                    catch (Exception ex)
+                    {
+                        _LOG.Error(ex, "OnProtocol");
+                        // 重连服务器
+                        Link.Close();
+                        return;
+                    }
                 }
 
                 // launcher status update

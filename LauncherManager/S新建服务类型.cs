@@ -45,11 +45,11 @@ public partial class S新建服务类型 : UIScene
             return;
         }
 
-        if (string.IsNullOrEmpty(TB启动文件.Text))
-        {
-            S确认对话框.Hint("运行程序不能为空");
-            return;
-        }
+        //if (string.IsNullOrEmpty(TB启动文件.Text))
+        //{
+        //    S确认对话框.Hint("运行程序不能为空");
+        //    return;
+        //}
 
         ServiceType type = new ServiceType();
         type.Name = TB名字.Text;

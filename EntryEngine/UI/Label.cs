@@ -226,7 +226,14 @@ namespace EntryEngine.UI
         protected virtual void InternalResetDisplay(string text)
         {
             if (BreakLine)
+            {
+                // InternalResetDisplay -> DisplayText -> this
+                // base.TextArea会用到UIText.Text(DisplayText)进行计算
+                // 这里之后计算出新的区域以重新计算DisplayText
+                // 所以旧的DisplayText可能会影响计算出来的区域
+                UIText.Text = string.Empty;
                 DisplayText = Font.BreakLine(text, TextArea.Width);
+            }
             else
                 DisplayText = text;
         }
@@ -308,8 +315,9 @@ namespace EntryEngine.UI
         }
         protected override sealed void DrawFont(GRAPHICS spriteBatch, Entry e)
         {
-            RECT textArea = base.TextArea;
-            RECT viewArea = ViewArea;
+            RECT textArea = TextArea;
+            //RECT viewArea = ViewArea;
+            RECT viewArea = ViewClip;
             bool needBeginEnd = NeedBeginEnd(ref viewArea);
             if (needBeginEnd)
             {

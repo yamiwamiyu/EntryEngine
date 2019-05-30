@@ -55,8 +55,8 @@ namespace LauncherManagerEntry
             obj.GRAPHICS.ScreenSize = new VECTOR2(1280, 720);
             obj.GRAPHICS.GraphicsSize = obj.GRAPHICS.ScreenSize;
             FONT.Default = obj.NewFONT("黑体", 16);
-            //obj.ShowMainScene(new SEntryPoint());
-            obj.ShowMainScene<TestScene>();
+            obj.ShowMainScene(new SEntryPoint());
+            //obj.ShowMainScene<TestScene>();
         }
     }
 

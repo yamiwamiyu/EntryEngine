@@ -270,7 +270,14 @@ namespace EntryEngine.Cmdline
                     if (overheat >= overheatFrameCount)
                     {
                         if (Overheat != null)
-                            Overheat(overheatTimes);
+                            try
+                            {
+                                Overheat(overheatTimes);
+                            }
+                            catch (Exception ex)
+                            {
+                                _LOG.Error(ex, "Overheat Error");
+                            }
                         overheat = 0;
                         Thread.Sleep(frameRate);
                     }

@@ -25,8 +25,8 @@ namespace LauncherServer
             AppDomain.CurrentDomain.UnhandledException += new UnhandledExceptionEventHandler(CurrentDomain_UnhandledException);
 
             Logger logger = new Logger();
-            logger.Colors.Remove(0);
-            _LOG._Logger = logger;
+            //logger.Colors.Remove(0);
+            _LOG._Logger = new LoggerFile(logger);
 
             _LOG.Debug("加载常量表");
             _C.Load(_IO.ReadText("_C.xml"));
@@ -56,6 +56,7 @@ namespace LauncherServer
 
         static void CurrentDomain_UnhandledException(object sender, UnhandledExceptionEventArgs e)
         {
+            _LOG.Error("Fatal: {0}", Environment.StackTrace);
             if (EntryEngine.EntryService.Instance != null)
                 EntryEngine.EntryService.Instance.Dispose();
             Environment.Exit(-1);

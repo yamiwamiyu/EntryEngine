@@ -2032,18 +2032,18 @@ namespace EntryEngine
         }
         private int GetClickPositionIndex(VECTOR2 cursor)
         {
-            return typist.Font.CursorIndex(text, VECTOR2.Subtract(cursor, typist.TextArea.Location));
+            return typist.Font.CursorIndex(text, cursor - typist.TextArea.Location);
         }
         internal void Update(Entry e)
         {
+            if (!IsActive)
+                return;
+
             // && e.Input.Keyboard.Focused
             if (e.INPUT.Keyboard != null && !ImmCapturing)
             {
                 shift = e.INPUT.Keyboard.Shift;
                 ctrl = e.INPUT.Keyboard.Ctrl;
-
-                if (!IsActive)
-                    return;
 
                 // shortcut
                 if (ctrl)
@@ -2605,59 +2605,33 @@ namespace EntryEngine
     /// </summary>
     public interface ITypist
     {
-        /// <summary>
-        /// 激活设备时是否要选中所有文字
-        /// </summary>
+        /// <summary>激活设备时是否要选中所有文字</summary>
         bool ActiveSelect { get; }
-        /// <summary>
-        /// 计算光标位置
-        /// </summary>
+        /// <summary>计算光标位置</summary>
         FONT Font { get; }
-        /// <summary>
-        /// 未经处理的源文字
-        /// </summary>
+        /// <summary>未经处理的源文字</summary>
         string Text { get; set; }
-        /// <summary>
-        /// 只读则不允许输入和删除操作，不过可以复制
-        /// </summary>
+        /// <summary>只读则不允许输入和删除操作，不过可以复制</summary>
         bool Readonly { get; }
-        /// <summary>
-        /// 控制是否超出文字区域自动换行，用于计算光标位置
-        /// </summary>
+        /// <summary>控制是否超出文字区域自动换行，用于计算光标位置</summary>
         bool BreakLine { get; }
-        /// <summary>
-        /// 用于判断回车是换行还是确定
-        /// </summary>
+        /// <summary>用于判断回车是换行还是确定</summary>
         bool Multiple { get; }
-        /// <summary>
-        /// 遮挡模式时不可复制选中
-        /// </summary>
+        /// <summary>遮挡(密码)模式时不可复制选中</summary>
         bool IsMask { get; }
-        /// <summary>
-        /// 文字区域，用于计算光标位置
-        /// </summary>
+        /// <summary>文字区域，用于计算光标位置</summary>
         RECT TextArea { get; }
-        /// <summary>
-        /// 显示区域，用于点击取消编辑
-        /// </summary>
+        /// <summary>显示区域，用于点击取消编辑</summary>
         RECT ViewArea { get; }
-        /// <summary>
-        /// 限制输入最大长度
-        /// </summary>
+        /// <summary>限制输入最大长度</summary>
         int MaxLength { get; }
-        /// <summary>
-        /// 使用输入设备的控件是否激活，用于控制设备自动关闭
-        /// </summary>
+        /// <summary>使用输入设备的控件是否激活，用于控制设备自动关闭</summary>
         bool IsActive { get; }
-        /// <summary>
-        /// 文字筛选，用于例如只能输入数字
-        /// </summary>
+        /// <summary>文字筛选，用于例如只能输入数字</summary>
         /// <param name="c">允许替换的单个字符</param>
         /// <returns>true: 被筛选掉的非法字符 / false: 合法字符</returns>
         bool Filter(ref char c);
-        /// <summary>
-        /// 设备关闭时回调源的处理程序
-        /// </summary>
+        /// <summary>设备关闭时回调源的处理程序</summary>
         /// <param name="result">最终文本属性</param>
         void OnStop(string result);
     }
@@ -5711,7 +5685,7 @@ namespace EntryEngine
                             // 连续英文换行
                             int value = alphabet.HasValue ? alphabet.Value : i;
                             list.Add(line.Substring(start, value - start));
-                            _width = alphabetWidth;
+                            _width = alphabetWidth + charWidth;
                             start = value;
                         }
                     }

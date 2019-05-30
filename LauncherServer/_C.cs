@@ -5,7 +5,7 @@ using System.Text;
 using EntryEngine;
 using EntryEngine.Serialize;
 
-public static partial class _C
+[AReflexible]public static partial class _C
 {
     public static string Name;
     public static ushort PortManager;

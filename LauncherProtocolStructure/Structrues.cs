@@ -38,7 +38,7 @@ namespace LauncherProtocolStructure
         public ushort ID;
         public string EndPoint;
         public string NickName;
-        public Service[] Services;
+        public Service[] Services = new Service[0];
 
         public string Name
         {

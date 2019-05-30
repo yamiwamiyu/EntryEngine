@@ -77,6 +77,10 @@ namespace LauncherServer
         {
             get { return logs.Values; }
         }
+        public static IEnumerable<Service> AllServices
+        {
+            get { return servers.SelectMany(s => s.Services); }
+        }
 
         public static LogStorage GetOrCreateLog(string serviceName)
         {

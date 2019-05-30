@@ -1129,19 +1129,19 @@ namespace EntryEngine.UI
 				}
             }
 
-            //var scene2 = SceneIsRunning;
-            //if (scene2 != null && scene2.IsInStage && scene2.UseFlowLayout)
-            //{
-            //    var clip = ViewClip;
-            //    clip.Width += Flow.MaginLeft + Flow.MaginRight;
-            //    clip.X -= Flow.MaginLeft;
-            //    if (Flow.Line)
-            //        clip.Width = Parent.Width - clip.X;
-            //    clip.Height += Flow.MaginTop + Flow.MaginBottom;
-            //    clip.Y -= Flow.MaginTop;
+            var scene2 = SceneIsRunning;
+            if (scene2 != null && scene2.IsInStage && scene2.UseFlowLayout)
+            {
+                var clip = ViewClip;
+                clip.Width += Flow.MaginLeft + Flow.MaginRight;
+                clip.X -= Flow.MaginLeft;
+                if (Flow.Line)
+                    clip.Width = Parent.Width - clip.X;
+                clip.Height += Flow.MaginTop + Flow.MaginBottom;
+                clip.Y -= Flow.MaginTop;
 
-            //    spriteBatch.Draw(patch, clip);
-            //}
+                spriteBatch.Draw(patch, clip);
+            }
         }
         protected virtual void OnUpdateBegin(Entry e)
         {
@@ -1810,16 +1810,18 @@ namespace EntryEngine.UI
         public static VECTOR2 CalcPivotPoint(VECTOR2 size, EPivot pivot)
         {
             return new VECTOR2(
-                Utility.EnumLow4((int)pivot) * size.X * 0.5f,
-                Utility.EnumHigh4((int)pivot) * size.Y * 0.5f);
+                PivotX(pivot) * size.X * 0.5f,
+                PivotY(pivot) * size.Y * 0.5f);
         }
         public static int PivotX(EPivot pivot)
         {
-            return Utility.EnumLow4((int)pivot);
+            return ((int)pivot) & 15;
+            //return Utility.EnumLow4((int)pivot);
         }
         public static int PivotY(EPivot pivot)
         {
-            return Utility.EnumHigh4((int)pivot);
+            return ((int)pivot) >> 4;
+            //return Utility.EnumHigh4((int)pivot);
         }
         public static VECTOR2 TextAlign(RECT bound, VECTOR2 textSize, EPivot alignment)
         {

@@ -252,10 +252,10 @@ namespace EntryEngine
         }
         public override void Log(ref Record record)
         {
-            if (Base != null)
-                Base.Log(ref record);
             string format = string.Format("[{0}] {1}", record.Time.ToString("yyyy-MM-dd HH:mm:ss"), record.ToString());
             writer.WriteLine(format);
+            if (Base != null)
+                Base.Log(ref record);
         }
         public void Dispose()
         {

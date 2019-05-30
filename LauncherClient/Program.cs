@@ -1,5 +1,6 @@
 ﻿using System;
 using EntryEngine.Cmdline;
+using EntryEngine;
 
 namespace LauncherClient
 {
@@ -26,6 +27,7 @@ namespace LauncherClient
 
         static void CurrentDomain_UnhandledException(object sender, UnhandledExceptionEventArgs e)
         {
+            _LOG.Error("Fatal: {0}", Environment.StackTrace);
             if (EntryEngine.EntryService.Instance != null)
                 EntryEngine.EntryService.Instance.Dispose();
             Environment.Exit(-1);

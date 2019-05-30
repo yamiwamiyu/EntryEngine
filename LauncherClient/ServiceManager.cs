@@ -171,7 +171,8 @@ namespace LauncherClient
                         if (record.Level <= (byte)ELog.Debug)
                         {
                             if (service.Status == EServiceStatus.Starting &&
-                                (record.Level == 2 || record.Level == 3))
+                                //(record.Level == 2 || record.Level == 3))
+                                (record.Level == 3))
                             {
                                 _LOG.Info("服务[{0}]启动时发生异常即将自动关闭", service.Name);
                                 Proxy.LogServer(name, record);
@@ -251,7 +252,9 @@ namespace LauncherClient
             bool flag = false;
             foreach (var item in _SAVE.ServiceTypes)
             {
+                _LOG.Info("准备开始更新{0}", item.Type);
                 int revision = _SVN.Update(item.Type);
+                _LOG.Info("版本号: {0} 旧版本号:{1}", revision, item.Revision);
                 if (revision != item.Revision)
                 {
                     item.Revision = revision;
@@ -268,6 +271,7 @@ namespace LauncherClient
             bool flag = false;
             foreach (var item in _SAVE.Services)
             {
+                // todo: svn信息修改
                 if (item.Type == type.Name && item.Exe != type.Exe)
                 {
                     _LOG.Debug("服务[{0}]运行程序修改 {1} -> {2}", item.Name, item.Exe, type.Exe);
