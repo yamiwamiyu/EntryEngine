@@ -45,14 +45,14 @@ namespace LauncherServer
                 reader.Read(out sign);
 
                 string remote = link.EndPoint.Address.ToString();
-                if (ip != remote
-                    && !(remote.StartsWith("192.168") && ip == "127.0.0.1")
-                    && !(remote == "127.0.0.1" && ip.StartsWith("192.168")))
-                {
-                    _LOG.Error("异常的终端:{0}尝试连接管理器 IP:{1}", link.EndPoint, ip);
-                    result.Result = EAcceptPermit.Block;
-                    break;
-                }
+                //if (ip != remote
+                //    && !(remote.StartsWith("192.168") && ip == "127.0.0.1")
+                //    && !(remote == "127.0.0.1" && ip.StartsWith("192.168")))
+                //{
+                //    _LOG.Error("异常的终端:{0}尝试连接管理器 IP:{1}", link.EndPoint, ip);
+                //    result.Result = EAcceptPermit.Block;
+                //    break;
+                //}
 
                 if (_NETWORK.ValidMD5toBase64(ip + _C.PublicKey) != sign)
                 {

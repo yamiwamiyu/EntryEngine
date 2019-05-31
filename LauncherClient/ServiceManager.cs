@@ -141,6 +141,11 @@ namespace LauncherClient
                 if (index != -1)
                     _SAVE.ServiceTypes.RemoveAt(index);
                 // 删除服务类型
+                foreach (var file in Directory.GetFiles(type, "*.svn-base", SearchOption.AllDirectories))
+                {
+                    // svn的只读文件会导致删除不了文件夹
+                    File.SetAttributes(file, FileAttributes.Normal);
+                }
                 Directory.Delete(type, true);
                 Directory.Delete("__" + type, true);
                 _LOG.Info("删除服务类型：{0}", type);
