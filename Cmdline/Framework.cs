@@ -300,46 +300,7 @@ namespace EntryEngine.Cmdline
             }
         }
     }
-    public class Logger : _LOG.Logger
-    {
-        //private const byte LOG = (byte)ELog.Debug;
-        private ConsoleColor last;
-
-        public Dictionary<byte, ConsoleColor> Colors
-        {
-            get;
-            private set;
-        }
-
-        public Logger()
-        {
-            Colors = new Dictionary<byte, ConsoleColor>();
-            Colors.Add(0, ConsoleColor.Gray);
-            Colors.Add(1, ConsoleColor.White);
-            Colors.Add(2, ConsoleColor.DarkYellow);
-            Colors.Add(3, ConsoleColor.Red);
-        }
-
-        public sealed override void Log(ref Record record)
-        {
-            byte level = record.Level;
-            ConsoleColor color;
-            if (!Colors.TryGetValue(level, out color))
-                return;
-
-            if (color != last)
-            {
-                last = color;
-                Console.ForegroundColor = color;
-            }
-            InternalLog(record);
-        }
-        protected virtual void InternalLog(Record record)
-        {
-            Console.WriteLine("[{0}] {1}", record.Time.ToString("yyyy-MM-dd HH:mm:ss"), record.ToString());
-        }
-    }
-    public class LoggerToShell : Logger
+    public class LoggerToShell : LoggerConsole
     {
         //private JsonWriter json = new JsonWriter();
 

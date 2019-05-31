@@ -201,7 +201,7 @@ namespace EntryEngine
                         builder.AppendFormat("\r\n{{{0}}}", i);
                         // 从内往外记录异常
                         temp = exes[exDepth - (i - len) - 1];
-                        param[i] = string.Format("msg: {0}\r\nstack: {1}", temp.Message, temp.StackTrace);
+                        param[i] = string.Format("type: {2}\r\nmsg: {0}\r\nstack: {1}", temp.Message, temp.StackTrace, temp.GetType().FullName);
                     }
                     message = builder.ToString();
                 }
@@ -239,15 +239,15 @@ namespace EntryEngine
         public _LOG.Logger Base;
         StreamWriter writer;
         public LoggerFile() : this(_LOG._Logger) { }
-        public LoggerFile(_LOG.Logger baseLog)
+        public LoggerFile(_LOG.Logger baseLog) : this(baseLog, NEW_LOG, OLD_LOG) { }
+        public LoggerFile(_LOG.Logger baseLog, string newFile, string oldFile)
         {
             Base = baseLog;
-            if (File.Exists(NEW_LOG))
+            if (File.Exists(newFile))
             {
-                File.Copy(NEW_LOG, OLD_LOG, true);
+                File.Copy(newFile, oldFile, true);
             }
-            writer = new StreamWriter(NEW_LOG, false, Encoding.UTF8);
-            //writer = File.CreateText(NEW_LOG);
+            writer = new StreamWriter(newFile, false, Encoding.UTF8);
             writer.AutoFlush = true;
         }
         public override void Log(ref Record record)

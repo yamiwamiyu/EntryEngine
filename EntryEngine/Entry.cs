@@ -6145,7 +6145,17 @@ namespace EntryEngine
 
         protected internal override float CharWidth(char c)
         {
-            return cache.Maps[c].W + Spacing.X;
+            if (c == '\r') return 0;
+            Buffer buffer;
+            if (cache.Maps.TryGetValue(c, out buffer))
+            {
+                return buffer.W + Spacing.X;
+            }
+            else
+            {
+                //_LOG.Warning("字体不包含文字:{0}", c);
+                return 0;
+            }
         }
         public bool GetTextTexture(char c, out TEXTURE texture, out RECT source)
         {

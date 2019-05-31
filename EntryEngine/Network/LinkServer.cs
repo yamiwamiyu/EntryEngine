@@ -1598,14 +1598,21 @@ namespace EntryEngine.Network
             catch (Exception ex)
             {
                 _LOG.Error(ex, "协议处理错误！URL: {0}", Context.Request.Url.LocalPath);
-                if (agent != null)
+                try
                 {
-                    agent.Response(new HttpError(500, ex.Message));
+                    if (agent != null)
+                    {
+                        agent.Response(new HttpError(500, ex.Message));
+                    }
+                    else
+                    {
+                        Context.Response.StatusCode = 500;
+                        Context.Response.Close();
+                    }
                 }
-                else
+                catch (Exception exInner)
                 {
-                    Context.Response.StatusCode = 500;
-                    Context.Response.Close();
+                    _LOG.Error(exInner, "协议异常回调错误！URL: {0}", Context.Request.Url.LocalPath);
                 }
             }
             finally
@@ -1713,14 +1720,22 @@ namespace EntryEngine.Network
         }
         public void Response(byte[] buffer, int offset, int count)
         {
+            if (hasResponsed) return;
             hasResponsed = true;
             Context.Response.OutputStream.BeginWrite(buffer, offset, count, EndResponse, Context);
         }
         public void EndResponse(IAsyncResult ar)
         {
             var context = (HttpListenerContext)ar.AsyncState;
-            context.Response.OutputStream.EndWrite(ar);
-            context.Response.Close();
+            try
+            {
+                context.Response.OutputStream.EndWrite(ar);
+                context.Response.Close();
+            }
+            catch (Exception ex)
+            {
+                _LOG.Error(ex, "Error EndResponse");
+            }
         }
     }
     public class HttpError

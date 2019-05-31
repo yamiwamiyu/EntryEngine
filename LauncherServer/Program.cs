@@ -24,9 +24,10 @@ namespace LauncherServer
         {
             AppDomain.CurrentDomain.UnhandledException += new UnhandledExceptionEventHandler(CurrentDomain_UnhandledException);
 
-            Logger logger = new Logger();
+            _LOG.Logger logger = new LoggerConsole();
             //logger.Colors.Remove(0);
             _LOG._Logger = new LoggerFile(logger);
+            //_LOG._Logger = logger;
 
             _LOG.Debug("加载常量表");
             _C.Load(_IO.ReadText("_C.xml"));

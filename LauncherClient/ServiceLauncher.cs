@@ -55,7 +55,7 @@ namespace LauncherClient
 
     partial class ServiceLauncher : EntryService, ICmdline
     {
-        class LoggerToManager : Logger
+        class LoggerToManager : LoggerConsole
         {
             ServiceLauncher service;
             public LoggerToManager(ServiceLauncher service)
@@ -63,11 +63,11 @@ namespace LauncherClient
                 //Colors.Remove(0);
                 this.service = service;
             }
-            protected override void InternalLog(Record record)
+            public override void Log(ref Record record)
             {
-                base.InternalLog(record);
                 if (service.Proxy != null && record.Level > 0)
                     service.Proxy.LogServer(null, record);
+                base.Log(ref record);
             }
         }
 
@@ -101,6 +101,7 @@ namespace LauncherClient
         IEnumerable<ICoroutine> Initialize()
         {
             _LOG._Logger = new LoggerFile(new LoggerToManager(this));
+            //_LOG._Logger = new LoggerToManager(this);
 
             _LOG.Info("正在读取配置");
             _C.Load(_IO.ReadText("_C.xml"));

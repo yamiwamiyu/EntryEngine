@@ -69,7 +69,7 @@ namespace LauncherServer
         public ServiceManager()
         {
             Instance = this;
-            this.Heartbeat = TimeSpan.FromMinutes(35);
+            this.Heartbeat = TimeSpan.FromMinutes(-35);
             this.ClientDisconnect += new Action<EntryEngine.Network.Link>(ServiceManager_ClientDisconnect);
         }
 

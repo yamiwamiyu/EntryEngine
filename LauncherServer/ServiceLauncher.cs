@@ -22,7 +22,7 @@ namespace LauncherServer
     {
         public ServiceLauncher()
         {
-            this.Heartbeat = TimeSpan.FromMinutes(35);
+            this.Heartbeat = TimeSpan.FromMinutes(-35);
             this.ClientDisconnect += new Action<EntryEngine.Network.Link>(ServiceLauncher_ClientDisconnect);
         }
 
