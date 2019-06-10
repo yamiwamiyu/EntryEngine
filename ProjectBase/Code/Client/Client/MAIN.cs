@@ -28,10 +28,10 @@ public class MAIN : UIScene
         Encoding encoding = _IO.IOEncoding;
         _IO.IOEncoding = Encoding.Default;
 
-        async = _IO.ReadAsync("Tables\\LANGUAGE.csv");
-        if (!async.IsEnd) yield return async;
-        _LANGUAGE.Load(_IO.ReadPreambleText(async.Data), "");
-        _LOG.Debug("加载语言表完毕");
+        //async = _IO.ReadAsync("Tables\\LANGUAGE.csv");
+        //if (!async.IsEnd) yield return async;
+        //_LANGUAGE.Load(_IO.ReadPreambleText(async.Data), "");
+        //_LOG.Debug("加载语言表完毕");
 
         //foreach (var item in _TABLE.LoadAsync("Tables\\"))
         //    if (!item.IsEnd)
@@ -43,5 +43,7 @@ public class MAIN : UIScene
         // 确保加载完了所有的基本资源后就可以启动第一个正式的菜单了
         //Entry.ShowMainScene<T>();
         this.State = EState.Release;
+
+        yield break;
     }
 }

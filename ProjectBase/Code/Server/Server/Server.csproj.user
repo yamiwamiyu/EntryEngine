@@ -2,6 +2,6 @@
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x86'">
     <StartAction>Program</StartAction>
-    <StartProgram>D:\Projects\EntryEngine\ProjectBase\Launch\Server\Cmdline.exe</StartProgram>
+    <StartProgram>..\Launch\Server\Cmdline.exe</StartProgram>
   </PropertyGroup>
 </Project>
