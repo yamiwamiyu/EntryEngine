@@ -2138,6 +2138,7 @@ namespace EntryBuilder
                 builder.AppendLine("var {0} = {{}};", name);
                 builder.AppendLine("export {{{0}}}", name);
                 builder.AppendLine("{0}.onSend = null;", name);
+                builder.AppendLine("{0}.onCallback = null;", name);
                 builder.AppendLine("{0}.onErrorMsg = null;", name);
                 builder.AppendLine("{0}.onError = null;", name);
                 builder.AppendLine("{0}.url = \"\";", name);
@@ -2151,6 +2152,7 @@ namespace EntryBuilder
                         builder.AppendLine("if (req.readyState == 4)");
                         builder.AppendBlock(() =>
                         {
+                            builder.AppendLine("if ({0}.onCallback) {0}.onCallback(req);", name);
                             builder.AppendLine("if (req.status == 200)");
                             builder.AppendBlock(() =>
                             {
@@ -9021,6 +9023,14 @@ namespace EntryBuilder
             //ForeachDirectory(xnaDir, copy);
             File.WriteAllText(fileList, builder.ToString(), Encoding.UTF8);
             File.WriteAllBytes(fileListVersion, BitConverter.GetBytes(new FileInfo(fileList).LastWriteTime.Ticks));
+            // xna目录下也应该存在上面两个文件，否则没法对比版本号
+            //Console.WriteLine("拷贝版本文件到XNA目录 {0}", isDirDifference);
+            if (isDirDifference)
+            {
+                Console.WriteLine("拷贝版本文件到XNA目录");
+                File.Copy(fileList, originDLL + Path.GetFileName(fileList), true);
+                File.Copy(fileListVersion, originDLL + Path.GetFileName(fileListVersion), true);
+            }
             Console.WriteLine("复制资源完成");
         }
         public static void PublishToUnity(string xnaDir, string unityAssetsDir)
