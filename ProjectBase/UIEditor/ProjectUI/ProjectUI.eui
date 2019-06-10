@@ -1,7 +1,7 @@
 <root>
 	<Name>..&#92;..&#92;ProjectUI&#92;ProjectUI.eui</Name>
 	<Document>
-		<File>NULL</File>
+		<File>null</File>
 	</Document>
 	<TranslateTable>..&#92;..&#92;Design&#92;LANGUAGE.csv</TranslateTable>
 	<ContentDirectory>..&#92;..&#92;Launch&#92;Client&#92;Content</ContentDirectory>
