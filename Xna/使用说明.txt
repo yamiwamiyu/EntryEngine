@@ -25,3 +25,4 @@
 Visual Studio 2010 调试 -> 异常 -> Managed Debugging Assistants -> 关闭LoaderLock
 
 P.S. 若new XnaGate().Run()没能调用Initialize，请确保Xna生成为x86，引用Xna并要运行的项目也要为x86
+P.S. 若启动程序需要.net4，需要添加配置文件设置兼容模式，配置文件在Launch\Client\Xna.exe.config

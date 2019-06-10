@@ -7355,7 +7355,7 @@ namespace EntryBuilder
 									builder.AppendLine("if (file == self) continue;");
                                     builder.AppendLine("string arg = null;");
                                     // 同一文件夹下有多个exe文件时，可以通过参数指定要运行的exe文件
-                                    builder.AppendLine("if (n > 2 && args.Length > 0)");
+                                    builder.AppendLine("if (n > 1 && args.Length > 0)");
                                     builder.AppendBlock(() =>
                                     {
                                         builder.AppendLine("if (System.IO.Path.GetFileNameWithoutExtension(file) == args[0])");

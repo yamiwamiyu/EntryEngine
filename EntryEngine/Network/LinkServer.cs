@@ -7,6 +7,7 @@ using System.Net;
 using System.Net.Sockets;
 using EntryEngine.Serialize;
 using System.Text;
+using System.IO;
 
 namespace EntryEngine.Network
 {
@@ -1747,6 +1748,126 @@ namespace EntryEngine.Network
         {
             this.errCode = code;
             this.errMsg = msg;
+        }
+    }
+
+    public class FileService
+    {
+        Dictionary<string, byte[]> Cache;
+        HttpListener listener;
+        string localPath;
+
+        public bool UseCache
+        {
+            get { return Cache != null; }
+            set
+            {
+                if (UseCache != value)
+                {
+                    if (value)
+                    {
+                        Cache = new Dictionary<string, byte[]>();
+                    }
+                    else
+                    {
+                        Cache = null;
+                    }
+                }
+            }
+        }
+        public HttpListener Listener
+        {
+            get { return listener; }
+        }
+        public bool IsStarted
+        {
+            get { return listener != null; }
+        }
+        public string LocalPath
+        {
+            get { return localPath; }
+            set
+            {
+                if (string.IsNullOrEmpty(value) || value.EndsWith("/") || value.EndsWith("\\"))
+                {
+                    localPath = string.Empty;
+                }
+                else
+                {
+                    localPath = value + "/";
+                }
+            }
+        }
+        public ushort Port
+        {
+            get;
+            private set;
+        }
+
+        public void Start(ushort port)
+        {
+            listener = new HttpListener();
+            listener.Prefixes.Add(string.Format("http://*:{0}/", port));
+            listener.Start();
+            listener.BeginGetContext(Accept, listener);
+            this.Port = port;
+        }
+        void Accept(IAsyncResult ar)
+        {
+            HttpListener handle = (HttpListener)ar.AsyncState;
+            try
+            {
+                HttpListenerContext context = handle.EndGetContext(ar);
+                handle.BeginGetContext(Accept, handle);
+                context.Response.AppendHeader("Access-Control-Allow-Origin", "*");
+                string path = context.Request.Url.LocalPath.Substring(1);
+                _LOG.Debug(path);
+                string fullPath = localPath + path;
+                if (!File.Exists(fullPath))
+                {
+                    context.Response.StatusCode = 404;
+                }
+                else
+                {
+                    if (path.Contains(".html"))
+                        context.Response.ContentType = "text/html";
+                    byte[] bytes;
+                    if (UseCache)
+                    {
+                        bool cache;
+                        lock (Cache)
+                            cache = Cache.TryGetValue(path, out bytes);
+                        if (!cache)
+                        {
+                            bytes = File.ReadAllBytes(path);
+                            lock (Cache)
+                                Cache[path] = bytes;
+                        }
+                    }
+                    else
+                    {
+                        bytes = File.ReadAllBytes(fullPath);
+                    }
+                    context.Response.OutputStream.Write(bytes, 0, bytes.Length);
+                }
+                context.Response.Close();
+            }
+            catch (Exception ex)
+            {
+                _LOG.Debug("async GetContext error! msg={0}", ex.Message);
+            }
+            //finally
+            //{
+
+            //}
+        }
+        public void Stop()
+        {
+            if (listener != null)
+            {
+                listener.Stop();
+                listener = null;
+            }
         }
     }
 
