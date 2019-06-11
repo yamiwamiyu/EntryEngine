@@ -222,7 +222,7 @@ namespace EntryEngine.Serialize
         public static string Serialize(object value)
         {
             if (value == null)
-                return null;
+                return string.Empty;
             return Serialize(value, value.GetType(), SerializeSetting.DefaultSetting);
         }
         public static string Serialize(object value, Type type)
@@ -572,10 +572,18 @@ namespace EntryEngine.Serialize
 			List<string> keys = new List<string>();
 			while (pos < len)
 			{
-				string value = ReadGrid;
-				keys.Add(value);
-				if (PeekChar == '\r')
-					break;
+                if (PeekChar == ',')
+                {
+                    keys.Add(string.Empty);
+                    Read();
+                }
+                else
+                {
+                    string value = ReadGrid;
+                    keys.Add(value);
+                    if (PeekChar == '\r')
+                        break;
+                }
 			}
 			if (skipTitle)
 				for (int i = 0; i < TITLE_ROW_COUNT; i++)

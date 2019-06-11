@@ -188,7 +188,7 @@ namespace EntryEngine.Serialize
         public static string Serialize(object value)
         {
             if (value == null)
-                return null;
+                return string.Empty;
             return Serialize(value, value.GetType(), SerializeSetting.DefaultSetting);
         }
         public static string Serialize(object value, Type type)
