@@ -1104,7 +1104,7 @@ namespace EntryEngine
 		{
 			return LocalTime + timestamp;
 		}
-        public static DateTime ToTime(int milliseconds)
+        public static DateTime ToTime(long milliseconds)
         {
             return LocalTime.AddMilliseconds(milliseconds);
         }

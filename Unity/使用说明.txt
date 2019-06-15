@@ -195,6 +195,9 @@ Android环境搭建2
 2. 下载ADT，解压后自带Eclipse，SDK和SDK Manager
 3. 指定SDK路径
 
+较为稳定的版本JDK8
+https://unity3d.com/cn/get-unity/download?thank-you=update&download_nid=47202&os=Win
+
 Android广告植入
 
 1. 新建java项目，Package Name要与最终发布的名字相同，在AndroidManifest.xml可修改

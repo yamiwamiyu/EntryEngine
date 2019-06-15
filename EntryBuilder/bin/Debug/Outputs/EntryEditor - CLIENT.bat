@@ -9,5 +9,5 @@ copy ..\..\..\..\Xna\bin\CLIENT\*.dll EntryEditor\
 copy ..\..\..\..\EntryEngine\bin\CLIENT\*.dll EntryEditor\
 
 move EntryEditor\fmodex.dll fmodex.dll
-..\EntryBuilder.exe BuildLinkShell EntryEditor\ 3.5 10 EntryEditor.exe "x86" ""
+..\EntryBuilder.exe BuildLinkShell EntryEditor\ 3.5 10 EntryEditor.exe "x86" "" true
 del fmodex.dll

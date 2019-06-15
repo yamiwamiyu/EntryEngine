@@ -1858,7 +1858,7 @@ namespace EntryBuilder
                                     else
                                     {
                                         //builder.AppendLine("{0} {1} = __temp == null ? default({0}) : ({0})Convert.ChangeType(__temp, typeof({0}));", param.ParameterType.CodeName(), param.Name);
-                                        builder.Append("{0} {1} = __temp == null ? default({0}) : ", typeCodeName, param.Name);
+                                        builder.Append("{0} {1} = string.IsNullOrEmpty(__temp) ? default({0}) : ", typeCodeName, param.Name);
                                         if (param.ParameterType == typeof(byte)
                                             || param.ParameterType == typeof(sbyte)
                                             || param.ParameterType == typeof(ushort)
@@ -1869,10 +1869,13 @@ namespace EntryBuilder
                                             || param.ParameterType == typeof(float)
                                             || param.ParameterType == typeof(ulong)
                                             || param.ParameterType == typeof(long)
-                                            || param.ParameterType == typeof(double)
-                                            || param.ParameterType == typeof(DateTime))
+                                            || param.ParameterType == typeof(double))
                                         {
                                             builder.AppendLine("{0}.Parse(__temp);", typeCodeName);
+                                        }
+                                        else if (param.ParameterType == typeof(DateTime))
+                                        {
+                                            builder.AppendLine("Utility.ToTime(long.Parse(__temp));", typeCodeName);
                                         }
                                         else if (param.ParameterType.IsEnum)
                                         {
@@ -2214,7 +2217,8 @@ namespace EntryBuilder
                             //    builder.Append("&");
                             builder.Append("\"{0}=\" + ", param.Name);
                             if (param.ParameterType == typeof(DateTime))
-                                builder.Append("JSON.stringify({0}).replace(\"T\", \" \").replace(\"Z\", \"\")", param.Name);
+                                //builder.Append("JSON.stringify({0}).replace(\"T\", \" \").replace(\"Z\", \"\")", param.Name);
+                                builder.Append("{0}", param.Name);
                             else if (param.ParameterType.IsCustomType())
                                 builder.Append("JSON.stringify({0})", param.Name);
                             else
@@ -7225,7 +7229,7 @@ namespace EntryBuilder
 
 			SaveCode(outputCS, builder);
 		}
-		public static void BuildLinkShell(string inputDirOrFile, string dotnetCompilerVersion, byte depth, string outputFile, string x86, string overdueTime)
+		public static void BuildLinkShell(string inputDirOrFile, string dotnetCompilerVersion, byte depth, string outputFile, string x86, string overdueTime, bool showConsole)
 		{
 			object[] exe = null;
 			byte[] result = null;
@@ -7240,6 +7244,10 @@ namespace EntryBuilder
 			builder.AppendLine("public class Shell");
 			builder.AppendBlock(() =>
 			{
+                if (!showConsole)
+                {
+                    builder.AppendLine("[System.Runtime.InteropServices.DllImport(\"user32.dll\")]static extern bool ShowWindow(int hWnd, int nCmdShow);");
+                }
 				builder.AppendLine("public static void Next(byte[] bytes)");
 				builder.AppendBlock(() =>
 				{
@@ -7283,11 +7291,15 @@ namespace EntryBuilder
 						}
 						catch (Exception)
 						{
-                            Console.WriteLine("加载入口Dll异常，编译选项采用x86");
+                            Console.WriteLine("加载入口Dll[{0}]异常，编译选项采用x86", file);
 							x86 = "x86";
 						}
 					}
 					builder.AppendLine("AppDomain.CurrentDomain.AssemblyResolve += (sender, e) => asses.FirstOrDefault(a => a.FullName == e.Name);");
+                    if (!showConsole)
+                    {
+                        builder.AppendLine("ShowWindow(System.Diagnostics.Process.GetCurrentProcess().MainWindowHandle.ToInt32(), 0);");
+                    }
 					// if has EntryPoint will run the application
 					builder.AppendLine("foreach (var assembly in asses)");
 					builder.AppendBlock(() =>
