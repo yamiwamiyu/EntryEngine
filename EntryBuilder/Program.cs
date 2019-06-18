@@ -599,7 +599,7 @@ namespace EntryBuilder
 			// path\Dll.dll\Namespace
 			int index = dllAndNamespace.LastIndexOf('\\');
 			string lib = dllAndNamespace.Substring(0, index);
-			Assembly assembly = Assembly.LoadFrom(lib);
+            Assembly assembly = Assembly.LoadFile(lib);
 			if (assembly == null)
 			{
 				Console.WriteLine("no library: {0}", lib);
@@ -621,7 +621,8 @@ namespace EntryBuilder
             var name = AppDomain.CurrentDomain.GetAssemblies()[0].GetName();
             Assembly assembly = AppDomain.CurrentDomain.GetAssemblies().FirstOrDefault(a => a.GetName().Name == libName);
             if (assembly == null)
-			    assembly = Assembly.LoadFrom(lib);
+                //assembly = Assembly.LoadFrom(lib);
+                assembly = Assembly.LoadFile(lib);
 			if (assembly == null)
 			{
 				Console.WriteLine("no library: {0}", lib);
@@ -2350,7 +2351,7 @@ namespace EntryBuilder
                     // 自毁程序
                     builder.AppendLine("const string DESTRUCT = \"destruct.bat\";");
                     builder.AppendLine("System.IO.File.WriteAllText(DESTRUCT,");
-                    builder.AppendLine("string.Format(\"taskkill /PID {0}\\r\\ndel {1}\\r\\ndel {2}\", System.Diagnostics.Process.GetCurrentProcess().Id, System.Reflection.Assembly.GetExecutingAssembly().Location, DESTRUCT));");
+                    builder.AppendLine("string.Format(\"taskkill /PID {0}\\r\\ndel \\\"{1}\\\"\\r\\ndel {2}\", System.Diagnostics.Process.GetCurrentProcess().Id, System.Reflection.Assembly.GetExecutingAssembly().Location, DESTRUCT), System.Text.Encoding.Default);");
                     builder.AppendLine("System.Diagnostics.Process.Start(DESTRUCT);");
                     builder.AppendLine("return;");
                 });
