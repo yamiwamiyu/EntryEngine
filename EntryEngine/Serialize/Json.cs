@@ -708,7 +708,8 @@ namespace EntryEngine.Serialize
         }
         internal static char CharToInt(char value)
         {
-            return (char)(value <= '9' ? value - '0' : value - 'A' + 10);
+            return (char)(value <= '9' ? value - '0' :
+                (value >= 'a' ? value - 'a' : value - 'A') + 10);
         }
         public static object Deserialize(string buffer, Type type)
         {

@@ -678,7 +678,8 @@ del {2}
 ";
                 // 关闭程序并启动批处理来启动程序
                 File.WriteAllText(HOT_FIX_BAT,
-                    string.Format(update_bat, Process.GetCurrentProcess().Id, FIX_TEMP, HOT_FIX_BAT));
+                    string.Format(update_bat, Process.GetCurrentProcess().Id, FIX_TEMP, HOT_FIX_BAT),
+                    Encoding.Default);
                 Process.Start(HOT_FIX_BAT);
             }
         }

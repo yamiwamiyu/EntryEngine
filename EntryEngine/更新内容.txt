@@ -1,4 +1,10 @@
-﻿2019/06/15
+﻿2019/06/20
+1. 修复JsonReader.CharToInt对于小写字母转换错误的问题
+
+2019/06/18
+1. EntryBuilder.GetDllType的LoadFrom改为LoadFile，修复加载exe程序失败的BUG
+
+2019/06/15
 1. HTTP服务端协议解析DateTime类型为时间戳
 2. BuildLinkShell新增参数，可以控制显示或隐藏控制台
 
