@@ -561,7 +561,7 @@ namespace EntryEngine.UI
 			needBeginEnd = NeedBeginEnd;
 			if (needBeginEnd)
 			{
-				spriteBatch.Begin(view);
+				spriteBatch.Begin(spriteBatch.FromPreviousNonOffset(view));
 			}
 			base.DrawBegin(spriteBatch, ref transform, ref view, shader);
 		}

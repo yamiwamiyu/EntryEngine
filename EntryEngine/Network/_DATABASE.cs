@@ -442,7 +442,6 @@ namespace EntryEngine.Network
             public bool Idle;
         }
 
-        private COROUTINE clearPool;
         private Pool<CONNECTION> pools = new Pool<CONNECTION>();
         public TimeSpan ClearTime = TimeSpan.FromSeconds(15);
 
@@ -457,18 +456,12 @@ namespace EntryEngine.Network
 
         public ConnectionPool()
         {
-            this.OnTestConnection += TestConnecttion_UpdatePool;
         }
-        public ConnectionPool(_DATABASE.Database _base) : this()
+        public ConnectionPool(_DATABASE.Database _base)
         {
             this.Base = _base;
         }
 
-        private void TestConnecttion_UpdatePool(IDbConnection connection, _DATABASE.Database database)
-        {
-            if (EntryService.Instance != null)
-                clearPool = EntryService.Instance.SetTimer(1000, ClearPool);
-        }
         public void ClearPool()
         {
             var now = DateTime.Now;
@@ -500,9 +493,25 @@ namespace EntryEngine.Network
 
         protected internal override IDbConnection CreateConnection()
         {
+            DateTime now = DateTime.Now;
             lock (pools)
             {
-                var conn = pools.FirstOrDefault(p => p.Idle);
+                CONNECTION conn = null;
+                foreach (var item in pools)
+                {
+                    if (item.Connection == null ||
+                        item.Connection.State == ConnectionState.Closed ||
+                        (ClearTime.Ticks > 0 && (now - item.LastUseTime) >= ClearTime))
+                    {
+                        ReleaseConnection(item);
+                    }
+                    else if (item.Idle)
+                    {
+                        conn = item;
+                        break;
+                    }
+                }
+                //var conn = pools.FirstOrDefault(p => p.Idle);
                 if (conn == null)
                 {
                     conn = pools.Allot();
@@ -544,8 +553,6 @@ namespace EntryEngine.Network
                 }
                 pools.Clear();
             }
-            if (clearPool != null)
-                clearPool.Dispose();
         }
     }
 

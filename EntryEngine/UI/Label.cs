@@ -325,7 +325,7 @@ namespace EntryEngine.UI
                 temp.M31 -= offset.X;
                 temp.M32 -= offset.Y;
                 viewArea.Width++;
-                spriteBatch.Begin(temp, viewArea);
+                spriteBatch.Begin(temp, RECT.Intersect(spriteBatch.CurrentGraphics, viewArea));
             }
             // selected text area
             if (Focused && InputDevice != null && InputDevice.HasSelected)

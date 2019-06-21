@@ -599,6 +599,7 @@ namespace EntryEngine
                     {
                         file.Length = long.Parse(splits[2]);
                         newFilelist.Add(file);
+                        _LOG.Debug("Update: {0}", file.File);
                     }
                 }
                 else
@@ -609,6 +610,7 @@ namespace EntryEngine
                     file.Time = splits[1];
                     file.Length = long.Parse(splits[2]);
                     newFilelist.Add(file);
+                    _LOG.Debug("Download: {0}", file.File);
                 }
             }
 
@@ -628,33 +630,43 @@ namespace EntryEngine
                     parallel++;
                     request = WebRequest.Create(ServerURL + item.File);
                     Filelist fileListItem = item;
+                    _LOG.Debug("正在下载{0}", fileListItem.File);
                     request.BeginGetResponse(ar =>
                     {
-                        WebResponse _response = ((WebRequest)ar.AsyncState).EndGetResponse(ar);
-                        byte[] result = _IO.ReadStream(_response.GetResponseStream(), (int)fileListItem.Length);
-
-                        string dir = Path.GetDirectoryName(fileListItem.File);
-                        if (!string.IsNullOrEmpty(dir) && !Directory.Exists(dir))
-                            Directory.CreateDirectory(dir);
-
-                        if (fileListItem.File.EndsWith(".dll") || fileListItem.File.EndsWith(".exe") || fileListItem.File.EndsWith(".pdb"))
+                        try
                         {
-                            if (!Directory.Exists(FIX_TEMP))
-                                Directory.CreateDirectory(FIX_TEMP);
-                            // 写入程序到临时文件夹，重启时通过临时文件夹拷贝程序覆盖原来的程序
-                            withDLL = true;
-                            _LOG.Debug("下载DLL:" + FIX_TEMP + fileListItem.File);
-                            File.WriteAllBytes(FIX_TEMP + fileListItem.File, result);
-                        }
-                        else
-                        {
-                            _IO.WriteByte(fileListItem.File, result);
-                        }
+                            WebResponse _response = ((WebRequest)ar.AsyncState).EndGetResponse(ar);
+                            byte[] result = _IO.ReadStream(_response.GetResponseStream(), (int)fileListItem.Length);
 
-                        // todo:每完成一个下载都写入旧文件列表，这样中途退出下次也能接着上次中断的文件开始下载
-                        download += fileListItem.Length >> 10;
-                        ProcessText = string.Format("正在更新：{0}kb / {1}kb", download, needDownload);
-                        parallel--;
+                            string dir = Path.GetDirectoryName(fileListItem.File);
+                            if (!string.IsNullOrEmpty(dir) && !Directory.Exists(dir))
+                                Directory.CreateDirectory(dir);
+
+                            if (fileListItem.File.EndsWith(".dll") || fileListItem.File.EndsWith(".exe") || fileListItem.File.EndsWith(".pdb"))
+                            {
+                                if (!Directory.Exists(FIX_TEMP))
+                                    Directory.CreateDirectory(FIX_TEMP);
+                                // 写入程序到临时文件夹，重启时通过临时文件夹拷贝程序覆盖原来的程序
+                                withDLL = true;
+                                //_LOG.Debug("下载DLL:" + FIX_TEMP + fileListItem.File);
+                                File.WriteAllBytes(FIX_TEMP + fileListItem.File, result);
+                            }
+                            else
+                            {
+                                _IO.WriteByte(fileListItem.File, result);
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            _LOG.Error("下载文件{0}失败 Error:{1}", fileListItem.File, ex.Message);
+                        }
+                        finally
+                        {
+                            // todo:每完成一个下载都写入旧文件列表，这样中途退出下次也能接着上次中断的文件开始下载
+                            download += fileListItem.Length >> 10;
+                            ProcessText = string.Format("正在更新：{0}kb / {1}kb", download, needDownload);
+                            parallel--;
+                        }
                     }, request);
                 }
                 while (parallel > 0)
@@ -678,8 +690,7 @@ del {2}
 ";
                 // 关闭程序并启动批处理来启动程序
                 File.WriteAllText(HOT_FIX_BAT,
-                    string.Format(update_bat, Process.GetCurrentProcess().Id, FIX_TEMP, HOT_FIX_BAT),
-                    Encoding.Default);
+                    string.Format(update_bat, Process.GetCurrentProcess().Id, FIX_TEMP, HOT_FIX_BAT));
                 Process.Start(HOT_FIX_BAT);
             }
         }

@@ -1756,7 +1756,12 @@ namespace EntryBuilder
                         {
                             builder.AppendLine("if (IsCallback) return;");
                             // 参数
-                            builder.AppendLine("string __ret = JsonWriter.Serialize({0});", parameter.Name);
+                            if (parameter.ParameterType.IsCustomType())
+                                builder.AppendLine("string __ret = JsonWriter.Serialize({0});", parameter.Name);
+                            else if (parameter.ParameterType == typeof(string))
+                                builder.AppendLine("string __ret = {0};", parameter.Name);
+                            else
+                                builder.AppendLine("string __ret = {0}.ToString();", parameter.Name);
                             // 记录日志
                             builder.AppendLine("#if DEBUG");
                             builder.AppendLine("_LOG.Debug(\"{0} {{0}}\", __ret);", name);
@@ -7360,15 +7365,25 @@ namespace EntryBuilder
 							{
 								builder.AppendLine("var self = System.Reflection.Assembly.GetEntryAssembly().Location;");
 								builder.AppendLine("var files = System.IO.Directory.GetFiles(Environment.CurrentDirectory, \"*.exe\", System.IO.SearchOption.TopDirectoryOnly);");
-                                //builder.AppendLine("foreach (var file in files)");
-                                builder.AppendLine("for (int i = 0, n = files.Length - 1; i <= n; i++)");
+                                builder.AppendLine("int realExeCount = files.Length;");
+                                builder.AppendLine("for (int i = 0, n = realExeCount - 1; i <= n; i++)");
+                                builder.AppendBlock(() =>
+                                {
+                                    builder.AppendLine("if (files[i].EndsWith(\".vshost.exe\") || files[i] == self)");
+                                    builder.AppendBlock(() =>
+                                    {
+                                        builder.AppendLine("files[i] = null;");
+                                        builder.AppendLine("realExeCount--;");
+                                    });
+                                });
+                                builder.AppendLine("for (int i = 0; i < files.Length; i++)");
 								builder.AppendBlock(() =>
 								{
                                     builder.AppendLine("string file = files[i];");
-									builder.AppendLine("if (file == self) continue;");
+									builder.AppendLine("if (file == null) continue;");
                                     builder.AppendLine("string arg = null;");
                                     // 同一文件夹下有多个exe文件时，可以通过参数指定要运行的exe文件
-                                    builder.AppendLine("if (n > 1 && args.Length > 0)");
+                                    builder.AppendLine("if (realExeCount > 1 && args.Length > 0)");
                                     builder.AppendBlock(() =>
                                     {
                                         builder.AppendLine("if (System.IO.Path.GetFileNameWithoutExtension(file) == args[0])");

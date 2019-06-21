@@ -7133,32 +7133,38 @@ namespace EntryEngine
         }
         public void BeginFromPrevious(MATRIX2x3 matrix)
         {
-            RenderState rs = CurrentRenderState;
-            matrix *= (MATRIX2x3)rs.Transform;
-            Begin(ref matrix, ref rs.Graphics, null);
+            matrix = FromPrevious(matrix);
+            Begin(ref matrix, ref CurrentRenderState.Graphics, null);
         }
         public void BeginFromPrevious(RECT rect)
         {
-            RenderState rs = CurrentRenderState;
-            RECT _preRect = rs.Graphics;
-            rect.X += _preRect.X;
-            rect.Y += _preRect.Y;
-            RECT.Intersect(ref rect, ref _preRect, out rect);
-            rect.X -= _preRect.X;
-            rect.Y -= _preRect.Y;
-            Begin(rs.ThreeD, ref rs.Transform, ref rect, null);
+            rect = FromPrevious(rect);
+            Begin(CurrentRenderState.ThreeD, ref CurrentRenderState.Transform, ref rect, null);
         }
         /// <summary>在之前的矩阵的基础上开始绘制</summary>
         public void BeginFromPrevious(MATRIX2x3 matrix, RECT rect)
         {
-            matrix *= (MATRIX2x3)CurrentRenderState.Transform;
+            matrix = FromPrevious(matrix);
+            rect = FromPrevious(rect);
+            Begin(ref matrix, ref rect, null);
+        }
+        public MATRIX2x3 FromPrevious(MATRIX2x3 matrix)
+        {
+            return matrix * (MATRIX2x3)CurrentRenderState.Transform;
+        }
+        public RECT FromPrevious(RECT rect)
+        {
             RECT _preRect = CurrentRenderState.Graphics;
             rect.X += _preRect.X;
             rect.Y += _preRect.Y;
             RECT.Intersect(ref rect, ref _preRect, out rect);
             rect.X -= _preRect.X;
             rect.Y -= _preRect.Y;
-            Begin(ref matrix, ref rect, null);
+            return rect;
+        }
+        public RECT FromPreviousNonOffset(RECT rect)
+        {
+            return RECT.Intersect(CurrentRenderState.Graphics, rect);
         }
         public virtual void Clear()
         {
