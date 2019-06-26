@@ -1211,6 +1211,7 @@ namespace EntryEngine.Network
     public class ExceptionHeartbeatStop : Exception { }
     public abstract class LinkBinary : Link
     {
+        public static uint MAX_SIZE = 1024 * 1024 * 1024;
         private static byte[] HeartbeatProtocol = new byte[0];
         protected byte[] buffer = new byte[MaxBuffer];
         protected ByteWriter writer = new ByteWriter(MaxBuffer);
@@ -1301,6 +1302,11 @@ namespace EntryEngine.Network
                 }
                 if (size > buffer.Length)
                 {
+                    if (size > MAX_SIZE)
+                    {
+                        _LOG.Error("数据包过大: {0}", size);
+                        throw new InvalidOperationException("数据包过大");
+                    }
                     // buffer为最终数据包
                     if (ValidateCRC)
                         buffer = new byte[size - MAX_BUFFER_SIZE - 4];
