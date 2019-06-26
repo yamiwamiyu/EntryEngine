@@ -111,13 +111,32 @@ namespace LauncherServer
                 }
                 else
                 {
-                    var old = managers.FirstOrDefault(m => m.Manager.Name == manager.Name);
-                    if (old != null)
+                    int index = -1;
+                    for (int i = 0; i < managers.Count; i++)
                     {
+                        if (managers[i].Manager.Name == manager.Name)
+                        {
+                            index = i;
+                            break;
+                        }
+                    }
+                    if (index != -1)
+                    {
+                        var old = managers[index];
                         IManagerCallbackProxy.OnLoginAgain(old.Link);
                         _LOG.Debug("账号[{0}]重复登录", manager.Name);
-                        old.Link.Flush();
-                        old.Link.Close();
+                        try
+                        {
+                            old.Link.Flush();
+                        }
+                        catch
+                        {
+                        }
+                        finally
+                        {
+                            managers.RemoveAt(index);
+                            old.Link.Close();
+                        }
                     }
 
                     _LOG.Info("{0}登录管理服务器", manager.Name);
