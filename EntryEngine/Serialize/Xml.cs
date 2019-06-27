@@ -807,7 +807,7 @@ namespace EntryEngine.Serialize
 
         public static object Deserialize(string buffer, Type type)
         {
-            return Deserialize(buffer, type, SerializeSetting.DefaultSetting);
+            return Deserialize(buffer, type, SerializeSetting.DefaultSerializeAll);
         }
         public static object Deserialize(string buffer, Type type, SerializeSetting setting)
         {

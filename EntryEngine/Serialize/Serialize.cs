@@ -1127,7 +1127,7 @@ namespace EntryEngine.Serialize
                 return ReadArray(type, elementType);
             }
 
-            return ReadObject(type);
+            return ReadClassObject(type);
         }
         protected virtual object ReadNullable(Type type, Type nullableType)
         {
@@ -1170,25 +1170,26 @@ namespace EntryEngine.Serialize
         }
         protected virtual object ReadNumber(Type type)
         {
-            char c = PeekChar;
-            switch (c)
-            {
-                case '0':
-                case '1':
-                case '2':
-                case '3':
-                case '4':
-                case '5':
-                case '6':
-                case '7':
-                case '8':
-                case '9':
-                case '-':
-                case '.':
-                    return _SERIALIZE.ParseNumber(type, ReadNextString());
+            return _SERIALIZE.ParseNumber(type, ReadNextString());
+            //char c = PeekChar;
+            //switch (c)
+            //{
+            //    case '0':
+            //    case '1':
+            //    case '2':
+            //    case '3':
+            //    case '4':
+            //    case '5':
+            //    case '6':
+            //    case '7':
+            //    case '8':
+            //    case '9':
+            //    case '-':
+            //    case '.':
+            //        return _SERIALIZE.ParseNumber(type, ReadNextString());
 
-                default: throw new FormatException("错误的数字格式");
-            }
+            //    default: throw new FormatException("错误的数字格式");
+            //}
         }
         protected virtual TimeSpan ReadTimeSpan()
         {
@@ -1232,7 +1233,10 @@ namespace EntryEngine.Serialize
         }
         protected virtual void ReadArray(Type elementType, List<object> list)
         {
-            throw new NotImplementedException();
+            while (pos < len)
+            {
+                list.Add(ReadObject(elementType));
+            }
         }
         protected virtual object ReadClassObject(Type type)
         {

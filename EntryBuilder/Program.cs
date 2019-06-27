@@ -1756,12 +1756,13 @@ namespace EntryBuilder
                         {
                             builder.AppendLine("if (IsCallback) return;");
                             // 参数
-                            if (parameter.ParameterType.IsCustomType())
-                                builder.AppendLine("string __ret = JsonWriter.Serialize({0});", parameter.Name);
-                            else if (parameter.ParameterType == typeof(string))
-                                builder.AppendLine("string __ret = {0};", parameter.Name);
-                            else
-                                builder.AppendLine("string __ret = {0}.ToString();", parameter.Name);
+                            //if (parameter.ParameterType.IsCustomType())
+                            //    builder.AppendLine("string __ret = JsonWriter.Serialize({0});", parameter.Name);
+                            //else if (parameter.ParameterType == typeof(string))
+                            //    builder.AppendLine("string __ret = {0};", parameter.Name);
+                            //else
+                            //    builder.AppendLine("string __ret = {0}.ToString();", parameter.Name);
+                            builder.AppendLine("string __ret = JsonWriter.Serialize({0});", parameter.Name);
                             // 记录日志
                             builder.AppendLine("#if DEBUG");
                             builder.AppendLine("_LOG.Debug(\"{0} {{0}}\", __ret);", name);

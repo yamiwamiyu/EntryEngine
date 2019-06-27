@@ -248,13 +248,14 @@ namespace EntryEngine.Serialize
 
         private class ColumnProperty
         {
+            public string Name;
             public PropertyInfo Property;
             public FieldInfo Field;
             public bool Special;
         }
 
 		//public bool IsSkipTitleRow = true;
-        //ColumnProperty[] columes;
+        ColumnProperty[] columns;
 
 		public CSVReader() : this(null)
 		{
@@ -387,118 +388,84 @@ namespace EntryEngine.Serialize
 		{
             return ReadTable(-1);
 		}
-        //public override object ReadObject(Type type)
-        //{
-        //    bool isArray = type.IsArray;
-        //    Type arrayType = type;
-        //    if (!isArray)
-        //        arrayType = type.MakeArrayType();
-        //    var time = DateTime.Now.Ticks;
-        //    var readNode = ReadToNode(type, isArray ? -1 : 1);
-        //    _LOG.Debug("Read node end: {0}", DateTime.Now.Ticks - time);
-        //    var read = XmlReader.ReadObject(arrayType, readNode, Setting);
-        //    _LOG.Debug("Read object end: {0}", DateTime.Now.Ticks - time);
-        //    if (isArray)
-        //        return read;
-        //    else
-        //        return ((Array)read).GetValue(0);
-        //}
-        public override object ReadObject(Type type)
+        protected override string ReadNextString()
         {
-            bool isArray = type.IsArray;
-            if (isArray)
-                type = type.GetElementType();
-
-            //if (Setting.AutoType)
-            //    type = Type.GetType(ReadType());
-
-            List<object> objects = null;
-            List<string> keys = PeekGridColumnKey(true);
-            ColumnProperty[] columns = new ColumnProperty[keys.Count];
-            var fields = Setting.GetFieldsDic(type);
-            var properties = Setting.GetPropertiesDic(type);
-            for (int i = 0; i < keys.Count; i++)
+            return Decode(ReadGrid);
+        }
+        //protected override void ReadArray(Type elementType, List<object> list)
+        //{
+        //    while (pos < len)
+        //    {
+        //        list.Add(ReadObject(elementType));
+        //    }
+        //}
+        protected override object ReadClassObject(Type type)
+        {
+            if (columns == null)
             {
-                ColumnProperty column = new ColumnProperty();
-                FieldInfo field;
-                if (fields.TryGetValue(keys[i], out field))
-                {
-                    column.Field = field;
-                    column.Special = field.FieldType.IsCustomType();
-                }
-                else
-                {
-                    PropertyInfo property;
-                    if (!properties.TryGetValue(keys[i], out property))
-                        throw new KeyNotFoundException(string.Format("缺少CSV列{0}[长度:{1}]", keys[i], keys[i].Length));
-                    column.Property = property;
-                    column.Special = property.PropertyType.IsCustomType();
-                }
-                columns[i] = column;
-            }
-
-            // 用于后面动态创建objects时计算一个合适的capcity
-            int start = pos;
-            bool read;
-            while (pos < len)
-            {
-                if (PeekIsNullRow())
-                {
-                    EatLine();
-                    continue;
-                }
-
-                object obj;
-                if (type.IsStatic())
-                    obj = null;
-                else
-                    obj = Activator.CreateInstance(type);
-
+                List<string> keys = PeekGridColumnKey(true);
+                columns = new ColumnProperty[keys.Count];
+                var fields = Setting.GetFieldsDic(type);
+                var properties = Setting.GetPropertiesDic(type);
                 for (int i = 0; i < keys.Count; i++)
                 {
-                    string name = keys[i];
-                    string text = Decode(ReadGrid);
-                    if (columns[i].Special)
+                    ColumnProperty column = new ColumnProperty();
+                    column.Name = keys[i];
+                    FieldInfo field;
+                    if (fields.TryGetValue(keys[i], out field))
                     {
-                        JsonReader reader = new JsonReader(text);
-                        reader.Setting = this.Setting;
-                        if (columns[i].Field == null)
-                            columns[i].Property.SetValue(obj, reader.ReadObject(columns[i].Property.PropertyType), null);
-                        else
-                            columns[i].Field.SetValue(obj, reader.ReadObject(columns[i].Field.FieldType));
+                        column.Field = field;
+                        column.Special = field.FieldType.IsCustomType();
                     }
                     else
                     {
-                        if (columns[i].Field == null)
-                            columns[i].Property.SetValue(obj, ReadValue(columns[i].Property.PropertyType, text, out read), null);
-                        else
-                            columns[i].Field.SetValue(obj, ReadValue(columns[i].Field.FieldType, text, out read));
+                        PropertyInfo property;
+                        if (!properties.TryGetValue(keys[i], out property))
+                            throw new KeyNotFoundException(string.Format("缺少CSV列{0}[长度:{1}]", keys[i], keys[i].Length));
+                        column.Property = property;
+                        column.Special = property.PropertyType.IsCustomType();
                     }
-                }
-
-                if (obj != null)
-                {
-                    if (objects == null)
-                        objects = new List<object>((int)(len * 1.2f / (pos - start)));
-
-                    objects.Add(obj);
-                    if (!isArray)
-                        return obj;
+                    columns[i] = column;
                 }
             }
+            //else
+            //{
+            //    JsonReader reader = new JsonReader(ReadNextString());
+            //    reader.Setting = this.Setting;
+            //    return reader.ReadObject(type);
+            //}
 
-            if (isArray)
-            {
-                int count = 0;
-                if (objects != null)
-                    count = objects.Count;
-                Array array = Array.CreateInstance(type, count);
-                for (int i = 0; i < count; i++)
-                    array.SetValue(objects[i], i);
-                return array;
-            }
+            object obj;
+            if (type.IsStatic())
+                obj = null;
             else
-                return objects[0];
+                obj = Activator.CreateInstance(type);
+
+            for (int i = 0; i < columns.Length; i++)
+            {
+                string name = columns[i].Name;
+                //string text = Decode(ReadGrid);
+                if (columns[i].Special)
+                {
+                    JsonReader reader = new JsonReader(ReadNextString());
+                    reader.Setting = this.Setting;
+                    if (columns[i].Field == null)
+                        columns[i].Property.SetValue(obj, reader.ReadObject(columns[i].Property.PropertyType), null);
+                    else
+                        columns[i].Field.SetValue(obj, reader.ReadObject(columns[i].Field.FieldType));
+                }
+                else
+                {
+                    if (columns[i].Field == null)
+                        columns[i].Property.SetValue(obj, ReadObject(columns[i].Property.PropertyType), null);
+                    else
+                        columns[i].Field.SetValue(obj, ReadObject(columns[i].Field.FieldType));
+                }
+            }
+
+            EatLine();
+
+            return obj;
         }
 		private List<string> PeekGridColumnKey(bool skipTitle)
 		{
@@ -553,7 +520,7 @@ namespace EntryEngine.Serialize
         }
         public static object Deserialize(string buffer, Type type)
         {
-            return Deserialize(buffer, type, SerializeSetting.DefaultSetting);
+            return Deserialize(buffer, type, SerializeSetting.DefaultSerializeAll);
         }
         public static object Deserialize(string buffer, Type type, SerializeSetting setting)
         {
@@ -561,7 +528,7 @@ namespace EntryEngine.Serialize
                 return null;
             if (type == null)
                 throw new ArgumentNullException();
-            JsonReader reader = new JsonReader(buffer);
+            CSVReader reader = new CSVReader(buffer);
             reader.Setting = setting;
             return reader.ReadObject(type);
         }
