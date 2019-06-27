@@ -254,6 +254,7 @@ namespace EntryEngine.Serialize
         }
 
 		//public bool IsSkipTitleRow = true;
+        //ColumnProperty[] columes;
 
 		public CSVReader() : this(null)
 		{
@@ -414,21 +415,21 @@ namespace EntryEngine.Serialize
             List<object> objects = null;
             List<string> keys = PeekGridColumnKey(true);
             ColumnProperty[] columns = new ColumnProperty[keys.Count];
-            var fields = Setting.GetFields(type);
-            var properties = Setting.GetProperties(type);
+            var fields = Setting.GetFieldsDic(type);
+            var properties = Setting.GetPropertiesDic(type);
             for (int i = 0; i < keys.Count; i++)
             {
                 ColumnProperty column = new ColumnProperty();
-                var field = fields.FirstOrDefault(f => f.Name == keys[i]);
-                if (field != null)
+                FieldInfo field;
+                if (fields.TryGetValue(keys[i], out field))
                 {
                     column.Field = field;
                     column.Special = field.FieldType.IsCustomType();
                 }
                 else
                 {
-                    var property = properties.FirstOrDefault(p => p.Name == keys[i]);
-                    if (property == null)
+                    PropertyInfo property;
+                    if (!properties.TryGetValue(keys[i], out property))
                         throw new KeyNotFoundException(string.Format("缺少CSV列{0}[长度:{1}]", keys[i], keys[i].Length));
                     column.Property = property;
                     column.Special = property.PropertyType.IsCustomType();
@@ -438,6 +439,7 @@ namespace EntryEngine.Serialize
 
             // 用于后面动态创建objects时计算一个合适的capcity
             int start = pos;
+            bool read;
             while (pos < len)
             {
                 if (PeekIsNullRow())
@@ -468,9 +470,9 @@ namespace EntryEngine.Serialize
                     else
                     {
                         if (columns[i].Field == null)
-                            columns[i].Property.SetValue(obj, ReadValue(columns[i].Property.PropertyType, text), null);
+                            columns[i].Property.SetValue(obj, ReadValue(columns[i].Property.PropertyType, text, out read), null);
                         else
-                            columns[i].Field.SetValue(obj, ReadValue(columns[i].Field.FieldType, text));
+                            columns[i].Field.SetValue(obj, ReadValue(columns[i].Field.FieldType, text, out read));
                     }
                 }
 
@@ -498,75 +500,6 @@ namespace EntryEngine.Serialize
             else
                 return objects[0];
         }
-        private XmlNode ReadToNode(Type type, int row)
-        {
-            if (str == null)
-                throw new ArgumentNullException("read string can not be null");
-
-            //if (Setting.AutoType)
-            //    type = Type.GetType(ReadType());
-
-            List<int> customType = new List<int>();
-            if (type != null)
-            {
-                if (type.IsArray)
-                    type = type.GetElementType();
-                int index = 0;
-                Setting.Serialize(type, null,
-                    v =>
-                    {
-                        if (v.Type.IsCustomType())
-                            customType.Add(index);
-                        index++;
-                    });
-            }
-
-            List<XmlNode> rows = new List<XmlNode>();
-            List<string> keys = PeekGridColumnKey(true);
-            while (pos < len && (row < 0 || rows.Count < row))
-            {
-                if (PeekIsNullRow())
-                {
-                    EatLine();
-                    continue;
-                }
-
-                XmlNode array = new XmlNode();
-                array.Name = _XML.ARRAY_NODE;
-                if (PeekIsNull())
-                {
-                    EatLine();
-                    array.Value = null;
-                }
-                else
-                {
-                    for (int i = 0; i < keys.Count; i++)
-                    {
-                        XmlNode node = new XmlNode();
-                        node.Name = keys[i];
-                        node.Value = Decode(ReadGrid);
-                        if (customType.Contains(i))
-                        {
-                            JsonReader reader = new JsonReader(node.Value);
-                            reader.Setting = this.Setting;
-                            node.AddRange(reader.ReadToNode().ToArray());
-                        }
-                        else
-                        {
-                            node.Value = _XML.Escape(node.Value);
-                        }
-                        array.Add(node);
-                    }
-                }
-                rows.Add(array);
-            }
-
-            return XmlNode.CreateRoot(rows);
-        }
-		public override XmlNode ReadToNode()
-		{
-            return ReadToNode(null, -1);
-		}
 		private List<string> PeekGridColumnKey(bool skipTitle)
 		{
 			List<string> keys = new List<string>();

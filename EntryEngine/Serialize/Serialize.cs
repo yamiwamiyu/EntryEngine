@@ -446,6 +446,23 @@ namespace EntryEngine.Serialize
             var filter = Filter;
             return properties.Where(p => !filter.SkipProperty(p));
         }
+        public Dictionary<string, PropertyInfo> GetPropertiesDic(Type type)
+        {
+            Dictionary<string, PropertyInfo> dic = new Dictionary<string, PropertyInfo>();
+            if (!Property)
+                return dic;
+            PropertyInfo[] properties = type.GetProperties(BuildingFlags);
+            if (Filter == null)
+            {
+                foreach (var item in properties)
+                    dic.Add(item.Name, item);
+                return dic;
+            }
+            var filter = Filter;
+            foreach (var item in properties.Where(p => !filter.SkipProperty(p)))
+                dic.Add(item.Name, item);
+            return dic;
+        }
         public IEnumerable<FieldInfo> GetFields(Type type)
         {
             FieldInfo[] fields = type.GetFields(BuildingFlags);
@@ -453,6 +470,21 @@ namespace EntryEngine.Serialize
                 return fields;
             var filter = Filter;
             return fields.Where(f => !filter.SkipField(f));
+        }
+        public Dictionary<string, FieldInfo> GetFieldsDic(Type type)
+        {
+            FieldInfo[] fields = type.GetFields(BuildingFlags);
+            Dictionary<string, FieldInfo> dic = new Dictionary<string, FieldInfo>();
+            if (Filter == null)
+            {
+                foreach (var item in fields)
+                    dic.Add(item.Name, item);
+                return dic;
+            }
+            var filter = Filter;
+            foreach (var item in fields.Where(f => !filter.SkipField(f)))
+                dic.Add(item.Name, item);
+            return dic;
         }
         public IEnumerable<IVariable> GetVariables(Type type, object instance)
         {
@@ -475,9 +507,35 @@ namespace EntryEngine.Serialize
                 }
             }
         }
+        public Dictionary<string, IVariable> GetVariablesDic(Type type, object instance)
+        {
+            Dictionary<string, IVariable> dic = new Dictionary<string, IVariable>();
+
+            foreach (var field in GetFields(type))
+            {
+                if (instance == null)
+                    dic.Add(field.Name, new VariableObject(type, field));
+                else
+                    dic.Add(field.Name, new VariableObject(instance, field));
+            }
+
+            if (Property)
+            {
+                foreach (PropertyInfo property in GetProperties(type))
+                {
+                    if (instance == null)
+                        dic.Add(property.Name, new VariableObject(type, property));
+                    else
+                        dic.Add(property.Name, new VariableObject(instance, property));
+                }
+            }
+
+            return dic;
+        }
 	}
 	public abstract class Serializable
 	{
+        public const string ABSTRACT_TYPE = "#";
 		public SerializeSetting Setting = SerializeSetting.DefaultSetting;
         /// <summary>
         /// <para>true: value.GetType() != type时，则将序列化value.GetType()的类型名以便反序列化</para>
@@ -717,8 +775,143 @@ namespace EntryEngine.Serialize
         {
             return str;
         }
-        protected object ReadValue(Type type, string value)
+        //protected object ReadValue(Type type, string value)
+        //{
+        //    if (value == null)
+        //    {
+        //        return null;
+        //    }
+
+        //    Type nullable;
+        //    if (type.IsValueType && type.IsNullable(out nullable))
+        //    {
+        //        // Nullable<struct>
+        //        if (string.IsNullOrEmpty(value))
+        //        {
+        //            return null;
+        //        }
+        //        else
+        //        {
+        //            type = nullable;
+        //        }
+        //    }
+
+        //    if (type.IsEnum)
+        //    {
+        //        if (string.IsNullOrEmpty(value))
+        //            return Enum.GetValues(type).GetValue(0);
+        //        return Enum.Parse(type, value);
+        //        //Type underlying = Enum.GetUnderlyingType(type);
+        //        //try
+        //        //{
+        //        //    return Convert.ChangeType(Convert.ChangeType(value, underlying), type);
+        //        //}
+        //        //catch
+        //        //{
+        //        //    return Enum.Parse(type, value);
+        //        //}
+        //    }
+        //    else if (type == typeof(char))
+        //    {
+        //        if (string.IsNullOrEmpty(value))
+        //            return default(char);
+        //        return UnEscapeString(value)[0];
+        //    }
+        //    else if (type == typeof(string))
+        //    {
+        //        return UnEscapeString(value);
+        //    }
+        //    else if (type == typeof(bool))
+        //    {
+        //        if (string.IsNullOrEmpty(value))
+        //            return default(bool);
+        //        if (value == "1")
+        //            return true;
+        //        else if (value == "0")
+        //            return false;
+        //        else
+        //            return bool.Parse(value);
+        //    }
+        //    else if (type == typeof(sbyte))
+        //    {
+        //        if (string.IsNullOrEmpty(value))
+        //            return default(sbyte);
+        //        return sbyte.Parse(value);
+        //    }
+        //    else if (type == typeof(byte))
+        //    {
+        //        if (string.IsNullOrEmpty(value))
+        //            return default(byte);
+        //        return byte.Parse(value);
+        //    }
+        //    else if (type == typeof(short))
+        //    {
+        //        if (string.IsNullOrEmpty(value))
+        //            return default(short);
+        //        return short.Parse(value);
+        //    }
+        //    else if (type == typeof(ushort))
+        //    {
+        //        if (string.IsNullOrEmpty(value))
+        //            return default(ushort);
+        //        return ushort.Parse(value);
+        //    }
+        //    else if (type == typeof(int))
+        //    {
+        //        if (string.IsNullOrEmpty(value))
+        //            return default(int);
+        //        return int.Parse(value);
+        //    }
+        //    else if (type == typeof(uint))
+        //    {
+        //        if (string.IsNullOrEmpty(value))
+        //            return default(uint);
+        //        return uint.Parse(value);
+        //    }
+        //    else if (type == typeof(float))
+        //    {
+        //        if (string.IsNullOrEmpty(value))
+        //            return default(float);
+        //        return float.Parse(value);
+        //    }
+        //    else if (type == typeof(long))
+        //    {
+        //        if (string.IsNullOrEmpty(value))
+        //            return default(long);
+        //        return long.Parse(value);
+        //    }
+        //    else if (type == typeof(ulong))
+        //    {
+        //        if (string.IsNullOrEmpty(value))
+        //            return default(ulong);
+        //        return ulong.Parse(value);
+        //    }
+        //    else if (type == typeof(double))
+        //    {
+        //        if (string.IsNullOrEmpty(value))
+        //            return default(double);
+        //        return double.Parse(value);
+        //    }
+        //    else if (type == typeof(DateTime))
+        //    {
+        //        if (string.IsNullOrEmpty(value))
+        //            return default(DateTime);
+        //        //return Utility.ToUnixTime(int.Parse(value));
+        //        return DateTime.Parse(value);
+        //    }
+        //    else if (type == typeof(TimeSpan))
+        //    {
+        //        if (string.IsNullOrEmpty(value))
+        //            return default(TimeSpan);
+        //        //return new TimeSpan(long.Parse(value));
+        //        return TimeSpan.Parse(value);
+        //    }
+        //    throw new NotSupportedException("不支持的数据类型");
+        //}
+        protected object ReadValue(Type type, string value, out bool read)
         {
+            read = true;
+
             if (value == null)
             {
                 return null;
@@ -736,6 +929,10 @@ namespace EntryEngine.Serialize
                 {
                     type = nullable;
                 }
+            }
+
+            if (type.IsArray)
+            {
             }
 
             if (type.IsEnum)
@@ -838,17 +1035,208 @@ namespace EntryEngine.Serialize
             {
                 if (string.IsNullOrEmpty(value))
                     return default(DateTime);
-                //return Utility.ToUnixTime(int.Parse(value));
+                long timestamp;
+                if (long.TryParse(value, out timestamp))
+                    return Utility.ToTime(timestamp);
                 return DateTime.Parse(value);
             }
             else if (type == typeof(TimeSpan))
             {
                 if (string.IsNullOrEmpty(value))
                     return default(TimeSpan);
-                //return new TimeSpan(long.Parse(value));
+                long timestamp;
+                if (long.TryParse(value, out timestamp))
+                    return TimeSpan.FromMilliseconds(timestamp);
                 return TimeSpan.Parse(value);
             }
-            throw new NotSupportedException("不支持的数据类型");
+
+            read = false;
+            return null;
+            //throw new NotSupportedException("不支持的数据类型");
+        }
+        protected virtual string ReadNextString()
+        {
+            return NextWord;
+        }
+        protected string PeekNextString()
+        {
+            int temp = pos;
+            string result = ReadNextString();
+            pos = temp;
+            return result;
+        }
+        public virtual object ReadObject(Type type)
+        {
+            if (pos >= len) return null;
+
+            Type nullable;
+            if (type.IsValueType && type.IsNullable(out nullable))
+            {
+                // Nullable<struct>
+                return ReadNullable(type, nullable);
+            }
+
+            if (type.IsEnum)
+            {
+                Type underlying = Enum.GetUnderlyingType(type);
+                return ReadEnum(type, underlying);
+            }
+            else if (type == typeof(char))
+            {
+                return ReadChar();
+            }
+            else if (type == typeof(string))
+            {
+                return ReadString();
+            }
+            else if (type == typeof(bool))
+            {
+                return ReadBool();
+            }
+            else if (type == typeof(sbyte)
+                || type == typeof(byte)
+                || type == typeof(short)
+                || type == typeof(ushort)
+                || type == typeof(int)
+                || type == typeof(uint)
+                || type == typeof(float)
+                || type == typeof(long)
+                || type == typeof(ulong)
+                || type == typeof(double)
+                )
+            {
+                return ReadNumber(type);
+            }
+            else if (type == typeof(TimeSpan))
+            {
+                return ReadTimeSpan();
+            }
+            else if (type == typeof(DateTime))
+            {
+                return ReadDateTime();
+            }
+
+            bool isList = !type.IsArray && type.Is(typeof(IList));
+            if (type.IsArray || isList)
+            {
+                Type elementType;
+                if (isList)
+                    elementType = type.GetGenericArguments()[0];
+                else
+                    elementType = type.GetElementType();
+                return ReadArray(type, elementType);
+            }
+
+            return ReadObject(type);
+        }
+        protected virtual object ReadNullable(Type type, Type nullableType)
+        {
+            string word = ReadNextString();
+            if (string.IsNullOrEmpty(word) || word == "null")
+            {
+                return null;
+            }
+            else
+            {
+                return ReadObject(nullableType);
+            }
+        }
+        protected virtual object ReadEnum(Type type, Type underlyingType)
+        {
+            return Enum.Parse(type, ReadNumber(underlyingType).ToString());
+        }
+        protected virtual char ReadChar()
+        {
+            return ReadString()[0];
+        }
+        protected virtual string ReadString()
+        {
+            return ReadNextString();
+        }
+        protected virtual bool ReadBool()
+        {
+            if (pos >= len) return false;
+            string result = ReadNextString();
+            if (result.Length == 1)
+            {
+                char c = result[0];
+                if (c == '1') return true;
+                else return false;
+            }
+            else
+            {
+                return bool.Parse(result);
+            }
+        }
+        protected virtual object ReadNumber(Type type)
+        {
+            char c = PeekChar;
+            switch (c)
+            {
+                case '0':
+                case '1':
+                case '2':
+                case '3':
+                case '4':
+                case '5':
+                case '6':
+                case '7':
+                case '8':
+                case '9':
+                case '-':
+                case '.':
+                    return _SERIALIZE.ParseNumber(type, ReadNextString());
+
+                default: throw new FormatException("错误的数字格式");
+            }
+        }
+        protected virtual TimeSpan ReadTimeSpan()
+        {
+            return new TimeSpan((long)ReadNumber(typeof(long)));
+        }
+        protected virtual DateTime ReadDateTime()
+        {
+            int temp = pos;
+            string strValue = null;
+            try
+            {
+                strValue = ReadString();
+            }
+            catch
+            {
+                pos = temp;
+                long timestamp = (long)ReadNumber(typeof(long));
+                return Utility.ToTime(timestamp);
+            }
+            return DateTime.Parse(strValue);
+        }
+        protected virtual object ReadArray(Type type, Type elementType)
+        {
+            List<object> objects = new List<object>((len - pos) >> 2 + 16);
+            ReadArray(elementType, objects);
+            int count = objects.Count;
+            if (type.IsArray)
+            {
+                Array array = Array.CreateInstance(elementType, count);
+                for (int i = 0; i < count; i++)
+                    array.SetValue(objects[i], i);
+                return array;
+            }
+            else
+            {
+                IList list = Activator.CreateInstance(type, count) as IList;
+                for (int i = 0; i < count; i++)
+                    list.Add(objects[i]);
+                return list;
+            }
+        }
+        protected virtual void ReadArray(Type elementType, List<object> list)
+        {
+            throw new NotImplementedException();
+        }
+        protected virtual object ReadClassObject(Type type)
+        {
+            throw new NotImplementedException();
         }
 		public virtual StringTable ReadTable()
 		{
@@ -874,8 +1262,6 @@ namespace EntryEngine.Serialize
                 throw new ArgumentOutOfRangeException("index");
             this.pos = index;
         }
-        public abstract object ReadObject(Type type);
-		public abstract XmlNode ReadToNode();
 		protected int Peek()
 		{
 			if (pos >= len)
@@ -1619,6 +2005,65 @@ namespace EntryEngine.Serialize
 #else
             ;
 #endif
+        }
+        public static object ParseNumber(this Type type, string value)
+        {
+            if (type == typeof(sbyte))
+            {
+                if (string.IsNullOrEmpty(value)) return (sbyte)0;
+                return sbyte.Parse(value);
+            }
+            else if (type == typeof(byte))
+            {
+                if (string.IsNullOrEmpty(value)) return (byte)0;
+                return byte.Parse(value);
+            }
+            else if (type == typeof(short))
+            {
+                if (string.IsNullOrEmpty(value)) return (short)0;
+                return short.Parse(value);
+            }
+            else if (type == typeof(ushort))
+            {
+                if (string.IsNullOrEmpty(value)) return (ushort)0;
+                return ushort.Parse(value);
+            }
+            else if (type == typeof(int))
+            {
+                if (string.IsNullOrEmpty(value)) return (int)0;
+                return int.Parse(value);
+            }
+            else if (type == typeof(uint))
+            {
+                if (string.IsNullOrEmpty(value)) return (uint)0;
+                return uint.Parse(value);
+            }
+            else if (type == typeof(float))
+            {
+                if (string.IsNullOrEmpty(value)) return (float)0;
+                return float.Parse(value);
+            }
+            else if (type == typeof(long))
+            {
+                if (string.IsNullOrEmpty(value)) return (long)0;
+                return long.Parse(value);
+            }
+            else if (type == typeof(ulong))
+            {
+                if (string.IsNullOrEmpty(value)) return (ulong)0;
+                return ulong.Parse(value);
+            }
+            else if (type == typeof(double))
+            {
+                if (string.IsNullOrEmpty(value)) return (double)0;
+                return double.Parse(value);
+            }
+            else if (type == typeof(decimal))
+            {
+                if (string.IsNullOrEmpty(value)) return (decimal)0;
+                return decimal.Parse(value);
+            }
+            throw new InvalidCastException("错误的数字类型" + type.FullName);
         }
         public static bool IsNullable(this Type type)
         {

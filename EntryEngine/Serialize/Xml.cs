@@ -304,7 +304,6 @@ namespace EntryEngine.Serialize
 	}
 	public class XmlWriter : StringWriter
 	{
-        public const string SPECIAL = "#";
 		public bool MultipleRoot;
 
 		public override void WriteTable(StringTable table)
@@ -381,7 +380,7 @@ namespace EntryEngine.Serialize
 			if (specialType)
 			{
 				type = value.GetType();
-                WriteNode(SPECIAL + type.SimpleAQName());
+                WriteNode(ABSTRACT_TYPE + type.SimpleAQName());
 			}
 			Setting.Serialize(type, value,
 				variable =>
@@ -392,7 +391,7 @@ namespace EntryEngine.Serialize
 				});
 			if (specialType)
 			{
-                WriteNodeClose(SPECIAL + type.SimpleAQName());
+                WriteNodeClose(ABSTRACT_TYPE + type.SimpleAQName());
 			}
 		}
 
@@ -512,7 +511,7 @@ namespace EntryEngine.Serialize
                 roots.Add(ReadToNode());
             return roots;
 		}
-		public override XmlNode ReadToNode()
+		public XmlNode ReadToNode()
 		{
 			if (str == null)
 				throw new ArgumentNullException("read string can not be null");
@@ -740,10 +739,10 @@ namespace EntryEngine.Serialize
                 //}
                 // 单纯的接口实现某方法而没有其它字段属性时，First.ChildCount是0
                 //if (node.ChildCount == 1 && node.First.ChildCount > 0 && node.First.Name.StartsWith(XmlWriter.SPECIAL))
-                if (node.ChildCount == 1 && node.First.Name.StartsWith(XmlWriter.SPECIAL))
+                if (node.ChildCount == 1 && node.First.Name.StartsWith(XmlWriter.ABSTRACT_TYPE))
                 {
                     node = node.First;
-                    type = _SERIALIZE.LoadSimpleAQName(node.Name.Substring(XmlWriter.SPECIAL.Length));
+                    type = _SERIALIZE.LoadSimpleAQName(node.Name.Substring(XmlWriter.ABSTRACT_TYPE.Length));
                 }
 				if (type.IsStatic())
 				{

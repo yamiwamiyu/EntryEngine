@@ -1084,21 +1084,19 @@ namespace EntryEngine
         public readonly static DateTime LocalTime = UtcTime + (DateTime.Now - DateTime.UtcNow);
         public const string DATETIME_FORMAT = "yyyy-MM-dd HH:mm:ss";
 
-		public static TimeSpan Timestamp
+		public static long Timestamp
 		{
 			get { return ToTimestamp(DateTime.Now); }
 		}
-		/// <summary>
-		/// 2038年将超过int最大值
-		/// </summary>
+        /// <summary>2038年将超过int最大值</summary>
 		public static int UnixTimestamp
 		{
-			get { return (int)Timestamp.TotalSeconds; }
+            get { return ToUnixTimestamp(DateTime.Now); }
 		}
 
-		public static TimeSpan ToTimestamp(DateTime localTime)
+		public static long ToTimestamp(DateTime localTime)
 		{
-			return localTime - LocalTime;
+			return (long)(localTime - LocalTime).TotalMilliseconds;
 		}
 		public static DateTime ToTime(TimeSpan timestamp)
 		{
@@ -1110,7 +1108,7 @@ namespace EntryEngine
         }
 		public static int ToUnixTimestamp(DateTime localTime)
 		{
-			return (int)ToTimestamp(localTime).TotalSeconds;
+            return (int)(localTime - LocalTime).TotalSeconds;
 		}
 		public static DateTime ToUnixTime(int timestamp)
 		{
