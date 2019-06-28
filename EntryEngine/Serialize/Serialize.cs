@@ -1069,6 +1069,8 @@ namespace EntryEngine.Serialize
         {
             if (pos >= len) return null;
 
+            EatWhitespace();
+
             Type nullable;
             if (type.IsValueType && type.IsNullable(out nullable))
             {

@@ -274,7 +274,7 @@ namespace EntryEngine.Serialize
 		//}
 		public CSVReader(string content) : base(content)
 		{
-			WHITE_SPACE = "";
+            WHITE_SPACE = "";
 			WORD_BREAK = "\",\r";
 		}
 
