@@ -857,6 +857,7 @@ namespace EntryEngine.Serialize
             if (PeekChar != '[')
                 throw new FormatException("数组缺少'['");
             Read();
+            EatWhitespace();
 
             // byte[]数组加速
             if (type == typeof(byte[]))
@@ -877,10 +878,12 @@ namespace EntryEngine.Serialize
                             if (c == ']') __continue = false;
                             break;
                         }
-                        else
+                        else if (c >= '0' && c <= '9')
                         {
                             value = value * 10 + c - '0';
                         }
+                        else
+                            throw new FormatException("byte[]数值间不能带有其它字符");
                     }
                 }
                 return bytes.ToArray();
@@ -892,6 +895,7 @@ namespace EntryEngine.Serialize
         {
             while (true)
             {
+                EatWhitespace();
                 if (pos >= len) throw new FormatException("数组缺少']'");
                 if (PeekChar == ']')
                 {
@@ -904,11 +908,14 @@ namespace EntryEngine.Serialize
         }
         protected override object ReadClassObject(Type type)
         {
+            EatWhitespace();
+
             bool isStatic = type.IsStatic();
 
             if (PeekChar != '{') // }
                 throw new FormatException("对象缺少'{'"); // }
             Read();
+            EatWhitespace();
 
             object obj = Activator.CreateInstance(type);
             if (isStatic) obj = null;
@@ -924,13 +931,16 @@ namespace EntryEngine.Serialize
 
             while (true)
             {
+                EatWhitespace();
                 if (pos >= len)
                     // {
                     throw new FormatException("对象缺少'}'");
                 string key = ReadString();
+                EatWhitespace();
                 if (PeekChar != ':')
                     throw new FormatException("Key后缺少符号':'");
                 Read();
+                EatWhitespace();
                 if (key.StartsWith(ABSTRACT_TYPE))
                 {
                     // #类型SimpleName
@@ -946,8 +956,14 @@ namespace EntryEngine.Serialize
                     {
                         variable.SetValue(ReadObject(variable.Type));
                     }
+                    else
+                    {
+                        // 消耗掉值
+                        ReadValue();
+                    }
                 }
 
+                EatWhitespace();
                 // 读取完一个对象
                 // {
                 if (PeekChar == '}')
