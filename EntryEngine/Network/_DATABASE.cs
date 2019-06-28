@@ -390,6 +390,33 @@ namespace EntryEngine.Network
 
         //    }
         //}
+        public static PagedModel<T> SelectPages<T>(this _DATABASE.Database db, string selectCountSQL, string __where, string selectSQL, string conditionAfterWhere, int page, int pageSize, params object[] param) where T : new()
+        {
+            StringBuilder builder = new StringBuilder();
+            builder.AppendLine("{0} {1};", selectCountSQL, __where);
+            builder.AppendLine("{0} {1} {2} LIMIT @p{3},@p{4};", selectSQL, __where, conditionAfterWhere, param.Length, param.Length + 1);
+            object[] __param = new object[param.Length + 2];
+            Array.Copy(param, __param, param.Length);
+            __param[param.Length] = page * pageSize;
+            __param[param.Length + 1] = pageSize;
+            PagedModel<T> result = new PagedModel<T>();
+            result.Page = page;
+            result.PageSize = pageSize;
+            db.ExecuteReader((reader) =>
+            {
+                reader.Read();
+                result.Count = (int)(long)reader[0];
+                result.Models = new List<T>();
+
+                reader.NextResult();
+                while (reader.Read())
+                {
+                    result.Models.Add(_DATABASE.ReadObject<T>(reader, 0, reader.FieldCount));
+                }
+
+            }, builder.ToString(), __param);
+            return result;
+        }
     }
     public abstract class Database_Link : EntryEngine.Network._DATABASE.Database
     {
@@ -830,5 +857,14 @@ namespace EntryEngine.Network
         {
             TempTable = temp;
         }
+    }
+
+    /// <summary>翻页数据模型</summary>
+    public class PagedModel<T>
+    {
+        public int Count;
+        public int Page;
+        public int PageSize;
+        public List<T> Models;
     }
 }

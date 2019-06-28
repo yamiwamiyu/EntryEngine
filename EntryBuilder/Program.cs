@@ -6994,6 +6994,13 @@ namespace EntryBuilder
                             builderOP.AppendLine("return results;");
                         });
                     }
+
+                    // 翻页查询
+                    builderOP.AppendLine("public {0}PagedModel<T> SelectPages<T>(string __where, string selectSQL, string conditionAfterWhere, int page, int pageSize, params object[] param) where T : new()", _static);
+                    builderOP.AppendBlock(() =>
+                    {
+                        builderOP.AppendLine("return _DAO.SelectPages<T>(\"SELECT count(`{0}`.`{1}`) FROM `{0}`\", __where, selectSQL, conditionAfterWhere, page, pageSize, param);", table.Name, fields[0].Name);
+                    });
                     
                     // ___类型结束
                     if (!isStatic)
