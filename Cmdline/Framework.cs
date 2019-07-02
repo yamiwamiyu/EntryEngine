@@ -231,9 +231,7 @@ namespace EntryEngine.Cmdline
     public class LauncherCmdline : Launcher
     {
         private JsonReader reader = new JsonReader();
-        /// <summary>
-        /// 事件触发在异步线程上
-        /// </summary>
+        /// <summary>事件触发在异步线程上</summary>
         public Action<Record> OnLogRecord;
 
         protected StreamWriter Writer
@@ -300,13 +298,46 @@ namespace EntryEngine.Cmdline
             }
         }
     }
-    public class LoggerToShell : LoggerConsole
+    public class Logger : _LOG.Logger
     {
-        //private JsonWriter json = new JsonWriter();
-
+        private ConsoleColor last;
+        public Dictionary<byte, ConsoleColor> Colors
+        {
+            get;
+            private set;
+        }
+        public Logger()
+        {
+            this.Colors = new Dictionary<byte, ConsoleColor>();
+            this.Colors.Add(0, ConsoleColor.Gray);
+            this.Colors.Add(1, ConsoleColor.White);
+            this.Colors.Add(2, ConsoleColor.DarkYellow);
+            this.Colors.Add(3, ConsoleColor.Red);
+        }
+        public sealed override void Log(ref Record record)
+        {
+            byte level = record.Level;
+            ConsoleColor color;
+            if (this.Colors.TryGetValue(level, out color))
+            {
+                if (color != last)
+                {
+                    last = color;
+                    Console.ForegroundColor = color;
+                }
+                InternalLog(record);
+            }
+        }
+        protected virtual void InternalLog(Record record)
+        {
+            Console.WriteLine("[{0}] {1}", record.Time.ToString("yyyy-MM-dd HH:mm:ss"), record.ToString());
+        }
+    }
+    public class LoggerToShell : Logger
+    {
         public LoggerToShell()
         {
-            Colors.Remove(0);
+            //Colors.Remove(0);
             Colors.Add(4, ConsoleColor.Gray);
             Colors.Add(5, ConsoleColor.White);
             Colors.Add(6, ConsoleColor.DarkYellow);
@@ -336,15 +367,10 @@ namespace EntryEngine.Cmdline
         }
         protected override void InternalLog(Record record)
         {
-            JsonWriter json = new JsonWriter();
-            //json.Reset();
-            json.WriteObject(record);
-            Console.WriteLine(json.Result);
+            Console.WriteLine(JsonWriter.Serialize(record));
         }
     }
-    /// <summary>
-    /// LogSearch在修改时间段，查询条件微调，等级筛选时可以在原缓存上稍作修改
-    /// </summary>
+    /// <summary>LogSearch在修改时间段，查询条件微调，等级筛选时可以在原缓存上稍作修改</summary>
     [Code(ECode.Optimize)]
     public class LogStorage : _LOG.Logger, IDisposable
     {

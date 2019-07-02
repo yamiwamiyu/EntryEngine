@@ -18,17 +18,11 @@ namespace EntryEngine.Cmdline
 
         private TimeSpan frameRate = TimeSpan.FromSeconds(1.0 / 60);
         private byte overheatFrameCount = 10;
-        /// <summary>
-        /// 程序Update用时超过FrameRate连续超过OverheatFrameCount时触发
-        /// </summary>
+        /// <summary>程序Update用时超过FrameRate连续超过OverheatFrameCount时触发</summary>
         public event Action<TimeSpan[]> Overheat;
-        /// <summary>
-        /// 每帧循环时触发，返回是否继续程序
-        /// </summary>
+        /// <summary>每帧循环时触发，返回是否继续程序</summary>
         public event Func<bool> Loop;
-        /// <summary>
-        /// 循环发生异常时触发，返回是否继续程序
-        /// </summary>
+        /// <summary>循环发生异常时触发，返回是否继续程序</summary>
         public event Func<Exception, bool> Error;
         private List<Command> commands = new List<Command>();
 

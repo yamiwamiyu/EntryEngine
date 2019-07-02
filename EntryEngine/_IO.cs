@@ -518,6 +518,8 @@ namespace EntryEngine
         public static string ServerURL;
 
         public static string ProcessText { get; private set; }
+        public static bool NeedUpdate { get; private set; }
+        public static float Progress { get; private set; }
 
         static string ReadString(byte[] bytes)
         {
@@ -561,6 +563,8 @@ namespace EntryEngine
                 if (!needUpdate)
                     yield break;
             }
+
+            NeedUpdate = true;
 
             ProcessText = "正在计算更新内容大小";
             yield return null;
@@ -664,6 +668,7 @@ namespace EntryEngine
                         {
                             // todo:每完成一个下载都写入旧文件列表，这样中途退出下次也能接着上次中断的文件开始下载
                             download += fileListItem.Length >> 10;
+                            Progress = (float)Math.Min(download * 1.0 / needDownload, 1);
                             ProcessText = string.Format("正在更新：{0}kb / {1}kb", download, needDownload);
                             parallel--;
                         }
@@ -685,12 +690,13 @@ namespace EntryEngine
 cd {1}
 xcopy /Y *.* ..\
 cd ..\
-start Xna.exe
-del {2}
+start {2}
+del {3}
 ";
                 // 关闭程序并启动批处理来启动程序
                 File.WriteAllText(HOT_FIX_BAT,
-                    string.Format(update_bat, Process.GetCurrentProcess().Id, FIX_TEMP, HOT_FIX_BAT));
+                    string.Format(update_bat, Process.GetCurrentProcess().Id, FIX_TEMP, 
+                    System.Reflection.Assembly.GetEntryAssembly().Location, HOT_FIX_BAT));
                 Process.Start(HOT_FIX_BAT);
             }
         }

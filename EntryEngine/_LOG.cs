@@ -267,7 +267,6 @@ namespace EntryEngine
     }
     public class LoggerConsole : _LOG.Logger
     {
-        private const byte LOG = (byte)ELog.Debug;
         private byte last;
 
         public ConsoleColor[] Colors
@@ -290,7 +289,7 @@ namespace EntryEngine
         public override void Log(ref Record record)
         {
             byte level = record.Level;
-            if (level > LOG)
+            if (level >= Colors.Length)
                 return;
 
             if (level != last)
