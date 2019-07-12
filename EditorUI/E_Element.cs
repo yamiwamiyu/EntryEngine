@@ -255,7 +255,7 @@ namespace EditorUI
             if (type == typeof(UIScene))
                 panel.Hover += new DUpdate<UIElement>(panel_Hover);
             else
-                panel.Click += SelectPreviewElement;
+                panel.Clicked += SelectPreviewElement;
 
             ElementLib widget = GetElementLib(type);
             if (!string.IsNullOrEmpty(widget.Icon))

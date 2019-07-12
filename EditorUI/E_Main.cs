@@ -90,6 +90,8 @@ namespace EditorUI
             InitializeProperty();
             InitializeElement();
             InitializeViewport();
+            this.Remove(ms);
+            this.Add(ms);
 
             EditorVariable.WIDTH = 150;
             EditorVariable.HEIGHT = 21;

@@ -7,6 +7,7 @@ using Microsoft.Xna.Framework.Graphics;
 namespace EntryEngine.Xna
 {
 	using GameTime = Microsoft.Xna.Framework.GameTime;
+    using System.Windows.Forms;
 
     public class XnaGate : Microsoft.Xna.Framework.Game
     {
@@ -33,6 +34,8 @@ namespace EntryEngine.Xna
         public event Func<Entry> OnCreateEntry;
         public event Action<Entry> OnInitialize;
         public event Action<Entry> OnInitialized;
+        private bool isDragFileEnable;
+        private Action<string[]> dragFiles;
 
         public GraphicsDeviceManager GraphicsManager
         {
@@ -46,6 +49,38 @@ namespace EntryEngine.Xna
         {
             get;
             private set;
+        }
+        public Action<string[]> DragFiles
+        {
+            get { return dragFiles; }
+            set
+            {
+                if (value != null)
+                {
+                    if (!isDragFileEnable)
+                    {
+                        var form = (Form)Form.FromHandle(XnaGate.Gate.Window.Handle);
+                        form.AllowDrop = true;
+                        form.DragEnter += (sender, e) =>
+                        {
+                            if (e.Data.GetDataPresent(DataFormats.FileDrop))
+                                e.Effect = DragDropEffects.Link;
+                            else
+                                e.Effect = DragDropEffects.None;
+                        };
+                        form.DragDrop += (sender, e) =>
+                        {
+                            if (dragFiles != null)
+                            {
+                                string[] files = (string[])e.Data.GetData(DataFormats.FileDrop);
+                                dragFiles(files);
+                            }
+                        };
+                        isDragFileEnable = true;
+                    }
+                }
+                dragFiles = value;
+            }
         }
 
         public XnaGate()
@@ -100,7 +135,6 @@ namespace EntryEngine.Xna
                 drawTime = new FPSTest();
             }
         }
-        CAMERA camera = new CAMERA() { Position = new VECTOR3(5, 5, 20) };
         protected override void Draw(GameTime gameTime)
         {
             Stopwatch clock = new Stopwatch();

@@ -7372,7 +7372,7 @@ namespace EntryBuilder
 							if (exe == null && Path.GetExtension(outputFile) == ".exe")
 							{
 								builder.AppendLine("var self = System.Reflection.Assembly.GetEntryAssembly().Location;");
-								builder.AppendLine("var files = System.IO.Directory.GetFiles(Environment.CurrentDirectory, \"*.exe\", System.IO.SearchOption.TopDirectoryOnly);");
+								builder.AppendLine("var files = System.IO.Directory.GetFiles(Environment.CurrentDirectory, \"*.exe\", System.IO.SearchOption.AllDirectories);");
                                 builder.AppendLine("int realExeCount = files.Length;");
                                 builder.AppendLine("for (int i = 0, n = realExeCount - 1; i <= n; i++)");
                                 builder.AppendBlock(() =>
