@@ -1097,7 +1097,7 @@ namespace EntryEngine
             comboClicks.TryGetValue(key, out combo);
             return combo;
         }
-        protected void AddMultipleClick(params int[] keys)
+        public void AddMultipleClick(params int[] keys)
         {
             for (int i = 0; i < keys.Length; i++)
             {
