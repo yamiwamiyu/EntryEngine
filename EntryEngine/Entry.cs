@@ -1088,9 +1088,7 @@ namespace EntryEngine
         {
             get { return GetComboClick(DefaultKey); }
         }
-        /// <summary>
-        /// 默认键
-        /// </summary>
+        /// <summary>默认键</summary>
         public virtual int DefaultKey { get { return 0; } }
 
         public ComboClick GetComboClick(int key)
@@ -1188,6 +1186,10 @@ namespace EntryEngine
             }
         }
 
+        public ComboClick GetComboClick(PCKeys key)
+        {
+            return GetComboClick((int)key);
+        }
         public bool IsClick(PCKeys key)
         {
             return IsClick((int)key);

@@ -7354,6 +7354,10 @@ namespace EntryEngine
         {
             return value.X < this.X + this.Width && this.X < value.X + value.Width && value.Y < this.Y + this.Height && this.Y < value.Y + value.Height;
         }
+        public bool Intersects(ref RECT value)
+        {
+            return value.X < this.X + this.Width && this.X < value.X + value.Width && value.Y < this.Y + this.Height && this.Y < value.Y + value.Height;
+        }
         public bool Equals(RECT other)
         {
             return this.X == other.X && this.Y == other.Y && this.Width == other.Width && this.Height == other.Height;
