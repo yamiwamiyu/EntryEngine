@@ -1,4 +1,7 @@
-﻿2019/07/12
+﻿2019/07/16
+1. Xna键盘GetState能保留按键按下的顺序
+
+2019/07/12
 1. UI编辑器修复点击菜单项优先级低的BUG
 2. EntryBuilder.BuildLinkShell生成的运行库exe，打开其它exe允许目录下的所有目录
 3. XnaGate新增拖拽文件

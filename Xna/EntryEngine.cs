@@ -845,6 +845,8 @@ namespace EntryEngine.Xna
 	public struct KeyboardStateXna : IKeyboardState
     {
         private const byte MAX_KEY = 8;
+        internal static KeyboardStateXna previous;
+        private static byte[] sorted = new byte[MAX_KEY];
         private byte key1;
         private byte key2;
         private byte key3;
@@ -883,12 +885,33 @@ namespace EntryEngine.Xna
 
             KeyboardStateXna state;
             KeyboardStateXna* ptr = &state;
+
+            // 前一帧按下的按键按顺序先加入
+            fixed (KeyboardStateXna* __ptr = &previous)
+            {
+                KeyboardStateXna* __ptr__ = __ptr;
+                for (int i = 0; i < previous.count; i++, __ptr__++)
+                    for (int j = 0; j < keys.Length; j++)
+                        if ((byte)keys[j] == *((byte*)__ptr__))
+                        {
+                            *((byte*)ptr + ptr->count++) = (byte)keys[j];
+                            keys[j] = Keys.None;
+                            break;
+                        }
+            }
+            // 当前帧新按下的按键后加入
             for (int i = 0; i < keys.Length; i++)
             {
-                *((byte*)ptr + i) = (byte)keys[i];
-                if (++(ptr->count) == MAX_KEY)
-                    break;
+                if (keys[i] != Keys.None)
+                {
+                    *((byte*)ptr + ptr->count++) = (byte)keys[i];
+                    if (ptr->count == MAX_KEY)
+                        break;
+                }
             }
+
+            previous = state;
+
             return state;
         }
     }
