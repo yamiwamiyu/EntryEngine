@@ -385,7 +385,8 @@ namespace EntryBuilder
         }
         public static string GetChinese()
         {
-            return GetString(0xF900, 0xFAFF);
+            //return GetString(0xF900, 0xFAFF);
+            return GetString(0xF900, 0xFA6D);
         }
         public static string GetEnglish()
         {
