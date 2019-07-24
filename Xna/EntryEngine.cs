@@ -1249,7 +1249,15 @@ namespace EntryEngine.Xna
         {
             CacheInfo3 info = new CacheInfo3();
             info.image = new Bitmap(BUFFER_SIZE, BUFFER_SIZE);
+            info.image.SetResolution(320, 320);
             info.graphics = Graphics.FromImage(info.image);
+            info.graphics.CompositingMode = System.Drawing.Drawing2D.CompositingMode.SourceCopy;
+            info.graphics.CompositingQuality = System.Drawing.Drawing2D.CompositingQuality.HighQuality;
+            info.graphics.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.HighQualityBicubic;
+            //info.graphics.PageUnit = GraphicsUnit.Pixel;
+            info.graphics.PixelOffsetMode = System.Drawing.Drawing2D.PixelOffsetMode.HighQuality;
+            info.graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.HighQuality;
+            info.graphics.TextContrast = 0;
             info.graphics.TextRenderingHint = TextRenderingHint.AntiAlias;
             return info;
         }

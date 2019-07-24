@@ -531,7 +531,7 @@ namespace EntryEngine.UI
                     {
                         Childs[i].NeedUpdateLocalToWorld = value;
                     }
-                    needUpdateLocalToWorld = value;
+                    //needUpdateLocalToWorld = value;
                 }
                 needUpdateLocalToWorld = value;
             }
@@ -1373,7 +1373,7 @@ namespace EntryEngine.UI
         protected override void OnRemoved(UIElement node)
         {
             needSort = true;
-            NeedUpdateLocalToWorld = true;
+            //NeedUpdateLocalToWorld = true;
         }
         protected void InsertChildBefore(UIElement element, UIElement target)
         {

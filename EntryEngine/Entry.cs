@@ -6145,6 +6145,12 @@ namespace EntryEngine
             get { return cache == null || cache.Maps == null || cache.Maps.Count == 0 || cache.Textures.IsEmpty(); }
         }
 
+        public IEnumerable<TEXTURE> GetTextures()
+        {
+            foreach (var item in cache.Textures)
+                if (item != null)
+                    yield return item;
+        }
         protected internal override float CharWidth(char c)
         {
             if (c == '\r') return 0;
@@ -7597,10 +7603,10 @@ namespace EntryEngine
                 Array.Resize(ref buffer.spriteQueue, newSize);
                 Array.Resize(ref buffer.spriteBoundingBox, newSize);
             }
-            buffer.spriteQueue[index].Destination.X = vertex.Destination.X;
-            buffer.spriteQueue[index].Destination.Y = vertex.Destination.Y;
-            buffer.spriteQueue[index].Destination.Width = vertex.Destination.Width;
-            buffer.spriteQueue[index].Destination.Height = vertex.Destination.Height;
+            buffer.spriteQueue[index].Destination.X = (int)vertex.Destination.X;
+            buffer.spriteQueue[index].Destination.Y = (int)vertex.Destination.Y;
+            buffer.spriteQueue[index].Destination.Width = (int)vertex.Destination.Width;
+            buffer.spriteQueue[index].Destination.Height = (int)vertex.Destination.Height;
             buffer.spriteQueue[index].Source.X = vertex.Source.X;
             buffer.spriteQueue[index].Source.Y = vertex.Source.Y;
             buffer.spriteQueue[index].Source.Width = vertex.Source.Width;
