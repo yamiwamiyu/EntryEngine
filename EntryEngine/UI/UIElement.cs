@@ -105,7 +105,7 @@ namespace EntryEngine.UI
         }
         public static COLOR ToLight(COLOR originColor, float percent)
         {
-            return new COLOR((byte)(originColor.R + (255 - originColor.R) * percent), (byte)(originColor.G + (255 - originColor.G) * percent), (byte)(originColor.B + (255 - originColor.B) * percent), originColor.A);
+            return new COLOR(_MATH.InByte(originColor.R + (255 - originColor.R) * percent), _MATH.InByte(originColor.G + (255 - originColor.G) * percent), _MATH.InByte(originColor.B + (255 - originColor.B) * percent), originColor.A);
         }
         public static COLOR ToDark(COLOR originColor)
         {
@@ -115,9 +115,9 @@ namespace EntryEngine.UI
         {
             float b = 1 / (1 - percent);
             return new COLOR(
-                (byte)_MATH.Round((originColor.R - 255 * percent) * b),
-                (byte)_MATH.Round((originColor.G - 255 * percent) * b),
-                (byte)_MATH.Round((originColor.B - 255 * percent) * b),
+                _MATH.InByte(_MATH.Round((originColor.R - 255 * percent) * b)),
+                _MATH.InByte(_MATH.Round((originColor.G - 255 * percent) * b)),
+                _MATH.InByte(_MATH.Round((originColor.B - 255 * percent) * b)),
                 originColor.A);
         }
         public static void StyleButtonPatchBorder(Button item, COLOR defaultColor, COLOR hoverColor, byte bold, COLOR defaultFontColor)
