@@ -1249,14 +1249,14 @@ namespace EntryEngine.Xna
         {
             CacheInfo3 info = new CacheInfo3();
             info.image = new Bitmap(BUFFER_SIZE, BUFFER_SIZE);
-            info.image.SetResolution(320, 320);
+            //info.image.SetResolution(320, 320);
             info.graphics = Graphics.FromImage(info.image);
-            info.graphics.CompositingMode = System.Drawing.Drawing2D.CompositingMode.SourceCopy;
-            info.graphics.CompositingQuality = System.Drawing.Drawing2D.CompositingQuality.HighQuality;
-            info.graphics.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.HighQualityBicubic;
-            //info.graphics.PageUnit = GraphicsUnit.Pixel;
-            info.graphics.PixelOffsetMode = System.Drawing.Drawing2D.PixelOffsetMode.HighQuality;
-            info.graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.HighQuality;
+            //info.graphics.CompositingMode = System.Drawing.Drawing2D.CompositingMode.SourceCopy;
+            //info.graphics.CompositingQuality = System.Drawing.Drawing2D.CompositingQuality.HighQuality;
+            info.graphics.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.HighQualityBilinear;
+            info.graphics.PageUnit = GraphicsUnit.Pixel;
+            //info.graphics.PixelOffsetMode = System.Drawing.Drawing2D.PixelOffsetMode.HighQuality;
+            //info.graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.HighQuality;
             info.graphics.TextContrast = 0;
             info.graphics.TextRenderingHint = TextRenderingHint.AntiAlias;
             return info;
@@ -1264,7 +1264,7 @@ namespace EntryEngine.Xna
         protected override FontDynamic OnSizeChanged(float fontSize)
         {
             Font font = cacheP2.font;
-            Font newFont = new Font(font.FontFamily, GetDynamicSize(fontSize), font.Style, GraphicsUnit.Pixel);
+            Font newFont = new Font(font.FontFamily, GetDynamicSize(fontSize), font.Style, font.Unit, font.GdiCharSet, font.GdiVerticalFont);
             FontDynamic result = GetCache(GetID(newFont));
             if (result == null)
             {
@@ -1431,7 +1431,7 @@ namespace EntryEngine.Xna
 
             XnaGate xna = XnaGate.Gate;
 
-            FONT = new FontGUIP(new Font("黑体", 24f, FontStyle.Bold, GraphicsUnit.Pixel));
+            FONT = new FontGUIP("黑体", 24f);
 
             IPlatform = new PlatformXna(xna);
 
