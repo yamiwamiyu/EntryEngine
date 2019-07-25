@@ -498,6 +498,37 @@ namespace EntryEngine
                 Utility.Swap(ref bytes[i], ref bytes[random.Next(len)]);
         }
     }
+    public class EncryptRandom : IEncrypt
+    {
+        public void Encrypt(ref byte[] bytes)
+        {
+            int len = bytes.Length;
+            byte[] random = new byte[len + 4];
+            int seed = _RANDOM.Next();
+            random[0] = (byte)seed;
+            random[1] = (byte)(seed >> 8);
+            random[2] = (byte)(seed >> 16);
+            random[3] = (byte)(seed >> 24);
+            Random __random = new Random(seed);
+            for (int i = 0, index = 4; i < len; i++, index++)
+            {
+                random[index] = (byte)(bytes[i] + __random.Next(255));
+            }
+            bytes = random;
+        }
+        public void Decrypt(ref byte[] bytes)
+        {
+            int seed = (bytes[3] << 24) | (bytes[2] << 16) | (bytes[1] << 8) | bytes[0];
+            Random __random = new Random(seed);
+            int len = bytes.Length;
+            byte[] origin = new byte[len - 4];
+            for (int i = 0, index = 4; index < len; i++, index++)
+            {
+                origin[i] = (byte)(bytes[index] - __random.Next(255));
+            }
+            bytes = origin;
+        }
+    }
 
 #if DEBUG
     public static class HotFix
