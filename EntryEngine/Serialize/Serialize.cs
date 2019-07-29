@@ -1145,6 +1145,11 @@ namespace EntryEngine.Serialize
         }
         protected virtual object ReadEnum(Type type, Type underlyingType)
         {
+            if (string.IsNullOrEmpty(PeekNextString()))
+            {
+                var array = Enum.GetValues(type);
+                if (array.Length > 0) return array.GetValue(0);
+            }
             return Enum.Parse(type, ReadNumber(underlyingType).ToString());
         }
         protected virtual char ReadChar()
@@ -1159,6 +1164,7 @@ namespace EntryEngine.Serialize
         {
             if (pos >= len) return false;
             string result = ReadNextString();
+            if (string.IsNullOrEmpty(result)) return false;
             if (result.Length == 1)
             {
                 char c = result[0];
