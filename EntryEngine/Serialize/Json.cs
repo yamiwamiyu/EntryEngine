@@ -983,7 +983,7 @@ namespace EntryEngine.Serialize
 
             return obj;
         }
-        
+
         public object ReadValue()
         {
             return ReadByToken(PeekJson);
@@ -1227,6 +1227,141 @@ namespace EntryEngine.Serialize
         public static T Deserialize<T>(string buffer, SerializeSetting setting)
         {
             return (T)Deserialize(buffer, typeof(T), setting);
+        }
+    }
+    public struct JsonObject
+    {
+        public object Value;
+
+        public JsonObject this[string key]
+        {
+            get { return new JsonObject(((Dictionary<string, object>)Value)[key]); }
+        }
+        public JsonObject this[int arrayIndex]
+        {
+            get { return new JsonObject(((List<object>)Value)[arrayIndex]); }
+        }
+
+        public JsonObject(object value)
+        {
+            this.Value = value;
+        }
+
+        //public T GetValue<T>()
+        //{
+        //    return (T)Value;
+        //}
+        public byte GetByte()
+        {
+#if HTML5
+            return (byte)(Value == null ? 0 : Value);
+#else
+            return Convert.ToByte(Value == null ? 0 : Value);
+#endif
+        }
+        public sbyte GetSByte()
+        {
+#if HTML5
+            return (sbyte)(Value == null ? 0 : Value);
+#else
+            return Convert.ToSByte(Value == null ? 0 : Value);
+#endif
+        }
+        public bool GetBool()
+        {
+            return (bool)(Value == null ? false : Value);
+        }
+        public char GetChar()
+        {
+            return (char)(Value == null ? 0 : Value);
+        }
+        public ushort GetUInt16()
+        {
+#if HTML5
+            return (ushort)(Value == null ? 0 : Value);
+#else
+            return Convert.ToUInt16(Value == null ? 0 : Value);
+#endif
+        }
+        public short GetInt16()
+        {
+#if HTML5
+            return (short)(Value == null ? 0 : Value);
+#else
+            return Convert.ToInt16(Value == null ? 0 : Value);
+#endif
+        }
+        public uint GetUInt32()
+        {
+#if HTML5
+            return (uint)(Value == null ? 0 : Value);
+#else
+            return Convert.ToUInt32(Value == null ? 0 : Value);
+#endif
+        }
+        public int GetInt32()
+        {
+#if HTML5
+            return (int)(Value == null ? 0 : Value);
+#else
+            return Convert.ToInt32(Value == null ? 0 : Value);
+#endif
+        }
+        public float GetSingle()
+        {
+#if HTML5
+            return (float)(Value == null ? 0 : Value);
+#else
+            return Convert.ToSingle(Value == null ? 0 : Value);
+#endif
+        }
+        public ulong GetUInt64()
+        {
+#if HTML5
+            return (ulong)(Value == null ? 0 : Value);
+#else
+            return Convert.ToUInt64(Value == null ? 0 : Value);
+#endif
+        }
+        public long GetInt64()
+        {
+#if HTML5
+            return (long)(Value == null ? 0 : Value);
+#else
+            return Convert.ToInt64(Value == null ? 0 : Value);
+#endif
+        }
+        public string GetString()
+        {
+            return (string)Value;
+        }
+        public T[] GetArray<T>()
+        {
+            List<object> array = (List<object>)Value;
+            T[] result = new T[array.Count];
+            for (int i = 0; i < result.Length; i++)
+                result[i] = (T)array[i];
+            return result;
+        }
+        public DateTime GetDateTime()
+        {
+            return DateTime.Parse((string)Value);
+        }
+        public DateTime GetDateTimeFromTimeStamp()
+        {
+            return Utility.ToTime(GetInt64());
+        }
+        public DateTime GetDateTimeFromUnixTimeStamp()
+        {
+            return Utility.ToUnixTime(GetInt32());
+        }
+
+        public override string ToString()
+        {
+            if (Value == null) return string.Empty;
+            else if (Value is List<object>) return string.Format("List[{0}]", ((List<object>)Value).Count);
+            else if (Value is Dictionary<string, object>) return "Object";
+            else return Value.ToString();
         }
     }
 }
