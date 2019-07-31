@@ -1,5 +1,6 @@
 ﻿2019/07/31
 1. 新增SMask弹窗遮罩场景
+2. 新增ProxyHttpService2简单实现引擎内的HTTP二进制交互协议
 
 2019/07/30
 1. 新增ParallelQueue和ParallelRouter，可以分配异步线程来处理网络请求

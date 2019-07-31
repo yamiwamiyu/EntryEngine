@@ -944,6 +944,29 @@ namespace EntryEngine.Network
             }
         }
     }
+    public class ProxyHttpService2 : ProxyHttpAsync
+    {
+        private LinkHttpResponseShort link;
+        public AgentProtocolStub Agent { get; private set; }
+
+        public ProxyHttpService2()
+        {
+            link = new LinkHttpResponseShort();
+            Agent = new AgentProtocolStub(link);
+        }
+
+        protected override IEnumerator<LoginResult> Login(Link link)
+        {
+            throw new NotImplementedException();
+        }
+        protected override Link InternalAccept(HttpListenerContext context)
+        {
+            link.Enqueue(context);
+            Agent.OnProtocol(null);
+            return null;
+        }
+        protected override void OnUpdate(GameTime time) { }
+    }
     public class ProxyHttpService : ProxyHttpAsync
     {
         public AgentHttp Agent;
