@@ -385,5 +385,12 @@ namespace EntryEditor
 			graphics.Save();
 			return pixel.GetPixel(0, 0).GUIColor();
 		}
+        public static string SelectFont()
+        {
+            FontDialog selector = new FontDialog();
+            if (selector.ShowDialog() != DialogResult.OK)
+                return null;
+            return selector.Font.Name;
+        }
 	}
 }

@@ -1229,6 +1229,7 @@ namespace EntryEngine.Xna
         {
             get { return (CacheInfo3)base.cacheP; }
         }
+        public Font Font { get { return cacheP2.font; } }
 
         public FontGUIP(string fontName, float fontSize)
             : this(new Font(fontName, GetDynamicSize(fontSize), FontStyle.Regular, GraphicsUnit.Pixel))

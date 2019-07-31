@@ -587,6 +587,7 @@ namespace EntryEditor
 		public RECT WindowClip = new RECT(0, 0, 960, 540);
 		public bool WindowMax;
 		public COLOR BGColor = COLOR.CornflowerBlue;
+        public string Font;
 
 		public void RefreshRecentProject()
 		{
@@ -609,6 +610,16 @@ namespace EntryEditor
 				RecentProjects[index] = project;
 			RefreshRecentProject();
 		}
+        public string ChangeFont()
+        {
+            System.Windows.Forms.FontDialog selector = new System.Windows.Forms.FontDialog();
+            selector.Font = ((FontGUIP)FONT.Default).Font;
+            if (selector.ShowDialog() != System.Windows.Forms.DialogResult.OK)
+                return null;
+            Font = selector.Font.Name;
+            FONT.Default = Entry.Instance.NewFONT(Font, FONT.Default.FontSize);
+            return Font;
+        }
 	}
 	public class ProjectData
 	{

@@ -130,6 +130,10 @@ namespace EditorUI
             item2.Text = "取消翻译表";
             strip2.AddItem(item2);
 
+            item2 = new MenuStripItem();
+            item2.Text = "更换项目字体";
+            strip2.AddItem(item2);
+
             foreach (MenuStripItem i in ms.Items)
             {
                 //i.TextShader = new TextShader();
@@ -164,6 +168,7 @@ namespace EditorUI
             ms[2].MenuStripChild[4].Clicked += AllVisible;
             ms[2].MenuStripChild[5].Clicked += DeleteInvisible;
             ms[2].MenuStripChild[6].Clicked += ClearTranslation;
+            ms[2].MenuStripChild[7].Clicked += ChangeFont;
             this.Add(ms);
         }
 
@@ -375,6 +380,10 @@ namespace EditorUI
         private void ClearTranslation(UIElement sender, Entry e)
         {
             Project.TranslateTable = null;
+        }
+        private void ChangeFont(UIElement sender, Entry e)
+        {
+            Config<ConfigEditor>.Setting.ChangeFont();
         }
     }
 }

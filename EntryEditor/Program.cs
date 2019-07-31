@@ -90,6 +90,9 @@ namespace EntryEditor
             if (entry != null)
                 entry.Size = Entry.Instance.GRAPHICS.ScreenSize;
 
+            if (!string.IsNullOrEmpty(Config<ConfigEditor>.Setting.Font))
+                FONT.Default = Entry.Instance.NewFONT(Config<ConfigEditor>.Setting.Font, 16f);
+
             yield break;
 		}
 		[STAThread]
