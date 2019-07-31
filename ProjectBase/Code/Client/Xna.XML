@@ -1,0 +1,32 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>Xna</name>
+    </assembly>
+    <members>
+        <member name="M:EntryEngine.Xna._XNA.SetColor(Microsoft.Xna.Framework.Graphics.Texture2D,Microsoft.Xna.Framework.Graphics.Color[],EntryEngine.RECT)">
+            <summary>
+            设置图片颜色
+            </summary>
+            <param name="texture">要设置颜色的图片</param>
+            <param name="color">要设置颜色的区域的颜色</param>
+            <param name="rec">要设置颜色的区域</param>
+        </member>
+        <member name="M:EntryEngine.Xna._XNA.SetColor(Microsoft.Xna.Framework.Graphics.Texture2D,Microsoft.Xna.Framework.Graphics.Color[],EntryEngine.RECT,EntryEngine.RECT)">
+            <summary>
+            设置图片颜色
+            </summary>
+            <param name="texture">要设置颜色的图片</param>
+            <param name="color">整张图片的颜色</param>
+            <param name="source">图片上的像素区域</param>
+            <param name="rec">要设置颜色的区域</param>
+        </member>
+        <member name="M:EntryEngine.Xna.ShaderXna.SetPass(System.Int32)">
+            <summary>
+            开关Shader
+            </summary>
+            <param name="pass">开启：1 ~ PassCount/关闭：-pass|0</param>
+            <returns>是否正常操作Shader</returns>
+        </member>
+    </members>
+</doc>

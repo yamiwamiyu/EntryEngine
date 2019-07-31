@@ -2,6 +2,10 @@ copy Dummy\EntryEngine.dll ..\..\..\..\ProjectBase\Code\
 copy Dummy\Xna.dll ..\..\..\..\ProjectBase\Code\Client\
 copy Dummy\Cmdline.dll ..\..\..\..\ProjectBase\Code\Server\
 
+copy ..\..\..\..\EntryEngine\bin\Debug\EntryEngine.XML ..\..\..\..\ProjectBase\Code\
+copy ..\..\..\..\Xna\bin\Debug\Xna.XML ..\..\..\..\ProjectBase\Code\Client\
+copy ..\..\..\..\Cmdline\bin\Debug\Cmdline.XML ..\..\..\..\ProjectBase\Code\Server\
+
 copy EntryBuilder.exe ..\..\..\..\ProjectBase\
 
 copy Xna.exe ..\..\..\..\ProjectBase\Launch\Client\

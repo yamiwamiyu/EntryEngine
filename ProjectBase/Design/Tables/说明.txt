@@ -11,6 +11,7 @@
 
 数据表类型
 * ushort[] 生成Dictionary<ushort, 类型>的字典
+* ushort[[]] 生成Dictionary<ushort, 类型[]>的字典
 * string#Item[ID(ushort),Count(uint)][|] '#'后需要生成Item类型
 * string:COLOR[R(byte),G(byte),B(byte),A(byte)] ':'后不需要生成类型
 * string:Range<float>[Min(float)~Max(float)] 可用于泛型

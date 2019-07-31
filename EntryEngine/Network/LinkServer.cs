@@ -961,8 +961,28 @@ namespace EntryEngine.Network
         }
         protected override Link InternalAccept(HttpListenerContext context)
         {
-            link.Enqueue(context);
-            Agent.OnProtocol(null);
+            string url = null;
+            try
+            {
+                url = context.Request.RawUrl;
+                // 函数路由
+                link.Enqueue(context);
+                /* 每帧需要手动发出客户端的请求数据 */
+                while (link.CanRead)
+                {
+                    byte[] package = link.Read();
+                    if (package != null)
+                        Agent.OnProtocol(package);
+                    else
+                        break;
+                }
+                link.Flush();
+            }
+            catch (Exception ex)
+            {
+                lock (_LOG._Logger)
+                    _LOG.Error(ex, "处理请求异常 URL: {0}", url);
+            }
             return null;
         }
         protected override void OnUpdate(GameTime time) { }
