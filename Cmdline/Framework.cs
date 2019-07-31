@@ -14,9 +14,7 @@ namespace EntryEngine.Cmdline
 
         private string name;
         private event EventHandler exit;
-        /// <summary>
-        /// 事件触发在异步线程上
-        /// </summary>
+        /// <summary>事件触发在异步线程上</summary>
         public event Action<string> ConsoleLog;
         public event Action<Process> Launched;
 

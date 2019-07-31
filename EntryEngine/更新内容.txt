@@ -1,4 +1,11 @@
-﻿2019/07/29
+﻿2019/07/31
+1. 新增SMask弹窗遮罩场景
+
+2019/07/30
+1. 新增ParallelQueue和ParallelRouter，可以分配异步线程来处理网络请求
+2. 网络Connector进行优化
+
+2019/07/29
 1. 新增JsonObject，针对JsonReader.ReadValue()的结果可以不用声明类型方便读取
 2. 修复反序列化空字符串转换bool类型的错误，空字符串获取枚举类型默认值的错误
 

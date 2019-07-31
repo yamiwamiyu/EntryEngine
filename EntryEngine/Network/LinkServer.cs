@@ -8,6 +8,8 @@ using System.Net.Sockets;
 using EntryEngine.Serialize;
 using System.Text;
 using System.IO;
+using System.Threading;
+using System.Reflection;
 
 namespace EntryEngine.Network
 {
@@ -1867,6 +1869,266 @@ namespace EntryEngine.Network
             {
                 listener.Stop();
                 listener = null;
+            }
+        }
+    }
+
+    public class ParallelRouter<T>
+    {
+        class Router
+        {
+            public Func<T, int> RouteToken;
+            public ParallelQueue<T>[] Workers;
+            public Router(Func<T, int> getToken, ParallelQueue<T>[] workers)
+            {
+                this.RouteToken = getToken;
+                this.Workers = workers;
+            }
+        }
+        private List<Router> routers = new List<Router>();
+
+        /// <param name="getToken">返回值必须大于等于0时分配工作队列，相同的返回值会分配到相同的工作队列；返回值小于0时不工作</param>
+        public bool AddRouter(Func<T, int> getToken, ParallelQueue<T>[] workers)
+        {
+            if (workers == null || workers.Length == 0)
+                throw new ArgumentException("Worker's count must bigger than 0.");
+            for (int i = 0; i < routers.Count; i++)
+                if (routers[i].RouteToken == getToken)
+                    return false;
+            routers.Add(new Router(getToken, workers));
+            return true;
+        }
+        public bool RemoveRouter(Func<T, int> getToken)
+        {
+            for (int i = 0; i < routers.Count; i++)
+                if (routers[i].RouteToken == getToken)
+                {
+                    routers.RemoveAt(i);
+                    return true;
+                }
+            return false;
+        }
+        public void Route(T data)
+        {
+            if (routers == null) return;
+            for (int i = 0; i < routers.Count; i++)
+            {
+                int token;
+                if (routers[i].RouteToken == null) token = 0;
+                else token = routers[i].RouteToken(data);
+                if (token >= 0)
+                {
+                    var workers = routers[i].Workers;
+                    var temp = workers.FirstOrDefault(ob => ob.Check(token));
+                    // 相同Token的请求则放入同一个线程队列
+                    if (temp != null)
+                    {
+                        temp.Request(data, token);
+                    }
+                    else
+                    {
+                        // 分配一个工作最少的线程
+                        temp = workers.MaxMin(ob => ob.QueueCount, true);
+                        temp.Request(data, token);
+                    }
+                }
+            }
+        }
+    }
+    public abstract class ParallelQueue<T>
+    {
+        struct Job
+        {
+            public T Context;
+            public int Token;
+            public Job(T context, int token)
+            {
+                this.Context = context;
+                this.Token = token;
+            }
+        }
+        private Thread thread;
+        private EventWaitHandle handle = new EventWaitHandle(false, EventResetMode.ManualReset);
+        private bool running = true;
+        private Queue<Job> jobs = new Queue<Job>();
+        private Job request;
+        /// <summary>key:某个角色 / value:工作数量</summary>
+        private Dictionary<int, int> tokenJobs = new Dictionary<int, int>();
+        public int QueueCount { get { return jobs.Count; } }
+
+        public ParallelQueue()
+        {
+            thread = new Thread(MainProcess);
+            thread.IsBackground = true;
+            thread.Start();
+        }
+        void MainProcess()
+        {
+            while (running)
+            {
+                handle.Reset();
+                handle.WaitOne();
+
+                while (true)
+                {
+                    lock (jobs)
+                    {
+                        if (jobs.Count > 0)
+                            request = jobs.Dequeue();
+                        else
+                            break;
+                    }
+
+                    try
+                    {
+                        Work(request.Context);
+                    }
+                    catch (Exception ex)
+                    {
+                        lock (_LOG._Logger)
+                            _LOG.Error(ex, "并行[{0}]异常, ", typeof(T).Name);
+                    }
+
+                    lock (tokenJobs)
+                    {
+                        int count;
+                        if (tokenJobs.TryGetValue(request.Token, out count))
+                        {
+                            count--;
+                            if (count == 0)
+                                tokenJobs.Remove(request.Token);
+                            else
+                                tokenJobs[request.Token] = count;
+                        }
+                    }
+                }
+            }
+        }
+        protected abstract void Work(T data);
+        protected T GetContext()
+        {
+            return request.Context;
+        }
+        public void Request(T context, int token)
+        {
+            lock (jobs)
+                jobs.Enqueue(new Job(context, token));
+            lock (tokenJobs)
+            {
+                int count;
+                if (tokenJobs.TryGetValue(token, out count))
+                    tokenJobs[token] = count + 1;
+                else
+                    tokenJobs.Add(token, 1);
+            }
+            handle.Set();
+        }
+        public bool Check(int token)
+        {
+            lock (tokenJobs)
+            {
+                return tokenJobs.ContainsKey(token);
+            }
+        }
+        public void Stop()
+        {
+            running = false;
+        }
+    }
+    public class ParallelJsonHttpService : ParallelQueue<HttpListenerContext>
+    {
+        public AgentHttp Agent { get; protected set; }
+        public LinkHttpResponseShort Link { get; protected set; }
+
+        public ParallelJsonHttpService() : this(null) { }
+        public ParallelJsonHttpService(StubHttp[] stubs)
+        {
+            Link = new LinkHttpResponseShort();
+            Link.ValidateCRC = false;
+            if (stubs != null)
+                Agent = new AgentHttp(stubs);
+        }
+
+        protected override void Work(HttpListenerContext data)
+        {
+            if (Agent == null)
+            {
+                _LOG.Warning("No Agent");
+            }
+            else
+            {
+                lock (Agent)
+                {
+                    Agent.Context = data;
+                    data.Response.AppendHeader("Access-Control-Allow-Origin", "*");
+                    data.Response.AppendHeader("Access-Control-Allow-Headers", "AccessToken");
+                    data.Response.ContentType = "text/plain; charset=utf-8";
+                    data.Response.ContentEncoding = Encoding.UTF8;
+                    if (data.Request.HttpMethod.ToLower() == "options")
+                    {
+                        data.Response.Close();
+                    }
+                    else
+                    {
+                        Agent.OnProtocol(null);
+                    }
+                }
+            }
+        }
+        /// <summary>热更新Agent处理协议：StubHttp[] Method(Func&lt;HttpListenerContext> getData)</summary>
+        public void HotFixAgent(MethodInfo method)
+        {
+            StubHttp[] stubs = (StubHttp[])method.Invoke(null, new object[] { new Func<HttpListenerContext>(GetContext) });
+            lock (Agent)
+            {
+                Agent = new AgentHttp(stubs);
+            }
+        }
+    }
+    public abstract class ParallelBinaryService<T> : ParallelQueue<T>
+    {
+        public Agent Agent { get; protected set; }
+        public Link Link { get; protected set; }
+
+        /// <summary>热更新Agent处理协议：Stub[] Method(Func&lt;T> getData)</summary>
+        public void HotFixAgent(MethodInfo method)
+        {
+            Stub[] stubs = (Stub[])method.Invoke(null, new object[] { new Func<T>(GetContext) });
+            lock (Agent)
+            {
+                Agent = new AgentProtocolStub(Link, stubs);
+            }
+        }
+    }
+    public class ParallelBinaryHttpService : ParallelBinaryService<HttpListenerContext>
+    {
+        public ParallelBinaryHttpService()
+        {
+            Link = new LinkHttpResponseShort();
+        }
+        protected override void Work(HttpListenerContext data)
+        {
+            if (Agent == null)
+            {
+                _LOG.Warning("No Agent");
+            }
+            else
+            {
+                // 函数路由
+                ((LinkHttpResponseShort)Link).Enqueue(data);
+                lock (Agent)
+                {
+                    /* 每帧需要手动发出客户端的请求数据 */
+                    while (Link.CanRead)
+                    {
+                        byte[] package = Link.Read();
+                        if (package != null)
+                            Agent.OnProtocol(package);
+                        else
+                            break;
+                    }
+                }
+                Link.Flush();
             }
         }
     }

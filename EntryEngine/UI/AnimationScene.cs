@@ -157,4 +157,43 @@ namespace EntryEngine.UI
             return fade;
         }
     }
+    /// <summary>弹出子场景，子场景以外的部分遮罩</summary>
+    public class SMask : UIScene
+    {
+        public UIScene Scene;
+
+        public SMask()
+        {
+            this.Background = TEXTURE.Pixel;
+            this.Color = new COLOR(0, 0, 0, 128);
+        }
+
+        protected override void InternalEvent(Entry e)
+        {
+            base.InternalEvent(e);
+            if (Scene != null && !Scene.IsHover && e.INPUT.Pointer.IsRelease(0))
+            {
+                Scene.Close(true);
+                this.Close(true);
+                //Handled = true;
+                Handle();
+            }
+        }
+        protected override void InternalUpdate(Entry e)
+        {
+            base.InternalUpdate(e);
+            if (Scene != null && !Scene.IsInStage)
+            {
+                this.Close(true);
+            }
+        }
+
+        public static T Show<T>() where T : UIScene, new()
+        {
+            SMask gray = Entry.Instance.ShowDialogScene<SMask>(EState.Dialog);
+            T scene = Entry.Instance.ShowDialogScene<T>(EState.None);
+            gray.Scene = scene;
+            return scene;
+        }
+    }
 }

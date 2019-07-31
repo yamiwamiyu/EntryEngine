@@ -570,6 +570,7 @@ namespace EntryEngine.Network
         public int ReconnectCount = 3;
         protected LinkedList<HttpRequestPost> requests = new LinkedList<HttpRequestPost>();
         private int dataLength = -1;
+        public event Action<HttpRequestPost> OnRequestPrepare;
 
         public override bool IsConnected
         {
@@ -656,6 +657,8 @@ namespace EntryEngine.Network
         protected virtual void PrepareRequest(HttpRequestPost request)
         {
             request.OnConnect += RequestOnConnect;
+            if (OnRequestPrepare != null)
+                OnRequestPrepare(request);
             requests.AddFirst(request);
         }
         protected HttpRequestPost GetRequestLink()
@@ -821,6 +824,8 @@ namespace EntryEngine.Network
         public event Func<bool, byte[], Agent> OnConnectSuccess;
         /// <summary>连接失败；是否断线重连，重连次数，返回是否继续重连</summary>
         public event Func<bool, int, bool> OnConnectFault;
+        /// <summary>网络交互协议异常</summary>
+        public event Action<Exception> OnAgentError;
         public bool Running { get; private set; }
         public bool IsConnected
         {
@@ -831,16 +836,8 @@ namespace EntryEngine.Network
         public ushort Port { get; private set; }
         public COROUTINE Coroutine { get; private set; }
         public IConnector NetConnector { get; private set; }
-        public IEnumerable<ICoroutine> Connect(EntryService entry, bool setCoroutine, IConnector connector, string host, ushort port)
+        public IEnumerable<ICoroutine> Connect(EntryService entry, IConnector connector, string host, ushort port)
         {
-            if (entry == null)
-            {
-                entry = EntryService.Instance;
-                if (entry == null)
-                {
-                    throw new ArgumentNullException("entry");
-                }
-            }
             if (string.IsNullOrEmpty(host))
                 throw new ArgumentNullException("ip");
             if (connector == null)
@@ -853,8 +850,8 @@ namespace EntryEngine.Network
             this.Port = port;
             this.NetConnector = connector;
 
-            IEnumerable<ICoroutine> coroutine = Connect(entry);
-            if (setCoroutine)
+            IEnumerable<ICoroutine> coroutine = Connect();
+            if (entry != null)
             {
                 Coroutine = entry.SetCoroutine(coroutine);
             }
@@ -864,7 +861,7 @@ namespace EntryEngine.Network
             }
             return coroutine;
         }
-        private IEnumerable<ICoroutine> Connect(EntryService entry)
+        private IEnumerable<ICoroutine> Connect()
         {
             while (Running)
             {
@@ -929,7 +926,7 @@ namespace EntryEngine.Network
                             byte[] buffer = link.Read();
                             if (buffer == null)
                             {
-                                over.Update(entry.GameTime);
+                                over.Update(GameTime.Time);
                                 if (over.IsEnd)
                                 {
                                     _LOG.Error("未能在时间内收到服务器的响应，关闭本次连接");
@@ -1007,6 +1004,10 @@ namespace EntryEngine.Network
                     catch (Exception ex)
                     {
                         _LOG.Error(ex, "网络交互异常");
+                        if (OnAgentError != null)
+                        {
+                            OnAgentError(ex);
+                        }
                     }
                     yield return null;
                 }
