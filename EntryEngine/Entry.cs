@@ -6151,13 +6151,18 @@ namespace EntryEngine
                 if (item != null)
                     yield return item;
         }
+        protected virtual float GetCharWidth(float width)
+        {
+            return width + Spacing.X;
+        }
         protected internal override float CharWidth(char c)
         {
             if (c == '\r') return 0;
             Buffer buffer;
             if (cache.Maps.TryGetValue(c, out buffer))
             {
-                return buffer.W + Spacing.X;
+                //return buffer.W + Spacing.X;
+                return GetCharWidth(buffer.W);
             }
             else
             {
@@ -6306,9 +6311,9 @@ namespace EntryEngine
             this.cache.Maps = maps;
         }
 
-        protected internal override float CharWidth(char c)
+        protected override float GetCharWidth(float width)
         {
-            return base.CharWidth(c) * scale;
+            return base.GetCharWidth(width) * scale;
         }
         //protected internal override void Draw(GRAPHICS spriteBatch, string text, VECTOR2 location, COLOR color, float scale)
         //{
@@ -6659,7 +6664,7 @@ namespace EntryEngine
         {
             return MeasureString(CalcBufferWidth, lineHeight, c.ToString());
         }
-        protected float CalcBufferWidth(char c)
+        protected virtual float CalcBufferWidth(char c)
         {
             return IsHalfWidthChar(c) ? fontSize * 0.5f : fontSize;
         }

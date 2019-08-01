@@ -1218,11 +1218,19 @@ namespace EntryEngine.Xna
 	{
         private static Brush brush = Brushes.White;
 
+        private enum EMonospaced
+        {
+            None,
+            Monospaced,
+            Proportional,
+        }
         private class CacheInfo3 : FontDynamic.CacheInfo2
         {
             public Bitmap image;
             public Graphics graphics;
             public Font font;
+            public EMonospaced IsMonospaced;
+            //public float 
         }
         
         private CacheInfo3 cacheP2
@@ -1246,6 +1254,46 @@ namespace EntryEngine.Xna
             this.lineHeight = font.GetHeight();
 		}
 
+        private void TestMonospaced()
+        {
+            var cache = this.cacheP2;
+            if (cache.IsMonospaced == EMonospaced.None)
+            {
+                var measure0 = cache.graphics.MeasureString("w", cache.font);
+                var measure1 = cache.graphics.MeasureString("i", cache.font);
+                if (measure0.Width == measure1.Width)
+                    cache.IsMonospaced = EMonospaced.Monospaced;
+                else
+                    cache.IsMonospaced = EMonospaced.Proportional;
+            }
+        }
+        protected override float CalcBufferWidth(char c)
+        {
+            TestMonospaced();
+            var cache = this.cacheP2;
+            if (cache.IsMonospaced == EMonospaced.Monospaced)
+            {
+                return base.CalcBufferWidth(c);
+            }
+            else
+            {
+                return cache.graphics.MeasureString(c.ToString(), cache.font).Width - 5;
+            }
+        }
+        protected override float CharWidth(char c)
+        {
+            // 检验字体是等宽字体还是比例字体
+            TestMonospaced();
+            var cache = this.cacheP2;
+            if (cache.IsMonospaced == EMonospaced.Monospaced)
+            {
+                return base.CharWidth(c);
+            }
+            else
+            {
+                return GetCharWidth(cache.graphics.MeasureString(c.ToString(), cache.font).Width - 5);
+            }
+        }
         protected override FontDynamic.CacheInfo2 BuildGraphicsInfo()
         {
             CacheInfo3 info = new CacheInfo3();
