@@ -1254,44 +1254,29 @@ namespace EntryEngine.Xna
             this.lineHeight = font.GetHeight();
 		}
 
-        private void TestMonospaced()
+        protected override float CalcBufferWidth(char c)
         {
+            // 检验字体是等宽字体还是比例字体
             var cache = this.cacheP2;
             if (cache.IsMonospaced == EMonospaced.None)
             {
-                var measure0 = cache.graphics.MeasureString("w", cache.font);
-                var measure1 = cache.graphics.MeasureString("i", cache.font);
+                var measure0 = cache.graphics.MeasureString("w", cache.font, new SizeF(0, 0), StringFormat.GenericTypographic);
+                var measure1 = cache.graphics.MeasureString("i", cache.font, new SizeF(0, 0), StringFormat.GenericTypographic);
                 if (measure0.Width == measure1.Width)
                     cache.IsMonospaced = EMonospaced.Monospaced;
                 else
                     cache.IsMonospaced = EMonospaced.Proportional;
             }
-        }
-        protected override float CalcBufferWidth(char c)
-        {
-            TestMonospaced();
-            var cache = this.cacheP2;
             if (cache.IsMonospaced == EMonospaced.Monospaced)
             {
                 return base.CalcBufferWidth(c);
             }
             else
             {
-                return cache.graphics.MeasureString(c.ToString(), cache.font).Width - 5;
-            }
-        }
-        protected override float CharWidth(char c)
-        {
-            // 检验字体是等宽字体还是比例字体
-            TestMonospaced();
-            var cache = this.cacheP2;
-            if (cache.IsMonospaced == EMonospaced.Monospaced)
-            {
-                return base.CharWidth(c);
-            }
-            else
-            {
-                return GetCharWidth(cache.graphics.MeasureString(c.ToString(), cache.font).Width - 5);
+                if (char.IsWhiteSpace(c))
+                    return cache.graphics.MeasureString(c.ToString(), cache.font, new SizeF(0, 0), StringFormat.GenericDefault).Width;
+                else
+                    return cache.graphics.MeasureString(c.ToString(), cache.font, new SizeF(0, 0), StringFormat.GenericTypographic).Width;
             }
         }
         protected override FontDynamic.CacheInfo2 BuildGraphicsInfo()
