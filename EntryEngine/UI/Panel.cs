@@ -269,7 +269,7 @@ namespace EntryEngine.UI
 
         protected void PanelMouseScroll(UIElement sender, Entry e)
         {
-            if (e.INPUT.Mouse != null && ScrollWheelSpeed != 0 && DragMode == EDragMode.Drag)
+            if (e.INPUT.Mouse != null && ScrollWheelSpeed != 0)
             {
                 float value = e.INPUT.Mouse.ScrollWheelValue;
                 if (value != 0)
@@ -607,16 +607,15 @@ namespace EntryEngine.UI
         //}
 	}
 
-    public class ListView<T> : IDisposable
+    public class ListView<DataType, ElementType> : IDisposable where ElementType : UIElement
     {
         private Panel panel;
-        private Pool<UIElement> pools = new Pool<UIElement>();
-        public event Func<UIElement> OnCreateElement;
-        public event Action<UIElement, int, T> OnSetData;
-        public event Action<UIElement> OnCloseElement;
-        //public float ScrollWheelSpeed = 100;
+        private Pool<ElementType> pools = new Pool<ElementType>();
+        public event Func<ElementType> OnCreateElement;
+        public event Action<ElementType, int, DataType> OnSetData;
+        //public event Action<ElementType> OnRemoveElement;
 
-        public IList<T> Datas
+        public List<DataType> Datas
         {
             get;
             private set;
@@ -654,17 +653,6 @@ namespace EntryEngine.UI
             this.Panel = panel;
         }
 
-        //private void HoverScroll(UIElement sender, Entry e)
-        //{
-        //    if (e.INPUT.Mouse != null)
-        //    {
-        //        float value = e.INPUT.Mouse.ScrollWheelValue;
-        //        if (value != 0)
-        //        {
-        //            Panel.OffsetY += value * ScrollWheelSpeed;
-        //        }
-        //    }
-        //}
         private void Scroll(Panel sender, Entry e)
         {
             float offset = Panel.OffsetY;
@@ -688,7 +676,7 @@ namespace EntryEngine.UI
                 y += Panel[i].Height;
             }
         }
-        public void SetDataSource(IList<T> value)
+        public void SetDataSource(List<DataType> value)
         {
             if (Datas == value)
                 return;
@@ -696,39 +684,47 @@ namespace EntryEngine.UI
             Datas = value;
             Close();
 
-            Panel.Offset = VECTOR2.Zero;
+            //Panel.Offset = VECTOR2.Zero;
             Panel.ContentScope = VECTOR2.Zero;
 
             if (Datas == null)
                 return;
 
-            if (OnCreateElement == null)
-                return;
-
-            float y = 0;
             int count = Datas.Count;
             for (int i = 0; i < count; i++)
+                AddData(Datas[i]);
+            //Panel.ContentScope = new VECTOR2(0, y);
+        }
+        public ElementType AddData(DataType data)
+        {
+            var element = pools.Allot();
+            if (element == null)
             {
-                UIElement element = pools.Allot();
-                if (element == null)
+                if (OnCreateElement == null)
+                    element = Activator.CreateInstance<ElementType>();
+                else
                 {
                     element = OnCreateElement();
                     if (element == null)
                         throw new ArgumentNullException("element");
                 }
-                element.Y = y;
-                if (OnSetData != null)
-                    OnSetData(element, i, Datas[i]);
-                Panel.Add(element);
-                y += element.Height;
             }
-            Panel.ContentScope = new VECTOR2(0, y);
+            element.Y = element.Height * Panel.ChildCount;
+            if (OnSetData != null)
+                OnSetData(element, Panel.ChildCount, data);
+            Panel.Add(element);
+
+            if (Datas == null)
+                Datas = new List<DataType>();
+            Datas.Add(data);
+
+            return element;
         }
         public void Close()
         {
-            if (OnCloseElement != null)
-                foreach (var item in pools)
-                    OnCloseElement(item);
+            //if (OnRemoveElement != null)
+            //    foreach (var item in pools)
+            //        OnRemoveElement(item);
             pools.ClearToFree();
             if (panel != null)
                 Panel.Clear();

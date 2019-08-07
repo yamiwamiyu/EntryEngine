@@ -179,7 +179,10 @@ namespace EntryEngine.UI
             set
             {
                 if (dropDownText != null)
+                {
                     dropDownText.Text = value;
+                    base.Text = null;
+                }
                 else
                     base.Text = value;
             }
@@ -217,9 +220,7 @@ namespace EntryEngine.UI
             var item = selectable.Selected;
             if (item != null)
             {
-                Button button = item as Button;
-                if (button != null)
-                    Text = button.Text;
+                Text = item.Text;
             }
             else
             {
@@ -289,6 +290,10 @@ namespace EntryEngine.UI
     //        }
     //    }
     //}
+    public interface ISelectable
+    {
+        bool Selected { get; set; }
+    }
     public class Selectable : UIScene
     {
         private int selectedIndex = -1;
@@ -297,7 +302,7 @@ namespace EntryEngine.UI
         public event Action<UIElement, float> ResetLayout;
         /// <summary>返回true时会选中Hover的项</summary>
         public event Func<bool> SelectHandle;
-        public event Func<string, Button> CreateItem;
+        public event Func<Selectable, string, Button> CreateItem;
         private float maxHeight;
 
         public override float Height
@@ -354,13 +359,13 @@ namespace EntryEngine.UI
                     SelectedIndexChanged(this);
             }
         }
-        public UIElement Selected
+        public Button Selected
         {
             get
             {
                 if (selectedIndex == -1)
                     return null;
-                return GetItem<UIElement>(selectedIndex);
+                return GetItem<Button>(selectedIndex);
             }
         }
         public override EUIType UIType
@@ -373,12 +378,21 @@ namespace EntryEngine.UI
             RegistEvent(DoSelectHandle);
         }
 
+        public void DoSelect(int index)
+        {
+            this.selectedIndex = -1;
+            this.SelectedIndex = index;
+        }
         public Button AddItem(string text)
         {
             if (CreateItem != null)
             {
-                Button create = CreateItem(text);
-                if (create != null) return create;
+                Button create = CreateItem(this, text);
+                if (create != null)
+                {
+                    Add(create);
+                    return create;
+                }
             }
             Button button = new Button();
             button.Width = this.Width;
@@ -392,10 +406,9 @@ namespace EntryEngine.UI
         }
         public bool RemoveItem(int index)
         {
-            var item = GetItem<UIElement>(index);
-            if (item == null)
-                return false;
-            return Remove(item);
+            if (index < 0 || index >= ChildCount) return false;
+            Remove(index);
+            return true;
         }
         public bool RemoveItem(string text)
         {
@@ -546,6 +559,152 @@ namespace EntryEngine.UI
                 else
                     base.Height = maxHeight;
             }
+        }
+
+        /// <summary>Panel的子控件必须实现ISelectable</summary>
+        public static void ListViewSelect(Panel panel)
+        {
+            // 最后一次是选中还是取消选中，Ctrl+Shift选择时会范围进行选中/取消选中
+            bool lastIsSelect = true;
+            // 最后一次操作的项的索引，Shift时，从这个索引网目标索引进行选中/取消选中
+            int lastSelectIndex = -1;
+            VECTOR2 clickOffsetPosition = VECTOR2.Zero;
+            Action cancelSelect = () =>
+            {
+                foreach (ISelectable item in panel)
+                {
+                    if (item.Selected)
+                        item.Selected = false;
+                }
+            };
+            Action<Entry> clickSelect = (e) =>
+            {
+                int current = -1;
+                for (int i = 0; i < panel.ChildCount; i++)
+                    if (panel[i].IsHover)
+                    {
+                        current = i;
+                        break;
+                    }
+                if (current == -1)
+                {
+                    // 左键点到面板内的空白处
+                    if (!e.INPUT.Keyboard.Ctrl && !e.INPUT.Keyboard.Shift)
+                    {
+                        // 取消所有选择
+                        cancelSelect();
+                    }
+                }
+                else
+                {
+                    bool ctrl = e.INPUT.Keyboard.Ctrl;
+                    bool shift = e.INPUT.Keyboard.Shift;
+                    if (shift && ctrl)
+                    {
+                        // 按住Shift时，选择/取消选择连续项，选择还是取消选择取决于Ctrl的最后一次操作
+                        bool isSelect = lastIsSelect;
+                        if (lastSelectIndex > current)
+                            Utility.Swap(ref lastSelectIndex, ref current);
+                        for (int i = _MATH.Max(lastSelectIndex, 0); i <= current; i++)
+                        {
+                            ISelectable selectable = panel[i] as ISelectable;
+                            if (selectable != null && selectable.Selected != isSelect)
+                            {
+                                selectable.Selected = isSelect;
+                            }
+                        }
+                    }
+                    else if (shift)
+                    {
+                        // 没有按Ctrl时，无论最后是选择还是取消选择都是选择
+                        lastIsSelect = true;
+                        // 按住Shift时，选择/取消选择连续项
+                        if (lastSelectIndex > current)
+                            Utility.Swap(ref lastSelectIndex, ref current);
+                        for (int i = 0; i < panel.ChildCount; i++)
+                        {
+                            // 范围内的选中，否则取消选中
+                            bool isSelect = i >= lastSelectIndex && i <= current;
+                            ISelectable selectable = panel[i] as ISelectable;
+                            if (selectable != null && selectable.Selected != isSelect)
+                            {
+                                selectable.Selected = isSelect;
+                            }
+                        }
+                    }
+                    else if (ctrl)
+                    {
+                        // 加选/取消选择目标项
+                        ISelectable selectable = panel[current] as ISelectable;
+                        selectable.Selected = !selectable.Selected;
+                        lastIsSelect = selectable.Selected;
+                        lastSelectIndex = current;
+                    }
+                    else
+                    {
+                        cancelSelect();
+                        ISelectable selectable = panel[current] as ISelectable;
+                        if (!selectable.Selected)
+                            selectable.Selected = true;
+                        lastIsSelect = true;
+                        lastSelectIndex = current;
+                    }
+                }
+            };
+            panel.EventBegin = (sender, e) =>
+            {
+                // 点击右键清空选中
+                //if (panel.IsHover && e.INPUT.Pointer.IsClick(1))
+                //{
+                //    cancelSelect();
+                //}
+                // 点击清空选中项，选中点击的当前项
+                if (panel.IsHover)
+                {
+                    if (e.INPUT.Pointer.IsClick(0))
+                    {
+                        clickOffsetPosition = panel.ConvertGraphicsToLocal(e.INPUT.Pointer.ClickPosition);
+                    }
+                    else if (e.INPUT.Pointer.IsRelease(0))
+                    {
+                        clickSelect(e);
+                    }
+                }
+                // 拖拽连续选中项
+                if (panel.IsClick && e.INPUT.Pointer.IsPressed(0) && e.INPUT.Pointer.Position != e.INPUT.Pointer.ClickPosition)
+                {
+                    var p1 = panel.ConvertGraphicsToLocal(e.INPUT.Pointer.Position);
+                    RECT clip = RECT.CreateRectangle(p1, clickOffsetPosition);
+                    //clip.X += panel.OffsetX;
+                    //clip.Y += panel.OffsetY;
+                    for (int i = 0; i < panel.ChildCount; i++)
+                    {
+                        bool isSelect = panel[i].Clip.Intersects(ref clip);
+                        ISelectable selectable = panel[i] as ISelectable;
+                        if (selectable != null && selectable.Selected != isSelect)
+                        {
+                            selectable.Selected = isSelect;
+                        }
+                    }
+                    // 拖拽到外部时滚动面板
+                    p1.X -= panel.OffsetX;
+                    p1.Y -= panel.OffsetY;
+                    const float MULTIPLE = 3.0f;
+                    if (p1.X < 0) panel.OffsetX += p1.X * MULTIPLE * e.GameTime.ElapsedSecond;
+                    else if (p1.X > panel.Width) panel.OffsetX += (p1.X - panel.Width) * MULTIPLE * e.GameTime.ElapsedSecond;
+                    if (p1.Y < 0) panel.OffsetY += p1.Y * MULTIPLE * e.GameTime.ElapsedSecond;
+                    else if (p1.Y > panel.Height) panel.OffsetY += (p1.Y - panel.Height) * MULTIPLE * e.GameTime.ElapsedSecond;
+                }
+            };
+            PATCH patch = PATCH.GetNinePatch(new COLOR(0, 120, 215, 64), new COLOR(0, 120, 215, 128), 1);
+            panel.DrawBeforeEnd = (sender, sb, e) =>
+            {
+                if (panel.IsClick && e.INPUT.Pointer.IsPressed(0))
+                {
+                    var p2 = panel.ConvertLocalToGraphics(clickOffsetPosition);
+                    sb.Draw(patch, RECT.CreateRectangle(e.INPUT.Pointer.Position, p2));
+                }
+            };
         }
     }
 }

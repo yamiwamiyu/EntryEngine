@@ -10,7 +10,7 @@ namespace EntryEngine.UI
 		Clicked,
 		Unable = 0xf0,
 	}
-	public class Button : UIElement
+    public class Button : UIElement, ISelectable
 	{
 		public TEXTURE SourceNormal;
 		public TEXTURE SourceHover;
@@ -65,6 +65,11 @@ namespace EntryEngine.UI
                 }
             }
 		}
+        bool ISelectable.Selected
+        {
+            get { return Checked; }
+            set { Checked = value; }
+        }
 		public TEXTURE Source
 		{
 			get
@@ -272,7 +277,7 @@ namespace EntryEngine.UI
             SourceClicked = null;
             SourceUnable = null;
 		}
-	}
+    }
 }
 
 #endif

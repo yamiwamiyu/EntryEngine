@@ -333,12 +333,23 @@ namespace EntryEngine.UI
                 foreach (RECT area in InputDevice.SelectedAreas)
                 {
                     var area2 = area;
+                    if (needBeginEnd)
+                    {
+                        area2.X += offset.X;
+                        area2.Y += offset.Y;
+                    }
                     area2.X += textArea.X;
                     area2.Y += textArea.Y;
                     spriteBatch.Draw(TEXTURE.Pixel, area2, CursorAreaColor);
                 }
             }
             BaseDrawFont(spriteBatch, e);
+            
+            if (needBeginEnd)
+            {
+                spriteBatch.End();
+            }
+
             if (Focused && InputDevice != null && InputDevice.IsActive && InputDevice.CursorShow)
             {
                 RECT cursor = new RECT();
@@ -346,10 +357,6 @@ namespace EntryEngine.UI
                 cursor.Width = spriteBatch.OnePixel.X;
                 cursor.Height = UIText.Font.LineHeight;
                 spriteBatch.Draw(TEXTURE.Pixel, cursor, CursorColor);
-            }
-            if (needBeginEnd)
-            {
-                spriteBatch.End();
             }
         }
         protected virtual void BaseDrawFont(GRAPHICS spriteBatch, Entry e)
