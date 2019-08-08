@@ -650,6 +650,7 @@ namespace EntryEngine.UI
 
         public ListView(Panel panel)
         {
+            Datas = new List<DataType>();
             this.Panel = panel;
         }
 
@@ -681,14 +682,12 @@ namespace EntryEngine.UI
             if (Datas == value)
                 return;
 
+            if (value == null) value = new List<DataType>();
             Datas = value;
             Close();
 
             //Panel.Offset = VECTOR2.Zero;
             Panel.ContentScope = VECTOR2.Zero;
-
-            if (Datas == null)
-                return;
 
             int count = Datas.Count;
             for (int i = 0; i < count; i++)
@@ -714,11 +713,24 @@ namespace EntryEngine.UI
                 OnSetData(element, Panel.ChildCount, data);
             Panel.Add(element);
 
-            if (Datas == null)
-                Datas = new List<DataType>();
             Datas.Add(data);
 
             return element;
+        }
+        public bool Remove(int index)
+        {
+            if (index < 0 || index >= Datas.Count)
+                return false;
+            Datas.RemoveAt(index);
+            var temp = panel[index];
+            pools.Remove((ElementType)temp);
+            panel.Remove(index);
+            if (index < Datas.Count)
+            {
+                for (int i = index; i < Datas.Count; i++)
+                    panel[i].Y -= panel[i].Height;
+            }
+            return true;
         }
         public void Close()
         {

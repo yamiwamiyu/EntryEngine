@@ -181,7 +181,7 @@ namespace EntryEngine.UI
                 if (dropDownText != null)
                 {
                     dropDownText.Text = value;
-                    base.Text = null;
+                    base.Text = string.Empty;
                 }
                 else
                     base.Text = value;
@@ -239,7 +239,7 @@ namespace EntryEngine.UI
 
             DropDownList = new Selectable();
             dropDownList.Width = width;
-            dropDownList.Height = height;
+            dropDownList.Height = 0;
             dropDownList.Anchor = EAnchor.Left | EAnchor.Right | EAnchor.Top;
             dropDownList.Y = height;
             dropDownList.DragMode = EDragMode.Drag;
@@ -257,12 +257,8 @@ namespace EntryEngine.UI
             if (dropDownList == null || Handled)
                 return;
 
-            if (IsHover && e.INPUT.Pointer.IsClick(0))
-            {
-                Checked = !Checked;
-                Handle();
-            }
-            else if (dropDownText != null && dropDownText.IsHover && e.INPUT.Pointer.IsClick(0))
+            if (e.INPUT.Pointer.IsClick(0) &&
+                ((dropDownText != null && dropDownText.IsHover) || IsHover))
             {
                 Checked = !Checked;
                 Handle();

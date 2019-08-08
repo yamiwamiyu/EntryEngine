@@ -157,13 +157,13 @@ namespace EntryEngine.UI
 
         protected RECT CalcTextClip()
         {
-            if (UIText.Font == null || string.IsNullOrEmpty(Text))
+            if (UIText.Font == null || string.IsNullOrEmpty(UIText.Text))
                 return RECT.Empty;
 
             RECT textClip;
             RECT clip = Clip;
 
-            VECTOR2 fontSize = UIText.Font.MeasureString(Text);
+            VECTOR2 fontSize = UIText.Font.MeasureString(UIText.Text);
             int x = PivotX(UIText.TextAlignment);
             int y = PivotY(UIText.TextAlignment);
             if (x == 1)
