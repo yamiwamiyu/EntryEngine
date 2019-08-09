@@ -683,15 +683,15 @@ namespace EntryEngine.UI
                 return;
 
             if (value == null) value = new List<DataType>();
-            Datas = value;
             Close();
 
             //Panel.Offset = VECTOR2.Zero;
             Panel.ContentScope = VECTOR2.Zero;
 
-            int count = Datas.Count;
+            int count = value.Count;
             for (int i = 0; i < count; i++)
-                AddData(Datas[i]);
+                AddData(value[i]);
+            Datas = value;
             //Panel.ContentScope = new VECTOR2(0, y);
         }
         public ElementType AddData(DataType data)
