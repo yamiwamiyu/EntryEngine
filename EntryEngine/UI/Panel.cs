@@ -384,7 +384,8 @@ namespace EntryEngine.UI
 			if (offsetScope.Y > 0 && ShowScrollHorizontal)
 				offsetScope.Y += scrollBarHorizontal.Height;
 			UpdateScrollBar();
-            if (!offsetScope.Equals(ref temp))
+            //if (!offsetScope.Equals(ref temp))
+            if (offsetScope != temp)
             {
                 if (stayValue)
                     Offset = VECTOR2.Multiply(new VECTOR2(
@@ -677,6 +678,14 @@ namespace EntryEngine.UI
                 y += Panel[i].Height;
             }
         }
+        private void ResetContentScope()
+        {
+            // 上面的Scroll方法会自动隐藏掉看不见的元素，导致Panel.ContentSize变小，自动适配滚动区域则会出错
+            if (panel.ChildCount == 0)
+                panel.ContentScope = VECTOR2.Zero;
+            else
+                panel.ContentScope = new VECTOR2(0, panel.Last.Clip.Bottom);
+        }
         public void SetDataSource(List<DataType> value)
         {
             if (Datas == value)
@@ -712,6 +721,7 @@ namespace EntryEngine.UI
             if (OnSetData != null)
                 OnSetData(element, Panel.ChildCount, data);
             Panel.Add(element);
+            ResetContentScope();
 
             Datas.Add(data);
 
@@ -730,6 +740,7 @@ namespace EntryEngine.UI
                 for (int i = index; i < Datas.Count; i++)
                     panel[i].Y -= panel[i].Height;
             }
+            ResetContentScope();
             return true;
         }
         public void Close()
