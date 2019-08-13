@@ -1140,7 +1140,7 @@ namespace EntryEngine.UI
                 clip.Height += Flow.MaginTop + Flow.MaginBottom;
                 clip.Y -= Flow.MaginTop;
 
-                spriteBatch.Draw(patch, clip);
+                //spriteBatch.Draw(patch, clip);
             }
         }
         protected virtual void OnUpdateBegin(Entry e)
@@ -1294,7 +1294,7 @@ namespace EntryEngine.UI
         protected virtual void InternalDraw(GRAPHICS spriteBatch, Entry e)
         {
         }
-        static PATCH patch = PATCH.GetNinePatch(new COLOR(235, 32, 32, 64), COLOR.Aqua, 1);
+        //static PATCH patch = PATCH.GetNinePatch(new COLOR(235, 32, 32, 64), COLOR.Aqua, 1);
         protected virtual void InternalDrawAfter(GRAPHICS spriteBatch, Entry e)
         {
         }

@@ -196,4 +196,295 @@ namespace EntryEngine.UI
             return scene;
         }
     }
+    /// <summary>翻页按钮场景</summary>
+    public class SPages : UIScene
+    {
+        private Button bPrev;
+        private Button bNext;
+        private TextBox tbGotoPage;
+        private Label lTotal;
+        private Panel pPages;
+
+        public Button BPrev
+        {
+            get { return bPrev; }
+            set
+            {
+                if (bPrev == value) return;
+                if (value == null)
+                    throw new ArgumentNullException();
+                if (bPrev != null)
+                    Remove(bPrev);
+                bPrev = value;
+                value.Clicked += TBPrev_Click;
+                Add(value);
+            }
+        }
+        public Button BNext
+        {
+            get { return bNext; }
+            set
+            {
+                if (bNext == value) return;
+                if (value == null)
+                    throw new ArgumentNullException();
+                if (bNext != null)
+                    Remove(bNext);
+                bNext = value;
+                value.Clicked += TBNext_Click;
+                Add(value);
+            }
+        }
+        public TextBox TBGotoPage
+        {
+            get { return tbGotoPage; }
+            set
+            {
+                if (tbGotoPage == value) return;
+                if (value == null)
+                    throw new ArgumentNullException();
+                if (tbGotoPage != null)
+                    Remove(tbGotoPage);
+                tbGotoPage = value;
+                value.TextEditOver += TBGotoPage_TextEditOver;
+                Add(value);
+            }
+        }
+        public Label LTotal
+        {
+            get { return lTotal; }
+            set
+            {
+                if (lTotal == value) return;
+                if (value == null)
+                    throw new ArgumentNullException();
+                if (lTotal != null)
+                    Remove(lTotal);
+                lTotal = value;
+                Add(value);
+            }
+        }
+        public Panel PPages { get { return pPages; } }
+
+        const float BUTTON_SPACE = 10;
+        const float BUTTON_SIZE = 30;
+        private int page;
+        private int pageMax;
+        public Action<int> OnChangePage;
+        public Action<CheckBox> OnCreatePage;
+
+        public int Page
+        {
+            get { return page; }
+            set
+            {
+                if (value < 0)
+                    value = 0;
+                else if (value > pageMax)
+                    value = pageMax;
+                page = value;
+                if (OnChangePage != null)
+                    OnChangePage(value);
+                Relayout();
+            }
+        }
+
+        public SPages()
+        {
+            BPrev = new Button();
+            BNext = new Button();
+            TBGotoPage = new TextBox();
+            LTotal = new Label();
+            pPages = new Panel();
+            Add(pPages);
+
+            this.Width = 0;
+            this.Height = 70;
+            this.Pivot = EPivot.BottomCenter;
+            this.Anchor = EAnchor.Bottom | EAnchor.Left | EAnchor.Right;
+
+            SetDefaultClip(bPrev);
+            SetDefaultClip(bNext);
+            SetDefaultClip(tbGotoPage);
+            SetDefaultClip(lTotal);
+            SetDefaultClip(pPages);
+
+            lTotal.UIText.FontSize = 12;
+            lTotal.UIText.FontColor = new COLOR(51, 51, 51);
+            lTotal.UIText.TextAlignment = EPivot.MiddleCenter;
+            lTotal.Width = 0;
+
+            bPrev.UIText.FontSize = 15;
+            bPrev.UIText.FontColor = new COLOR(153, 153, 153);
+            bPrev.Text = "<";
+            bPrev.SourceNormal = PATCH.GetNinePatch(COLOR.TransparentBlack, new COLOR(220, 220, 220), 1);
+            bPrev.SourceHover = PATCH.GetNinePatch(COLOR.TransparentBlack, new COLOR(77, 160, 254), 1);
+            bPrev.SourceClick = PATCH.GetNinePatch(COLOR.TransparentBlack, UIStyle.ToLight(new COLOR(77, 160, 254)), 1);
+
+            bNext.UIText.FontSize = bPrev.UIText.FontSize;
+            bNext.UIText.FontColor = bPrev.UIText.FontColor;
+            bNext.Text = ">";
+            bNext.SourceNormal = bPrev.SourceNormal;
+            bNext.SourceHover = bPrev.SourceHover;
+            bNext.SourceClick = bPrev.SourceClick;
+
+            tbGotoPage.UIText.FontSize = 12;
+            tbGotoPage.UIText.FontColor = new COLOR(51, 51, 51);
+            tbGotoPage.UIText.TextAlignment = EPivot.MiddleCenter;
+            tbGotoPage.SourceNormal = bPrev.SourceNormal;
+            tbGotoPage.SourceHover = bPrev.SourceHover;
+            tbGotoPage.SourceClick = bPrev.SourceClick;
+            tbGotoPage.SourceClicked = bPrev.SourceHover;
+        }
+
+        void SetDefaultClip(UIElement element)
+        {
+            element.Pivot = EPivot.MiddleLeft;
+            element.Y = Height * 0.5f;
+            element.Width = BUTTON_SIZE;
+            element.Height = BUTTON_SIZE;
+        }
+
+        void TBGotoPage_TextEditOver(Label sender)
+        {
+            if (string.IsNullOrEmpty(TBGotoPage.Text))
+                return;
+
+            int page;
+            if (int.TryParse(TBGotoPage.Text, out page))
+            {
+                this.Page = page - 1;
+            }
+            else
+            {
+                sender.Text = null;
+            }
+        }
+        void TBNext_Click(UIElement sender, Entry e)
+        {
+            if (page < pageMax)
+                this.Page = page + 1;
+        }
+        void TBPrev_Click(UIElement sender, Entry e)
+        {
+            if (page > 0)
+                this.Page = page - 1;
+        }
+
+        public void Relayout()
+        {
+            // 向前翻页
+            BPrev.X = LTotal.X + LTotal.ContentSize.X + BUTTON_SPACE;
+            // 页码
+            pPages.Clear();
+            if (pageMax >= 0)
+            {
+                pPages.X = BPrev.X + BPrev.Width + BUTTON_SPACE;
+                int showCount = 5;
+                int showHalf = showCount >> 1;
+                // 首页
+                CreatePageNumber(0);
+                if (pageMax >= 1)
+                {
+                    // 向前快速翻页
+                    if (page > showCount - 1)
+                        // ~
+                        CreatePageNumber(page - showHalf - 1, "~");
+                    else
+                        // 正数第二页
+                        CreatePageNumber(1);
+                    if (pageMax >= 2)
+                    {
+                        // 中间页码
+                        for (int i = Math.Max(page - showHalf, 2), end = Math.Min(i + showCount, pageMax - 1); i < end; i++)
+                        {
+                            CreatePageNumber(i);
+                        }
+                        if (pageMax >= 3)
+                        {
+                            // 向后快速翻页
+                            if (pageMax - page > showCount - 1)
+                                // ~
+                                CreatePageNumber(page + showHalf + 1, "~");
+                            else
+                                // 倒数第二页
+                                CreatePageNumber(pageMax - 1);
+                        }
+                        // 末页
+                        CreatePageNumber(pageMax);
+                    }
+                }
+            }
+            pPages.Width = pPages.Last.X + pPages.Last.Width;
+
+            // 向后翻页
+            BNext.X = pPages.X + pPages.Width + BUTTON_SPACE;
+
+            // 跳转页数
+            TBGotoPage.X = BNext.X + BNext.Width + BUTTON_SPACE;
+            TBGotoPage.Text = null;
+        }
+        CheckBox CreatePageNumber(int number)
+        {
+            return CreatePageNumber(number, (number + 1).ToString());
+        }
+        CheckBox CreatePageNumber(int number, string text)
+        {
+            CheckBox pageItem = new CheckBox();
+            pageItem.Width = BUTTON_SIZE;
+            pageItem.Height = BUTTON_SIZE;
+            pageItem.X = (pageItem.Width + BUTTON_SPACE) * pPages.ChildCount;
+            pageItem.CheckedOverlayNormal = true;
+            pageItem.IsRadioButton = true;
+            pageItem.SourceNormal = PATCH.GetNinePatch(COLOR.TransparentBlack, new COLOR(220, 220, 220), 1);
+            pageItem.SourceClicked = PATCH.GetNinePatch(new COLOR(77, 160, 254), COLOR.TransparentBlack, 1);
+            pageItem.UpdateEnd = Page_ColorChange;
+            pageItem.UIText.FontSize = 12;
+            pageItem.UIText.TextAlignment = EPivot.MiddleCenter;
+            pageItem.Text = text;
+            pageItem.Tag = number;
+            pageItem.CheckedChanged += Page_CheckedChanged;
+            if (this.page == number)
+                pageItem.Checked = true;
+            pPages.Add(pageItem);
+            if (OnCreatePage != null)
+                OnCreatePage(pageItem);
+            return pageItem;
+        }
+        void Page_ColorChange(UIElement sender, Entry e)
+        {
+            CheckBox cb = (CheckBox)sender;
+            if (cb.Checked)
+                cb.UIText.FontColor = COLOR.White;
+            else
+                cb.UIText.FontColor = new COLOR(102, 102, 102);
+        }
+        public void Page_CheckedChanged(Button sender, Entry e)
+        {
+            int page = (int)sender.Tag;
+            if (this.page != page)
+            {
+                this.Page = page;
+            }
+        }
+        public void SetParameter(int totalCount, int pageSize)
+        {
+            int tempMax = (totalCount - 1) / pageSize;
+            bool changeMax = tempMax != pageMax;
+            // 总页数
+            pageMax = tempMax;
+            // 共n条
+            lTotal.Text = totalCount.ToString();
+            // 刷新页面因为条数减少而导致页数减少时，显示到最后一夜
+            if (page > pageMax)
+            {
+                this.Page = pageMax;
+            }
+            else
+            {
+                if (changeMax)
+                    Relayout();
+            }
+        }
+    }
 }

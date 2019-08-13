@@ -49,7 +49,7 @@ namespace EditorUI
             //Panel.IsClip = false;
             Panel.ScrollOrientation = EScrollOrientation.None;
             Panel.DragMode = EDragMode.Drag;
-            Panel.Width = 300;
+            Panel.Width = 200;
             Panel.Height = 100;
             Add(Panel);
 

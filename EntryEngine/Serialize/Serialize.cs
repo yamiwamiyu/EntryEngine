@@ -2070,11 +2070,13 @@ namespace EntryEngine.Serialize
                 if (string.IsNullOrEmpty(value)) return (double)0;
                 return double.Parse(value);
             }
+#if !HTML5
             else if (type == typeof(decimal))
             {
                 if (string.IsNullOrEmpty(value)) return (decimal)0;
                 return decimal.Parse(value);
             }
+#endif
             throw new InvalidCastException("错误的数字类型" + type.FullName);
         }
         public static bool IsNullable(this Type type)

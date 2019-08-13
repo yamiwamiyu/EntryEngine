@@ -213,6 +213,14 @@ namespace EntryEngine.UI
 			this.Clicked += OnClicked;
 		}
 
+        public void ChangeCheck(bool isChecked)
+        {
+            if (Checked == isChecked)
+            {
+                hasClicked = !isChecked;
+            }
+            Checked = isChecked;
+        }
         public void DoCheck()
         {
             if (!Checked)

@@ -2084,7 +2084,7 @@ namespace __System
     [AInvariant]public partial class Activator
     {
         [ASystemAPI]private static extern object CreateDefault(Type type);
-        public static object CreateInstance(Type type)
+        public static object CreateInstance(Type type, params object[] parameters)
         {
             var constructors = type.GetConstructors();
             bool hasConstructorFlag = false;
@@ -2095,7 +2095,7 @@ namespace __System
                     continue;
                 hasConstructorFlag = true;
                 if (constructor.GetParameters().Length == 0)
-                    return constructor.Invoke(MemberInfo._Empty);
+                    return constructor.Invoke(parameters);
             }
             if (!hasConstructorFlag)
             {

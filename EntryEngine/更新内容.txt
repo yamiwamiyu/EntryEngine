@@ -1,4 +1,11 @@
-﻿2019/08/09
+﻿2019/08/12
+1. 修改Activator.CreateInstance的定义
+2. 新增EntryEngine.UI.SPages翻页按钮菜单
+3. 新增Button.ChangeCheck方法方便设置Checked属性的初始值并触发事件
+4. 其它编译H5相关内容修复
+5. 修复UI编辑器预设栏横向滚动的BUG
+
+2019/08/09
 1. 修复ListView导致面板无法正常滚动的BUG
 
 2019/08/08
