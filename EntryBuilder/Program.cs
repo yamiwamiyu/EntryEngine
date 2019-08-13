@@ -506,6 +506,7 @@ namespace EntryBuilder
         [STAThread]
 		static void Main(string[] args)
         {
+            //PublishToWebGL(@"C:\Yamiwamiyu\Project\EntryEngineGit\trunk\", @"C:\Users\Freedom\Desktop\ChamberH5\Code", "", @"C:\Users\Freedom\Desktop\ChamberH5\Launch\h5.html", false, 1);
             //_LOG._Logger = new LoggerConsole();
 
             //GaussianBlur gauss = new GaussianBlur(15);

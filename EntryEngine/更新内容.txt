@@ -1,4 +1,8 @@
-﻿2019/08/12
+﻿2019/08/13
+1. 扩展优化Panel和ListView相关封装
+2. Spine更新至3.8.59版本，尚未完善
+
+2019/08/12
 1. 修改Activator.CreateInstance的定义
 2. 新增EntryEngine.UI.SPages翻页按钮菜单
 3. 新增Button.ChangeCheck方法方便设置Checked属性的初始值并触发事件

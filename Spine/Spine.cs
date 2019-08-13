@@ -25,6 +25,8 @@ namespace Spine
             _vertices = new float[vertexCount * 2];
         }
 
+        SkeletonClipping clipper = new SkeletonClipping();
+
         public override int Width
         {
             get { return (int)Skeleton.Data.Width; }
@@ -128,29 +130,29 @@ namespace Spine
                     itemVertices[BR].Color = color;
                     itemVertices[TR].Color = color;
 
-                    regionAttachment.ComputeWorldVertices(slot.Bone, _vertices);
-                    itemVertices[TL].Position.X = _vertices[RegionAttachment.X1];
-                    itemVertices[TL].Position.Y = _vertices[RegionAttachment.Y1];
+                    regionAttachment.ComputeWorldVertices(slot.Bone, _vertices, 0, 2);
+                    itemVertices[TL].Position.X = _vertices[RegionAttachment.ULX];
+                    itemVertices[TL].Position.Y = _vertices[RegionAttachment.ULY];
                     itemVertices[TL].Position.Z = 0;
-                    itemVertices[BL].Position.X = _vertices[RegionAttachment.X2];
-                    itemVertices[BL].Position.Y = _vertices[RegionAttachment.Y2];
+                    itemVertices[BL].Position.X = _vertices[RegionAttachment.BLX];
+                    itemVertices[BL].Position.Y = _vertices[RegionAttachment.BLY];
                     itemVertices[BL].Position.Z = 0;
-                    itemVertices[BR].Position.X = _vertices[RegionAttachment.X3];
-                    itemVertices[BR].Position.Y = _vertices[RegionAttachment.Y3];
+                    itemVertices[BR].Position.X = _vertices[RegionAttachment.BRX];
+                    itemVertices[BR].Position.Y = _vertices[RegionAttachment.BRY];
                     itemVertices[BR].Position.Z = 0;
-                    itemVertices[TR].Position.X = _vertices[RegionAttachment.X4];
-                    itemVertices[TR].Position.Y = _vertices[RegionAttachment.Y4];
+                    itemVertices[TR].Position.X = _vertices[RegionAttachment.URX];
+                    itemVertices[TR].Position.Y = _vertices[RegionAttachment.URY];
                     itemVertices[TR].Position.Z = 0;
 
                     float[] uvs = regionAttachment.UVs;
-                    itemVertices[TL].TextureCoordinate.X = uvs[RegionAttachment.X1];
-                    itemVertices[TL].TextureCoordinate.Y = uvs[RegionAttachment.Y1];
-                    itemVertices[BL].TextureCoordinate.X = uvs[RegionAttachment.X2];
-                    itemVertices[BL].TextureCoordinate.Y = uvs[RegionAttachment.Y2];
-                    itemVertices[BR].TextureCoordinate.X = uvs[RegionAttachment.X3];
-                    itemVertices[BR].TextureCoordinate.Y = uvs[RegionAttachment.Y3];
-                    itemVertices[TR].TextureCoordinate.X = uvs[RegionAttachment.X4];
-                    itemVertices[TR].TextureCoordinate.Y = uvs[RegionAttachment.Y4];
+                    itemVertices[TL].TextureCoordinate.X = uvs[RegionAttachment.ULX];
+                    itemVertices[TL].TextureCoordinate.Y = uvs[RegionAttachment.ULY];
+                    itemVertices[BL].TextureCoordinate.X = uvs[RegionAttachment.BLX];
+                    itemVertices[BL].TextureCoordinate.Y = uvs[RegionAttachment.BLY];
+                    itemVertices[BR].TextureCoordinate.X = uvs[RegionAttachment.BRX];
+                    itemVertices[BR].TextureCoordinate.Y = uvs[RegionAttachment.BRY];
+                    itemVertices[TR].TextureCoordinate.X = uvs[RegionAttachment.URX];
+                    itemVertices[TR].TextureCoordinate.Y = uvs[RegionAttachment.URY];
 
                     graphics.DrawPrimitives(texture, vertices, 0, 4, quadTriangles, 0, 2);
                 }
@@ -202,6 +204,124 @@ namespace Spine
                     graphics.DrawPrimitives(texture, vertices, 0, vertexCount / 2, triangles, 0, triangles.Length / 3);
                 }
                 #endregion
+
+                #region 3.8版本render
+
+                //float attachmentColorR, attachmentColorG, attachmentColorB, attachmentColorA;
+                //TEXTURE texture = null;
+                //int verticesCount = 0;
+                //float[] vertices = this.vertices;
+                //int indicesCount = 0;
+                //short[] indices = null;
+                //float[] uvs = null;
+
+                //if (attachment is RegionAttachment)
+                //{
+                //    RegionAttachment regionAttachment = (RegionAttachment)attachment;
+                //    attachmentColorR = regionAttachment.R; attachmentColorG = regionAttachment.G; attachmentColorB = regionAttachment.B; attachmentColorA = regionAttachment.A;
+                //    AtlasRegion region = (AtlasRegion)regionAttachment.RendererObject;
+                //    texture = (TEXTURE)region.page.rendererObject;
+                //    verticesCount = 4;
+                //    regionAttachment.ComputeWorldVertices(slot.Bone, vertices, 0, 2);
+                //    indicesCount = 6;
+                //    indices = quadTriangles;
+                //    uvs = regionAttachment.UVs;
+                //}
+                //else if (attachment is MeshAttachment)
+                //{
+                //    MeshAttachment mesh = (MeshAttachment)attachment;
+                //    attachmentColorR = mesh.R; attachmentColorG = mesh.G; attachmentColorB = mesh.B; attachmentColorA = mesh.A;
+                //    AtlasRegion region = (AtlasRegion)mesh.RendererObject;
+                //    texture = (TEXTURE)region.page.rendererObject;
+                //    int vertexCount = mesh.WorldVerticesLength;
+                //    if (vertices.Length < vertexCount) vertices = new float[vertexCount];
+                //    verticesCount = vertexCount >> 1;
+                //    mesh.ComputeWorldVertices(slot, vertices);
+                //    indicesCount = mesh.Triangles.Length;
+                //    indices = mesh.Triangles;
+                //    uvs = mesh.UVs;
+                //}
+                //else if (attachment is ClippingAttachment)
+                //{
+                //    ClippingAttachment clip = (ClippingAttachment)attachment;
+                //    clipper.ClipStart(slot, clip);
+                //    continue;
+                //}
+                //else
+                //{
+                //    continue;
+                //}
+
+                //// calculate color
+                //COLOR color;
+                //float a = skeletonA * slot.A * attachmentColorA;
+                //bool premultipliedAlpha = false;
+                //if (premultipliedAlpha)
+                //{
+                //    color = new COLOR(
+                //            skeletonR * slot.R * attachmentColorR * a,
+                //            skeletonG * slot.G * attachmentColorG * a,
+                //            skeletonB * slot.B * attachmentColorB * a, a);
+                //}
+                //else
+                //{
+                //    color = new COLOR(
+                //            skeletonR * slot.R * attachmentColorR,
+                //            skeletonG * slot.G * attachmentColorG,
+                //            skeletonB * slot.B * attachmentColorB, a);
+                //}
+
+                //COLOR darkColor = new COLOR();
+                //if (slot.HasSecondColor)
+                //{
+                //    if (premultipliedAlpha)
+                //    {
+                //        darkColor = new COLOR(slot.R2 * a, slot.G2 * a, slot.B2 * a, 1);
+                //    }
+                //    else
+                //    {
+                //        darkColor = new COLOR(slot.R2 * a, slot.G2 * a, slot.B2 * a, 1);
+                //    }
+                //}
+                //darkColor.A = premultipliedAlpha ? (byte)255 : (byte)0;
+
+                //// clip
+                //if (clipper.IsClipping)
+                //{
+                //    clipper.ClipTriangles(vertices, verticesCount << 1, indices, indicesCount, uvs);
+                //    vertices = clipper.ClippedVertices.Items;
+                //    verticesCount = clipper.ClippedVertices.Count >> 1;
+                //    indices = clipper.ClippedTriangles.Items;
+                //    indicesCount = clipper.ClippedTriangles.Count;
+                //    uvs = clipper.ClippedUVs.Items;
+                //}
+
+                //if (verticesCount == 0 || indicesCount == 0)
+                //    continue;
+
+                //// submit to batch
+                //MeshItem item = batcher.NextItem(verticesCount, indicesCount);
+                //item.texture = texture;
+                //for (int ii = 0, nn = indicesCount; ii < nn; ii++)
+                //{
+                //    item.triangles[ii] = indices[ii];
+                //}
+                //VertexPositionColorTextureColor[] itemVertices = item.vertices;
+                //for (int ii = 0, v = 0, nn = verticesCount << 1; v < nn; ii++, v += 2)
+                //{
+                //    itemVertices[ii].Color = color;
+                //    itemVertices[ii].Color2 = darkColor;
+                //    itemVertices[ii].Position.X = vertices[v];
+                //    itemVertices[ii].Position.Y = vertices[v + 1];
+                //    itemVertices[ii].Position.Z = 0;
+                //    itemVertices[ii].TextureCoordinate.X = uvs[v];
+                //    itemVertices[ii].TextureCoordinate.Y = uvs[v + 1];
+                //    if (VertexEffect != null) VertexEffect.Transform(ref itemVertices[ii]);
+                //}
+
+                //clipper.ClipEnd(slot);
+
+                #endregion
             }
 
             graphics.End();
@@ -246,6 +366,11 @@ namespace Spine
     }
     public class PipelineSpine : ContentPipeline
     {
+        static PipelineSpine()
+        {
+            Bone.yDown = true;
+        }
+
         class SpineAtlasLoader : TextureLoader
         {
             internal PipelineSpine Pipeline;
@@ -302,9 +427,18 @@ namespace Spine
             TextReader reader = new StringReader(text);
             Atlas atlas = new Atlas(reader, dir, loader);
 
-            byte[] data = IO.ReadByte(temp + ".skel");
+            byte[] data = IO.ReadByte(temp + ".skel.bytes");
             SkeletonBinary binary = new SkeletonBinary(atlas);
+            binary.Scale = 0.1f;
             SkeletonData skeletonData = binary.ReadSkeletonData(new MemoryStream(data));
+
+            //string text = IO.ReadText(temp + ".atlas");
+            //TextReader reader = new StringReader(text);
+            //Atlas atlas = new Atlas(reader, dir, loader);
+
+            //string data = IO.ReadText(temp + ".json");
+            //SkeletonJson json = new SkeletonJson(atlas);
+            //SkeletonData skeletonData = json.ReadSkeletonData(new StringReader(data));
 
             SPINE spine = new SPINE(skeletonData);
             return spine;

@@ -27,34 +27,41 @@
  * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *****************************************************************************/
 
-using System;
-
 namespace Spine {
-	public class TransformConstraintData : ConstraintData {
-		internal ExposedList<BoneData> bones = new ExposedList<BoneData>();
-		internal BoneData target;
-		internal float rotateMix, translateMix, scaleMix, shearMix;
-		internal float offsetRotation, offsetX, offsetY, offsetScaleX, offsetScaleY, offsetShearY;
-		internal bool relative, local;
+	/// <summary>
+	/// An attachment which is a single point and a rotation. This can be used to spawn projectiles, particles, etc. A bone can be
+	/// used in similar ways, but a PointAttachment is slightly less expensive to compute and can be hidden, shown, and placed in a
+	/// skin.
+	/// <p>
+	/// See <a href="http://esotericsoftware.com/spine-point-attachments">Point Attachments</a> in the Spine User Guide.
+	/// </summary>
+	public class PointAttachment : Attachment {
+		internal float x, y, rotation;
+		public float X { get { return x; } set { x = value; } }
+		public float Y { get { return y; } set { y = value; } }
+		public float Rotation { get { return rotation; } set { rotation = value; } }
 
-		public ExposedList<BoneData> Bones { get { return bones; } }
-		public BoneData Target { get { return target; } set { target = value; } }
-		public float RotateMix { get { return rotateMix; } set { rotateMix = value; } }
-		public float TranslateMix { get { return translateMix; } set { translateMix = value; } }
-		public float ScaleMix { get { return scaleMix; } set { scaleMix = value; } }
-		public float ShearMix { get { return shearMix; } set { shearMix = value; } }
+		public PointAttachment (string name)
+			: base(name) {
+		}
 
-		public float OffsetRotation { get { return offsetRotation; } set { offsetRotation = value; } }
-		public float OffsetX { get { return offsetX; } set { offsetX = value; } }
-		public float OffsetY { get { return offsetY; } set { offsetY = value; } }
-		public float OffsetScaleX { get { return offsetScaleX; } set { offsetScaleX = value; } }
-		public float OffsetScaleY { get { return offsetScaleY; } set { offsetScaleY = value; } }
-		public float OffsetShearY { get { return offsetShearY; } set { offsetShearY = value; } }
+		public void ComputeWorldPosition (Bone bone, out float ox, out float oy) {
+			bone.LocalToWorld(this.x, this.y, out ox, out oy);
+		}
 
-		public bool Relative { get { return relative; } set { relative = value; } }
-		public bool Local { get { return local; } set { local = value; } }
+		public float ComputeWorldRotation (Bone bone) {
+			float cos = MathUtils.CosDeg(rotation), sin = MathUtils.SinDeg(rotation);
+			float ix = cos * bone.a + sin * bone.b;
+			float iy = cos * bone.c + sin * bone.d;
+			return MathUtils.Atan2(iy, ix) * MathUtils.RadDeg;
+		}
 
-		public TransformConstraintData (string name) : base(name) {
+		public override Attachment Copy () {
+			PointAttachment copy = new PointAttachment(this.Name);
+			copy.x = x;
+			copy.y = y;
+			copy.rotation = rotation;
+			return copy;
 		}
 	}
 }

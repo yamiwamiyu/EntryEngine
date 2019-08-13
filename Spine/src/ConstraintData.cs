@@ -28,33 +28,35 @@
  *****************************************************************************/
 
 using System;
+using System.Collections.Generic;
 
-namespace Spine {
-	public class TransformConstraintData : ConstraintData {
-		internal ExposedList<BoneData> bones = new ExposedList<BoneData>();
-		internal BoneData target;
-		internal float rotateMix, translateMix, scaleMix, shearMix;
-		internal float offsetRotation, offsetX, offsetY, offsetScaleX, offsetScaleY, offsetShearY;
-		internal bool relative, local;
+namespace Spine
+{
+	/// <summary>The base class for all constraint datas.</summary>
+	public abstract class ConstraintData {
+		internal readonly string name;
+		internal int order;
+		internal bool skinRequired;
 
-		public ExposedList<BoneData> Bones { get { return bones; } }
-		public BoneData Target { get { return target; } set { target = value; } }
-		public float RotateMix { get { return rotateMix; } set { rotateMix = value; } }
-		public float TranslateMix { get { return translateMix; } set { translateMix = value; } }
-		public float ScaleMix { get { return scaleMix; } set { scaleMix = value; } }
-		public float ShearMix { get { return shearMix; } set { shearMix = value; } }
+		public ConstraintData (string name) {
+			if (name == null) throw new ArgumentNullException("name", "name cannot be null.");
+			this.name = name;
+		}
 
-		public float OffsetRotation { get { return offsetRotation; } set { offsetRotation = value; } }
-		public float OffsetX { get { return offsetX; } set { offsetX = value; } }
-		public float OffsetY { get { return offsetY; } set { offsetY = value; } }
-		public float OffsetScaleX { get { return offsetScaleX; } set { offsetScaleX = value; } }
-		public float OffsetScaleY { get { return offsetScaleY; } set { offsetScaleY = value; } }
-		public float OffsetShearY { get { return offsetShearY; } set { offsetShearY = value; } }
+		/// <summary> The constraint's name, which is unique across all constraints in the skeleton of the same type.</summary>
+		public string Name { get { return name; } }
 
-		public bool Relative { get { return relative; } set { relative = value; } }
-		public bool Local { get { return local; } set { local = value; } }
+		///<summary>The ordinal of this constraint for the order a skeleton's constraints will be applied by
+		/// <see cref="Skeleton.UpdateWorldTransform()"/>.</summary>
+		public int Order { get { return order; } set { order = value; } }
 
-		public TransformConstraintData (string name) : base(name) {
+		///<summary>When true, <see cref="Skeleton.UpdateWorldTransform()"/> only updates this constraint if the <see cref="Skeleton.Skin"/> contains
+		/// this constraint.</summary>
+		///<seealso cref="Skin.Constraints"/>
+		public bool SkinRequired { get { return skinRequired; } set { skinRequired = value; } }
+
+		override public string ToString () {
+			return name;
 		}
 	}
 }

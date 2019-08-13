@@ -296,10 +296,10 @@ namespace EntryEngine.UI
 			baseView.Height += offsetScope.Y;
 			return baseView;
 		}
-		protected override bool IsNeedUpdateContent()
-		{
-			return contentScope.X == 0 && contentScope.Y == 0;
-		}
+        //protected override bool IsNeedUpdateContent()
+        //{
+        //    return contentScope.X == 0 && contentScope.Y == 0;
+        //}
 		protected virtual void InternalContentSizeChanged(VECTOR2 size)
 		{
 			this.UpdateScrollScope(false);
@@ -621,6 +621,14 @@ namespace EntryEngine.UI
             get;
             private set;
         }
+        public IEnumerable<ElementType> Elements
+        {
+            get
+            {
+                for (int i = 0; i < panel.ChildCount; i++)
+                    yield return (ElementType)panel[i];
+            }
+        }
         public Panel Panel
         {
             get { return panel; }
@@ -657,25 +665,23 @@ namespace EntryEngine.UI
 
         private void Scroll(Panel sender, Entry e)
         {
-            float offset = Panel.OffsetY;
-            float y = 0;
-            int count = Panel.ChildCount;
+            float offset = panel.OffsetY;
+            int count = panel.ChildCount;
             int i;
             for (i = 0; i < count; i++)
             {
-                y += Panel[i].Height;
-                if (y > offset)
+                float bottom = panel[i].Y + panel[i].Height;
+                //y += Panel[i].Height;
+                if (bottom > offset)
                 {
-                    y -= Panel[i].Height;
                     break;
                 }
-                Panel[i].Visible = false;
+                panel[i].Visible = false;
             }
-            offset += Panel.Height;
+            offset += panel.Height;
             for (; i < count; i++)
             {
-                Panel[i].Visible = y < offset;
-                y += Panel[i].Height;
+                panel[i].Visible = panel[i].Y < offset;
             }
         }
         private void ResetContentScope()
@@ -738,7 +744,11 @@ namespace EntryEngine.UI
             if (index < Datas.Count)
             {
                 for (int i = index; i < Datas.Count; i++)
+                {
                     panel[i].Y -= panel[i].Height;
+                    if (OnSetData != null)
+                        OnSetData((ElementType)panel[i], i, Datas[i]);
+                }
             }
             ResetContentScope();
             return true;
