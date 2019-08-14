@@ -1,5 +1,6 @@
 ﻿2019/08/14
 1. 修复Json读取字符串或对象值为null时的BUG
+2. 修复BuildSimpleAQName生成内部类数组类型的错误
 
 2019/08/13
 1. 扩展优化Panel和ListView相关封装

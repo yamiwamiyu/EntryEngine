@@ -1855,6 +1855,12 @@ namespace EntryEngine.Serialize
         }
         private static void BuildSimpleAQName(StringBuilder builder, Type type)
         {
+            int array = 0;
+            while (type.IsArray)
+            {
+                array++;
+                type = type.GetElementType();
+            }
             if (!string.IsNullOrEmpty(type.Namespace))
             {
                 builder.Append("{0}.", type.Namespace);
@@ -1890,6 +1896,8 @@ namespace EntryEngine.Serialize
                 }
                 builder.Append(']');
             }
+            for (int i = 0; i < array; i++)
+                builder.Append("[]");
             builder.Append(", {0}", type.Assembly.GetName().Name);
         }
         /// <summary>短AQ名在加密方式加载下的程序集中还是未能通过Type.GetType获得类型</summary>
