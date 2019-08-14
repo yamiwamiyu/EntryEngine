@@ -807,7 +807,10 @@ namespace EntryEngine.Serialize
         protected override string ReadString()
         {
             if (PeekChar != '"')
+            {
+                if (ReadNextString() == "null") return null;
                 throw new FormatException("字符串开头不包含'\"'");
+            }
             Read();
 
             StringBuilder builder = new StringBuilder(64);
@@ -913,11 +916,14 @@ namespace EntryEngine.Serialize
             bool isStatic = type.IsStatic();
 
             if (PeekChar != '{') // }
+            {
+                if (ReadNextString() == "null") return null;
                 throw new FormatException("对象缺少'{'"); // }
+            }
             Read();
             EatWhitespace();
 
-            object obj = Activator.CreateInstance(type);
+            object obj;
             if (isStatic) obj = null;
             else obj = Activator.CreateInstance(type);
             // {
@@ -941,6 +947,7 @@ namespace EntryEngine.Serialize
                     throw new FormatException("Key后缺少符号':'");
                 Read();
                 EatWhitespace();
+                object value = null;
                 if (key.StartsWith(ABSTRACT_TYPE))
                 {
                     // #类型SimpleName
@@ -954,7 +961,8 @@ namespace EntryEngine.Serialize
                     IVariable variable;
                     if (variables.TryGetValue(key, out variable))
                     {
-                        variable.SetValue(ReadObject(variable.Type));
+                        value = ReadObject(variable.Type);
+                        variable.SetValue(value);
                     }
                     else
                     {
@@ -977,8 +985,12 @@ namespace EntryEngine.Serialize
                     Read();
                 }
                 else
-                    // {
-                    throw new FormatException("对象缺少'}' 或 属性间缺少','");
+                {
+                    // 可能是key: null,
+                    if (value != null)
+                        // {
+                        throw new FormatException("对象缺少'}' 或 属性间缺少','");
+                }
             }
 
             return obj;
