@@ -6648,7 +6648,8 @@ namespace EntryEngine
                 async = new AsyncDrawDynamicChar();
             async.texture = texture;
             async.buffer = buffer;
-            DrawChar(async, c, buffer);
+            if (width != 0 && height != 0)
+                DrawChar(async, c, buffer);
             u += buffer.W;
             //u++;
             if (buffer.Space == 0)

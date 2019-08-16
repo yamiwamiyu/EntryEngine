@@ -1316,24 +1316,24 @@ namespace EntryEngine.Xna
 		{
             CacheInfo3 info = this.cacheP2;
 
-			System.Drawing.Rectangle source =
-				new System.Drawing.Rectangle(
+            System.Drawing.Rectangle source =
+                new System.Drawing.Rectangle(
                     buffer.X,
-					buffer.Y,
+                    buffer.Y,
                     buffer.W,
                     buffer.H);
             info.graphics.DrawString(c.ToString(), info.font, brush, source, StringFormat.GenericTypographic);
 
             BitmapData data = info.image.LockBits(source, ImageLockMode.ReadOnly, info.image.PixelFormat);
-			byte[] bytes = new byte[source.Width * source.Height * 4];
-			int start = 0;
-			int stride = source.Width * 4;
-			int line = source.Height;
-			for (int i = 0; i < line; i++)
-			{
-				System.Runtime.InteropServices.Marshal.Copy(new IntPtr(data.Scan0.ToInt32() + data.Stride * i), bytes, start, stride);
-				start += stride;
-			}
+            byte[] bytes = new byte[source.Width * source.Height * 4];
+            int start = 0;
+            int stride = source.Width * 4;
+            int line = source.Height;
+            for (int i = 0; i < line; i++)
+            {
+                System.Runtime.InteropServices.Marshal.Copy(new IntPtr(data.Scan0.ToInt32() + data.Stride * i), bytes, start, stride);
+                start += stride;
+            }
             info.image.UnlockBits(data);
 
             COLOR[] colors = new COLOR[source.Width * source.Height];

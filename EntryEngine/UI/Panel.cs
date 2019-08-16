@@ -296,10 +296,10 @@ namespace EntryEngine.UI
 			baseView.Height += offsetScope.Y;
 			return baseView;
 		}
-        //protected override bool IsNeedUpdateContent()
-        //{
-        //    return contentScope.X == 0 && contentScope.Y == 0;
-        //}
+        protected override bool IsNeedUpdateContent()
+        {
+            return base.IsNeedUpdateContent() || (contentScope.X == 0 && contentScope.Y == 0);
+        }
 		protected virtual void InternalContentSizeChanged(VECTOR2 size)
 		{
 			this.UpdateScrollScope(false);
