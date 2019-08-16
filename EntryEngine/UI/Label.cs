@@ -262,7 +262,7 @@ namespace EntryEngine.UI
         }
         private bool NeedBeginEnd(ref RECT view)
         {
-            if (IsAutoHeight)
+            if (IsAutoWidth)
                 return false;
             if (InputDevice == null)
                 return false;
