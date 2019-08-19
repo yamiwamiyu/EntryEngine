@@ -280,7 +280,8 @@ namespace EntryEngine.UI
             size.Y -= 1;
             float offsetX, offsetY;
             UIText.GetPaddingClip(ref view);
-            UIText.GetAlignmentClip(ref view, out offsetX, out offsetY);
+            var temp = view;
+            UIText.GetAlignmentClip(ref temp, out offsetX, out offsetY);
             if (InputDevice.Typist != this)
                 return size.X > view.Width || size.Y > view.Height;
             var cursor = InputDevice.CursorLocation;
