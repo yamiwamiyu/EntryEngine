@@ -266,17 +266,23 @@ namespace EntryEngine.UI
                 return false;
             if (InputDevice == null)
                 return false;
-            var size = TextContentSize;
+            // 不考虑偏移值的文字尺寸和考虑了偏移值的矩形区域做比较
+            VECTOR2 size;
+            if (UIText.Font == null)
+                size = VECTOR2.Zero;
+            else
+                if (string.IsNullOrEmpty(text))
+                    size = new VECTOR2(0, UIText.Font.LineHeight);
+                else
+                    size = UIText.Font.MeasureString(text);
             // 各平台相同字体尺寸有误差，不要因为细小误差导致BeginEnd
             size.X -= 1;
             size.Y -= 1;
-            //size.X -= UIText.Padding.X;
-            //size.Y -= UIText.Padding.Y;
+            float offsetX, offsetY;
+            UIText.GetPaddingClip(ref view);
+            UIText.GetAlignmentClip(ref view, out offsetX, out offsetY);
             if (InputDevice.Typist != this)
                 return size.X > view.Width || size.Y > view.Height;
-            RECT alignmentClip = view;
-            float offsetX, offsetY;
-            UIText.GetAlignmentClip(ref alignmentClip, out offsetX, out offsetY);
             var cursor = InputDevice.CursorLocation;
             cursor.X += offsetX;
             cursor.Y += offsetY;
@@ -294,6 +300,8 @@ namespace EntryEngine.UI
                     flag = true;
                 }
             }
+            else
+                offset.Y = 0;
             if (size.X > view.Width)
             {
                 if (cursor.X < offset.X)
@@ -307,11 +315,12 @@ namespace EntryEngine.UI
                     flag = true;
                 }
             }
-
-            if (flag)
-                return true;
             else
-                return size.X > view.Width || size.Y > view.Height;
+                offset.X = 0;
+
+            if (!flag)
+                flag = size.X > view.Width || size.Y > view.Height;
+            return flag;
         }
         protected override sealed void DrawFont(GRAPHICS spriteBatch, Entry e)
         {
