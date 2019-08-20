@@ -1910,86 +1910,91 @@ namespace EntryEngine.Serialize
         public static Type LoadSimpleAQName(string name)
         {
             Type type = null;
-            try { type = Type.GetType(name); }
-            catch { }
-            //Type type = Type.GetType(name);
-#if DEBUG
-            if (type == null)
+            try
             {
-                // 缓存
-                int index = name.IndexOf('[', 0);
-                if (index == -1)
+                type = Type.GetType(name);
+#if DEBUG
+                if (type == null)
                 {
-                    string[] names = name.Split(',');
-                    names[1] = names[1].Trim();
-                    var assemblies = AppDomain.CurrentDomain.GetAssemblies();
-                    var ass = assemblies.FirstOrDefault(a => a.GetName().Name == names[1]);
-                    if (ass == null)
-                        return null;
-                    // mono: 若没有类型则肯定抛出TypeLoadException
-                    type = ass.GetType(names[0]);
-                }
-                else
-                {
-                    string typeName = name.Substring(0, index);
-                    // 追加最后的程序集信息
-                    int lastIndex = name.LastIndexOf(',');
-                    typeName += name.Substring(lastIndex);
-                    type = LoadSimpleAQName(typeName);
-                    int index2 = typeName.IndexOf('`', 0);
-                    if (index2 != -1)
+                    // 缓存
+                    int index = name.IndexOf('[', 0);
+                    if (index == -1)
                     {
-                        int typeParameterCount = int.Parse(name.Substring(index2 + 1, index - index2 - 1));
-                        Type[] typeArguments = new Type[typeParameterCount];
-                        int gcount = 1;
-                        index += 2;
-                        index2 = index;
-                        int tai = 0;
-                        while (true)
+                        string[] names = name.Split(',');
+                        names[1] = names[1].Trim();
+                        var assemblies = AppDomain.CurrentDomain.GetAssemblies();
+                        var ass = assemblies.FirstOrDefault(a => a.GetName().Name == names[1]);
+                        if (ass == null)
+                            return null;
+                        // mono: 若没有类型则肯定抛出TypeLoadException
+                        type = ass.GetType(names[0]);
+                    }
+                    else
+                    {
+                        string typeName = name.Substring(0, index);
+                        // 追加最后的程序集信息
+                        int lastIndex = name.LastIndexOf(',');
+                        typeName += name.Substring(lastIndex);
+                        type = LoadSimpleAQName(typeName);
+                        int index2 = typeName.IndexOf('`', 0);
+                        if (index2 != -1)
                         {
-                            int end = name.IndexOf(']', index2);
-                            int start = name.IndexOf('[', index2);
-                            if (start != -1 && start < end)
+                            int typeParameterCount = int.Parse(name.Substring(index2 + 1, index - index2 - 1));
+                            Type[] typeArguments = new Type[typeParameterCount];
+                            int gcount = 1;
+                            index += 2;
+                            index2 = index;
+                            int tai = 0;
+                            while (true)
                             {
-                                // 有其它的泛型类型
-                                gcount++;
-                                index2 = start + 1;
-                                continue;
-                            }
-                            if (gcount > 0)
-                            {
-                                // 其它泛型类型的结束
-                                gcount--;
-                                if (gcount > 0)
+                                int end = name.IndexOf(']', index2);
+                                int start = name.IndexOf('[', index2);
+                                if (start != -1 && start < end)
                                 {
-                                    index2 = end + 1;
+                                    // 有其它的泛型类型
+                                    gcount++;
+                                    index2 = start + 1;
                                     continue;
                                 }
+                                if (gcount > 0)
+                                {
+                                    // 其它泛型类型的结束
+                                    gcount--;
+                                    if (gcount > 0)
+                                    {
+                                        index2 = end + 1;
+                                        continue;
+                                    }
+                                }
+                                typeName = name.Substring(index, end - index);
+                                typeArguments[tai++] = LoadSimpleAQName(typeName);
+                                if (tai == typeArguments.Length)
+                                {
+                                    // 跳过字符]]
+                                    index = end + 2;
+                                    break;
+                                }
+                                // 跳过字符：],[
+                                index = end + 3;
+                                index2 = index;
+                                gcount = 1;
                             }
-                            typeName = name.Substring(index, end - index);
-                            typeArguments[tai++] = LoadSimpleAQName(typeName);
-                            if (tai == typeArguments.Length)
-                            {
-                                // 跳过字符]]
-                                index = end + 2;
-                                break;
-                            }
-                            // 跳过字符：],[
-                            index = end + 3;
-                            index2 = index;
-                            gcount = 1;
+                            type = type.MakeGenericType(typeArguments);
                         }
-                        type = type.MakeGenericType(typeArguments);
-                    }
-                    // name[index] == '[' 用于处理 System.Int32[], mscorlib
-                    while (index < name.Length && name[index] == '[')
-                    {
-                        type = type.MakeArrayType();
-                        index += 2;
+                        // name[index] == '[' 用于处理 System.Int32[], mscorlib
+                        while (index < name.Length && name[index] == '[')
+                        {
+                            type = type.MakeArrayType();
+                            index += 2;
+                        }
                     }
                 }
-            }
 #endif
+            }
+            catch
+            {
+                type = null;
+            }
             return type;
         }
         public static bool IsCustomType(this Type type)
