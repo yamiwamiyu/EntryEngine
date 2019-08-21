@@ -751,6 +751,7 @@ namespace EntryEngine.UI
                 }
             }
             ResetContentScope();
+            Scroll(null, null);
             return true;
         }
         public void Close()
