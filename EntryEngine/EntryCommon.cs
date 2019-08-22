@@ -3282,7 +3282,7 @@ namespace EntryEngine
     public static class _SARRAY<T>
     {
         public static readonly T[] Empty = new T[0];
-        public static T[] Single = new T[1];
+        public static readonly T[] Single = new T[1];
         public static T[] GetSingleArray(T value)
         {
             Single[0] = value;
