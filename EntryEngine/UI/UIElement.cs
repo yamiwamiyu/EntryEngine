@@ -441,6 +441,7 @@ namespace EntryEngine.UI
         public string Name;
         public UIFlowLayout Flow;
         private RECT clip;
+        private RECT autoClip;
 		private MATRIX2x3 model = MATRIX2x3.Identity;
         public SHADER Shader;
         public bool Enable = true;
@@ -503,7 +504,7 @@ namespace EntryEngine.UI
         private bool needUpdateHover = true;
 		private MATRIX2x3 world = MATRIX2x3.Identity;
 		private MATRIX2x3 worldInvert = MATRIX2x3.Identity;
-        protected VECTOR2 contentSize;
+        protected VECTOR2 contentSize = VECTOR2.NaN;
         private int sortZ = -1;
         private bool needSort;
         protected bool isHover;
@@ -696,11 +697,12 @@ namespace EntryEngine.UI
             get { return Clip.Width; }
             set
             {
-                if (value == 0)
-                    clip.Width = 0;
-                UpdateWidth(Width, value);
+                float width = this.Width;
+                if (clip.Width != 0 && value == 0)
+                    contentSize.X = float.NaN;
                 clip.Width = value;
                 NeedUpdateLocalToWorld = true;
+                UpdateWidth(width, this.Width);
             }
         }
         public virtual float Height
@@ -708,11 +710,12 @@ namespace EntryEngine.UI
             get { return Clip.Height; }
             set
             {
-                if (value == 0)
-                    clip.Height = 0;
-                UpdateHeight(Height, value);
+                float height = this.Height;
+                if (clip.Height != 0 && value == 0)
+                    contentSize.Y = float.NaN;
                 clip.Height = value;
                 NeedUpdateLocalToWorld = true;
+                UpdateHeight(height, this.Height);
             }
         }
         public VECTOR2 Size
@@ -734,9 +737,23 @@ namespace EntryEngine.UI
                 }
                 else
                 {
-                    RECT autoClip = new RECT();
+                    //RECT autoClip = new RECT();
                     autoClip.X = X;
                     autoClip.Y = Y;
+
+                    // 效率非常低下
+                    //if (needUpdateLocalToWorld)
+                    //    UpdateContent();
+                    //if (Parent == null)
+                    //    UpdateContent();
+
+                    bool flag = false;
+                    if (clip.Width == 0 && contentSize.X != autoClip.Width)
+                        flag = true;
+                    if (!flag && clip.Height == 0 && contentSize.Y != autoClip.Height)
+                        flag = true;
+                    if (flag)
+                        UpdateContent();
 
                     if (clip.Width == 0)
                         autoClip.Width = contentSize.X;
@@ -1261,8 +1278,9 @@ namespace EntryEngine.UI
         }
         public void ResetContentSize()
         {
-            contentSize.X = 0;
-            contentSize.Y = 0;
+            contentSize = VECTOR2.NaN;
+            //contentSize.X = 0;
+            //contentSize.Y = 0;
         }
         private void UpdateContent()
         {
@@ -1271,8 +1289,13 @@ namespace EntryEngine.UI
                 VECTOR2 size = ContentSize;
                 if (contentSize.X != size.X || contentSize.Y != size.Y)
                 {
+                    //_LOG.Debug("ContentSize X:{0} Y:{1} Stack:{2}", size.X, size.Y, Environment.StackTrace);
                     NeedUpdateLocalToWorld = true;
+                    if (IsAutoWidth && contentSize.X != size.X)
+                        UpdateWidth(contentSize.X, size.X);
                     contentSize.X = size.X;
+                    if (IsAutoHeight && contentSize.Y != size.Y)
+                        UpdateHeight(contentSize.Y, size.Y);
                     contentSize.Y = size.Y;
                     if (ContentSizeChanged != null)
                     {
@@ -1394,7 +1417,7 @@ namespace EntryEngine.UI
         private void UpdateWidth(float srcWidth, float dstWidth)
         {
             // UI编辑器 -> 读取TabPage.Page -> 读取TabPage.Parent.Clip -> 导致Page尺寸拉大
-            if (srcWidth == 0)
+            if (srcWidth == 0 || float.IsNaN(srcWidth) || srcWidth == dstWidth)
                 return;
 
             float add = dstWidth - srcWidth;
@@ -1438,7 +1461,7 @@ namespace EntryEngine.UI
         }
         private void UpdateHeight(float srcHeight, float dstHeight)
         {
-            if (srcHeight == 0)
+            if (srcHeight == 0 || float.IsNaN(srcHeight) || srcHeight == dstHeight)
                 return;
 
             float add = dstHeight - srcHeight;

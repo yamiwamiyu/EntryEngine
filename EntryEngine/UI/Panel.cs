@@ -694,8 +694,8 @@ namespace EntryEngine.UI
         }
         public void SetDataSource(List<DataType> value)
         {
-            if (Datas == value)
-                return;
+            //if (Datas == value)
+            //    return;
 
             if (value == null) value = new List<DataType>();
             Close();
