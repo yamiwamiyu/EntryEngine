@@ -2,6 +2,7 @@
 1. UIElement.AutoClip会自动检测更新
 2. ContentSize变更时也会调用UpdateWidth和UpdateHeight来刷新Anchor信息
 3. ListView允许重新设置Datas来刷新界面
+4. FileService提供事件来自定义回调的内容
 
 2019/08/21
 1. 修复ListView删除项时被隐藏的项任然隐藏的BUG

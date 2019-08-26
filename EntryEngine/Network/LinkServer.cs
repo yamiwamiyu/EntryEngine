@@ -1802,6 +1802,8 @@ namespace EntryEngine.Network
         HttpListener listener;
         string localPath;
 
+        public Action<HttpListenerContext> OnAccept;
+
         public bool UseCache
         {
             get { return Cache != null; }
@@ -1865,6 +1867,9 @@ namespace EntryEngine.Network
                 HttpListenerContext context = handle.EndGetContext(ar);
                 handle.BeginGetContext(Accept, handle);
                 context.Response.AppendHeader("Access-Control-Allow-Origin", "*");
+                context.Response.ContentType = "application/octet-stream";
+                if (OnAccept != null)
+                    OnAccept(context);
                 string path = context.Request.Url.LocalPath.Substring(1);
                 _LOG.Debug(path);
                 string fullPath = localPath + path;

@@ -312,7 +312,7 @@ namespace Spine
 
             byte[] data = IO.ReadByte(temp + ".skel.bytes");
             SkeletonBinary binary = new SkeletonBinary(atlas);
-            //binary.Scale = 0.097f;
+            binary.Scale = 0.097f;
             //binary.Scale = 1f;
             SkeletonData skeletonData = binary.ReadSkeletonData(new MemoryStream(data));
 
