@@ -1,4 +1,4 @@
 ﻿1. 设置程序名称：若需要修改运行程序的名称，只需要进行以下设置
 	PCRun的属性 -> 应用程序 -> 修改程序集名称
 
-2. 若PCRun运行不了，提示修改OutputPath和AssemblyName什么的，就到项目文件夹中删除obj目录即可
+2. 若PCRun运行不了，提示修改OutputPath和AssemblyName什么的，关闭VS并到项目文件夹中删除obj目录即可
