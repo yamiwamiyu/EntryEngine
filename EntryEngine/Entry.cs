@@ -1932,7 +1932,7 @@ namespace EntryEngine
         {
             get
             {
-                return typist.Font.Cursor(text, index);
+                return typist.Font.Cursor(typist.DisplayText, index);
             }
         }
         public IEnumerable<RECT> SelectedAreas
@@ -1949,6 +1949,7 @@ namespace EntryEngine
                     _MATH.Min(from, to));
                 VECTOR2 start, end;
 
+                string text = typist.DisplayText;
                 int index = selected.Min;
                 while (true)
                 {
@@ -2613,6 +2614,8 @@ namespace EntryEngine
         FONT Font { get; }
         /// <summary>未经处理的源文字</summary>
         string Text { get; set; }
+        /// <summary>经过处理显示的文字</summary>
+        string DisplayText { get; }
         /// <summary>只读则不允许输入和删除操作，不过可以复制</summary>
         bool Readonly { get; }
         /// <summary>控制是否超出文字区域自动换行，用于计算光标位置</summary>

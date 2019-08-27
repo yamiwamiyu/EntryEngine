@@ -3,6 +3,7 @@
 using System;
 namespace EntryEngine.UI
 {
+    // todo: 增加OffsetScope，在编辑时允许滚动条滚动
 	public class Label : Button, ITypist
 	{
 		private string text = string.Empty;
@@ -271,10 +272,10 @@ namespace EntryEngine.UI
             if (UIText.Font == null)
                 size = VECTOR2.Zero;
             else
-                if (string.IsNullOrEmpty(text))
+                if (string.IsNullOrEmpty(DisplayText))
                     size = new VECTOR2(0, UIText.Font.LineHeight);
                 else
-                    size = UIText.Font.MeasureString(text);
+                    size = UIText.Font.MeasureString(DisplayText);
             // 各平台相同字体尺寸有误差，不要因为细小误差导致BeginEnd
             size.X -= 1;
             size.Y -= 1;

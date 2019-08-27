@@ -9009,7 +9009,7 @@ namespace EntryBuilder
             string fileListVersion = outputDir + "__version.txt";
 
             // 复制资源文件到StreamingAssets文件夹
-            string originDLL = xnaDir;
+            string originDLL = Path.GetFullPath(xnaDir);
             xnaDir = _IO.PathCombine(Path.GetFullPath(xnaDir), "Content\\");
             outputDir = _IO.PathCombine(Path.GetFullPath(outputDir), "Content\\");
             DirectoryInfo target = new DirectoryInfo(outputDir);

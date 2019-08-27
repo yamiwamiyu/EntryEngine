@@ -1,4 +1,11 @@
-﻿2019/08/22
+﻿2019/08/27
+1. HotFix批处理改用Encoding.Default写成.bat文件以适用于中文名字的程序
+2. 修复PublishToPC文件列表的地址错误BUG
+
+2019/08/26
+1. ITypist新增DisplayText，修复TextBox在密码模式时光标位置错误的BUG
+
+2019/08/22
 1. UIElement.AutoClip会自动检测更新
 2. ContentSize变更时也会调用UpdateWidth和UpdateHeight来刷新Anchor信息
 3. ListView允许重新设置Datas来刷新界面

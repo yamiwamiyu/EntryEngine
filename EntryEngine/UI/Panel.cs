@@ -745,6 +745,7 @@ namespace EntryEngine.UI
             {
                 for (int i = index; i < Datas.Count; i++)
                 {
+                    // 如果元素高度各不相同时，这样会导致坐标不正确
                     panel[i].Y -= panel[i].Height;
                     if (OnSetData != null)
                         OnSetData((ElementType)panel[i], i, Datas[i]);
