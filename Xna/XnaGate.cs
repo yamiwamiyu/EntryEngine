@@ -29,26 +29,31 @@ namespace EntryEngine.Xna
 		TimeSpan realTime;
 
         GraphicsDeviceManager graphics;
-        GameTime gameTime;
         public Color BGColor = Color.TransparentBlack;
         public event Func<Entry> OnCreateEntry;
         public event Action<Entry> OnInitialize;
         public event Action<Entry> OnInitialized;
         private bool isDragFileEnable;
         private Action<string[]> dragFiles;
+        private bool testFPS = true;
 
         public GraphicsDeviceManager GraphicsManager
         {
             get { return graphics; }
         }
-        public GameTime GameTime
-        {
-            get { return gameTime; }
-        }
         public Entry Entry
         {
             get;
             private set;
+        }
+        public string Title
+        {
+            get { return Window.Title; }
+            set
+            {
+                Window.Title = value;
+                testFPS = false;
+            }
         }
         public Action<string[]> DragFiles
         {
@@ -113,39 +118,50 @@ namespace EntryEngine.Xna
         }
         protected override void Update(GameTime gameTime)
         {
-            this.gameTime = gameTime;
-
-			Stopwatch clock = new Stopwatch();
-			clock.Start();
-			Entry.Update();
-			clock.Stop();
-			updateTime.InvokeTime = updateTime.InvokeTime.Add(clock.Elapsed);
-			updateTime.InvokeCount++;
-
-            base.Update(gameTime);
-
-            realTime += gameTime.ElapsedRealTime;
-            if (realTime.TotalSeconds >= 1)
+            if (testFPS)
             {
-                Window.Title = string.Format("Update: {0} / {1} = {2} Render: {3} / {4} = {5}",
-                    updateTime.InvokeTime.TotalMilliseconds.ToString("0.00"), updateTime.InvokeCount, (updateTime.InvokeTime.TotalMilliseconds / updateTime.InvokeCount).ToString("0.00"),
-                    drawTime.InvokeTime.TotalMilliseconds.ToString("0.00"), drawTime.InvokeCount, (drawTime.InvokeTime.TotalMilliseconds / drawTime.InvokeCount).ToString("0.00"));
-                realTime -= TimeSpan.FromSeconds(1);
-                updateTime = new FPSTest();
-                drawTime = new FPSTest();
+                Stopwatch clock = new Stopwatch();
+                clock.Start();
+                Entry.Update();
+                clock.Stop();
+                updateTime.InvokeTime = updateTime.InvokeTime.Add(clock.Elapsed);
+                updateTime.InvokeCount++;
+
+                realTime += Entry.GameTime.ElapsedRealTime;
+                if (realTime.TotalSeconds >= 1)
+                {
+                    Window.Title = string.Format("Update: {0} / {1} = {2} Render: {3} / {4} = {5}",
+                        updateTime.InvokeTime.TotalMilliseconds.ToString("0.00"), updateTime.InvokeCount, (updateTime.InvokeTime.TotalMilliseconds / updateTime.InvokeCount).ToString("0.00"),
+                        drawTime.InvokeTime.TotalMilliseconds.ToString("0.00"), drawTime.InvokeCount, (drawTime.InvokeTime.TotalMilliseconds / drawTime.InvokeCount).ToString("0.00"));
+                    realTime -= TimeSpan.FromSeconds(1);
+                    updateTime = new FPSTest();
+                    drawTime = new FPSTest();
+                }
             }
+            else
+                Entry.Update();
+            
+            base.Update(gameTime);
         }
         protected override void Draw(GameTime gameTime)
         {
-            Stopwatch clock = new Stopwatch();
-            clock.Start();
             GraphicsDevice.Clear(BGColor);
 
-			Entry.Draw();
+            if (testFPS)
+            {
+                Stopwatch clock = new Stopwatch();
+                clock.Start();
 
-			clock.Stop();
-			drawTime.InvokeTime = drawTime.InvokeTime.Add(clock.Elapsed);
-			drawTime.InvokeCount++;
+                Entry.Draw();
+
+                clock.Stop();
+                drawTime.InvokeTime = drawTime.InvokeTime.Add(clock.Elapsed);
+                drawTime.InvokeCount++;
+            }
+            else
+            {
+                Entry.Draw();
+            }
 
             base.Draw(gameTime);
         }

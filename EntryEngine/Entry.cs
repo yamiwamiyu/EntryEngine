@@ -2035,7 +2035,7 @@ namespace EntryEngine
         }
         private int GetClickPositionIndex(VECTOR2 cursor)
         {
-            return typist.Font.CursorIndex(text, cursor - typist.TextArea.Location);
+            return typist.Font.CursorIndex(typist.DisplayText, cursor - typist.TextArea.Location);
         }
         internal void Update(Entry e)
         {
