@@ -9337,5 +9337,37 @@ namespace EntryBuilder
                 }
             });
         }
+        public static void CopyFilesName(string dir, string suffixSplitByComma, bool all)
+        {
+            string[] suffix;
+            if (string.IsNullOrEmpty(suffixSplitByComma))
+                suffix = new string[] { "*" };
+            else
+                suffix = suffixSplitByComma.Split(',');
+
+            if (string.IsNullOrEmpty(dir))
+                dir = Environment.CurrentDirectory;
+            else
+                dir = Path.GetFullPath(dir);
+
+            int relation;
+            if (dir.StartsWith(Environment.CurrentDirectory))
+                relation = Environment.CurrentDirectory.Length + 1;
+            else
+                // 目标文件夹在执行文件夹的前面层级的文件夹
+                relation = dir.Length + 1;
+
+            StringBuilder builder = new StringBuilder();
+            SearchOption option = all ? SearchOption.AllDirectories : SearchOption.TopDirectoryOnly;
+            foreach (var item in suffix)
+            {
+                foreach (var file in Directory.GetFiles(dir, "*." + item, option))
+                {
+                    builder.AppendLine(file.Substring(relation));
+                }
+            }
+
+            Clipboard.SetText(builder.ToString());
+        }
 	}
 }
