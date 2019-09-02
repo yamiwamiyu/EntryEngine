@@ -538,6 +538,8 @@ namespace EntryEngine
             public string File;
             public string Time;
             public long Length;
+
+            public Exception UpdateException { get; set; }
         }
 
         internal const string FIX_TEMP = "HotFix/";
@@ -677,7 +679,9 @@ namespace EntryEngine
                             if (!string.IsNullOrEmpty(dir) && !Directory.Exists(dir))
                                 Directory.CreateDirectory(dir);
 
-                            if (fileListItem.File.EndsWith(".dll") || fileListItem.File.EndsWith(".exe") || fileListItem.File.EndsWith(".pdb"))
+                            // 需要热更重启的必须是根目录下的exe，dll文件
+                            if (string.IsNullOrEmpty(dir) &&
+                                (fileListItem.File.EndsWith(".dll") || fileListItem.File.EndsWith(".exe") || fileListItem.File.EndsWith(".pdb")))
                             {
                                 if (!Directory.Exists(FIX_TEMP))
                                     Directory.CreateDirectory(FIX_TEMP);
@@ -693,6 +697,7 @@ namespace EntryEngine
                         }
                         catch (Exception ex)
                         {
+                            fileListItem.UpdateException = ex;
                             _LOG.Error("下载文件{0}失败 Error:{1}", fileListItem.File, ex.Message);
                         }
                         finally
@@ -707,6 +712,12 @@ namespace EntryEngine
                 }
                 while (parallel > 0)
                     yield return null;
+                var error = newFilelist.FirstOrDefault(f => f.UpdateException != null);
+                if (error != null)
+                {
+                    // 任何一个文件错误都视为更新失败
+                    throw new Exception("文件更新失败", error.UpdateException);
+                }
                 // 写入新文件列表
                 File.WriteAllBytes(FILE_LIST, newFileListBuffer);
             }
