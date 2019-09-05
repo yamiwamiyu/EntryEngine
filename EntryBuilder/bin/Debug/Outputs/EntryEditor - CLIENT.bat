@@ -12,5 +12,5 @@ del EntryEditor\Microsoft.Xna.Framework.dll
 del EntryEditor\Microsoft.Xna.Framework.Game.dll
 
 move EntryEditor\fmodex.dll fmodex.dll
-..\EntryBuilder.exe BuildLinkShell EntryEditor\ 3.5 10 EntryEditor.exe "x86" "" true
+..\EntryBuilder.exe BuildLinkShell EntryEditor\ 3.5 10 EntryEditor.exe "x86" "" true ""
 del fmodex.dll

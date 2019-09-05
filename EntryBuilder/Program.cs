@@ -5519,7 +5519,7 @@ namespace EntryBuilder
 			}
 			if (!string.IsNullOrEmpty(outputDll))
 			{
-				var result = UtilityCode.Compile(outputDll, "3.5", "", Environment.CurrentDirectory, builder.ToString());
+				var result = UtilityCode.Compile(outputDll, "3.5", "", "", Environment.CurrentDirectory, builder.ToString());
 				if (result.Errors.Count > 0)
 					for (int i = 0; i < result.Errors.Count; i++)
 						Console.WriteLine(result.Errors[i].ErrorText);
@@ -7244,7 +7244,7 @@ namespace EntryBuilder
 
 			SaveCode(outputCS, builder);
 		}
-		public static void BuildLinkShell(string inputDirOrFile, string dotnetCompilerVersion, byte depth, string outputFile, string x86, string overdueTime, bool showConsole)
+		public static void BuildLinkShell(string inputDirOrFile, string dotnetCompilerVersion, byte depth, string outputFile, string x86, string overdueTime, bool showConsole, string iconFileOrEmpty)
 		{
 			object[] exe = null;
 			byte[] result = null;
@@ -7425,7 +7425,7 @@ namespace EntryBuilder
 						});
 					});
 				}
-                CompilerResults compileResult = UtilityCode.Compile(temp, dotnetCompilerVersion, d == depth && !string.IsNullOrEmpty(x86) ? x86 : "", "", builder.ToString());
+                CompilerResults compileResult = UtilityCode.Compile(temp, dotnetCompilerVersion, d == depth && !string.IsNullOrEmpty(x86) ? x86 : "", iconFileOrEmpty, "", builder.ToString());
                 //CompilerResults compileResult = UtilityCode.Compile(temp, "", d == depth && !string.IsNullOrEmpty(x86) ? x86 : "", "", builder.ToString());
 				if (UtilityCode.CheckCompileError(compileResult))
 				{

@@ -200,13 +200,15 @@ namespace EntryBuilder
             }
             return false;
         }
-        public static CompilerResults Compile(string output, string version, string platform, string refferenceDllDir, params string[] codes)
+        public static CompilerResults Compile(string output, string version, string platform, string icon, string refferenceDllDir, params string[] codes)
         {
             CSharpCodeProvider.SetCompileVersion(version);
             CompilerParameters param = new CompilerParameters();
             param.CompilerOptions = "/unsafe /optimize";
             if (!string.IsNullOrEmpty(platform))
                 param.CompilerOptions += string.Format(" /platform:{0}", platform);
+            if (!string.IsNullOrEmpty(icon))
+                param.CompilerOptions += string.Format(" /win32icon:{0}", icon);
             param.ReferencedAssemblies.Add("System.dll");
             param.ReferencedAssemblies.Add("System.Data.dll");
             param.ReferencedAssemblies.Add("System.Core.dll");
