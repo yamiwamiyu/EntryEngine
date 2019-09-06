@@ -16,6 +16,7 @@ namespace EntryEngine.Cmdline
         private event EventHandler exit;
         /// <summary>事件触发在异步线程上</summary>
         public event Action<string> ConsoleLog;
+        public event Action<Process> OnLaunch;
         public event Action<Process> Launched;
 
         protected Process Process
@@ -119,6 +120,8 @@ namespace EntryEngine.Cmdline
             if (exit != null)
                 Process.Exited += exit;
 
+            if (OnLaunch != null)
+                OnLaunch(Process);
             Process.OutputDataReceived += new DataReceivedEventHandler(Process_OutputDataReceived);
             Process.Start();
 
