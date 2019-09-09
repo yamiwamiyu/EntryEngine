@@ -7361,7 +7361,10 @@ namespace EntryBuilder
 						{
                             DestructSelf(overdueTime, builder);
 
-							builder.AppendLine("byte[] bytes = {{{0}}};", string.Join(",", result.Select(r => r.ToString()).ToArray()));
+                            // 超出编译器限制: 行不能超过 16777214 个字符
+                            builder.AppendLine("byte[] bytes = {{{0}}};", string.Join(",", result.Select(r => r.ToString()).ToArray()));
+                            //builder.AppendLine("byte[] bytes = new byte[{0}];", result.Length);
+                            //StringBuilder appendBytes = new StringBuilder(10000000);
 							result = null;
 							builder.AppendLine("Shell.Next(bytes);");
 							// exe == null: 加密的dll没有入口
@@ -7425,7 +7428,9 @@ namespace EntryBuilder
 						});
 					});
 				}
-                CompilerResults compileResult = UtilityCode.Compile(temp, dotnetCompilerVersion, d == depth && !string.IsNullOrEmpty(x86) ? x86 : "", iconFileOrEmpty, "", builder.ToString());
+                CompilerResults compileResult = UtilityCode.Compile(temp, dotnetCompilerVersion, 
+                    d == depth && !string.IsNullOrEmpty(x86) ? x86 : "",
+                    d == depth ? iconFileOrEmpty : "", "", builder.ToString());
                 //CompilerResults compileResult = UtilityCode.Compile(temp, "", d == depth && !string.IsNullOrEmpty(x86) ? x86 : "", "", builder.ToString());
 				if (UtilityCode.CheckCompileError(compileResult))
 				{

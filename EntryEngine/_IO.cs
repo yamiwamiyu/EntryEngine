@@ -732,8 +732,8 @@ namespace EntryEngine
 cd {1}
 xcopy /Y *.* ..\
 cd ..\
-start ""{2}""
-del ""{3}""
+start """" ""{2}""
+del {3}
 ";
                 // 关闭程序并启动批处理来启动程序
                 File.WriteAllText(HOT_FIX_BAT,
