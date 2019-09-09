@@ -12,7 +12,7 @@ using EntryEngine.Serialize;
     /// <summary>编辑器里显示的名字</summary>
     public string Name
     {
-        get { return _LANGUAGE.GetString(__Name); }
+        get { return string.IsNullOrEmpty(__Name) ? null : _LANGUAGE.GetString(__Name); }
         set { __Name = value; }
     }
     private string __Name;
@@ -21,18 +21,27 @@ using EntryEngine.Serialize;
     /// <summary>说明</summary>
     public string Explain
     {
-        get { return _LANGUAGE.GetString(__Explain); }
+        get { return string.IsNullOrEmpty(__Explain) ? null : _LANGUAGE.GetString(__Explain); }
         set { __Explain = value; }
     }
     private string __Explain;
+    static PF()
+    {
+        PF PF = new PF();
+        PF.TypeName = default(string);
+        PF.Name = null;
+        PF.Type = default(byte);
+        PF.Explain = null;
+    }
+    
 }
 [AReflexible]public partial class TEXT
 {
     public static bool __Load = true;
     /// <summary>键</summary>
-    public enum ETEXTKey
+    public enum ETEXTKey : byte
     {
-        New,
+        New = 0,
         Open,
         Save,
         Undo,
@@ -56,10 +65,17 @@ using EntryEngine.Serialize;
     /// <summary>值</summary>
     public string Value
     {
-        get { return _LANGUAGE.GetString(__Value); }
+        get { return string.IsNullOrEmpty(__Value) ? null : _LANGUAGE.GetString(__Value); }
         set { __Value = value; }
     }
     private string __Value;
+    static TEXT()
+    {
+        TEXT TEXT = new TEXT();
+        TEXT.Key = default(ETEXTKey);
+        TEXT.Value = null;
+    }
+    
 }
 public static partial class _TABLE
 {

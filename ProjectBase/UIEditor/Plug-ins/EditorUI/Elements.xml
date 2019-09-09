@@ -412,6 +412,10 @@
         <NickName>自动换行</NickName>
       </e>
       <e>
+        <VariableName>CanSelect</VariableName>
+        <NickName>可选择</NickName>
+      </e>
+      <e>
         <VariableName>MaxLength</VariableName>
         <NickName>最大长度</NickName>
       </e>

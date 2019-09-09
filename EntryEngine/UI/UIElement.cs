@@ -755,16 +755,6 @@ namespace EntryEngine.UI
                     if (flag)
                         UpdateContent();
 
-                    if (clip.Width == 0)
-                        autoClip.Width = contentSize.X;
-                    else
-                        autoClip.Width = clip.Width;
-
-                    if (clip.Height == 0)
-                        autoClip.Height = contentSize.Y;
-                    else
-                        autoClip.Height = clip.Height;
-
                     return autoClip;
                 }
             }
@@ -1297,6 +1287,14 @@ namespace EntryEngine.UI
                     if (IsAutoHeight && contentSize.Y != size.Y)
                         UpdateHeight(contentSize.Y, size.Y);
                     contentSize.Y = size.Y;
+                    if (clip.Width == 0)
+                        autoClip.Width = contentSize.X;
+                    else
+                        autoClip.Width = clip.Width;
+                    if (clip.Height == 0)
+                        autoClip.Height = contentSize.Y;
+                    else
+                        autoClip.Height = clip.Height;
                     if (ContentSizeChanged != null)
                     {
                         ContentSizeChanged(size);

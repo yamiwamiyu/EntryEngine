@@ -84,7 +84,6 @@ public partial class EditorParticle
         BNew.UIText.TextShader = null;
         BNew.UIText.Padding.X = 0f;
         BNew.UIText.Padding.Y = 0f;
-        BNew.UIText.FontSize = 0f;
         PTool.Add(BNew);
         BOpen.Name = "BOpen";
         EntryEngine.RECT BOpen_Clip = new EntryEngine.RECT();
@@ -107,7 +106,6 @@ public partial class EditorParticle
         BOpen.UIText.TextShader = null;
         BOpen.UIText.Padding.X = 0f;
         BOpen.UIText.Padding.Y = 0f;
-        BOpen.UIText.FontSize = 0f;
         PTool.Add(BOpen);
         BSave.Name = "BSave";
         EntryEngine.RECT BSave_Clip = new EntryEngine.RECT();
@@ -130,7 +128,6 @@ public partial class EditorParticle
         BSave.UIText.TextShader = null;
         BSave.UIText.Padding.X = 0f;
         BSave.UIText.Padding.Y = 0f;
-        BSave.UIText.FontSize = 0f;
         PTool.Add(BSave);
         TB161117153458.Name = "TB161117153458";
         EntryEngine.RECT TB161117153458_Clip = new EntryEngine.RECT();
