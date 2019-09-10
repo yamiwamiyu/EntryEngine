@@ -550,6 +550,8 @@ namespace EntryEngine
         public static readonly string[] SPLIT = new string[] { "\r\n" };
         public static string ServerURL;
 
+        public static long VersionOld { get; private set; }
+        public static long Version { get; private set; }
         public static string ProcessText { get; private set; }
         public static bool NeedUpdate { get; private set; }
         public static float Progress { get; private set; }
@@ -576,9 +578,11 @@ namespace EntryEngine
             WebRequest request = HttpWebRequest.Create(ServerURL + VERSION);
             WebResponse response = request.GetResponse();
             byte[] newVersionBuffer = _IO.ReadStream(response.GetResponseStream(), 8);
-
+            Version = BitConverter.ToInt64(newVersionBuffer, 0);
+            
             // 旧版本号
             byte[] oldVersionBuffer = File.ReadAllBytes(VERSION);
+            VersionOld = BitConverter.ToInt64(oldVersionBuffer, 0);
 
             // 新旧版本比对
             if (oldVersionBuffer != null)
