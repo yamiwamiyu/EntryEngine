@@ -45,7 +45,7 @@ namespace EntryEngine.UI
         Selectable = 0x22,
 
         Button = 0x30,
-        
+
         Label = 0x40,
 
         TextBox = 0x50,
@@ -442,7 +442,7 @@ namespace EntryEngine.UI
         public UIFlowLayout Flow;
         private RECT clip;
         private RECT autoClip;
-		private MATRIX2x3 model = MATRIX2x3.Identity;
+        private MATRIX2x3 model = MATRIX2x3.Identity;
         public SHADER Shader;
         public bool Enable = true;
         public bool Eventable = true;
@@ -502,8 +502,8 @@ namespace EntryEngine.UI
         /// 所以此时应该像needUpdateLocalToWorld时先去更新父场景的Hover状态
         /// </summary>
         private bool needUpdateHover = true;
-		private MATRIX2x3 world = MATRIX2x3.Identity;
-		private MATRIX2x3 worldInvert = MATRIX2x3.Identity;
+        private MATRIX2x3 world = MATRIX2x3.Identity;
+        private MATRIX2x3 worldInvert = MATRIX2x3.Identity;
         protected VECTOR2 contentSize = VECTOR2.NaN;
         private int sortZ = -1;
         private bool needSort;
@@ -546,7 +546,7 @@ namespace EntryEngine.UI
                 NeedUpdateLocalToWorld = true;
             }
         }
-		public MATRIX2x3 World
+        public MATRIX2x3 World
         {
             get { return world; }
         }
@@ -754,6 +754,7 @@ namespace EntryEngine.UI
                         flag = true;
                     if (flag)
                         UpdateContent();
+                    SetAutoSize();
 
                     return autoClip;
                 }
@@ -1120,20 +1121,20 @@ namespace EntryEngine.UI
                 }
             }
             InternalDrawAfter(spriteBatch, e);
-			if (DrawBeforeEnd != null)
-			{
-				DrawBeforeEnd(this, spriteBatch, e);
-			}
+            if (DrawBeforeEnd != null)
+            {
+                DrawBeforeEnd(this, spriteBatch, e);
+            }
 
             DrawEnd(spriteBatch, ref model, ref finalViewClip, Shader);
 
             if (DrawAfterEnd != null)
             {
                 DrawAfterEnd(this, spriteBatch, e);
-				if (DrawFocus != null)
-				{
-					DrawFocus(this, spriteBatch, e);
-				}
+                if (DrawFocus != null)
+                {
+                    DrawFocus(this, spriteBatch, e);
+                }
             }
 
             var scene2 = SceneIsRunning;
@@ -1178,10 +1179,10 @@ namespace EntryEngine.UI
                 EventEnd(this, e);
             }
         }
-		protected virtual void DrawBegin(GRAPHICS spriteBatch, ref MATRIX2x3 transform, ref RECT view, SHADER shader)
+        protected virtual void DrawBegin(GRAPHICS spriteBatch, ref MATRIX2x3 transform, ref RECT view, SHADER shader)
         {
         }
-		protected virtual void DrawEnd(GRAPHICS spriteBatch, ref MATRIX2x3 transform, ref RECT view, SHADER shader)
+        protected virtual void DrawEnd(GRAPHICS spriteBatch, ref MATRIX2x3 transform, ref RECT view, SHADER shader)
         {
         }
         private void UpdateSort()
@@ -1189,7 +1190,7 @@ namespace EntryEngine.UI
             if (needSort)
             {
                 drawOrder = Childs.ToArray();
-				Utility.SortOrderAsc(drawOrder, e => e.sortZ);
+                Utility.SortOrderAsc(drawOrder, e => e.sortZ);
                 needSort = false;
                 OnUpdateSort(drawOrder);
             }
@@ -1235,11 +1236,11 @@ namespace EntryEngine.UI
 
                 UpdateClip(ref finalClip, ref finalViewClip, ref model, ref world);
 
-				MATRIX2x3.Invert(ref world, out worldInvert);
+                MATRIX2x3.Invert(ref world, out worldInvert);
                 needUpdateLocalToWorld = false;
             }
         }
-		protected virtual void UpdateTranslation(ref MATRIX2x3 transform)
+        protected virtual void UpdateTranslation(ref MATRIX2x3 transform)
         {
             transform.M31 = X;
             transform.M32 = Y;
@@ -1249,7 +1250,7 @@ namespace EntryEngine.UI
             transform.M31 -= transform.M11 * pivotX + transform.M21 * pivotY;
             transform.M32 -= transform.M12 * pivotX + transform.M22 * pivotY;
         }
-		protected virtual void UpdateClip(ref RECT finalClip, ref RECT finalViewClip, ref MATRIX2x3 transform, ref MATRIX2x3 localToWorld)
+        protected virtual void UpdateClip(ref RECT finalClip, ref RECT finalViewClip, ref MATRIX2x3 transform, ref MATRIX2x3 localToWorld)
         {
             RECT clip = Clip;
             finalClip = clip;
@@ -1260,10 +1261,10 @@ namespace EntryEngine.UI
             finalViewClip = finalClip;
             if (scissor)
             {
-				RECT.Intersect(ref finalViewClip, ref Parent.finalViewClip, out finalViewClip);
+                RECT.Intersect(ref finalViewClip, ref Parent.finalViewClip, out finalViewClip);
             }
         }
-		protected virtual void UpdateTransformEnd(ref MATRIX2x3 transform, ref MATRIX2x3 localToWorld)
+        protected virtual void UpdateTransformEnd(ref MATRIX2x3 transform, ref MATRIX2x3 localToWorld)
         {
         }
         public void ResetContentSize()
@@ -1287,20 +1288,24 @@ namespace EntryEngine.UI
                     if (IsAutoHeight && contentSize.Y != size.Y)
                         UpdateHeight(contentSize.Y, size.Y);
                     contentSize.Y = size.Y;
-                    if (clip.Width == 0)
-                        autoClip.Width = contentSize.X;
-                    else
-                        autoClip.Width = clip.Width;
-                    if (clip.Height == 0)
-                        autoClip.Height = contentSize.Y;
-                    else
-                        autoClip.Height = clip.Height;
                     if (ContentSizeChanged != null)
                     {
+                        SetAutoSize();
                         ContentSizeChanged(size);
                     }
                 }
             }
+        }
+        private void SetAutoSize()
+        {
+            if (clip.Width == 0)
+                autoClip.Width = contentSize.X;
+            else
+                autoClip.Width = clip.Width;
+            if (clip.Height == 0)
+                autoClip.Height = contentSize.Y;
+            else
+                autoClip.Height = clip.Height;
         }
         protected virtual bool IsNeedUpdateContent()
         {
@@ -1534,12 +1539,12 @@ namespace EntryEngine.UI
         public VECTOR2 ConvertGraphicsToLocal(VECTOR2 point)
         {
             VECTOR2.Transform(ref point, ref worldInvert);
-			return point;
+            return point;
         }
         public VECTOR2 ConvertLocalToGraphics(VECTOR2 point)
         {
             VECTOR2.Transform(ref point, ref world);
-			return point;
+            return point;
         }
         public VECTOR2 ConvertLocalToOther(VECTOR2 point, UIElement other)
         {
@@ -1991,11 +1996,11 @@ namespace EntryEngine.UI
             {
                 if (Content == null || Content.IsDisposed)
                 {
-					return true;
+                    return true;
                 }
                 else
                 {
-					if (ContentType == EContent.Inherit && Parent != null && Parent.Scene != null)
+                    if (ContentType == EContent.Inherit && Parent != null && Parent.Scene != null)
                     {
                         return Parent.Scene.IsDisposed;
                     }
@@ -2368,7 +2373,7 @@ namespace EntryEngine.UI
                     FocusedElement.SetFocus(false);
             }
         }
-		protected override void DrawEnd(GRAPHICS spriteBatch, ref MATRIX2x3 transform, ref RECT view, SHADER shader)
+        protected override void DrawEnd(GRAPHICS spriteBatch, ref MATRIX2x3 transform, ref RECT view, SHADER shader)
         {
             while (TopMost.Count > 0)
                 TopMost.Dequeue().Draw(spriteBatch, Entry.Instance);

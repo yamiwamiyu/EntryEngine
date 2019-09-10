@@ -180,7 +180,7 @@ namespace EditorUI
             //collapse.Panel.Width = 0;
 
             collapse.Panel.Name = "PanelElementList";
-            collapse.Panel.Anchor = EAnchor.Top | EAnchor.Bottom | EAnchor.Left;
+            //collapse.Panel.Anchor = EAnchor.Top | EAnchor.Bottom | EAnchor.Left;
             collapse.Panel.Pivot = EPivot.TopLeft;
 
             XmlReader reader = new XmlReader(File.ReadAllText(Path.GetFullPath(FILE_ELEMENTS)));
@@ -307,9 +307,9 @@ namespace EditorUI
                 box.UIText.Padding.X = 20;
                 box.CheckedChanged += LayoutElementList;
 
-                box.Panel.Anchor = EAnchor.Top | EAnchor.Bottom | EAnchor.Left;
+                //box.Panel.Anchor = EAnchor.Top | EAnchor.Bottom | EAnchor.Left;
                 box.Panel.Pivot = EPivot.TopLeft;
-                box.Panel.IsClip = false;
+                //box.Panel.IsClip = false;
                 //box.Panel.DragMode = EDragMode.Drag;
 
                 pe.Add(box);
@@ -443,7 +443,7 @@ namespace EditorUI
                     continue;
                 child.Y = y;
                 y += child.Height;
-                //if (box.Checked)
+                //if (child.Checked)
                 //    y += child.ChildClip.Height;
             }
             SelectedElement = null;
