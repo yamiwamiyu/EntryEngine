@@ -2,6 +2,9 @@
 1. EntryBuilder.CopyFilesName允许拷贝文件夹的名字
 2. EntryBuilder.BuildTableFromCSV对生成枚举类型更加智能
 3. 完善EntryBuilder.BuildTableFromCSV生成的代码
+4. 裁切图片将空像素的图片视为1x1的空白图
+5. 打包等写出的文件统一用UTF8格式
+6. 修复PIECE有Padding时翻转错误的BUG
 
 2019/09/10
 1. 修复自动尺寸引起的UI编辑器BUG

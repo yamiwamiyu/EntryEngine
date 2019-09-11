@@ -3125,6 +3125,7 @@ namespace EntryBuilder
                 minX, minY,
                 maxX - minX,
                 maxY - minY);
+            //Console.WriteLine("minX: {0}, minY: {1}, maxX: {2}, maxY: {3}", minX, minY, maxX, maxY);
 
             Rectangle desc = new Rectangle(
                 0, 0,
@@ -3146,6 +3147,11 @@ namespace EntryBuilder
             {
                 using (Bitmap source = textures[i])
                 {
+                    if (maxX == 0 || maxY == 0)
+                    {
+                        textures[i] = new Bitmap(1, 1, Graphics.FromImage(source));
+                        continue;
+                    }
                     Bitmap texture = new Bitmap(desc.Width, desc.Height, Graphics.FromImage(source));
                     ImageDraw(texture, graphics =>
                     {
@@ -8204,7 +8210,7 @@ namespace EntryBuilder
                 if (!Directory.Exists(saveDir))
                     Directory.CreateDirectory(saveDir);
                 // 特殊的后缀.pcsv让PublishToUnity可以方便找到此文件，拷贝时过滤掉已经被打包的图片
-                File.WriteAllText(saveFile + ".pcsv", writer.Result);
+                File.WriteAllText(saveFile + ".pcsv", writer.Result, Encoding.UTF8);
                 Console.WriteLine("保存metadata:{0}完毕", item.Key);
             }
 		}
@@ -8256,7 +8262,7 @@ namespace EntryBuilder
 
                 var xml = new XmlWriter();
 				xml.WriteObject(target);
-				File.WriteAllText(Path.ChangeExtension(result, type), xml.Result);
+				File.WriteAllText(Path.ChangeExtension(result, type), xml.Result, Encoding.UTF8);
                 Console.WriteLine("生成九宫格{0}", item.Source);
 			}
 			Console.WriteLine("生成九宫格完毕");
@@ -8328,7 +8334,7 @@ namespace EntryBuilder
 
                 var xml = new XmlWriter();
 				xml.WriteObject(sequence);
-				File.WriteAllText(string.Format("{0}{1}.{2}", outputDir, item.Key, type), xml.Result);
+				File.WriteAllText(string.Format("{0}{1}.{2}", outputDir, item.Key, type), xml.Result, Encoding.UTF8);
                 Console.WriteLine("生成动画{0}", item.Key);
 			}
 			Console.WriteLine("生成动画完毕");

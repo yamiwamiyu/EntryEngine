@@ -4434,6 +4434,8 @@ namespace EntryEngine
                 if (oxFlag)
                 {
                     vertex.Origin.X = (vertex.Origin.X * width2 - whiteX1) / vertex.Destination.Width;
+                    if ((vertex.Flip & EFlip.FlipHorizontally) != EFlip.None)
+                        vertex.Origin.X = 1 - vertex.Origin.X;
                 }
 
                 whiteY1 = Padding.Y - vertex.Source.Y;
@@ -4462,6 +4464,8 @@ namespace EntryEngine
                 if (oyFlag)
                 {
                     vertex.Origin.Y = (vertex.Origin.Y * height2 - whiteY1) / vertex.Destination.Height;
+                    if ((vertex.Flip & EFlip.FlipVertically) != EFlip.None)
+                        vertex.Origin.Y = 1 - vertex.Origin.Y;
                 }
             }
             vertex.Source.X += SourceRectangle.X;
