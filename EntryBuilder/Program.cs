@@ -2776,26 +2776,26 @@ namespace EntryBuilder
             {
                 reader.Next("[");
 
-                if (temp != "string")
-                {
+                //if (temp != "string")
+                //{
                     special.NeedBuildType = false;
                     special.TypeName = temp;
-                }
-                else
-                {
-                    special.NeedBuildType = true;
-                }
+                //}
+                //else
+                //{
+                //    special.NeedBuildType = true;
+                //}
             }
             
             temp = reader.PeekNext("]");
             if (temp.Length == 1)
             {
                 // string数组
-                if (special.NeedBuildType)
-                {
-                    special.TypeName = "string";
-                    special.NeedBuildType = false;
-                }
+                //if (special.NeedBuildType)
+                //{
+                //    special.TypeName = "string";
+                //    special.NeedBuildType = false;
+                //}
                 special.BuildDictionary = 1;
                 return special;
             }
@@ -4339,29 +4339,40 @@ namespace EntryBuilder
                                 writer.Append("public enum {0} : {1}", enumName, type.Substring(5));
                             writer.AppendLine();
                             bool duplicateFlag = false;
+                            // 若枚举有重复，且枚举值重复是连续的，就要生成字典
+                            bool continueFlag = true;
                             writer.AppendBlock(() =>
                             {
                                 string[] all = table.GetColumns(i);
                                 HashSet<string> set = new HashSet<string>();
+                                string continueTemp = null;
                                 for (int j = 2; j < all.Length; j++)
                                 {
                                     if (string.IsNullOrEmpty(all[j])) continue;
                                     if (set.Add(all[j]))
                                         writer.AppendLine("{0},", all[j]);
                                     else
+                                    {
                                         duplicateFlag = true;
+                                        if (continueFlag && continueTemp != null && continueTemp != all[j])
+                                            continueFlag = false;
+                                    }
+                                    continueTemp = all[j];
                                 }
                             });
                             writer.AppendLine("public {0} {1};", enumName, column);
 
                             nonOptimize.AppendLine("{0}.{1} = default({2});", name, column, enumName);
 
-                            if (!duplicateFlag)
+                            if (!duplicateFlag || continueFlag)
                             {
                                 // 构建字典
                                 SpecialType special = new SpecialType();
                                 special.TypeName = name + "." + enumName;
-                                special.BuildDictionary = 1;
+                                if (duplicateFlag)
+                                    special.BuildDictionary = 2;
+                                else
+                                    special.BuildDictionary = 1;
 
                                 Dictionary<string, SpecialType> s;
                                 if (!specials.TryGetValue(name, out s))

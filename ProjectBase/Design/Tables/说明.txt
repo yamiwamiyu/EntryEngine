@@ -20,9 +20,9 @@
 * ushort[,][#] 生成ushort[][]
 * string:COLOR[R(byte),G(byte),B(byte),A(byte)][#] 生成特殊类型的数组
 * string#Item[ID(ushort),Count(uint)][|][#] 特殊类型的数组最多支持二次交错数组，且不会重复生成Item类型
-* enum#EType:byte[A=0,B=1,C,D...] 生成类型的内部枚举
-* enum[:int] 生成表类型的内部枚举，枚举值不重复时会生成Dictionary
+* enum#EType:byte[A=0,B=1,C,D...] 生成枚举
 * 以上均可复合使用
+* enum[:int] 生成类型的内部枚举，枚举值不重复时会生成Dictionary<E,T>，有重复且重复项连续时生成Dictionary<E,T[]>
 * 生成的字典字段名为"_表明By字段名"
 * 生成的特殊字段名为"_源字段名"
 
