@@ -4329,11 +4329,14 @@ namespace EntryBuilder
 
                             nonOptimize.AppendLine("{0}.{1} = null;", name, column);
                         }
-                        else if(type.StartsWith("enum:"))
+                        else if(type.StartsWith("enum:") || type == "enum")
                         {
-                            // 生成枚举类型enum[#UnderlyingType]
+                            // 生成枚举类型enum[:UnderlyingType]
                             string enumName = string.Format("E{0}{1}", name, column);
-                            writer.Append("public enum {0} : {1}", enumName, type.Substring(5));
+                            if (type == "enum")
+                                writer.Append("public enum {0}", enumName);
+                            else
+                                writer.Append("public enum {0} : {1}", enumName, type.Substring(5));
                             writer.AppendLine();
                             bool duplicateFlag = false;
                             writer.AppendBlock(() =>
@@ -4341,10 +4344,13 @@ namespace EntryBuilder
                                 string[] all = table.GetColumns(i);
                                 HashSet<string> set = new HashSet<string>();
                                 for (int j = 2; j < all.Length; j++)
+                                {
+                                    if (string.IsNullOrEmpty(all[j])) continue;
                                     if (set.Add(all[j]))
                                         writer.AppendLine("{0},", all[j]);
                                     else
                                         duplicateFlag = true;
+                                }
                             });
                             writer.AppendLine("public {0} {1};", enumName, column);
 
@@ -9367,11 +9373,23 @@ namespace EntryBuilder
 
             StringBuilder builder = new StringBuilder();
             SearchOption option = all ? SearchOption.AllDirectories : SearchOption.TopDirectoryOnly;
-            foreach (var item in suffix)
+            if (string.IsNullOrEmpty(suffixSplitByComma))
             {
-                foreach (var file in Directory.GetFiles(dir, "*." + item, option))
+                // 拷贝目录名字
+                foreach (var item in Directory.GetDirectories(dir, "*.*", option))
                 {
-                    builder.AppendLine(file.Substring(relation));
+                    builder.AppendLine(item.Substring(relation));
+                }
+            }
+            else
+            {
+                // 拷贝文件名字
+                foreach (var item in suffix)
+                {
+                    foreach (var file in Directory.GetFiles(dir, "*." + item, option))
+                    {
+                        builder.AppendLine(file.Substring(relation));
+                    }
                 }
             }
 
