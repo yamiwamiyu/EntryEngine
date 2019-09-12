@@ -1,4 +1,7 @@
-﻿2019/09/11
+﻿2019/09/13
+1. 修复BuildTableFromCSV生成枚举时把枚举当成特殊字段解析的BUG
+
+2019/09/11
 1. EntryBuilder.CopyFilesName允许拷贝文件夹的名字
 2. EntryBuilder.BuildTableFromCSV对生成枚举类型更加智能
 3. 完善EntryBuilder.BuildTableFromCSV生成的代码

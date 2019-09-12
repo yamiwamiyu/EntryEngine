@@ -4601,7 +4601,7 @@ namespace EntryBuilder
                             writer.AppendBlock(() =>
                             {
                                 writer.AppendLine("var value = array[i];");
-                                foreach (var item in s.Where(i => !i.Value.IsDictionary))
+                                foreach (var item in s.Where(i => !i.Value.IsDictionary && !i.Value.IsEnum))
                                 {
                                     writer.AppendLine("if (!string.IsNullOrEmpty(value.{0}))", item.Key);
                                     writer.AppendBlock(() =>
