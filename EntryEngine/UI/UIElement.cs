@@ -731,6 +731,7 @@ namespace EntryEngine.UI
         {
             get
             {
+                if (float.IsNaN(contentSize.X)) return clip;
                 if (!IsAutoClip)
                 {
                     return clip;

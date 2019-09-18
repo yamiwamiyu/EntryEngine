@@ -1237,6 +1237,18 @@ namespace EditorUI
             this.OnGetValue += new Func<object, object>(EditorClip_OnGetValue);
         }
 
+        protected override void SetValue()
+        {
+            if (ValueEditor == null)
+            {
+            }
+            else
+            {
+                ValueEditor.OnGetValue -= EditorClip_OnGetValue;
+                ValueEditor.OnGetValue += EditorClip_OnGetValue;
+            }
+            base.SetValue();
+        }
         object EditorClip_OnGetValue(object arg)
         {
             var ins = ((UIElement)Variable.Instance);
