@@ -1,4 +1,8 @@
-﻿2019/09/19
+﻿2019/09/20
+1. 修改UIElement的EventBegin和EventEnd机制
+2. 修改Label在输入完成时不一定触发TextChanged事件
+
+2019/09/19
 1. BuildOutputCSV时，enum列允许值重复
 
 2019/09/18

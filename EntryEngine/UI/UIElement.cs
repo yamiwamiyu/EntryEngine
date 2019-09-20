@@ -1010,7 +1010,8 @@ namespace EntryEngine.UI
             if (!IsEnable)
                 return;
 
-            OnUpdateBegin(e);
+            if (UpdateBegin != null)
+                UpdateBegin(this, e);
 
             InternalUpdate(e);
             for (int i = Childs.Count - 1; i >= 0 && i < Childs.Count; i--)
@@ -1021,7 +1022,8 @@ namespace EntryEngine.UI
                     Childs[i].Update(e);
             }
 
-            OnUpdateEnd(e);
+            if (UpdateEnd != null)
+                UpdateEnd(this, e);
         }
         public void Event(Entry e)
         {
@@ -1035,7 +1037,9 @@ namespace EntryEngine.UI
                 isClick = isHover && pointer.IsClick(pointer.DefaultKey);
             }
 
-            OnEventBegin(e);
+            bool __event = FinalEventable;
+            if (__event && !Handled && EventBegin != null)
+                EventBegin(this, e);
 
             for (int i = Childs.Count - 1; i >= 0 && i < Childs.Count; i--)
             {
@@ -1045,7 +1049,7 @@ namespace EntryEngine.UI
                     Childs[i].Event(e);
             }
 
-            if (FinalEventable && !Handled)
+            if (__event && !Handled)
             {
                 for (int i = 0; i < events.Count; i++)
                 {
@@ -1057,7 +1061,8 @@ namespace EntryEngine.UI
                     InternalEvent(e);
             }
 
-            OnEventEnd(e);
+            if (__event && !Handled && EventEnd != null)
+                EventEnd(this, e);
 
             if (isClick)
             {
@@ -1150,34 +1155,6 @@ namespace EntryEngine.UI
                 clip.Y -= Flow.MaginTop;
 
                 //spriteBatch.Draw(patch, clip);
-            }
-        }
-        protected virtual void OnUpdateBegin(Entry e)
-        {
-            if (UpdateBegin != null)
-            {
-                UpdateBegin(this, e);
-            }
-        }
-        protected virtual void OnUpdateEnd(Entry e)
-        {
-            if (UpdateEnd != null)
-            {
-                UpdateEnd(this, e);
-            }
-        }
-        protected virtual void OnEventBegin(Entry e)
-        {
-            if (EventBegin != null)
-            {
-                EventBegin(this, e);
-            }
-        }
-        protected virtual void OnEventEnd(Entry e)
-        {
-            if (EventEnd != null && !Handled)
-            {
-                EventEnd(this, e);
             }
         }
         protected virtual void DrawBegin(GRAPHICS spriteBatch, ref MATRIX2x3 transform, ref RECT view, SHADER shader)
