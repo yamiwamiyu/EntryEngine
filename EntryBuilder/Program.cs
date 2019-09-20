@@ -4729,16 +4729,30 @@ namespace EntryBuilder
                         continue;
 					var table = ReadCSVTable(file, -1);
                     // 去除enum类型等号前面的名字
+                    Dictionary<string, long> set = new Dictionary<string, long>();
                     long enumValue = 0;
                     for (int i = 0; i < table.ColumnCount; i++)
                         if (table[i, 0].StartsWith("enum"))
                             for (int j = 2; j < table.RowCount; j++)
                             {
                                 int index = table[i, j].IndexOf('=');
+                                string key = table[i, j];
                                 if (index != -1)
+                                {
+                                    key = table[i, j].Substring(0, index);
                                     enumValue = long.Parse(table[i, j].Substring(index + 1));
-                                table[i, j] = enumValue.ToString();
-                                enumValue++;
+                                }
+                                long temp;
+                                if (set.TryGetValue(key, out temp))
+                                {
+                                    table[i, j] = temp.ToString();
+                                }
+                                else
+                                {
+                                    table[i, j] = enumValue.ToString();
+                                    set.Add(key, enumValue);
+                                    enumValue++;
+                                }
                             }
 					int title = CSVReader.TITLE_ROW_COUNT - 1;
 					for (int i = 0; i < table.ColumnCount; i++)
