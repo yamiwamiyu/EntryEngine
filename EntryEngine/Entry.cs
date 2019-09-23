@@ -2017,7 +2017,7 @@ namespace EntryEngine
             if (typist == null)
                 throw new InvalidOperationException();
             this.stopping = true;
-            typist.OnStop(current);
+            typist.OnStop(previous, current);
             var temp = typist;
             typist = null;
             OnStop(typist);
@@ -2638,7 +2638,7 @@ namespace EntryEngine
         bool Filter(ref char c);
         /// <summary>设备关闭时回调源的处理程序</summary>
         /// <param name="result">最终文本属性</param>
-        void OnStop(string result);
+        void OnStop(string previous, string result);
     }
 
 

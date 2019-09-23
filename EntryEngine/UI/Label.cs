@@ -378,10 +378,10 @@ namespace EntryEngine.UI
         {
             return false;
         }
-        public virtual void OnStop(string result)
+        public virtual void OnStop(string previous, string result)
         {
             SetFocus(false);
-            //text = null;
+            text = previous;
             Text = result;
             if (TextEditOver != null)
                 TextEditOver(this);
