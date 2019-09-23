@@ -699,7 +699,10 @@ namespace EntryEngine.UI
             {
                 float width = this.Width;
                 if (clip.Width != 0 && value == 0)
+                {
                     contentSize.X = float.NaN;
+                    contentSize.Y = 0;
+                }
                 clip.Width = value;
                 NeedUpdateLocalToWorld = true;
                 UpdateWidth(width, this.Width);
@@ -712,7 +715,10 @@ namespace EntryEngine.UI
             {
                 float height = this.Height;
                 if (clip.Height != 0 && value == 0)
+                {
+                    contentSize.X = 0;
                     contentSize.Y = float.NaN;
+                }
                 clip.Height = value;
                 NeedUpdateLocalToWorld = true;
                 UpdateHeight(height, this.Height);
@@ -731,7 +737,7 @@ namespace EntryEngine.UI
         {
             get
             {
-                if (float.IsNaN(contentSize.X)) return clip;
+                if (float.IsNaN(contentSize.X) && float.IsNaN(contentSize.Y)) return clip;
                 if (!IsAutoClip)
                 {
                     return clip;

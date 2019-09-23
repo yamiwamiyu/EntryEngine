@@ -4729,10 +4729,12 @@ namespace EntryBuilder
                         continue;
 					var table = ReadCSVTable(file, -1);
                     // 去除enum类型等号前面的名字
-                    Dictionary<string, long> set = new Dictionary<string, long>();
-                    long enumValue = 0;
                     for (int i = 0; i < table.ColumnCount; i++)
-                        if (table[i, 0].StartsWith("enum"))
+                    {
+                        if (table[i, 0].StartsWith("enum") && !table[i, 0].StartsWith("enum#"))
+                        {
+                            Dictionary<string, long> set = new Dictionary<string, long>();
+                            long enumValue = 0;
                             for (int j = 2; j < table.RowCount; j++)
                             {
                                 int index = table[i, j].IndexOf('=');
@@ -4754,6 +4756,8 @@ namespace EntryBuilder
                                     enumValue++;
                                 }
                             }
+                        }
+                    }
 					int title = CSVReader.TITLE_ROW_COUNT - 1;
 					for (int i = 0; i < table.ColumnCount; i++)
 					{

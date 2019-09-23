@@ -1,6 +1,7 @@
 ﻿2019/09/23
 1. 修复字符串反序列化读取Nullable类型的BUG
 2. 修复文本框在编辑完成时不触发TextChanged的BUG
+3. 修复BuildOutputCSV对同张表多个枚举列生成时枚举值累计的BUG
 
 2019/09/20
 1. 修改UIElement的EventBegin和EventEnd机制
