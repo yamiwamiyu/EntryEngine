@@ -1133,9 +1133,10 @@ namespace EntryEngine.Serialize
         }
         protected virtual object ReadNullable(Type type, Type nullableType)
         {
-            string word = ReadNextString();
+            string word = PeekNextString();
             if (string.IsNullOrEmpty(word) || word == "null")
             {
+                PeekNextString();
                 return null;
             }
             else
