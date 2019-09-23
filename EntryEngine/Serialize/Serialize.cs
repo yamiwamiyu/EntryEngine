@@ -1146,8 +1146,10 @@ namespace EntryEngine.Serialize
         }
         protected virtual object ReadEnum(Type type, Type underlyingType)
         {
-            if (string.IsNullOrEmpty(PeekNextString()))
+            string read = PeekNextString();
+            if (string.IsNullOrEmpty(read))
             {
+                ReadNextString();
                 var array = Enum.GetValues(type);
                 if (array.Length > 0) return array.GetValue(0);
             }
