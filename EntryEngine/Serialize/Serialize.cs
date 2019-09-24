@@ -1136,7 +1136,7 @@ namespace EntryEngine.Serialize
             string word = PeekNextString();
             if (string.IsNullOrEmpty(word) || word == "null")
             {
-                PeekNextString();
+                ReadNextString();
                 return null;
             }
             else
