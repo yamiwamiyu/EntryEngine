@@ -565,6 +565,7 @@ namespace EntryEngine.UI
             // 最后一次操作的项的索引，Shift时，从这个索引网目标索引进行选中/取消选中
             int lastSelectIndex = -1;
             VECTOR2 clickOffsetPosition = VECTOR2.Zero;
+            bool areaSelect = false;
             Action cancelSelect = () =>
             {
                 foreach (ISelectable item in panel)
@@ -575,6 +576,7 @@ namespace EntryEngine.UI
             };
             Action<Entry> clickSelect = (e) =>
             {
+                if (areaSelect) return;
                 int current = -1;
                 for (int i = 0; i < panel.ChildCount; i++)
                     if (panel[i].IsHover)
@@ -638,11 +640,20 @@ namespace EntryEngine.UI
                     }
                     else
                     {
-                        cancelSelect();
-                        ISelectable selectable = panel[current] as ISelectable;
-                        if (!selectable.Selected)
-                            selectable.Selected = true;
-                        lastIsSelect = true;
+                        if (panel.Any(c => c != panel[current] && ((ISelectable)c).Selected))
+                        {
+                            cancelSelect();
+                            ISelectable selectable = panel[current] as ISelectable;
+                            if (!selectable.Selected)
+                                selectable.Selected = true;
+                            lastIsSelect = true;
+                        }
+                        else
+                        {
+                            ISelectable selectable = panel[current] as ISelectable;
+                            selectable.Selected = !selectable.Selected;
+                            lastIsSelect = selectable.Selected;
+                        }
                         lastSelectIndex = current;
                     }
                 }
@@ -650,16 +661,17 @@ namespace EntryEngine.UI
             panel.EventBegin = (sender, e) =>
             {
                 // 点击右键清空选中
-                //if (panel.IsHover && e.INPUT.Pointer.IsClick(1))
-                //{
-                //    cancelSelect();
-                //}
+                if (panel.IsHover && e.INPUT.Pointer.IsClick(1))
+                {
+                    cancelSelect();
+                }
                 // 点击清空选中项，选中点击的当前项
                 if (panel.IsHover)
                 {
                     if (e.INPUT.Pointer.IsClick(0))
                     {
                         clickOffsetPosition = panel.ConvertGraphicsToLocal(e.INPUT.Pointer.ClickPosition);
+                        areaSelect = false;
                     }
                     else if (e.INPUT.Pointer.IsRelease(0))
                     {
@@ -669,6 +681,7 @@ namespace EntryEngine.UI
                 // 拖拽连续选中项
                 if (panel.IsClick && e.INPUT.Pointer.IsPressed(0) && e.INPUT.Pointer.Position != e.INPUT.Pointer.ClickPosition)
                 {
+                    areaSelect = true;
                     var p1 = panel.ConvertGraphicsToLocal(e.INPUT.Pointer.Position);
                     RECT clip = RECT.CreateRectangle(p1, clickOffsetPosition);
                     //clip.X += panel.OffsetX;

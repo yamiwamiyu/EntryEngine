@@ -5305,8 +5305,13 @@ namespace EntryEngine
             {
                 over = NextFrame();
                 //this.elapsedTime = 0;
-                this.elapsedTime = elapsedTime - frame.Interval;
-                frame = Frame;
+                if (!over)
+                {
+                    this.elapsedTime = elapsedTime - frame.Interval;
+                    frame = Frame;
+                }
+                else
+                    break;
             }
             this.elapsedTime += elapsed;
 

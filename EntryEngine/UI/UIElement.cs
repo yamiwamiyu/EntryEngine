@@ -737,7 +737,7 @@ namespace EntryEngine.UI
         {
             get
             {
-                if (float.IsNaN(contentSize.X) && float.IsNaN(contentSize.Y)) return clip;
+                if (!needUpdateLocalToWorld && float.IsNaN(contentSize.X) && float.IsNaN(contentSize.Y)) return clip;
                 if (!IsAutoClip)
                 {
                     return clip;
