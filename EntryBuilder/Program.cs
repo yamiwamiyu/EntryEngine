@@ -1317,9 +1317,8 @@ namespace EntryBuilder
                 string name = type.Name + "Proxy";
                 string cbname = agent.Callback != null ? agent.Callback.CodeName() : null;
 
-                //builder.AppendLine("class {0} : {1}, {2}", name, typeof(StubClientAsync).Name, type.Name);
-                //builder.AppendLine("class {0} : {1}, {2}", name, typeof(StubClientAsync).Name, type.Name);
-                builder.AppendLine("class {0} : {1}", name, typeof(StubClientAsync).Name);
+                builder.AppendLine("class {0} : {1}, {2}", name, typeof(StubClientAsync).Name, type.Name);
+                //builder.AppendLine("class {0} : {1}", name, typeof(StubClientAsync).Name);
                 builder.AppendBlock(() =>
                 {
                     if (agent.Callback != null)
@@ -2476,10 +2475,10 @@ namespace EntryBuilder
             }
             return results;
         }
-        private static List<NamedStringTable> LoadTablesFromExcelOleDb(string file, string version = "15.0")
+        private static List<NamedStringTable> LoadTablesFromExcelOleDb(string file, string version = EXCEL_REVERISION)
         {
             List<NamedStringTable> results = new List<NamedStringTable>();
-            string connString = string.Format("Provider=Microsoft.Ace.OleDb.{1};data source={0};Extended Properties='Excel 12.0; HDR=NO; IMEX=1'", file, version);
+            string connString = string.Format("Provider=Microsoft.Ace.OleDb.{1};data source={0};Extended Properties='Excel {1}; HDR=NO; IMEX=1'", file, version);
             OleDbConnection conn = new OleDbConnection(connString);
             try
             {
@@ -2566,7 +2565,7 @@ namespace EntryBuilder
             }
             return results;
         }
-		private static StringTable LoadTableFromExcel(string file, string version = "15.0")
+        private static StringTable LoadTableFromExcel(string file, string version = EXCEL_REVERISION)
 		{
             return LoadTablesFromExcelOleDb(file, version)[0];
 		}
