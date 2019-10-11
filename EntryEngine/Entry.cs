@@ -4399,6 +4399,8 @@ namespace EntryEngine
             if (vertex.Source.Width > width || vertex.Source.Height > height)
                 throw new InvalidOperationException("Piece texture can't tile. SourceRectangle must be contained in piece's SourceRectangle.");
 
+            SpriteVertex copy = vertex;
+
             if (!Padding.IsEmpty)
             {
                 float width2 = vertex.Destination.Width;
@@ -4472,6 +4474,8 @@ namespace EntryEngine
             vertex.Source.Y += SourceRectangle.Y;
             
             graphics.Draw(Base, ref vertex);
+
+            vertex = copy;
             return true;
         }
         protected internal override Content Cache()
@@ -4746,6 +4750,8 @@ namespace EntryEngine
                 (int)vertex.Source.Height != Base.Height)
                 throw new ArgumentException("Patch's source must be all of the base texture.");
 
+            SpriteVertex copy = vertex;
+
             float bwidth = Base.Width;
             float bheight = Base.Height;
             float width = vertex.Destination.Width;
@@ -4907,6 +4913,7 @@ namespace EntryEngine
                     Draw(graphics, ref vertex, ref _grid[i][j]);
                 }
             }
+            vertex = copy;
             return true;
         }
         void Draw(GRAPHICS graphics, ref SpriteVertex vertex, ref PatchPiece param)
@@ -4926,6 +4933,7 @@ namespace EntryEngine
         {
             var cache = new PATCH();
             cache._Key = this._Key;
+            cache.ContentManager = this.ContentManager;
             cache.Base = this.Base;
             cache.Anchor = this.Anchor;
             cache.ColorBody = this.ColorBody;
@@ -5332,9 +5340,10 @@ namespace EntryEngine
             var frame = Frame;
             if (frame != null)
             {
-                vertex.Origin.X += frame.PivotX;
-                vertex.Origin.Y += frame.PivotY;
-                base.Draw(graphics, ref vertex);
+                SpriteVertex copy = vertex;
+                copy.Origin.X += frame.PivotX;
+                copy.Origin.Y += frame.PivotY;
+                base.Draw(graphics, ref copy);
             }
             return true;
         }
@@ -5465,6 +5474,302 @@ namespace EntryEngine
                         sequences.SelectMany(s => s.Frames).Distinct(f => f.Texture).
                             Select(f => Manager.LoadAsync<TEXTURE>(f.Texture, t => textures[f.Texture] = t)),
                         () => new ANIMATION(sequences, textures));
+                });
+        }
+    }
+
+    /// <summary>未实现绘制指定SourceRectangle</summary>
+    [Code(ECode.Attention)]
+    public sealed class TILE : TEXTURE_Link
+    {
+        private int tileX;
+        private int tileY;
+
+        /// <summary>横向平铺的次数</summary>
+        public int TileX
+        {
+            get { return tileX; }
+            set
+            {
+                if (value < 0)
+                    value = 0;
+                this.tileX = value;
+            }
+        }
+        /// <summary>纵向平铺的次数</summary>
+        public int TileY
+        {
+            get { return tileY; }
+            set
+            {
+                if (value < 0)
+                    value = 0;
+                this.tileY = value;
+            }
+        }
+        public override int Width
+        {
+            get
+            {
+                if (Base == null) return 0;
+                return Base.Width * (tileX + 1);
+            }
+        }
+        public override int Height
+        {
+            get
+            {
+                if (Base == null) return 0;
+                return Base.Height * (tileY + 1);
+            }
+        }
+
+        protected internal override bool Draw(GRAPHICS graphics, ref SpriteVertex vertex)
+        {
+            if (Base == null) return true;
+
+            SpriteVertex copy = vertex;
+
+            float width = vertex.Destination.Width;
+            float height = vertex.Destination.Height;
+            float scaleX = width / this.Width;
+            float scaleY = height / this.Height;
+            VECTOR2 originPosition = vertex.Origin;
+            originPosition.X *= width;
+            originPosition.Y *= height;
+            float x = 0;
+            float y = 0;
+            vertex.Destination.Width = Base.Width * scaleX;
+            vertex.Destination.Height = Base.Height * scaleY;
+            vertex.Source.X = 0;
+            vertex.Source.Y = 0;
+            vertex.Source.Width = Base.Width;
+            vertex.Source.Height = Base.Height;
+            if (tileX != 0 && tileY != 0)
+            {
+                // 双向平铺，呈矩形
+                for (int i = 0; i <= tileX; i++)
+                {
+                    vertex.Origin.X = __GRAPHICS.CalcOrigin(x, vertex.Destination.Width, originPosition.X);
+                    y = 0;
+                    for (int j = 0; j <= tileY; j++)
+                    {
+                        vertex.Origin.Y = __GRAPHICS.CalcOrigin(y, vertex.Destination.Height, originPosition.Y);
+                        graphics.Draw(Base, ref vertex);
+                        y += vertex.Destination.Height;
+                    }
+                    x += vertex.Destination.Width;
+                }
+            }
+            else if (tileX != 0)
+            {
+                // 横向平铺
+                for (int i = 0; i <= tileX; i++)
+                {
+                    vertex.Origin.X = __GRAPHICS.CalcOrigin(x, vertex.Destination.Width, originPosition.X);
+                    graphics.Draw(Base, ref vertex);
+                    x += vertex.Destination.Width;
+                }
+            }
+            else if (tileY != 0)
+            {
+                // 纵向平铺
+                for (int i = 0; i <= tileY; i++)
+                {
+                    vertex.Origin.Y = __GRAPHICS.CalcOrigin(y, vertex.Destination.Height, originPosition.Y);
+                    graphics.Draw(Base, ref vertex);
+                    y += vertex.Destination.Height;
+                }
+            }
+            else
+            {
+                return base.Draw(graphics, ref vertex);
+            }
+            vertex = copy;
+            return true;
+        }
+        protected internal override Content Cache()
+        {
+            var cache = new TILE();
+            cache._Key = this._Key;
+            cache.Base = this.Base;
+            cache.tileX = this.tileX;
+            cache.tileY = this.tileY;
+            return cache;
+        }
+    }
+    public class PipelineTile : ContentPipeline
+    {
+        [AReflexible]
+        public class DATA
+        {
+            public int TileX;
+            public int TileY;
+            public string Source;
+        }
+
+        static PipelineTile()
+        {
+            // HACK: 防止构造函数被优化掉
+            new PipelineTile();
+        }
+
+        public override IEnumerable<string> SuffixProcessable
+        {
+            get { yield break; }
+        }
+        public override string FileType
+        {
+            get { return "tile"; }
+        }
+
+        protected internal override Content Load(string file)
+        {
+            string metadata = IO.ReadText(file);
+            var data = new JsonReader(metadata).ReadObject<DATA>();
+
+            TILE ret = new TILE();
+            ret.TileX = data.TileX;
+            ret.TileY = data.TileY;
+            ret.Base = Manager.Load<TEXTURE>(data.Source);
+            return ret;
+        }
+        protected internal override void LoadAsync(AsyncLoadContent async)
+        {
+            Wait(async, IO.ReadAsync(async.File),
+                wait =>
+                {
+                    string metadata = IO.ReadPreambleText(wait.Data);
+                    var data = new JsonReader(metadata).ReadObject<DATA>();
+
+                    TILE ret = new TILE();
+                    ret.TileX = data.TileX;
+                    ret.TileY = data.TileY;
+                    Wait(async,
+                        Manager.LoadAsync<TEXTURE>(data.Source, t => ret.Base = t),
+                        result => ret);
+                });
+        }
+    }
+
+    /// <summary>
+    /// 将多张小图按照一定的位置摆放成一张大图，需特殊编辑器
+    /// 未实现绘制指定SourceRectangle
+    /// </summary>
+    [Code(ECode.Attention)]
+    public sealed class PICTURE : TEXTURE
+    {
+        [AReflexible]
+        public class Graphics
+        {
+            public int Width;
+            public int Height;
+            public Part[] Parts;
+        }
+        [AReflexible]
+        public class Part
+        {
+            public int X;
+            public int Y;
+            public string Source;
+            [NonSerialized]
+            public TEXTURE Texture;
+        }
+
+        public Graphics Data;
+
+        public override int Width
+        {
+            get { return Data.Width; }
+        }
+        public override int Height
+        {
+            get { return Data.Height; }
+        }
+        public override bool IsDisposed
+        {
+            get { return Data == null; }
+        }
+        protected internal override void InternalDispose()
+        {
+            Data = null;
+        }
+        //public override void Update(GameTime time)
+        //{
+        //    if (Data == null || Data.Parts == null) return;
+        //    for (int i = 0; i < Data.Parts.Length; i++)
+        //        if (Data.Parts[i].Texture != null)
+        //            Data.Parts[i].Texture.Update(time);
+        //}
+        protected internal override bool Draw(GRAPHICS graphics, ref SpriteVertex vertex)
+        {
+            if (Data == null || Data.Parts == null || Data.Parts.Length == 0) return true;
+
+            SpriteVertex copy = vertex;
+
+            float width = vertex.Destination.Width;
+            float height = vertex.Destination.Height;
+            float scaleX = width / this.Width;
+            float scaleY = height / this.Height;
+            VECTOR2 originPosition = vertex.Origin;
+            originPosition.X *= width;
+            originPosition.Y *= height;
+
+            for (int i = 0; i < Data.Parts.Length; i++)
+            {
+                var part = Data.Parts[i];
+                vertex.Destination.Width = part.Texture.Width * scaleX;
+                vertex.Destination.Height = part.Texture.Height * scaleY;
+                vertex.Source.X = 0;
+                vertex.Source.Y = 0;
+                vertex.Source.Width = part.Texture.Width;
+                vertex.Source.Height = part.Texture.Height;
+                vertex.Origin.X = __GRAPHICS.CalcOrigin(part.X * scaleX, vertex.Destination.Width, originPosition.X);
+                vertex.Origin.Y = __GRAPHICS.CalcOrigin(part.Y * scaleY, vertex.Destination.Height, originPosition.Y);
+                graphics.Draw(part.Texture, ref vertex);
+            }
+
+            vertex = copy;
+            return true;
+        }
+    }
+    public sealed class PipelinePicture : ContentPipeline
+    {
+        public const string FILE_TYPE = "p";
+
+        public override IEnumerable<string> SuffixProcessable
+        {
+            get { yield break; }
+        }
+        public override string FileType
+        {
+            get { return FILE_TYPE; }
+        }
+
+        protected internal override Content Load(string file)
+        {
+            string metadata = IO.ReadText(file);
+            var data = JsonReader.Deserialize<PICTURE.Graphics>(metadata);
+
+            PICTURE ret = new PICTURE();
+            ret.Data = data;
+            for (int i = 0; i < data.Parts.Length; i++)
+                data.Parts[i].Texture = Manager.Load<TEXTURE>(data.Parts[i].Source);
+            return ret;
+        }
+        protected internal override void LoadAsync(AsyncLoadContent async)
+        {
+            Wait(async, IO.ReadAsync(async.File),
+                wait =>
+                {
+                    string metadata = IO.ReadPreambleText(wait.Data);
+                    var data = JsonReader.Deserialize<PICTURE.Graphics>(metadata);
+
+                    PICTURE ret = new PICTURE();
+                    ret.Data = data;
+                    Wait(async,
+                        data.Parts.Select(p => Manager.LoadAsync<TEXTURE>(p.Source, t => p.Texture = t)),
+                        () => ret);
                 });
         }
     }

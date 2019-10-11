@@ -111,7 +111,11 @@ namespace EntryEngine
             MATRIX2x3 translation = MATRIX2x3.CreateTranslation(rect.X, rect.Y);
             MATRIX2x3.Multiply(ref rotate, ref translation, out result);
         }
-        /// <summary>通过像素差计算锚点</summary>
+        /// <summary>通过像素差计算锚点，例如绘制200x200的图片到1000x1000的画布中的100x100的位置，锚点在画布中央，则p=[100,100],s=200,op=[500,500]</summary>
+        /// <param name="position">从0开始到绘制区域宽度或高度的位置</param>
+        /// <param name="size">当前绘制图片的最大宽度或高度</param>
+        /// <param name="originPosition">从0开始到绘制区域宽度或高度的锚点位置</param>
+        /// <returns>绘制用的锚点位置</returns>
         public static float CalcOrigin(float position, float size, float originPosition)
         {
             return (originPosition - position) / size;

@@ -3373,6 +3373,15 @@ namespace EntryBuilder
             [ASummary("动画尺寸一样时可以预先设定支点的Y坐标（单位尺寸百分比）")]
             public float PivotY;
 		}
+        private class Tile
+        {
+            [ASummary("原图片路径，输出的平铺图默认在相同目录下")]
+            public string Source;
+            [ASummary("横向平铺次数")]
+            public int TileX;
+            [ASummary("纵向平铺次数")]
+            public int TileY;
+        }
         private class Pixel : Graph<Pixel>, IEquatable<Pixel>
         {
             public byte Alpha;
@@ -8356,6 +8365,47 @@ namespace EntryBuilder
 			}
 			Console.WriteLine("生成动画完毕");
 		}
+        public static void TexTileFromExcel(string inputXLSX, string outputDir)
+        {
+            CSVWriter writer = new CSVWriter();
+            if (!File.Exists(inputXLSX))
+            {
+                Tile test = new Tile();
+                test.Source = "Test.png";
+                test.TileX = 2;
+                test.TileY = 0;
+                writer.WriteObject(test);
+                File.WriteAllText(Path.ChangeExtension(inputXLSX, "csv"), writer.Result, CSVWriter.CSVEncoding);
+                Console.WriteLine("已生成CSV文档，请新建Excel文档按照CSV表头格式填写数据后再试");
+                return;
+            }
+
+            BuildDir(ref outputDir);
+
+            var table = LoadTableFromExcel(inputXLSX);
+            writer.WriteTable(table);
+            CSVReader reader = new CSVReader(writer.Result);
+            var datas = reader.ReadObject<Tile[]>();
+            var target = new PipelineTile.DATA();
+            //var root = Path.GetDirectoryName(Path.GetFullPath(inputXLSX));
+            var type = new PipelinePatch().FileType;
+            foreach (var item in datas)
+            {
+                target.Source = item.Source;
+                target.TileX = item.TileX;
+                target.TileY = item.TileY;
+
+                string result = Path.Combine(outputDir, Path.ChangeExtension(item.Source, type));
+                //if (!File.Exists(result))
+                //{
+                //    Console.WriteLine("没有目标图片{0}", result);
+                //}
+
+                File.WriteAllText(result, JsonWriter.Serialize(target), Encoding.UTF8);
+                Console.WriteLine("生成平铺图{0}", item.Source);
+            }
+            Console.WriteLine("生成平铺图完毕");
+        }
         public static void TexFontFromText(string inputTextOrEmptyForAllChar, string fontName, byte fontSize, byte fontStyle, string outputFileName)
         {
             Font font;
