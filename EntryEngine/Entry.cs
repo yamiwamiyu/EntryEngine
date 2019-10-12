@@ -5478,12 +5478,29 @@ namespace EntryEngine
         }
     }
 
-    /// <summary>未实现绘制指定SourceRectangle</summary>
-    [Code(ECode.Attention)]
+    /// <summary>
+    /// 未实现绘制指定SourceRectangle
+    /// 待实现循环轮播的背景图片
+    /// </summary>
+    [Code(ECode.Attention | ECode.Expand)]
     public sealed class TILE : TEXTURE_Link
     {
+        struct Piece
+        {
+            public float Width;
+            public float Height;
+            public float SourceX;
+            public float SourceY;
+            public float SourceWidth;
+            public float SourceHeight;
+            public float X;
+            public float Y;
+        }
+
         private int tileX;
         private int tileY;
+        private VECTOR2 offset;
+        private Piece[] pieces;
 
         /// <summary>横向平铺的次数</summary>
         public int TileX
@@ -5507,6 +5524,28 @@ namespace EntryEngine
                 this.tileY = value;
             }
         }
+        public float OffsetX
+        {
+            get { return offset.X; }
+            set
+            {
+                if (Base == null)
+                    offset.X = value;
+                else
+                    offset.X = _MATH.Range(value, Base.Width);
+            }
+        }
+        public float OffsetY
+        {
+            get { return offset.Y; }
+            set
+            {
+                if (Base == null)
+                    offset.Y = value;
+                else
+                    offset.Y = _MATH.Range(value, Base.Height);
+            }
+        }
         public override int Width
         {
             get
@@ -5528,63 +5567,177 @@ namespace EntryEngine
         {
             if (Base == null) return true;
 
+            int __tileX = tileX + 1;
+            int __tileY = tileY + 1;
+            if (offset.X != 0) __tileX++;
+            if (offset.Y != 0) __tileY++;
+            int piece = __tileX * __tileY;
+            if (pieces == null || pieces.Length < piece)
+                Array.Resize(ref pieces, piece);
+
             SpriteVertex copy = vertex;
 
-            float width = vertex.Destination.Width;
-            float height = vertex.Destination.Height;
-            float scaleX = width / this.Width;
-            float scaleY = height / this.Height;
+            float scaleX = vertex.Destination.Width / this.Width;
+            float scaleY = vertex.Destination.Height / this.Height;
             VECTOR2 originPosition = vertex.Origin;
-            originPosition.X *= width;
-            originPosition.Y *= height;
+            originPosition.X *= vertex.Destination.Width;
+            originPosition.Y *= vertex.Destination.Height;
             float x = 0;
             float y = 0;
-            vertex.Destination.Width = Base.Width * scaleX;
-            vertex.Destination.Height = Base.Height * scaleY;
-            vertex.Source.X = 0;
-            vertex.Source.Y = 0;
-            vertex.Source.Width = Base.Width;
-            vertex.Source.Height = Base.Height;
-            if (tileX != 0 && tileY != 0)
             {
-                // 双向平铺，呈矩形
-                for (int i = 0; i <= tileX; i++)
+                // 初始化单片瓷砖的参数
+                pieces[0].Width = Base.Width * scaleX;
+                pieces[0].Height = Base.Height * scaleY;
+                pieces[0].SourceX = 0;
+                pieces[0].SourceY = 0;
+                pieces[0].SourceWidth = Base.Width;
+                pieces[0].SourceHeight = Base.Height;
+                pieces[0].X = vertex.Origin.X;
+                pieces[0].Y = vertex.Origin.Y;
+                for (int i = 1; i < piece; i++)
+                    pieces[i] = pieces[0];
+
+                if (offset.X != 0 || offset.Y != 0)
                 {
-                    vertex.Origin.X = __GRAPHICS.CalcOrigin(x, vertex.Destination.Width, originPosition.X);
-                    y = 0;
-                    for (int j = 0; j <= tileY; j++)
+                    float size;
+                    float source1;
+                    float source2;
+                    float origin;
+                    if (offset.X != 0)
                     {
-                        vertex.Origin.Y = __GRAPHICS.CalcOrigin(y, vertex.Destination.Height, originPosition.Y);
-                        graphics.Draw(Base, ref vertex);
-                        y += vertex.Destination.Height;
+                        for (int i = 0; i < __tileX; i++)
+                        {
+                            if (i == 0)
+                            {
+                                // 第一列X偏移
+                                size = offset.X * scaleX;
+                                source1 = vertex.Source.Width - offset.X;
+                                source2 = offset.X;
+                                origin = __GRAPHICS.CalcOrigin(x, size, originPosition.X);
+                                for (int j = 0; j < __tileY; j++)
+                                {
+                                    int idx = j * __tileY + i;
+                                    pieces[idx].Width = size;
+                                    pieces[idx].SourceX = source1;
+                                    pieces[idx].SourceWidth = source2;
+                                    pieces[idx].X = origin;
+                                }
+                                x += size;
+                            }
+                            else if (i == __tileX - 1)
+                            {
+                                // 最后一列X偏移
+                                size = (Base.Width - offset.X) * scaleX;
+                                source1 = 0;
+                                source2 = Base.Width - offset.X;
+                                origin = __GRAPHICS.CalcOrigin(x, size, originPosition.X);
+                                for (int j = 0; j < __tileY; j++)
+                                {
+                                    int idx = j * __tileY + i;
+                                    pieces[idx].Width = size;
+                                    pieces[idx].SourceX = source1;
+                                    pieces[idx].SourceWidth = source2;
+                                    pieces[idx].X = origin;
+                                }
+                            }
+                            else
+                            {
+                                origin = __GRAPHICS.CalcOrigin(x, pieces[i].Width, originPosition.X);
+                                x += pieces[i].Width;
+                                for (int j = 0; j < __tileY; j++)
+                                {
+                                    int idx = j * __tileY + i;
+                                    pieces[idx].X = origin;
+                                }
+                            }
+                        }
                     }
-                    x += vertex.Destination.Width;
-                }
-            }
-            else if (tileX != 0)
-            {
-                // 横向平铺
-                for (int i = 0; i <= tileX; i++)
+                    if (offset.Y != 0)
+                    {
+                        for (int i = 0; i < __tileY; i++)
+                        {
+                            int index = i * __tileY;
+                            if (i == 0)
+                            {
+                                // 第一行X偏移
+                                size = offset.Y * scaleY;
+                                source1 = vertex.Source.Height - offset.Y;
+                                source2 = offset.Y;
+                                origin = __GRAPHICS.CalcOrigin(0, size, originPosition.Y);
+                                for (int j = 0; j < __tileX; j++)
+                                {
+                                    int idx = index + j;
+                                    pieces[idx].Height = size;
+                                    pieces[idx].SourceY = source1;
+                                    pieces[idx].SourceHeight = source2;
+                                    pieces[idx].Y = origin;
+                                }
+                                y += size;
+                            }
+                            else if (i == __tileY - 1)
+                            {
+                                // 最后一行X偏移
+                                size = (Base.Height - offset.Y) * scaleY;
+                                source1 = 0;
+                                source2 = Base.Height - offset.Y;
+                                origin = __GRAPHICS.CalcOrigin(y, size, originPosition.Y);
+                                for (int j = 0; j < __tileX; j++)
+                                {
+                                    int idx = index + j;
+                                    pieces[idx].Height = size;
+                                    pieces[idx].SourceY = source1;
+                                    pieces[idx].SourceHeight = source2;
+                                    pieces[idx].Y = origin;
+                                }
+                            }
+                            else
+                            {
+                                origin = __GRAPHICS.CalcOrigin(x, pieces[index].Width, originPosition.X);
+                                x += pieces[index].Width;
+                                for (int j = 0; j < __tileX; j++)
+                                {
+                                    int idx = index + j;
+                                    pieces[idx].X = origin;
+                                }
+                            }
+                        }
+                    }
+                } // end of offset
+                else
                 {
-                    vertex.Origin.X = __GRAPHICS.CalcOrigin(x, vertex.Destination.Width, originPosition.X);
-                    graphics.Draw(Base, ref vertex);
-                    x += vertex.Destination.Width;
+                    // 初始化每一行的originY
+                    for (int i = 0; i < __tileY; i++)
+                    {
+                        int index = i * __tileY;
+                        float origin = __GRAPHICS.CalcOrigin(y, pieces[0].Height, originPosition.Y);
+                        for (int j = 0; j < __tileX; j++)
+                            pieces[index + j].Y = origin;
+                        y += pieces[0].Height;
+                    }
+                    // 初始化每一列的originX
+                    for (int i = 0; i < __tileX; i++)
+                    {
+                        float origin = __GRAPHICS.CalcOrigin(x, pieces[0].Width, originPosition.X);
+                        for (int j = 0; j < __tileY; j++)
+                            pieces[j * __tileY + i].X = origin;
+                        x += pieces[0].Width;
+                    }
                 }
-            }
-            else if (tileY != 0)
-            {
-                // 纵向平铺
-                for (int i = 0; i <= tileY; i++)
+
+                for (int i = 0; i < piece; i++)
                 {
-                    vertex.Origin.Y = __GRAPHICS.CalcOrigin(y, vertex.Destination.Height, originPosition.Y);
+                    vertex.Destination.Width = pieces[i].Width;
+                    vertex.Destination.Height = pieces[i].Height;
+                    vertex.Source.X = pieces[i].SourceX;
+                    vertex.Source.Y = pieces[i].SourceY;
+                    vertex.Source.Width = pieces[i].SourceWidth;
+                    vertex.Source.Height = pieces[i].SourceHeight;
+                    vertex.Origin.X = pieces[i].X;
+                    vertex.Origin.Y = pieces[i].Y;
                     graphics.Draw(Base, ref vertex);
-                    y += vertex.Destination.Height;
                 }
             }
-            else
-            {
-                return base.Draw(graphics, ref vertex);
-            }
+
             vertex = copy;
             return true;
         }
@@ -7928,8 +8081,8 @@ namespace EntryEngine
             }
             buffer.spriteQueue[index].Destination.X = (int)vertex.Destination.X;
             buffer.spriteQueue[index].Destination.Y = (int)vertex.Destination.Y;
-            buffer.spriteQueue[index].Destination.Width = (int)vertex.Destination.Width;
-            buffer.spriteQueue[index].Destination.Height = (int)vertex.Destination.Height;
+            buffer.spriteQueue[index].Destination.Width = vertex.Destination.Width;
+            buffer.spriteQueue[index].Destination.Height = vertex.Destination.Height;
             buffer.spriteQueue[index].Source.X = vertex.Source.X;
             buffer.spriteQueue[index].Source.Y = vertex.Source.Y;
             buffer.spriteQueue[index].Source.Width = vertex.Source.Width;

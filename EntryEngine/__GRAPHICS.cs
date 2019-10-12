@@ -39,9 +39,10 @@ namespace EntryEngine
 		/// 宽高要分别计算
 		/// </summary>
 		/// <param name="faraway">远景尺寸</param>
-		/// <param name="near">焦距尺寸</param>
-		/// <param name="offset">焦距偏移值</param>
-		/// <param name="screen">屏幕尺寸</param>
+		/// <param name="near">聚焦深度的尺寸，例如一张完整地图4000x2000</param>
+        /// <param name="offset">聚焦深度的偏移值，例如地图向左偏移1000,向上偏移200，即-1000,-200</param>
+		/// <param name="screen">屏幕尺寸，单屏尺寸，也可以理解为画布尺寸</param>
+        /// <returns>远景偏移值</returns>
 		public static VECTOR2 ViewDepth(VECTOR2 faraway, VECTOR2 near, VECTOR2 offset, VECTOR2 screen)
 		{
 			VECTOR2 output = new VECTOR2();
