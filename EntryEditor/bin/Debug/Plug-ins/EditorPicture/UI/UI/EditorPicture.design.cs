@@ -2,18 +2,18 @@
 using EntryEngine;
 using EntryEngine.UI;
 
-public partial class SMain
+public partial class EditorPicture
 {
     public EntryEngine.UI.Label LDirectory = new EntryEngine.UI.Label();
     public EntryEngine.UI.Label LSize = new EntryEngine.UI.Label();
-    public EntryEngine.UI.Label L缩放 = new EntryEngine.UI.Label();
+    public EntryEngine.UI.Label LScale = new EntryEngine.UI.Label();
     public EntryEngine.UI.Label LPosition = new EntryEngine.UI.Label();
     public EntryEngine.UI.Label LHelp = new EntryEngine.UI.Label();
     
     
     private void Initialize()
     {
-        this.Name = "SMain";
+        this.Name = "EditorPicture";
         EntryEngine.RECT this_Clip = new EntryEngine.RECT();
         this_Clip.X = 0f;
         this_Clip.Y = 0f;
@@ -31,8 +31,8 @@ public partial class SMain
         this.DragMode = (EDragMode)1;
         LDirectory.Name = "LDirectory";
         EntryEngine.RECT LDirectory_Clip = new EntryEngine.RECT();
-        LDirectory_Clip.X = 15f;
-        LDirectory_Clip.Y = 13.375f;
+        LDirectory_Clip.X = 5f;
+        LDirectory_Clip.Y = 3f;
         LDirectory_Clip.Width = 0;
         LDirectory_Clip.Height = 0;
         LDirectory.Clip = LDirectory_Clip;
@@ -55,8 +55,8 @@ public partial class SMain
         this.Add(LDirectory);
         LSize.Name = "LSize";
         EntryEngine.RECT LSize_Clip = new EntryEngine.RECT();
-        LSize_Clip.X = 11f;
-        LSize_Clip.Y = 15.375f;
+        LSize_Clip.X = 5f;
+        LSize_Clip.Y = 24.25f;
         LSize_Clip.Width = 0;
         LSize_Clip.Height = 0;
         LSize.Clip = LSize_Clip;
@@ -77,34 +77,34 @@ public partial class SMain
         LSize.UIText.FontSize = 12f;
         LSize.Text = "画布尺寸";
         this.Add(LSize);
-        L缩放.Name = "L缩放";
-        EntryEngine.RECT L缩放_Clip = new EntryEngine.RECT();
-        L缩放_Clip.X = 5f;
-        L缩放_Clip.Y = 24.25f;
-        L缩放_Clip.Width = 0;
-        L缩放_Clip.Height = 0;
-        L缩放.Clip = L缩放_Clip;
+        LScale.Name = "LScale";
+        EntryEngine.RECT LScale_Clip = new EntryEngine.RECT();
+        LScale_Clip.X = 5f;
+        LScale_Clip.Y = 42.9375f;
+        LScale_Clip.Width = 0;
+        LScale_Clip.Height = 0;
+        LScale.Clip = LScale_Clip;
         
-        L缩放.UIText = new EntryEngine.UI.UIText();
-        L缩放.UIText.Text = "缩放";
-        L缩放.UIText.FontColor = new COLOR()
+        LScale.UIText = new EntryEngine.UI.UIText();
+        LScale.UIText.Text = "缩放";
+        LScale.UIText.FontColor = new COLOR()
         {
             B = 255,
             G = 255,
             R = 255,
             A = 255,
         };
-        L缩放.UIText.TextAlignment = (EPivot)0;
-        L缩放.UIText.TextShader = null;
-        L缩放.UIText.Padding.X = 0f;
-        L缩放.UIText.Padding.Y = 0f;
-        L缩放.UIText.FontSize = 12f;
-        L缩放.Text = "缩放";
-        this.Add(L缩放);
+        LScale.UIText.TextAlignment = (EPivot)0;
+        LScale.UIText.TextShader = null;
+        LScale.UIText.Padding.X = 0f;
+        LScale.UIText.Padding.Y = 0f;
+        LScale.UIText.FontSize = 12f;
+        LScale.Text = "缩放";
+        this.Add(LScale);
         LPosition.Name = "LPosition";
         EntryEngine.RECT LPosition_Clip = new EntryEngine.RECT();
         LPosition_Clip.X = 5f;
-        LPosition_Clip.Y = 42.9375f;
+        LPosition_Clip.Y = 59.625f;
         LPosition_Clip.Width = 0;
         LPosition_Clip.Height = 0;
         LPosition.Clip = LPosition_Clip;
@@ -127,8 +127,8 @@ public partial class SMain
         this.Add(LPosition);
         LHelp.Name = "LHelp";
         EntryEngine.RECT LHelp_Clip = new EntryEngine.RECT();
-        LHelp_Clip.X = 5f;
-        LHelp_Clip.Y = 3f;
+        LHelp_Clip.X = 1217f;
+        LHelp_Clip.Y = 7.984375f;
         LHelp_Clip.Width = 0;
         LHelp_Clip.Height = 0;
         LHelp.Clip = LHelp_Clip;

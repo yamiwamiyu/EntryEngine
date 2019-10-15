@@ -2,9 +2,9 @@
 using EntryEngine;
 using EntryEngine.UI;
 
-public partial class SMain : UIScene
+public partial class EditorPicture : UIScene
 {
-    public SMain()
+    public EditorPicture()
     {
         Initialize();
     }
