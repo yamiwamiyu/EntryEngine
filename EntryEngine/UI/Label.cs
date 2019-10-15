@@ -291,7 +291,10 @@ namespace EntryEngine.UI
             bool flag = false;
             if (size.Y > view.Height)
             {
-                if (cursor.Y < offset.Y)
+                if (cursor.Y == offset.Y)
+                {
+                }
+                else if (cursor.Y < offset.Y)
                 {
                     offset.Y = cursor.Y;
                     flag = true;
@@ -306,7 +309,10 @@ namespace EntryEngine.UI
                 offset.Y = 0;
             if (size.X > view.Width)
             {
-                if (cursor.X < offset.X)
+                if (cursor.X == offset.X)
+                {
+                }
+                else if (cursor.X < offset.X)
                 {
                     offset.X = cursor.X;
                     flag = true;

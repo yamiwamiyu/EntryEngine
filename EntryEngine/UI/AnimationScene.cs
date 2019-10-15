@@ -487,4 +487,74 @@ namespace EntryEngine.UI
             }
         }
     }
+    /// <summary>提示框</summary>
+    public class STip : UIScene
+    {
+        private Dictionary<UIElement, Func<string>> tips = new Dictionary<UIElement, Func<string>>();
+        public Label Label;
+        public TEXTURE BG;
+        public float MaxWidth = 400;
+
+        public STip()
+        {
+            Color = new COLOR(228, 224, 110);
+            Clip = RECT.Empty;
+            BG = PATCH.GetNinePatch(new COLOR(242, 255, 172), COLOR.Black, 1);
+
+            Label = new Label();
+            Label.BreakLine = true;
+            Label.UIText.FontColor = new COLOR(16, 16, 0);
+            Add(Label);
+        }
+
+        public void SetTip(UIElement element, string text)
+        {
+            tips[element] = () => text;
+        }
+        public void SetTip(UIElement element, Func<string> getText)
+        {
+            tips[element] = getText;
+        }
+        public void ClearTips()
+        {
+            tips.Clear();
+        }
+
+        protected override void InternalEvent(EntryEngine.Entry e)
+        {
+            base.InternalEvent(e);
+
+            Label.Visible = false;
+            foreach (var item in tips)
+            {
+                if (item.Key.IsHover)
+                {
+                    Label.Visible = true;
+                    Label.Text = item.Value();
+                    var size = Label.TextContentSize;
+                    if (size.X > MaxWidth)
+                    {
+                        Label.Width = MaxWidth;
+                        Label.ResetDisplay();
+                        size = Label.TextContentSize;
+                    }
+                    else
+                        Label.Width = 0;
+
+                    var position = __INPUT.PointerPosition;
+                    var graphics = __GRAPHICS.GraphicsSize;
+                    if (position.X + size.X > graphics.X)
+                        position.X -= size.X;
+                    else
+                        position.X += 10;
+                    if (position.Y + size.Y > graphics.Y)
+                        position.Y -= size.Y;
+                    Location = position;
+                    break;
+                }
+            }
+
+            Background = Label.Visible ? BG : null;
+        }
+    }
 }
