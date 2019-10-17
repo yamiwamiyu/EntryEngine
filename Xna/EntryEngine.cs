@@ -17,6 +17,8 @@ using ButtonState = Microsoft.Xna.Framework.Input.ButtonState;
 
 namespace EntryEngine.Xna
 {
+    /// <summary>矩阵平移有小数时，渲染的图像会有一条线</summary>
+    [Code(ECode.BUG)]
     public class GraphicsXna : GRAPHICS
     {
         private class ScreenshotData
@@ -1500,12 +1502,14 @@ namespace EntryEngine.Xna
 		{
 			ContentManager content = new ContentManager(NewiO(null));
             //content.RootDirectory = "Content\\";
+            content.AddPipeline(new PipelinePicture());
+            content.AddPipeline(new PipelineTile());
             content.AddPipeline(new PipelineParticle());
             content.AddPipeline(new PipelineAnimation());
             content.AddPipeline(new PipelinePiece());
             content.AddPipeline(new PipelinePatch());
-			content.AddPipeline(new PipelineTextureXna());
             content.AddPipeline(new PipelineFontStatic());
+            content.AddPipeline(new PipelineTextureXna());
 #if CLIENT
             content.AddPipeline(new PipelineSoundFmod());
 #endif

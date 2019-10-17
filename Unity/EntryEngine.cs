@@ -1854,6 +1854,8 @@ namespace EntryEngine.Unity
         protected override ContentManager InternalNewContentManager()
         {
             ContentManager manager = new ContentManager(NewiO(null));
+            manager.AddPipeline(new PipelinePicture());
+            manager.AddPipeline(new PipelineTile());
             manager.AddPipeline(new PipelineParticle());
             manager.AddPipeline(new PipelineAnimation());
             manager.AddPipeline(new PipelinePiece());

@@ -293,7 +293,7 @@ namespace EntryEngine
         {
             UIElement.__PrevHandledElement = UIElement.__HandledElement;
             UIElement.__HandledElement = null;
-            if (IPlatform.IsActive)
+            //if (IPlatform.IsActive)
                 InputUpdate();
             if (AUDIO != null)
                 AUDIO.Update(GameTime);
@@ -841,14 +841,14 @@ namespace EntryEngine
         public virtual void Update(Entry entry)
         {
             // 若Keyboard在InputDevice之后调用，会使InputCapture先捕获操作键
-            if (Keyboard != null)
+            if (Keyboard != null && entry.IPlatform.IsActive)
                 Keyboard.Update(entry);
             if (Mouse != null)
                 Mouse.Update(entry);
             if (Touch != null)
                 Touch.Update(entry);
 
-            if (InputDevice != null)
+            if (InputDevice != null && entry.IPlatform.IsActive)
             {
                 InputDevice.Update(entry);
                 if (InputDevice.IsActive && Pointer != null && Pointer.IsPressed(Pointer.DefaultKey))
@@ -1162,7 +1162,7 @@ namespace EntryEngine
 
         public bool Focused
         {
-            get { return Current.HasPressedAnyKey || (Previous != null && Previous.HasPressedAnyKey); }
+            get { return Current != null && Current.HasPressedAnyKey || (Previous != null && Previous.HasPressedAnyKey); }
         }
         public bool Ctrl
         {
@@ -5871,6 +5871,7 @@ namespace EntryEngine
             for (int i = 0; i < Data.Parts.Length; i++)
             {
                 var part = Data.Parts[i];
+                if (part == null || part.Texture == null) break;
                 vertex.Destination.Width = part.Texture.Width * scaleX;
                 vertex.Destination.Height = part.Texture.Height * scaleY;
                 vertex.Source.X = 0;
@@ -5888,7 +5889,7 @@ namespace EntryEngine
     }
     public sealed class PipelinePicture : ContentPipeline
     {
-        public const string FILE_TYPE = "p";
+        public const string FILE_TYPE = "pmap";
 
         public override IEnumerable<string> SuffixProcessable
         {

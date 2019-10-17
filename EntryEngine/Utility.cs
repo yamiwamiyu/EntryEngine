@@ -851,7 +851,7 @@ namespace EntryEngine
 			num = 0;
 			for (int i = index; i < num2; i++)
 			{
-                if (comparer(array[i]))
+                if (!comparer(array[i]))
 				{
 					copy[num++] = array[i];
 				}

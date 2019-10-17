@@ -667,6 +667,55 @@ namespace EntryEngine
 				}
 			}
 		}
+        /// <summary>求一组正数的最大公约数</summary>
+        /// <returns>最小为1</returns>
+        public static int MaxDivisor(IEnumerable<int> values)
+        {
+            int min = values.Min();
+            // 最小数的质因数的乘积的排列组合就是有可能的公约数
+            List<int> prime1 = new List<int>();
+            List<int> prime2 = new List<int>();
+            prime1.Add(min);
+            for (int i = 2, e = (int)Math.Sqrt(min); i <= e; i++)
+            {
+                if (min % i == 0)
+                {
+                    prime2.Add(i);
+                    prime1.Add(min / i);
+                }
+            }
+            for (int i = 0; i < prime1.Count; i++)
+            {
+                int value = prime1[i];
+                bool flag = true;
+                foreach (var item in values)
+                {
+                    if (item % value != 0)
+                    {
+                        flag = false;
+                        break;
+                    }
+                }
+                if (flag)
+                    return value;
+            }
+            for (int i = prime2.Count - 1; i >= 0; i--)
+            {
+                int value = prime2[i];
+                bool flag = true;
+                foreach (var item in values)
+                {
+                    if (item % value != 0)
+                    {
+                        flag = false;
+                        break;
+                    }
+                }
+                if (flag)
+                    return value;
+            }
+            return 1;
+        }
 
 		/// <summary>
 		/// 关于一个指定角度对称
