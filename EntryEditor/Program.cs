@@ -99,6 +99,7 @@ namespace EntryEditor
 		static void Main(string[] args)
 		{
             //args = new string[] { "EditorParticle" };
+            //args = new string[] { "EditorPicture" };
             if (args.Length > 0)
                 Editor = args[0];
 
