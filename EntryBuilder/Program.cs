@@ -8370,11 +8370,15 @@ namespace EntryBuilder
             CSVWriter writer = new CSVWriter();
             if (!File.Exists(inputXLSX))
             {
-                Tile test = new Tile();
-                test.Source = "Test.png";
-                test.TileX = 2;
-                test.TileY = 0;
-                writer.WriteObject(test);
+                var fields = typeof(Tile).GetFields();
+                StringTable table1 = new StringTable();
+                foreach (var item in fields)
+                    table1.AddColumn(item.Name);
+                foreach (var item in fields)
+                    table1.AddValue(item.FieldType.CodeName());
+                foreach (var item in fields)
+                    table1.AddValue(item.GetAttribute<ASummary>().Note);
+                writer.WriteTable(table1);
                 File.WriteAllText(Path.ChangeExtension(inputXLSX, "csv"), writer.Result, CSVWriter.CSVEncoding);
                 Console.WriteLine("已生成CSV文档，请新建Excel文档按照CSV表头格式填写数据后再试");
                 return;
@@ -8388,7 +8392,7 @@ namespace EntryBuilder
             var datas = reader.ReadObject<Tile[]>();
             var target = new PipelineTile.DATA();
             //var root = Path.GetDirectoryName(Path.GetFullPath(inputXLSX));
-            var type = new PipelinePatch().FileType;
+            var type = new PipelineTile().FileType;
             foreach (var item in datas)
             {
                 target.Source = item.Source;
