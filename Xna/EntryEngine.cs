@@ -149,9 +149,10 @@ namespace EntryEngine.Xna
             //renderState.DepthBufferEnable = true;
             
             // Draw时设置SrouceRectangle超过Texture的宽高可以达到平铺
-            SamplerStateCollection samplers = XnaBatch.GraphicsDevice.SamplerStates;
-            samplers[0].AddressU = TextureAddressMode.Wrap;
-            samplers[0].AddressV = TextureAddressMode.Wrap;
+            // 设置平铺后，有半像素绘制时上面和左边有时会多出一个像素很难看
+            //SamplerStateCollection samplers = XnaBatch.GraphicsDevice.SamplerStates;
+            //samplers[0].AddressU = TextureAddressMode.Wrap;
+            //samplers[0].AddressV = TextureAddressMode.Wrap;
 
             if (screenshot.Capturing)
                 // 截图时，RenderTarget2D在屏幕左上角，Scissor也应该相应调整到左上角
@@ -161,13 +162,6 @@ namespace EntryEngine.Xna
             // 窗体缩小后，这个值会变为false
             Device.RenderState.ScissorTestEnable = true;
             Device.ScissorRectangle = graphics.GetRect();
-        }
-        protected override void InternalDraw(TEXTURE texture, ref SpriteVertex vertex, ref BoundingBox box)
-        {
-            // 不知道为什么，有半像素时上面和左边就是会多出一个像素
-            vertex.Source.X++;
-            vertex.Source.Y++;
-            base.InternalDraw(texture, ref vertex, ref box);
         }
         protected override void Ending(GRAPHICS.RenderState render)
         {
