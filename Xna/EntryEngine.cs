@@ -162,6 +162,13 @@ namespace EntryEngine.Xna
             Device.RenderState.ScissorTestEnable = true;
             Device.ScissorRectangle = graphics.GetRect();
         }
+        protected override void InternalDraw(TEXTURE texture, ref SpriteVertex vertex, ref BoundingBox box)
+        {
+            // 不知道为什么，有半像素时上面和左边就是会多出一个像素
+            vertex.Source.X++;
+            vertex.Source.Y++;
+            base.InternalDraw(texture, ref vertex, ref box);
+        }
         protected override void Ending(GRAPHICS.RenderState render)
         {
             BatchEnd(true);
