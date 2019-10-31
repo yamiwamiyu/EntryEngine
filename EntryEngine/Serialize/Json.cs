@@ -858,7 +858,10 @@ namespace EntryEngine.Serialize
         protected override object ReadArray(Type type, Type elementType)
         {
             if (PeekChar != '[')
+            {
+                if (ReadNextString() == "null") return null;
                 throw new FormatException("数组缺少'['");
+            }
             Read();
             EatWhitespace();
 

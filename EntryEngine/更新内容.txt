@@ -1,5 +1,6 @@
 ﻿2019/10/31
 1. 修复EntryBuilder.BuildTableFromCSV在有两个分组字典时临时变量重名的BUG
+2. 修复Json解析数组为null时的错误
 
 2019/10/21
 1. 提高Xna绘制精度
