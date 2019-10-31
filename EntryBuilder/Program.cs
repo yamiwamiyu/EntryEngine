@@ -4581,21 +4581,24 @@ namespace EntryBuilder
                         {
                             if (item.Value.IsDictionaryGroup)
                             {
-                                writer.AppendLine("Dictionary<{0}, List<{1}>> __group = new Dictionary<{0}, List<{1}>>();", item.Value.TypeName, name);
-                                writer.AppendLine("List<{0}> __list;", name);
-                                writer.AppendLine("foreach (var item in array)");
                                 writer.AppendBlock(() =>
                                 {
-                                    writer.AppendLine("if (!__group.TryGetValue(item.{0}, out __list))", item.Key);
+                                    writer.AppendLine("Dictionary<{0}, List<{1}>> __group = new Dictionary<{0}, List<{1}>>();", item.Value.TypeName, name);
+                                    writer.AppendLine("List<{0}> __list;", name);
+                                    writer.AppendLine("foreach (var item in array)");
                                     writer.AppendBlock(() =>
                                     {
-                                        writer.AppendLine("__list = new List<{0}>();", name);
-                                        writer.AppendLine("__group.Add(item.{0}, __list);", item.Key);
+                                        writer.AppendLine("if (!__group.TryGetValue(item.{0}, out __list))", item.Key);
+                                        writer.AppendBlock(() =>
+                                        {
+                                            writer.AppendLine("__list = new List<{0}>();", name);
+                                            writer.AppendLine("__group.Add(item.{0}, __list);", item.Key);
+                                        });
+                                        writer.AppendLine("__list.Add(item);");
                                     });
-                                    writer.AppendLine("__list.Add(item);");
+                                    writer.AppendLine("_{0}By{1} = new Dictionary<{2}, {0}[]>();", name, item.Key, item.Value.TypeName);
+                                    writer.AppendLine("foreach (var item in __group) _{0}By{1}.Add(item.Key, item.Value.ToArray());", name, item.Key);
                                 });
-                                writer.AppendLine("_{0}By{1} = new Dictionary<{2}, {0}[]>();", name, item.Key, item.Value.TypeName);
-                                writer.AppendLine("foreach (var item in __group) _{0}By{1}.Add(item.Key, item.Value.ToArray());", name, item.Key);
                             }
                             else
                                 writer.AppendLine("_{0}By{1} = array.ToDictionary(__a => __a.{1});", name, item.Key);
