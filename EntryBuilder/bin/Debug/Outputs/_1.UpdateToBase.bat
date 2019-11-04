@@ -17,4 +17,5 @@ copy ..\..\..\..\EntryEditor\bin\Debug\Plug-ins\EditorUI\Elements.xml ..\..\..\.
 copy ..\..\..\..\EntryEditor\bin\Debug\Plug-ins\EditorUI\Template.design.txt ..\..\..\..\ProjectBase\UIEditor\Plug-ins\EditorUI\
 copy ..\..\..\..\EntryEditor\bin\Debug\Plug-ins\EditorUI\Template.txt ..\..\..\..\ProjectBase\UIEditor\Plug-ins\EditorUI\
 copy ..\..\..\..\EntryEditor\bin\Debug\Plug-ins\EditorParticle\EditorParticle.* ..\..\..\..\ProjectBase\UIEditor\Plug-ins\EditorParticle\
+copy ..\..\..\..\EntryEditor\bin\Debug\Plug-ins\EditorPicture\EditorPicture.* ..\..\..\..\ProjectBase\UIEditor\Plug-ins\EditorPicture\
 copy EntryEditor.exe ..\..\..\..\ProjectBase\UIEditor\
