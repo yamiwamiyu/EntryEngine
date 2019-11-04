@@ -67,7 +67,8 @@ public partial class EditorPicture : SceneEditorEntry
         };
 
         Content = Entry.NewContentManager();
-        Content.RootDirectory = _IO.DirectoryWithEnding(Path.GetFullPath(_C.Directory));
+        if (!string.IsNullOrEmpty(_C.Directory))
+            Content.RootDirectory = _IO.DirectoryWithEnding(Path.GetFullPath(_C.Directory));
         if (!string.IsNullOrEmpty(_C.Directory))
             LDirectory.Text = "工作目录：" + Content.RootDirectory;
 
