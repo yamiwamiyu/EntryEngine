@@ -1956,6 +1956,10 @@ namespace EntryEngine.Network
                 }
             return false;
         }
+        public void ClearRouter()
+        {
+            routers.Clear();
+        }
         public void Route(T data)
         {
             if (routers == null) return;
@@ -1979,6 +1983,7 @@ namespace EntryEngine.Network
                         temp = workers.MaxMin(ob => ob.QueueCount, true);
                         temp.Request(data, token);
                     }
+                    break;
                 }
             }
         }
@@ -2102,6 +2107,8 @@ namespace EntryEngine.Network
             if (Agent == null)
             {
                 _LOG.Warning("No Agent");
+                data.Response.StatusCode = 403;
+                data.Response.Close();
             }
             else
             {
@@ -2127,7 +2134,7 @@ namespace EntryEngine.Network
         public void HotFixAgent(MethodInfo method)
         {
             StubHttp[] stubs = (StubHttp[])method.Invoke(null, new object[] { new Func<HttpListenerContext>(GetContext) });
-            lock (Agent)
+            lock (this)
             {
                 Agent = new AgentHttp(stubs);
             }
@@ -2142,7 +2149,7 @@ namespace EntryEngine.Network
         public void HotFixAgent(MethodInfo method)
         {
             Stub[] stubs = (Stub[])method.Invoke(null, new object[] { new Func<T>(GetContext) });
-            lock (Agent)
+            lock (this)
             {
                 Agent = new AgentProtocolStub(Link, stubs);
             }
@@ -2159,6 +2166,8 @@ namespace EntryEngine.Network
             if (Agent == null)
             {
                 _LOG.Warning("No Agent");
+                data.Response.StatusCode = 403;
+                data.Response.Close();
             }
             else
             {
