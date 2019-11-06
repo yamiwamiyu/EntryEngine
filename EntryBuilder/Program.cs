@@ -5903,7 +5903,7 @@ namespace EntryBuilder
                         builder.AppendLine("builder.Remove(0, builder.Length);");
                         //builder.AppendLine("builder = new StringBuilder();");
                         //builder.AppendLine("cmd = conn.CreateCommand();");
-                        builder.AppendLine("cmd.CommandText = \"SELECT COLUMN_NAME, COLUMN_KEY, EXTRA FROM information_schema.COLUMNS WHERE TABLE_NAME = '{0}' AND TABLE_SCHEMA = '\" + conn.Database + \"';\";", table.Name, nsOrEmptyDotDBnameOrEmpty);
+                        builder.AppendLine("cmd.CommandText = \"SELECT COLUMN_NAME, COLUMN_KEY, EXTRA, DATA_TYPE FROM information_schema.COLUMNS WHERE TABLE_NAME = '{0}' AND TABLE_SCHEMA = '\" + conn.Database + \"';\";", table.Name, nsOrEmptyDotDBnameOrEmpty);
                         builder.AppendLine("reader = cmd.ExecuteReader();");
                         builder.AppendLine("__hasPrimary = false;");
                         builder.AppendLine("foreach (var __column in _DATABASE.ReadMultiple<MYSQL_TABLE_COLUMN>(reader))");
@@ -5983,8 +5983,21 @@ namespace EntryBuilder
                             builder.AppendLine("if (__columns.TryGetValue(\"{0}\", out __value))", field.Name);
                             builder.AppendBlock(() =>
                             {
+                                bool isHasIndex = index != null && (index.Index == EIndex.Index || index.Index == EIndex.Group);
+                                // 将字段类型从int改为字符串且之前是索引列时，由于索引没有key(10)，CHANGE COLUMN就会失败
+                                if (isHasIndex && GetMySqlType(field.FieldType) == "TEXT")
+                                {
+                                    builder.AppendLine("if (__value.DATA_TYPE != \"text\" && (__value.IsIndex || __value.IsUnique))");
+                                    builder.AppendBlock(() =>
+                                    {
+                                        // 将列置为非索引
+                                        builder.AppendLine("__value.COLUMN_KEY = null;");
+                                        builder.AppendLine("builder.AppendLine(\"ALTER TABLE {0} DROP INDEX `{{0}}`;\", __value.COLUMN_NAME);", table.Name);
+                                        builder.AppendLine("_LOG.Debug(\"Drop index[`{0}`].\", __value.COLUMN_NAME);");
+                                    });
+                                }
                                 builder.AppendLine(result, "CHANGE COLUMN `" + field.Name + "`", "");
-                                if (index != null && (index.Index == EIndex.Index || index.Index == EIndex.Group))
+                                if (isHasIndex)
                                 {
                                     // ADD_INDEX: 当前是索引，以前不是索引时添加索引
                                     builder.AppendLine("if (!__value.IsIndex && !__value.IsUnique)");
@@ -6023,6 +6036,7 @@ namespace EntryBuilder
                         builder.AppendLine("foreach (var __column in __columns.Keys)");
                         builder.AppendBlock(() =>
                         {
+                            // 数据库里会自动删除掉相应索引
                             builder.AppendLine("builder.AppendLine(\"ALTER TABLE `{0}` DROP COLUMN `{{0}}`;\", __column);", table.Name);
                             builder.AppendLine("_LOG.Debug(\"Drop column[`{0}`].\", __column);");
                         });

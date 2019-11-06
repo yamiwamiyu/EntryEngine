@@ -681,6 +681,7 @@ namespace EntryEngine.Network
         public string COLUMN_NAME;
         public string COLUMN_KEY;
         public string EXTRA;
+        public string DATA_TYPE;
         public bool IsPrimary { get { return COLUMN_KEY == "PRI"; } }
         public bool IsIndex { get { return COLUMN_KEY == "MUL"; } }
         public bool IsUnique { get { return COLUMN_KEY == "UNI"; } }
