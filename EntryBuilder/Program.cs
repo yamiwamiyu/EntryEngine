@@ -1317,8 +1317,10 @@ namespace EntryBuilder
                 string name = type.Name + "Proxy";
                 string cbname = agent.Callback != null ? agent.Callback.CodeName() : null;
 
-                builder.AppendLine("class {0} : {1}, {2}", name, typeof(StubClientAsync).Name, type.Name);
-                //builder.AppendLine("class {0} : {1}", name, typeof(StubClientAsync).Name);
+                if (asyncCB.Count == 0)
+                    builder.AppendLine("class {0} : {1}, {2}", name, typeof(StubClientAsync).Name, type.Name);
+                else
+                    builder.AppendLine("class {0} : {1}", name, typeof(StubClientAsync).Name);
                 builder.AppendBlock(() =>
                 {
                     if (agent.Callback != null)

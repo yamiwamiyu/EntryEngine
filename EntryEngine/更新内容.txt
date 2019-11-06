@@ -1,5 +1,6 @@
 ﻿2019/11/06
 1. 修复BuildDatabaseMysql将int索引字段改为字符串索引字段时CHANGE COLUMN错误的BUG
+2. BuildProtocolAgentBinary生成客户端调用协议时，没有异步方法则实现原始接口
 
 2019/11/05
 1. 完善多线程服务器处理程序
