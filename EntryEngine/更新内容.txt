@@ -1,5 +1,6 @@
 ﻿2019/11/07
 1. BuildDatabaseMysql新增IsDropColumn字段，防止填错数据库时误删其它库的数据
+2. 修复渲染关于Flip计算BoundingBox不正确的BUG
 
 2019/11/06
 1. 修复BuildDatabaseMysql将int索引字段改为字符串索引字段时CHANGE COLUMN错误的BUG

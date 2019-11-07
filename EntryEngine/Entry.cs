@@ -7842,7 +7842,8 @@ namespace EntryEngine
             BoundingBox box;
 
             MATRIX2x3 matrix = CurrentTransform;
-            if (vertex.Rotation == 0 && vertex.Flip == EFlip.None)
+            if (vertex.Rotation == 0)
+                //&& vertex.Flip == EFlip.None)
             {
                 RECT desc = vertex.Destination;
                 if (vertex.Origin.X != 0)
@@ -7877,7 +7878,7 @@ namespace EntryEngine
             {
                 // 超出视口部分不绘制
                 MATRIX2x3 current;
-                __GRAPHICS.DrawMatrix(ref vertex.Destination, ref vertex.Source, vertex.Rotation, ref vertex.Origin, vertex.Flip, out current);
+                __GRAPHICS.DrawMatrix(ref vertex.Destination, ref vertex.Source, vertex.Rotation, ref vertex.Origin, EFlip.None, out current);
 
                 if (!matrix.IsIdentity())
                     current = current * matrix;
