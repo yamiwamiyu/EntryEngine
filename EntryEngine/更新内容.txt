@@ -2,6 +2,7 @@
 1. BuildDatabaseMysql新增IsDropColumn字段，防止填错数据库时误删其它库的数据
 2. 修复渲染关于Flip计算BoundingBox不正确的BUG
 3. 修复LauncherClient热更新不拷贝exe,dll的问题，现在允许热更新
+4. 数据库增加级联接口IInnerCascade及其相应操作方法
 
 2019/11/06
 1. 修复BuildDatabaseMysql将int索引字段改为字符串索引字段时CHANGE COLUMN错误的BUG

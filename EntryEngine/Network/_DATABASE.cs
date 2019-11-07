@@ -82,7 +82,7 @@ namespace EntryEngine.Network
                         Executed(connection);
                     }
                 }
-                
+
                 _LOG.Info("Connection test succuss.");
             }
             private IDbConnection CreateAvailableConnection()
@@ -417,6 +417,124 @@ namespace EntryEngine.Network
             }, builder.ToString(), __param);
             return result;
         }
+        public static int[] ToCascadeParentsArray(string parents)
+        {
+            if (string.IsNullOrEmpty(parents))
+                return _SARRAY<int>.Empty;
+
+            string[] split = parents.Split(',');
+            int length = split.Length;
+            int[] array = new int[length];
+            for (int i = 0; i < length; i++)
+                array[i] = int.Parse(split[i]);
+            return array;
+        }
+        public static string ToCascadeParentsString(int[] parents)
+        {
+            if (parents == null || parents.Length == 0)
+                return null;
+
+            StringBuilder builder = new StringBuilder();
+            for (int i = 0, e = parents.Length - 1; i <= e; i++)
+            {
+                builder.Append(parents[i]);
+                if (i != e)
+                    builder.Append(',');
+            }
+            return builder.ToString();
+        }
+        /// <summary>级联父级更换</summary>
+        /// <param name="items">完整级联列表，包含所有级别</param>
+        /// <param name="id">要改的目标层级</param>
+        /// <param name="newParentID">新的父级</param>
+        public static void UpdateCascadeParentID(IEnumerable<IInnerCascade> items, int id, int newParentID)
+        {
+            // 当前项
+            IInnerCascade current = items.FirstOrDefault(i => i.ID == id);
+            if (current == null)
+                throw new InvalidOperationException("没有找到目标项");
+
+            // ParentID并没有修改
+            if (current.ParentID == newParentID)
+                return;
+
+            // 上级项
+            IInnerCascade parent = items.FirstOrDefault(i => i.ID == newParentID);
+            if (parent == null)
+                throw new InvalidOperationException("没有找到上级项");
+
+            var dic = items.ToDictionary(t => t.ID, t => t.ParentID);
+            bool parentChange = false;
+
+            // 如果新的上级是目标原来的下级,那么这个新上级的上级改为目标原来的上级
+            {
+                int currentID = newParentID;
+                int parentID;
+                while (true)
+                {
+                    if (!dic.TryGetValue(currentID, out parentID))
+                        break;
+                    if (parentID == current.ID || parentID == 0)
+                        break;
+                    currentID = parentID;
+                }
+                if (parentID != 0)
+                {
+                    parent.ParentID = current.ParentID;
+                    parent.ModifiedFlag = true;
+                    dic[parent.ID] = current.ParentID;
+                    parentChange = true;
+                }
+            }
+
+            // 修改自己的上级ID
+            current.ParentID = newParentID;
+            current.ModifiedFlag = true;
+            dic[current.ID] = newParentID;
+
+            // 更新受影响的所有子项的上级数组
+            {
+                Stack<int> stack = new Stack<int>();
+                StringBuilder builder = new StringBuilder();
+                foreach (var item in items)
+                {
+                    stack.Clear();
+                    bool flag = item.ID == id || (parentChange && item.ID == newParentID);
+                    int currentID = item.ID;
+                    int parentID;
+                    while (true)
+                    {
+                        if (!dic.TryGetValue(currentID, out parentID))
+                            break;
+                        if (
+                            // 目标更换了上级，所以其所有下级都需要更新级联数组
+                            parentID == id
+                            // 若新上级是原来自己的下级，则也相当于更换了上级，所以其所有下级都需要更新级联数组
+                            || (parentChange && parentID == newParentID)
+                            )
+                            flag = true;
+                        if (parentID == 0)
+                            break;
+                        stack.Push(parentID);
+                        currentID = parentID;
+                    }
+                    if (!flag)
+                    {
+                        item.ModifiedFlag = false;
+                        continue;
+                    }
+                    item.ModifiedFlag = true;
+                    builder.Remove(0, builder.Length);
+                    while (stack.Count > 0)
+                    {
+                        builder.Append(stack.Pop());
+                        if (stack.Count > 0)
+                            builder.Append(',');
+                    }
+                    item.Parents = builder.ToString();
+                }
+            }
+        }
     }
     public abstract class Database_Link : EntryEngine.Network._DATABASE.Database
     {
@@ -479,7 +597,7 @@ namespace EntryEngine.Network
         public int IdleCount
         {
             get { lock (pools) { return pools.Count(c => c.Idle && (c.Connection == null || c.Connection.State == ConnectionState.Closed)); } }
-        }                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               
+        }
 
         public ConnectionPool()
         {
@@ -867,5 +985,15 @@ namespace EntryEngine.Network
         public int Page;
         public int PageSize;
         public List<T> Models;
+    }
+
+    /// <summary>内部级联的树状关系，例如分类和二级分类，账号和邀请账号等</summary>
+    public interface IInnerCascade
+    {
+        int ID { get; }
+        int ParentID { get; set; }
+        /// <summary>父类的级联数组，格式为0,1,2，越靠前计别越高</summary>
+        string Parents { set; }
+        bool ModifiedFlag { get; set; }
     }
 }
