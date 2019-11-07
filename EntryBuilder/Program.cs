@@ -5768,6 +5768,7 @@ namespace EntryBuilder
                 //});
 
                 // database instance
+                builder.AppendLine("public {0}bool IsDropColumn;", _static);
                 builder.AppendLine("public {0}string DatabaseName;", _static);
                 builder.AppendLine("public {0}Action<_DATABASE.Database> OnConstructDatabase;", _static);
                 builder.AppendLine("public static List<MergeTable> AllMergeTable = new List<MergeTable>()");
@@ -6034,13 +6035,19 @@ namespace EntryBuilder
                                 builder.AppendLine("_LOG.Debug(\"Add column[`{{0}}`].\", \"{0}\");", field.Name);
                             });
                         }
-                        // 删除字段
-                        builder.AppendLine("foreach (var __column in __columns.Keys)");
+
+                        // 防止新建服务时，服务的设置数据库设置成以前其它服务的数据库，导致删除了其它服务的数据
+                        builder.AppendLine("if (IsDropColumn)");
                         builder.AppendBlock(() =>
                         {
-                            // 数据库里会自动删除掉相应索引
-                            builder.AppendLine("builder.AppendLine(\"ALTER TABLE `{0}` DROP COLUMN `{{0}}`;\", __column);", table.Name);
-                            builder.AppendLine("_LOG.Debug(\"Drop column[`{0}`].\", __column);");
+                            // 删除字段
+                            builder.AppendLine("foreach (var __column in __columns.Keys)");
+                            builder.AppendBlock(() =>
+                            {
+                                // 数据库里会自动删除掉相应索引
+                                builder.AppendLine("builder.AppendLine(\"ALTER TABLE `{0}` DROP COLUMN `{{0}}`;\", __column);", table.Name);
+                                builder.AppendLine("_LOG.Debug(\"Drop column[`{0}`].\", __column);");
+                            });
                         });
 
                         // 添加主键 & 索引
