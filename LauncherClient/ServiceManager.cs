@@ -20,16 +20,23 @@ namespace LauncherClient
             get { return DateTime.Now.ToString(DATE_FORMAT); }
         }
 
-        public static void Copy(Service service)
+        public static bool Copy(Service service)
         {
-            Copy(new DirectoryInfo(service.Type), new DirectoryInfo(service.Directory), null);
+            return Copy(new DirectoryInfo(service.Type), new DirectoryInfo(service.Directory), null);
         }
-        public static void Copy(Service service, Func<FileInfo, bool> skip)
+        public static bool Copy(Service service, Func<FileInfo, bool> skip)
         {
-            Copy(new DirectoryInfo(service.Type), new DirectoryInfo(service.Directory), skip);
+            return Copy(new DirectoryInfo(service.Type), new DirectoryInfo(service.Directory), skip);
         }
-        private static void Copy(DirectoryInfo directory, DirectoryInfo target, Func<FileInfo, bool> skip)
+        /// <summary>拷贝文件价内的所有文件到目标文件夹内</summary>
+        /// <param name="directory">要拷贝的文件夹</param>
+        /// <param name="target">目标文件夹</param>
+        /// <param name="skip">设置需要忽略的文件，null则不忽略任何文件，委托返回true则忽略文件</param>
+        /// <returns>是否全部正常拷贝完成</returns>
+        private static bool Copy(DirectoryInfo directory, DirectoryInfo target, Func<FileInfo, bool> skip)
         {
+            bool all = true;
+
             if (!directory.Exists)
                 directory.Create();
             if (!target.Exists)
@@ -39,7 +46,15 @@ namespace LauncherClient
             for (int i = 0; i < files.Length; i++)
                 if ((files[i].Attributes & FileAttributes.Archive) == FileAttributes.Archive
                     && (skip == null || !skip(files[i])))
-                    files[i].CopyTo(Path.Combine(target.FullName, Path.GetFileName(files[i].Name)), true);
+                    try
+                    {
+                        files[i].CopyTo(Path.Combine(target.FullName, Path.GetFileName(files[i].Name)), true);
+                    }
+                    catch
+                    {
+                        all = false;
+                        _LOG.Warning("跳过更新{0}", files[i].Name);
+                    }
 
             var directories = directory.GetDirectories();
             for (int i = 0; i < directories.Length; i++)
@@ -47,8 +62,10 @@ namespace LauncherClient
                 if (directories[i].Attributes != FileAttributes.Directory)
                     continue;
                 DirectoryInfo _target = new DirectoryInfo(Path.Combine(target.FullName, directories[i].Name));
-                Copy(directories[i], _target, skip);
+                all &= Copy(directories[i], _target, skip);
             }
+
+            return all;
         }
         private static bool HotUpdateSkip(FileInfo file)
         {
@@ -216,17 +233,20 @@ namespace LauncherClient
             int revision = _SAVE.ServiceTypes.FirstOrDefault(s => s.Type == service.Type).Revision;
 
             var launcher = Launcher.Find(name);
-            if (launcher != null && launcher.Running)
+            bool hotFix = launcher != null && launcher.Running;
+            hotFix &= Copy(service);
+            //if (launcher != null && launcher.Running)
+            if (hotFix)
             {
                 // 热更
-                Copy(service, HotUpdateSkip);
+                //Copy(service, HotUpdateSkip);
                 service.Revision = -revision;
                 _LOG.Info("热更服务[{0}]完成", name);
             }
             else
             {
                 // 冷更
-                Copy(service);
+                //Copy(service);
                 service.Revision = revision;
                 _LOG.Info("冷更服务[{0}]完成", name);
             }
