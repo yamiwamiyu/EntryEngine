@@ -1,4 +1,7 @@
-﻿2019/11/07
+﻿2019/11/14
+1. BuildDatabaseMysql修复将自增主键改为双主键时，删除旧主键报错的BUG
+
+2019/11/07
 1. BuildDatabaseMysql新增IsDropColumn字段，防止填错数据库时误删其它库的数据
 2. 修复渲染关于Flip计算BoundingBox不正确的BUG
 3. 修复LauncherClient热更新不拷贝exe,dll的问题，现在允许热更新

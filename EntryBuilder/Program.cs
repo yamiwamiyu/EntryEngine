@@ -5933,6 +5933,8 @@ namespace EntryBuilder
                         builder.AppendLine("if (!__noneChangePrimary && __hasPrimary)");
                         builder.AppendBlock(() =>
                         {
+                            builder.AppendLine("var pk = __columns.Values.FirstOrDefault(f => f.IsPrimary);");
+                            builder.AppendLine("if (pk.IsIdentity) builder.AppendLine(\"ALTER TABLE `{0}` CHANGE COLUMN `{{0}}` `{{0}}` {{1}};\", pk.COLUMN_NAME, pk.DATA_TYPE);", table.Name);
                             builder.AppendLine("builder.AppendLine(\"ALTER TABLE `{0}` DROP PRIMARY KEY;\");", table.Name);
                             builder.AppendLine("_LOG.Debug(\"Drop primary key.\");");
                         });
