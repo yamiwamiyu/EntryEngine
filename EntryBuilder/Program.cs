@@ -6601,7 +6601,7 @@ namespace EntryBuilder
                             builderOP.AppendLine("{0} _{1} = new {0}({1});", tableMapperName, target);
                             target = "_" + target;
                         }
-                        builderOP.Append("builder.Append(\"INSERT `{0}`(", table.Name);
+                        builderOP.Append("builder.AppendFormat(\"INSERT `{0}`(", table.Name);
                         StringBuilder temp1 = new StringBuilder();
                         int last = fields.Length - 1;
                         int offset = 0;
@@ -6668,7 +6668,7 @@ namespace EntryBuilder
                         builderOP.AppendBlock(() =>
                         {
                             builderOP.AppendLine("int index = values.Count;");
-                            builderOP.Append("builder.Append(\"DELETE FROM `{0}` WHERE ", table.Name);
+                            builderOP.Append("builder.AppendFormat(\"DELETE FROM `{0}` WHERE ", table.Name);
                             for (int i = 0, n = primaryFields.Count - 1; i <= n; i++)
                             {
                                 var field = primaryFields[i];
@@ -6768,7 +6768,7 @@ namespace EntryBuilder
                                 builderOP.AppendLine("if (fields.Contains(E{0}.{1}))", table.Name, field.Name);
                                 builderOP.AppendBlock(() =>
                                 {
-                                    builderOP.AppendLine("builder.Append(\" `{0}` = @p{{0}},\", index++);", field.Name);
+                                    builderOP.AppendLine("builder.AppendFormat(\" `{0}` = @p{{0}},\", index++);", field.Name);
                                     builderOP.AppendLine("values.Add({1}.{0});", field.Name, target);
                                 });
                             }
@@ -6783,7 +6783,7 @@ namespace EntryBuilder
                                 builderOP.AppendLine("else");
                                 builderOP.AppendBlock(() =>
                                 {
-                                    builderOP.Append("builder.Append(\"WHERE ");
+                                    builderOP.Append("builder.AppendFormat(\"WHERE ");
                                     for (int i = 0, n = primaryFields.Count - 1; i <= n; i++)
                                     {
                                         var field = primaryFields[i];

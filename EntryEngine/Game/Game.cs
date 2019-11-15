@@ -285,16 +285,16 @@ namespace EntryEngine.Game
 
     public interface IDrop
     {
-        ushort ItemID { get; }
+        int ItemID { get; }
         int Count { get; }
         int Weight { get; }
     }
     public struct DROP
     {
-        public ushort ItemID;
+        public int ItemID;
         public float Weight;
 
-        public DROP(ushort itemID, float varyWeight)
+        public DROP(int itemID, float varyWeight)
         {
             this.ItemID = itemID;
             this.Weight = varyWeight;
@@ -303,9 +303,9 @@ namespace EntryEngine.Game
     /// <summary>掉落权重变化在_MATH.WeightVary</summary>
     public struct ITEM
     {
-        public ushort ID;
+        public int ID;
         public int Count;
-        public ITEM(ushort id, int count)
+        public ITEM(int id, int count)
         {
             this.ID = id;
             this.Count = count;
@@ -318,7 +318,7 @@ namespace EntryEngine.Game
         {
             return ID;
         }
-        public static void Integration(Dictionary<ushort, int> dic, ITEM item)
+        public static void Integration(Dictionary<int, int> dic, ITEM item)
         {
             int count;
             if (dic.TryGetValue(item.ID, out count))
@@ -329,7 +329,7 @@ namespace EntryEngine.Game
             else
                 dic.Add(item.ID, item.Count);
         }
-        public static void Integration(Dictionary<ushort, int> dic, ITEM[] items)
+        public static void Integration(Dictionary<int, int> dic, ITEM[] items)
         {
             if (items == null) return;
             int count;
@@ -344,7 +344,7 @@ namespace EntryEngine.Game
                     dic.Add(items[i].ID, items[i].Count);
             }
         }
-        public static ITEM[] ToArray(Dictionary<ushort, int> dic)
+        public static ITEM[] ToArray(Dictionary<int, int> dic)
         {
             ITEM[] array = new ITEM[dic.Count];
             int index = 0;
@@ -367,7 +367,7 @@ namespace EntryEngine.Game
             double weight = 0;
             foreach (var item in list)
             {
-                ushort id = item.ItemID;
+                int id = item.ItemID;
                 if (weightVary != null)
                 {
                     for (int i = 0; i < weightVary.Length; i++)
@@ -388,7 +388,7 @@ namespace EntryEngine.Game
             double dropPoint = random.Next(weight);
             foreach (var item in list)
             {
-                ushort id = item.ItemID;
+                int id = item.ItemID;
                 float varyWeight = 0;
                 if (weightVary != null)
                 {
