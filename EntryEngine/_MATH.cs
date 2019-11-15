@@ -846,11 +846,11 @@ namespace EntryEngine
             }
             return ((multiple - 1) * weight * total) / (total - weight * multiple);
         }
-        /// <summary>批量权重变化</summary>
-        /// <param name="weights">待改变的权重</param>
-        /// <param name="total">总权重</param>
-        /// <param name="multiple">权重变为原来的倍数</param>
-        /// <returns>每个权重的变化量</returns>
+        /// <summary>批量权重变化，例如750,125,125三个权重，希望125,125的两个权重翻倍</summary>
+        /// <param name="weights">待改变的权重(125,125)</param>
+        /// <param name="total">总权重(1000)</param>
+        /// <param name="multiple">权重变为原来的倍数(2)</param>
+        /// <returns>每个权重的变化量(250,250)，即最终权重应该变为(750,125+250,125+250)->(750,375,375)</returns>
         public static float[] WeightVary(float[] weights, float total, float multiple)
         {
             /* 将每个待变化的权重增加的权重和视为整体p

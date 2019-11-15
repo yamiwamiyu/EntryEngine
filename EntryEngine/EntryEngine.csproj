@@ -117,6 +117,7 @@
   <ItemGroup>
     <Compile Include="Animation.cs" />
     <Compile Include="EntryCommon.cs" />
+    <Compile Include="Game\Game.cs" />
     <Compile Include="Model3D.cs" />
     <Compile Include="Network\_NETWORK.cs" />
     <Compile Include="UI\AnimationScene.cs" />
