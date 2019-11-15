@@ -6864,7 +6864,7 @@ namespace EntryBuilder
                     // 主键查询
                     if (primaryFields.Count > 0)
                     {
-                        builderOP.Append("public {0}{1} Select(", _static, tableMapperName);
+                        builderOP.Append("public {0}{1} Select(", _static, table.Name);
                         foreach (var field in primaryFields)
                             builderOP.Append("{0} __{1}, ", field.FieldType.CodeName(), field.Name);
                         builderOP.AppendLine("params E{0}[] fields)", table.Name);
@@ -6891,7 +6891,7 @@ namespace EntryBuilder
                         });
                     }
                     // 条件查询
-                    builderOP.AppendLine("public {0}{1} Select(E{2}[] fields, string condition, params object[] param)", _static, tableMapperName, table.Name);
+                    builderOP.AppendLine("public {0}{1} Select(E{1}[] fields, string condition, params object[] param)", _static, table.Name);
                     builderOP.AppendBlock(() =>
                     {
                         builderOP.AppendLine("StringBuilder builder = GetSelectSQL(fields);");
