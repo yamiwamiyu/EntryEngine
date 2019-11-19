@@ -6672,7 +6672,7 @@ namespace EntryBuilder
                             for (int i = 0, n = primaryFields.Count - 1; i <= n; i++)
                             {
                                 var field = primaryFields[i];
-                                builderOP.Append("`{0}` = @p{{0}}", field.Name);
+                                builderOP.Append("`{0}` = @p{{{1}}}", field.Name, i);
                                 if (i != n)
                                     builderOP.Append(" AND ");
                             }
@@ -6918,16 +6918,6 @@ namespace EntryBuilder
                             builderOP.AppendLine("if (fields == null || fields.Length == 0) return _DAO.SelectObjects<{1}>(string.Format(\"SELECT * FROM {0} {{0}};\", condition), param);", table.Name, tableMapperName);
                         else
                             builderOP.AppendLine("if (fields == null || fields.Length == 0) return new List<{0}>(_DAO.SelectObjects<{1}>(string.Format(\"SELECT * FROM {0} {{0}};\", condition), param).ToArray());", table.Name, tableMapperName);
-                        //builderOP.AppendLine("StringBuilder builder = new StringBuilder();");
-                        //builderOP.AppendLine("builder.Append(\"SELECT\");");
-                        //builderOP.AppendLine("count--;");
-                        //builderOP.AppendLine("for (int i = 0; i <= count; i++)");
-                        //builderOP.AppendBlock(() =>
-                        //{
-                        //    builderOP.AppendLine("builder.Append(\" `{0}`\", fields[i].ToString());");
-                        //    builderOP.AppendLine("if (i != count) builder.Append(\",\");");
-                        //});
-                        //builderOP.AppendLine("builder.Append(\" FROM {0} {{0}};\", condition);", table.Name);
                         builderOP.AppendLine("StringBuilder builder = GetSelectSQL(fields);");
                         builderOP.AppendLine("if (!string.IsNullOrEmpty(condition)) builder.Append(\" {0}\", condition);");
                         builderOP.AppendLine("builder.Append(';');");
@@ -6983,19 +6973,6 @@ namespace EntryBuilder
                         builderOP.Append("public {0}List<Join{1}> SelectJoin(", _static, table.Name);
                         int e = foreignCount - 1;
 
-                        // 生成外包类型
-                        //builder.AppendLine("public class Join{0}", table.Name);
-                        //builder.AppendBlock(() =>
-                        //{
-                        //    builder.AppendLine("public {0} {0};", table.Name);
-                        //    for (int i = 0; i <= e; i++)
-                        //    {
-                        //        builder.AppendLine("public {0} {1};", foreigns[i].ForeignTable.Name, foreignFields[i].Name);
-                        //        //if (i != e)
-                        //        //    builderOP.Append(", ");
-                        //    }
-                        //});
-
                         builderOP.Append("E{0}[] f{0}", table.Name);
                         for (int i = 0; i <= e; i++)
                         {
@@ -7003,13 +6980,6 @@ namespace EntryBuilder
                             //if (i != e)
                             //    builderOP.Append(", ");
                         }
-                        //builderOP.Append(", out List<{0}> r{0}", table.Name);
-                        //for (int i = 0; i <= e; i++)
-                        //{
-                        //    builderOP.Append(", out List<{0}> r{1}", foreigns[i].ForeignTable.Name, foreignFields[i].Name);
-                        //    //if (i != e)
-                        //    //builderOP.Append(", ");
-                        //}
                         builderOP.AppendLine(", string condition, params object[] param)");
                         builderOP.AppendBlock(() =>
                         {
@@ -7068,10 +7038,6 @@ namespace EntryBuilder
                             });
                             builderOP.AppendLine(", builder.ToString(), param);");
 
-                            // 最后out赋值
-                            //builderOP.AppendLine("r{0} = t{0};", table.Name);
-                            //for (int i = 0; i <= e; i++)
-                            //    builderOP.AppendLine("r{0} = t{0};", foreignFields[i].Name);
                             builderOP.AppendLine("return results;");
                         });
                     }

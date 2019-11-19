@@ -1,4 +1,7 @@
-﻿2019/11/15
+﻿2019/11/19
+1. 修复生成BuildDatabaseMysql.GetDeleteSQL的错误
+
+2019/11/15
 1. 修改BuildDatabaseMysql生成的Select方法返回类型为定义原始类型而非扩展类型
 2. 新增Game文件夹，加入背包系统，掉落系统，统计在线人数功能的封装
 3. 将BuildDatabaseMysql生成的Append方法改为AppendFormat
