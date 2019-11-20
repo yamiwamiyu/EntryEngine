@@ -4,48 +4,66 @@
         <name>EntryEngine</name>
     </assembly>
     <members>
-        <member name="M:EntryEngine.EntryService.TimerCoroutine(EntryEngine.ICoroutine,EntryEngine.ICoroutine)">
+        <member name="M:EntryEngine.Utility.LengthFloat(System.Single,System.Int32)">
             <summary>
-            先timer，后tick
+            显示指定小数点位数的float值
+            </summary>
+            <param name="value">值</param>
+            <param name="length">要显示的小数点后面的位数</param>
+            <returns>指定位数的float字符串</returns>
+        </member>
+        <member name="M:EntryEngine.Utility.LengthString(System.String,System.Int32)">
+            <summary>
+            显示指定长度的字符串
+            </summary>
+            <param name="value">字符串</param>
+            <param name="length">要显示的长度</param>
+            <returns>截取长度后的字符串</returns>
+        </member>
+        <member name="M:EntryEngine.Utility.GetFloatLength(System.Single)">
+            <summary>
+            获得一个浮点数的位数
+            </summary>
+            <param name="value">一个浮点值</param>
+            <returns>浮点数的位数</returns>
+        </member>
+        <member name="M:EntryEngine.Utility.Switch``1(System.Collections.Generic.List{``0},System.Boolean)">
+            <summary>
+            切换排序
+            </summary>
+            <typeparam name="T">任意类型</typeparam>
+            <param name="list">要切换的集合</param>
+            <param name="order">切换的顺序</param>
+        </member>
+        <member name="M:EntryEngine.Utility.SortQuit``1(System.Collections.Generic.IList{``0},System.Int32,System.Int32,System.Boolean,System.Func{``0,System.Int32})">
+            <summary>
+            快速排序
+            </summary>
+            <typeparam name="T">排序类型</typeparam>
+            <param name="array">要排序的数组</param>
+            <param name="low">排序起始项索引</param>
+            <param name="high">排序结束项索引</param>
+            <param name="asc">升序True/降序False</param>
+            <param name="comparer">要比较的对象代数</param>
+        </member>
+        <member name="M:EntryEngine.Utility.SortOrderDesc``1(System.Collections.Generic.IList{``0},System.Func{``0,System.Int32})">
+            <summary>
+            稳定排序，同分时顺序不变
             </summary>
         </member>
-        <member name="F:EntryEngine.Entry.IsFixedTimeStep">
-            <summary>每帧经过的时间：true:Platform.FrameRate/false:实际经过时间</summary>
+        <member name="P:EntryEngine.Utility.UnixTimestamp">
+            <summary>2038年将超过int最大值</summary>
         </member>
-        <member name="M:EntryEngine.Entry.SwitchMainScene``2">
-            <summary>
-            使用过场场景切换场景
-            </summary>
-            <typeparam name="T">要切换的主场景类型</typeparam>
-            <typeparam name="U">过场场景类型</typeparam>
-            <returns>主场景</returns>
+        <member name="T:EntryEngine.UI.EUIType">
+            <summary>子类控件会默认采用父类样式，例如0x11会采用0x10的样式</summary>
         </member>
-        <member name="F:EntryEngine.Serialize.Serializable.RecognitionChildType">
-            <summary>
-            <para>true: value.GetType() != type时，则将序列化value.GetType()的类型名以便反序列化</para>
-            <para>false: 数据库自动生成的数据表子类型可能直接用于传输，此时序列化类型名将加大传输数据量</para>
-            </summary>
+        <member name="M:EntryEngine.UI.UIStyle.AddStyle(EntryEngine.UI.EUIType,System.Action{EntryEngine.UI.UIElement})">
+            <summary>添加某类UI控件的默认样式</summary>
+            <param name="uiType">UI控件类型</param>
+            <param name="setStyle">设置UI样式的方法，返回true则设置了样式（例如CheckBox的单选框和复选框就可能类型都是CheckBox但是样式不同）</param>
         </member>
-        <member name="F:EntryEngine.Serialize.JsonReader.EJson.CURLY_OPEN">
-            <summary>new object push</summary>
-        </member>
-        <member name="F:EntryEngine.Serialize.JsonReader.EJson.CURLY_CLOSE">
-            <summary>new object pop</summary>
-        </member>
-        <member name="F:EntryEngine.Serialize.JsonReader.EJson.SQUARED_OPEN">
-            <summary>'[' array object push</summary>
-        </member>
-        <member name="F:EntryEngine.Serialize.JsonReader.EJson.SQUARED_CLOSE">
-            <summary>']' array object pop</summary>
-        </member>
-        <member name="F:EntryEngine.Serialize.JsonReader.EJson.COMMA">
-            <summary>',' array object split</summary>
-        </member>
-        <member name="F:EntryEngine.Serialize.JsonReader.EJson.VALUE">
-            <summary>Value</summary>
-        </member>
-        <member name="T:EntryEngine.SingleEncoding">
-            <summary>char[]与byte[]直接转换，char>255则抛出异常</summary>
+        <member name="F:EntryEngine.UI.UIFlowLayout.Line">
+            <summary>占满一行</summary>
         </member>
         <member name="T:EntryEngine.UI.UIElement">
             <summary>
@@ -142,305 +160,6 @@
         <member name="P:EntryEngine.UI.UIElement.IsClip">
             <summary>约束子控件是否在自己的可视范围内才让有效</summary>
         </member>
-        <member name="T:EntryEngine.Serialize.SerializeSetting">
-            <summary>
-            反射GetField(string name)被调用后，接着调用GetFields()
-            类型的Field顺序将被打乱，GetField的字段将被提到第一位
-            所以应尽量使用此类型的GetProperties和GetFields获取所有成员再使用FirstOrDefault查找
-            此时可以使用默认实例SettingSerializeAll
-            </summary>
-        </member>
-        <member name="F:EntryEngine.Serialize.SerializeSetting.Static">
-            <summary>
-            序列化静态变量，只用于首个类型
-            <value>True: 静态变量</value>
-            <value>False: 实例变量</value>
-            </summary>
-        </member>
-        <member name="F:EntryEngine.Serialize.SerializeSetting.Property">
-            <summary>
-            序列化属性
-            </summary>
-        </member>
-        <member name="M:EntryEngine.Serialize.SerializeSetting.Serialize(System.Type,System.Object,System.Action{EntryEngine.Serialize.VariableObject})">
-            <summary>使用GetVariables，静态相关的逻辑需要测试</summary>
-        </member>
-        <member name="P:EntryEngine.Serialize.SerializeSetting.DefaultSetting">
-            <summary>
-            用于所有序列化的默认设置
-            </summary>
-        </member>
-        <member name="T:EntryEngine.Serialize._SERIALIZE">
-            <summary>
-            1. StringBuilder.AppendLine() { Append(Environment.NewLine); }: .net = \r\n, mono = \n
-            </summary>
-        </member>
-        <member name="M:EntryEngine.Serialize._SERIALIZE.SimpleAQName(System.Type)">
-            <summary>短AQ名在加密方式加载下的程序集中还是未能通过Type.GetType获得类型</summary>
-        </member>
-        <member name="F:EntryEngine.Serialize.Binary.Long52Bit">
-            <summary>Long类型采用52位长度</summary>
-        </member>
-        <member name="M:EntryEngine.Serialize.ByteReader.ReadArray(System.Array@,System.Type)">
-            <summary>
-            元素类型（非数组类型）
-            </summary>
-            <param name="array">要赋值的数组</param>
-            <param name="type">数组元素类型，int[]则传typeof(int)</param>
-        </member>
-        <member name="T:EntryEngine.Serialize.ByteRefWriter">
-            <summary>支持的引用：对象，对象数组</summary>
-        </member>
-        <member name="F:EntryEngine.Serialize.ByteRefWriter.onSerialize">
-            <summary>自定义类型序列化，若进行了序列化，应该返回true</summary>
-        </member>
-        <member name="M:EntryEngine.Serialize.ByteRefReader.INNER_READER.ReadObject(System.Type)">
-            <summary>由于读取数组不一样，需要先读取引用，所以封装成内部类，仅允许ReadObject操作</summary>
-        </member>
-        <member name="P:EntryEngine.GameTime.FrameID">
-            <summary>不断累加的帧ID</summary>
-        </member>
-        <member name="P:EntryEngine.GameTime.OpenTime">
-            <summary>入口开放时间</summary>
-        </member>
-        <member name="P:EntryEngine.GameTime.OpenedTotalTime">
-            <summary>入口开放总时间</summary>
-        </member>
-        <member name="P:EntryEngine.GameTime.PreviousFrame">
-            <summary>上一帧时间</summary>
-        </member>
-        <member name="P:EntryEngine.GameTime.CurrentFrame">
-            <summary>当前帧时间</summary>
-        </member>
-        <member name="P:EntryEngine.GameTime.ElapsedTime">
-            <summary>一帧经过的理论时间</summary>
-        </member>
-        <member name="P:EntryEngine.GameTime.ElapsedRealTime">
-            <summary>一帧经过的真实时间</summary>
-        </member>
-        <member name="P:EntryEngine.GameTime.Elapsed">
-            <summary>一帧经过的理论时间毫秒数</summary>
-        </member>
-        <member name="P:EntryEngine.GameTime.ElapsedSecond">
-            <summary>经过的秒数</summary>
-        </member>
-        <member name="P:EntryEngine.GameTime.CurrentElapsed">
-            <summary>当前帧经过的实时时间</summary>
-        </member>
-        <member name="P:EntryEngine.GameTime.UpdateElapsedTime">
-            <summary>帧更新经过的时间</summary>
-        </member>
-        <member name="P:EntryEngine.GameTime.TickSecond">
-            <summary>是否经过整秒</summary>
-        </member>
-        <member name="P:EntryEngine.GameTime.TickMinute">
-            <summary>是否经过整分</summary>
-        </member>
-        <member name="P:EntryEngine.GameTime.TickHour">
-            <summary>是否经过整点</summary>
-        </member>
-        <member name="P:EntryEngine.GameTime.TickDay">
-            <summary>是否经过整天</summary>
-        </member>
-        <member name="P:EntryEngine.GameTime.TickMonth">
-            <summary>是否经过整月</summary>
-        </member>
-        <member name="P:EntryEngine.GameTime.TickYear">
-            <summary>是否经过整年</summary>
-        </member>
-        <!-- 对于成员“P:EntryEngine.GameTime.Second”忽略有格式错误的 XML 注释 -->
-        <member name="P:EntryEngine.GameTime.Minute">
-            <summary>经过到达的分</summary>
-        </member>
-        <member name="P:EntryEngine.GameTime.Hour">
-            <summary>经过到达的时</summary>
-        </member>
-        <member name="P:EntryEngine.GameTime.Day">
-            <summary>经过到达的天</summary>
-        </member>
-        <member name="P:EntryEngine.GameTime.Month">
-            <summary>经过到达的月</summary>
-        </member>
-        <member name="P:EntryEngine.GameTime.Year">
-            <summary>经过到达的年</summary>
-        </member>
-        <member name="T:EntryEngine.ADefaultValue">
-            <summary>
-            <para>静态类里定义的内部类或接口</para>
-            <para>静态类将生成partial的部分，包含每个静态接口的一个对应的静态实例及调用实例的每个公开方法的静态方法</para>
-            </summary>
-        </member>
-        <member name="P:EntryEngine.ADefaultValue.DefaultValue">
-            <summary>
-            生成的静态实例的默认值的类型(可以在非partial的静态类的静态构造函数手动构造默认值，此时需要增加#if !EntryBuilder)
-            </summary>
-        </member>
-        <member name="T:EntryEngine.ADevice">
-            <summary>
-            跨平台设备
-            </summary>
-        </member>
-        <member name="T:EntryEngine.ADeviceNew">
-            <summary>
-            构造函数创建跨平台设备
-            </summary>
-        </member>
-        <member name="F:EntryEngine.ECode.ToBeContinue">
-            <summary>
-            还未写完
-            </summary>
-        </member>
-        <member name="F:EntryEngine.ECode.BeNotTest">
-            <summary>
-            写完还未测试
-            </summary>
-        </member>
-        <member name="F:EntryEngine.ECode.Expand">
-            <summary>
-            待扩展
-            </summary>
-        </member>
-        <member name="F:EntryEngine.ECode.MayBeReform">
-            <summary>
-            或许会重整
-            </summary>
-        </member>
-        <member name="F:EntryEngine.ECode.LessUseful">
-            <summary>
-            不常用的
-            </summary>
-        </member>
-        <member name="F:EntryEngine.ECode.Test">
-            <summary>
-            测试用
-            </summary>
-        </member>
-        <member name="F:EntryEngine.ECode.BUG">
-            <summary>
-            有已知BUG
-            </summary>
-        </member>
-        <member name="F:EntryEngine.ECode.MayBeBUG">
-            <summary>
-            可能有BUG
-            </summary>
-        </member>
-        <member name="F:EntryEngine.ECode.Value">
-            <summary>
-            变量的跨平台通用值未定
-            </summary>
-        </member>
-        <member name="F:EntryEngine.ECode.Optimize">
-            <summary>
-            可以优化
-            </summary>
-        </member>
-        <member name="F:EntryEngine.ECode.Attention">
-            <summary>有需要注意的地方</summary>
-        </member>
-        <member name="T:EntryEngine.AInvariant">
-            <summary>标识此特性的类型或程序集在重构代码或转换语言代码时类型及其成员不进行重命名，[不进行优化无引用成员（暂未实现，优化掉也貌似可以）]</summary>
-        </member>
-        <member name="T:EntryEngine.AReflexible">
-            <summary>标识此特性的类型在重构代码时生成程序集信息</summary>
-        </member>
-        <member name="T:EntryEngine.ANonOptimize">
-            <summary>标识此特性则不会被优化掉</summary>
-        </member>
-        <member name="T:EntryEngine.PoolHeap`1">
-            <summary>
-            池堆
-            将BufferSize个对象视为一堆
-            整个池能放满PoolSize堆时溢出
-            </summary>
-        </member>
-        <member name="T:EntryEngine.CorDelegate">
-            <summary>自定义委托完成协程</summary>
-        </member>
-        <member name="M:EntryEngine.CorEnumerator`1.Update(`0@)">
-            <summary>执行下一项</summary>
-            <param name="item">当前项</param>
-            <returns>是否结束</returns>
-        </member>
-        <member name="F:EntryEngine.CLOCK.Duration">
-            <summary>起止时间</summary>
-        </member>
-        <member name="F:EntryEngine.CLOCK.TickTime">
-            <summary>时钟嘀嗒（取值-n仅一次:0每次:n间隔)</summary>
-        </member>
-        <member name="M:EntryEngine.Timeline`1.AddScriptFrame(System.Single,`0,System.Func{System.Single,`0,`0,`0})">
-            <summary>自定义脚本关键帧</summary>
-            <param name="script">时间，前一帧对象，后一帧对象，Return当前帧的值</param>
-        </member>
-        <member name="M:EntryEngine.Timeline`1.Expand(System.Single)">
-            <summary>整体调整时间线时间</summary>
-        </member>
-        <member name="M:EntryEngine.__GRAPHICS.ViewAdapt(EntryEngine.VECTOR2,EntryEngine.VECTOR2,System.Single@,EntryEngine.VECTOR2@)">
-            <summary>
-            视口适配：计算画布要在屏幕内显示时的缩放和平移量
-            </summary>
-            <param name="graphics">画布尺寸</param>
-            <param name="screen">屏幕尺寸</param>
-            <param name="scale">缩放值</param>
-            <param name="offset">平移值</param>
-        </member>
-        <member name="M:EntryEngine.__GRAPHICS.ViewDepth(EntryEngine.VECTOR2,EntryEngine.VECTOR2,EntryEngine.VECTOR2,EntryEngine.VECTOR2)">
-            <summary>
-            景深公式
-            (远景-屏幕)/(焦距-屏幕)*偏移值
-            宽高要分别计算
-            </summary>
-            <param name="faraway">远景尺寸</param>
-            <param name="near">焦距尺寸</param>
-            <param name="offset">焦距偏移值</param>
-            <param name="screen">屏幕尺寸</param>
-        </member>
-        <member name="M:EntryEngine.__GRAPHICS.ViewDepth(System.Single,System.Single,System.Single,System.Single)">
-            <summary>
-            (faraway - screen) / (near - screen) * offset
-            </summary>
-            <returns>(faraway - screen) / (near - screen) * offset</returns>
-        </member>
-        <member name="M:EntryEngine.__GRAPHICS.DrawMatrix(EntryEngine.RECT@,EntryEngine.RECT@,System.Single,EntryEngine.VECTOR2@,EntryEngine.EFlip,EntryEngine.MATRIX2x3@)">
-            <summary>
-            if need begin with the result matrix, you should set the rect's location to 0,0
-            </summary>
-        </member>
-        <member name="M:EntryEngine.__GRAPHICS.DrawMatrixWithoutMirror(EntryEngine.RECT@,EntryEngine.RECT@,System.Single,EntryEngine.VECTOR2@,EntryEngine.MATRIX2x3@)">
-            <summary>
-            if need begin with the result matrix, you should set the rect's location to 0,0
-            </summary>
-        </member>
-        <member name="M:EntryEngine.__GRAPHICS.CalcOrigin(System.Single,System.Single,System.Single)">
-            <summary>通过像素差计算锚点</summary>
-        </member>
-        <member name="F:EntryEngine.UI.Panel.Inertia">
-            <summary>惯性移动量，拖拽时会自动维护，也可以自定义设置这个值</summary>
-        </member>
-        <member name="F:EntryEngine.UI.Panel.ScrollWheelSpeed">
-            <summary>鼠标滑轮的滑动像素，0则不能使用鼠标滑轮</summary>
-        </member>
-        <member name="M:EntryEngine.UI.Panel.DoMove(System.Single,System.Single,System.Boolean@,System.Boolean@)">
-            <summary>移动面板</summary>
-            <param name="moveX">X移动量</param>
-            <param name="moveY">Y移动量</param>
-            <param name="boundaryX">X是否已到边界</param>
-            <param name="boundaryY">Y是否已到边界</param>
-        </member>
-        <member name="P:EntryEngine.UI.Panel.DragFriction">
-            <summary>拖拽惯性摩擦，惯性力*=摩擦力；0则立刻停下，1则停不下来</summary>
-        </member>
-        <member name="T:EntryEngine.UI.EUIType">
-            <summary>子类控件会默认采用父类样式，例如0x11会采用0x10的样式</summary>
-        </member>
-        <member name="M:EntryEngine.UI.UIStyle.AddStyle(EntryEngine.UI.EUIType,System.Action{EntryEngine.UI.UIElement})">
-            <summary>添加某类UI控件的默认样式</summary>
-            <param name="uiType">UI控件类型</param>
-            <param name="setStyle">设置UI样式的方法，返回true则设置了样式（例如CheckBox的单选框和复选框就可能类型都是CheckBox但是样式不同）</param>
-        </member>
-        <member name="F:EntryEngine.UI.UIFlowLayout.Line">
-            <summary>占满一行</summary>
-        </member>
         <!-- 对于成员“T:EntryEngine.UI.EPhase”忽略有格式错误的 XML 注释 -->
         <member name="T:EntryEngine.UI.EState">
             <summary>
@@ -477,6 +196,22 @@
             只保留居中和自定义
             </summary>
         </member>
+        <member name="F:EntryEngine.UI.Panel.Inertia">
+            <summary>惯性移动量，拖拽时会自动维护，也可以自定义设置这个值</summary>
+        </member>
+        <member name="F:EntryEngine.UI.Panel.ScrollWheelSpeed">
+            <summary>鼠标滑轮的滑动像素，0则不能使用鼠标滑轮</summary>
+        </member>
+        <member name="M:EntryEngine.UI.Panel.DoMove(System.Single,System.Single,System.Boolean@,System.Boolean@)">
+            <summary>移动面板</summary>
+            <param name="moveX">X移动量</param>
+            <param name="moveY">Y移动量</param>
+            <param name="boundaryX">X是否已到边界</param>
+            <param name="boundaryY">Y是否已到边界</param>
+        </member>
+        <member name="P:EntryEngine.UI.Panel.DragFriction">
+            <summary>拖拽惯性摩擦，惯性力*=摩擦力；0则立刻停下，1则停不下来</summary>
+        </member>
         <member name="M:EntryEngine.UI.UIScene.OnPhaseShowing">
             <summary>
             Scene进入到Entry
@@ -503,42 +238,99 @@
             场景在其它场景里时，被Remove或Clear时需要关闭此场景
             </summary>
         </member>
-        <member name="M:EntryEngine._RANDOM.Random.ResetRandom(System.Int32)">
+        <member name="M:EntryEngine.EntryService.TimerCoroutine(EntryEngine.ICoroutine,EntryEngine.ICoroutine)">
             <summary>
-            重置随机
-            </summary>
-            <param name="seed">随机种子</param>
-        </member>
-        <member name="M:EntryEngine._RANDOM.Random.Next">
-            <summary>
-            随机0~int.MaxValue之间的数
-            </summary>
-            <returns>0 ~ int.MaxValue</returns>
-        </member>
-        <member name="M:EntryEngine._RANDOM.Random.NextDouble">
-            <summary>
-            随机0~1之间的数
-            </summary>
-            <returns>0 ~ 1</returns>
-        </member>
-        <member name="P:EntryEngine._RANDOM.Random.Seed">
-            <summary>
-            当前随机种子
+            先timer，后tick
             </summary>
         </member>
-        <member name="P:EntryEngine._RANDOM.Random.Count">
+        <member name="F:EntryEngine.Entry.IsFixedTimeStep">
+            <summary>每帧经过的时间：true:Platform.FrameRate/false:实际经过时间</summary>
+        </member>
+        <member name="M:EntryEngine.Entry.SwitchMainScene``2">
             <summary>
-            当前已随机的次数
+            使用过场场景切换场景
+            </summary>
+            <typeparam name="T">要切换的主场景类型</typeparam>
+            <typeparam name="U">过场场景类型</typeparam>
+            <returns>主场景</returns>
+        </member>
+        <member name="F:EntryEngine.Serialize.Serializable.RecognitionChildType">
+            <summary>
+            <para>true: value.GetType() != type时，则将序列化value.GetType()的类型名以便反序列化</para>
+            <para>false: 数据库自动生成的数据表子类型可能直接用于传输，此时序列化类型名将加大传输数据量</para>
             </summary>
         </member>
-        <member name="T:EntryEngine._LOG">
+        <member name="T:EntryEngine.ITypist">
             <summary>
-            Debug   : 测试时信息
-            Info    : 功能关键信息
-            Warning : 错误的操作信息
-            Error   : 抛出且截获的异常
-            --Fatal   : 抛出且未截获的异常
+            只有实现此接口的对象允许使用文本输入设备
             </summary>
+        </member>
+        <member name="M:EntryEngine.ITypist.Filter(System.Char@)">
+            <summary>文字筛选，用于例如只能输入数字</summary>
+            <param name="c">允许替换的单个字符</param>
+            <returns>true: 被筛选掉的非法字符 / false: 合法字符</returns>
+        </member>
+        <member name="M:EntryEngine.ITypist.OnStop(System.String,System.String)">
+            <summary>设备关闭时回调源的处理程序</summary>
+            <param name="result">最终文本属性</param>
+        </member>
+        <member name="P:EntryEngine.ITypist.ActiveSelect">
+            <summary>激活设备时是否要选中所有文字</summary>
+        </member>
+        <member name="P:EntryEngine.ITypist.Font">
+            <summary>计算光标位置</summary>
+        </member>
+        <member name="P:EntryEngine.ITypist.Text">
+            <summary>未经处理的源文字</summary>
+        </member>
+        <member name="P:EntryEngine.ITypist.DisplayText">
+            <summary>经过处理显示的文字</summary>
+        </member>
+        <member name="P:EntryEngine.ITypist.Readonly">
+            <summary>只读则不允许输入和删除操作，不过可以复制</summary>
+        </member>
+        <member name="P:EntryEngine.ITypist.BreakLine">
+            <summary>控制是否超出文字区域自动换行，用于计算光标位置</summary>
+        </member>
+        <member name="P:EntryEngine.ITypist.Multiple">
+            <summary>用于判断回车是换行还是确定</summary>
+        </member>
+        <member name="P:EntryEngine.ITypist.IsMask">
+            <summary>遮挡(密码)模式时不可复制选中</summary>
+        </member>
+        <member name="P:EntryEngine.ITypist.TextArea">
+            <summary>文字区域，用于计算光标位置</summary>
+        </member>
+        <member name="P:EntryEngine.ITypist.ViewArea">
+            <summary>显示区域，用于点击取消编辑</summary>
+        </member>
+        <member name="P:EntryEngine.ITypist.MaxLength">
+            <summary>限制输入最大长度</summary>
+        </member>
+        <member name="P:EntryEngine.ITypist.IsActive">
+            <summary>使用输入设备的控件是否激活，用于控制设备自动关闭</summary>
+        </member>
+        <member name="F:EntryEngine.UI.NumberBox.DragStep">
+            <summary>y+1px时对应的Value变化</summary>
+        </member>
+        <member name="F:EntryEngine.Serialize.Binary.Long52Bit">
+            <summary>Long类型采用52位长度</summary>
+        </member>
+        <member name="M:EntryEngine.Serialize.ByteReader.ReadArray(System.Array@,System.Type)">
+            <summary>
+            元素类型（非数组类型）
+            </summary>
+            <param name="array">要赋值的数组</param>
+            <param name="type">数组元素类型，int[]则传typeof(int)</param>
+        </member>
+        <member name="T:EntryEngine.Serialize.ByteRefWriter">
+            <summary>支持的引用：对象，对象数组</summary>
+        </member>
+        <member name="F:EntryEngine.Serialize.ByteRefWriter.onSerialize">
+            <summary>自定义类型序列化，若进行了序列化，应该返回true</summary>
+        </member>
+        <member name="M:EntryEngine.Serialize.ByteRefReader.INNER_READER.ReadObject(System.Type)">
+            <summary>由于读取数组不一样，需要先读取引用，所以封装成内部类，仅允许ReadObject操作</summary>
         </member>
         <member name="F:EntryEngine.Network.LinkBinary.Heartbeat">
             <summary>
@@ -588,6 +380,15 @@
         </member>
         <member name="E:EntryEngine.Network.HttpRequestPost.OnError">
             <summary>异步</summary>
+        </member>
+        <member name="M:EntryEngine.Network._DATABASE.UpdateCascadeParentID(System.Collections.Generic.IEnumerable{EntryEngine.Network.IInnerCascade},System.Int32,System.Int32)">
+            <summary>级联父级更换</summary>
+            <param name="items">完整级联列表，包含所有级别</param>
+            <param name="id">要改的目标层级</param>
+            <param name="newParentID">新的父级</param>
+        </member>
+        <member name="M:EntryEngine.Network._DATABASE.Database.CreateConnection">
+            <summary>已打开可使用的数据库连接</summary>
         </member>
         <member name="F:EntryEngine._MATH.DIVIDE_BY_1">
             <summary>1 ~ 2048的倒数(reciprocal)</summary>
@@ -875,6 +676,10 @@
             <param name="startIndex">交换的索引</param>
             <returns>数组的全排列</returns>
         </member>
+        <member name="M:EntryEngine._MATH.MaxDivisor(System.Collections.Generic.IEnumerable{System.Int32})">
+            <summary>求一组正数的最大公约数</summary>
+            <returns>最小为1</returns>
+        </member>
         <member name="M:EntryEngine._MATH.Symmetry(System.Single,System.Single)">
             <summary>
             关于一个指定角度对称
@@ -928,11 +733,203 @@
             <returns>权重的变化量</returns>
         </member>
         <member name="M:EntryEngine._MATH.WeightVary(System.Single[],System.Single,System.Single)">
-            <summary>批量权重变化</summary>
-            <param name="weights">待改变的权重</param>
-            <param name="total">总权重</param>
-            <param name="multiple">权重变为原来的倍数</param>
-            <returns>每个权重的变化量</returns>
+            <summary>批量权重变化，例如750,125,125三个权重，希望125,125的两个权重翻倍</summary>
+            <param name="weights">待改变的权重(125,125)</param>
+            <param name="total">总权重(1000)</param>
+            <param name="multiple">权重变为原来的倍数(2)</param>
+            <returns>每个权重的变化量(250,250)，即最终权重应该变为(750,125+250,125+250)->(750,375,375)</returns>
+        </member>
+        <member name="M:EntryEngine.__GRAPHICS.ViewAdapt(EntryEngine.VECTOR2,EntryEngine.VECTOR2,System.Single@,EntryEngine.VECTOR2@)">
+            <summary>
+            视口适配：计算画布要在屏幕内显示时的缩放和平移量
+            </summary>
+            <param name="graphics">画布尺寸</param>
+            <param name="screen">屏幕尺寸</param>
+            <param name="scale">缩放值</param>
+            <param name="offset">平移值</param>
+        </member>
+        <member name="M:EntryEngine.__GRAPHICS.ViewDepth(EntryEngine.VECTOR2,EntryEngine.VECTOR2,EntryEngine.VECTOR2,EntryEngine.VECTOR2)">
+            <summary>
+            景深公式
+            (远景-屏幕)/(焦距-屏幕)*偏移值
+            宽高要分别计算
+            </summary>
+            <param name="faraway">远景尺寸</param>
+            <param name="near">聚焦深度的尺寸，例如一张完整地图4000x2000</param>
+            <param name="offset">聚焦深度的偏移值，例如地图向左偏移1000,向上偏移200，即-1000,-200</param>
+            <param name="screen">屏幕尺寸，单屏尺寸，也可以理解为画布尺寸</param>
+            <returns>远景偏移值</returns>
+        </member>
+        <member name="M:EntryEngine.__GRAPHICS.ViewDepth(System.Single,System.Single,System.Single,System.Single)">
+            <summary>
+            (faraway - screen) / (near - screen) * offset
+            </summary>
+            <returns>(faraway - screen) / (near - screen) * offset</returns>
+        </member>
+        <member name="M:EntryEngine.__GRAPHICS.DrawMatrix(EntryEngine.RECT@,EntryEngine.RECT@,System.Single,EntryEngine.VECTOR2@,EntryEngine.EFlip,EntryEngine.MATRIX2x3@)">
+            <summary>
+            if need begin with the result matrix, you should set the rect's location to 0,0
+            </summary>
+        </member>
+        <member name="M:EntryEngine.__GRAPHICS.DrawMatrixWithoutMirror(EntryEngine.RECT@,EntryEngine.RECT@,System.Single,EntryEngine.VECTOR2@,EntryEngine.MATRIX2x3@)">
+            <summary>
+            if need begin with the result matrix, you should set the rect's location to 0,0
+            </summary>
+        </member>
+        <member name="M:EntryEngine.__GRAPHICS.CalcOrigin(System.Single,System.Single,System.Single)">
+            <summary>通过像素差计算锚点，例如绘制200x200的图片到1000x1000的画布中的100x100的位置，锚点在画布中央，则p=[100,100],s=200,op=[500,500]</summary>
+            <param name="position">从0开始到绘制区域宽度或高度的位置</param>
+            <param name="size">当前绘制图片的最大宽度或高度</param>
+            <param name="originPosition">从0开始到绘制区域宽度或高度的锚点位置</param>
+            <returns>绘制用的锚点位置</returns>
+        </member>
+        <member name="M:EntryEngine._RANDOM.Random.ResetRandom(System.Int32)">
+            <summary>
+            重置随机
+            </summary>
+            <param name="seed">随机种子</param>
+        </member>
+        <member name="M:EntryEngine._RANDOM.Random.Next">
+            <summary>
+            随机0~int.MaxValue之间的数
+            </summary>
+            <returns>0 ~ int.MaxValue</returns>
+        </member>
+        <member name="M:EntryEngine._RANDOM.Random.NextDouble">
+            <summary>
+            随机0~1之间的数
+            </summary>
+            <returns>0 ~ 1</returns>
+        </member>
+        <member name="P:EntryEngine._RANDOM.Random.Seed">
+            <summary>
+            当前随机种子
+            </summary>
+        </member>
+        <member name="P:EntryEngine._RANDOM.Random.Count">
+            <summary>
+            当前已随机的次数
+            </summary>
+        </member>
+        <member name="M:EntryEngine.UI.Selectable.ListViewSelect(EntryEngine.UI.Panel)">
+            <summary>Panel的子控件必须实现ISelectable</summary>
+        </member>
+        <member name="E:EntryEngine.UI.Selectable.SelectHandle">
+            <summary>返回true时会选中Hover的项</summary>
+        </member>
+        <member name="T:EntryEngine.Serialize.SerializeSetting">
+            <summary>
+            反射GetField(string name)被调用后，接着调用GetFields()
+            类型的Field顺序将被打乱，GetField的字段将被提到第一位
+            所以应尽量使用此类型的GetProperties和GetFields获取所有成员再使用FirstOrDefault查找
+            此时可以使用默认实例SettingSerializeAll
+            </summary>
+        </member>
+        <member name="F:EntryEngine.Serialize.SerializeSetting.Static">
+            <summary>
+            序列化静态变量，只用于首个类型
+            <value>True: 静态变量</value>
+            <value>False: 实例变量</value>
+            </summary>
+        </member>
+        <member name="F:EntryEngine.Serialize.SerializeSetting.Property">
+            <summary>
+            序列化属性
+            </summary>
+        </member>
+        <member name="M:EntryEngine.Serialize.SerializeSetting.Serialize(System.Type,System.Object,System.Action{EntryEngine.Serialize.VariableObject})">
+            <summary>使用GetVariables，静态相关的逻辑需要测试</summary>
+        </member>
+        <member name="P:EntryEngine.Serialize.SerializeSetting.DefaultSetting">
+            <summary>
+            用于所有序列化的默认设置
+            </summary>
+        </member>
+        <member name="T:EntryEngine.Serialize._SERIALIZE">
+            <summary>
+            1. StringBuilder.AppendLine() { Append(Environment.NewLine); }: .net = \r\n, mono = \n
+            </summary>
+        </member>
+        <member name="M:EntryEngine.Serialize._SERIALIZE.SimpleAQName(System.Type)">
+            <summary>短AQ名在加密方式加载下的程序集中还是未能通过Type.GetType获得类型</summary>
+        </member>
+        <member name="F:EntryEngine.Network.LoginResult.Agent">
+            <summary>
+            Agent is null: Not a new client
+            </summary>
+        </member>
+        <member name="F:EntryEngine.Network.EAcceptClose.LinkCountOver">
+            <summary>服务器连接数过多</summary>
+        </member>
+        <member name="F:EntryEngine.Network.EAcceptClose.ClientClose">
+            <summary>登录流程中客户端关闭了连接</summary>
+        </member>
+        <member name="F:EntryEngine.Network.EAcceptClose.ServerClose">
+            <summary>登录流程中服务器关闭了连接</summary>
+        </member>
+        <member name="F:EntryEngine.Network.EAcceptClose.Refuse">
+            <summary>登录被拒绝</summary>
+        </member>
+        <member name="F:EntryEngine.Network.EAcceptClose.CannotLogin">
+            <summary>登录流程结束也没能正确登录</summary>
+        </member>
+        <member name="F:EntryEngine.Network.EAcceptClose.Exception">
+            <summary>登录流程发生了异常</summary>
+        </member>
+        <member name="F:EntryEngine.Network.EAcceptClose.Timeout">
+            <summary>登录超时</summary>
+        </member>
+        <member name="F:EntryEngine.Network.EAcceptClose.Login">
+            <summary>登录完毕</summary>
+        </member>
+        <member name="F:EntryEngine.Network.Proxy.PermitAcceptCount">
+            <summary>限定最大接入数</summary>
+        </member>
+        <member name="F:EntryEngine.Network.Proxy.PermitAcceptEndPoint">
+            <summary>限定指定终端接入</summary>
+        </member>
+        <member name="F:EntryEngine.Network.Proxy.LinkTimeout">
+            <summary>连接验证包超时(ms)</summary>
+        </member>
+        <member name="F:EntryEngine.Network.Proxy.PermitSameIPLinkPerSecord">
+            <summary>限定每秒允许同一个IP的接入数</summary>
+        </member>
+        <member name="F:EntryEngine.Network.Proxy.SameIPLinkPerSecondBlock">
+            <summary>限定每秒允许同一个IP的接入数，超过则禁止该IP登录</summary>
+        </member>
+        <member name="F:EntryEngine.Network.Proxy.PermitAcceptTimeout">
+            <summary>每帧Accept的最长时间</summary>
+        </member>
+        <member name="F:EntryEngine.Network.Proxy.PermitReceiveTimeout">
+            <summary>每个Client接收处理数据包最长时间</summary>
+        </member>
+        <member name="F:EntryEngine.Network.Proxy.CatchUpdate">
+            <summary>值为false时，OnUpdate的异常会被抛出，可能导致服务的关闭</summary>
+        </member>
+        <member name="F:EntryEngine.Network.Proxy.Heartbeat">
+            <summary>
+            <para>大于0. 到时间会发送心跳包，包发不出去将结束心跳</para>
+            <para>等于0. 不关心心跳</para>
+            <para>小于0. 到时间(绝对值)会直接视为断线</para>
+            </summary>
+        </member>
+        <member name="F:EntryEngine.Network.LinkHttpResponseShort.MAX_PUSH_CACHE_SIZE">
+            <summary>由于短连接的特性，未能由服务器主动推送出去的数据将会被缓存，超过此尺寸时，缓存将被清空，负数则允许无限增大</summary>
+        </member>
+        <member name="F:EntryEngine.Network.AgentHttp.OnReset">
+            <summary>一次OnProtocol处理完一个请求时触发</summary>
+        </member>
+        <member name="M:EntryEngine.Network.ParallelRouter`1.AddRouter(System.Func{`0,System.Int32},EntryEngine.Network.ParallelQueue{`0}[])">
+            <param name="getToken">返回值必须大于等于0时分配工作队列，相同的返回值会分配到相同的工作队列；返回值小于0时不工作</param>
+        </member>
+        <member name="F:EntryEngine.Network.ParallelQueue`1.tokenJobs">
+            <summary>key:某个角色 / value:工作数量</summary>
+        </member>
+        <member name="M:EntryEngine.Network.ParallelJsonHttpService.HotFixAgent(System.Reflection.MethodInfo)">
+            <summary>热更新Agent处理协议：StubHttp[] Method(Func&lt;HttpListenerContext> getData)</summary>
+        </member>
+        <member name="M:EntryEngine.Network.ParallelBinaryService`1.HotFixAgent(System.Reflection.MethodInfo)">
+            <summary>热更新Agent处理协议：Stub[] Method(Func&lt;T> getData)</summary>
         </member>
         <member name="F:EntryEngine.EPlatform.Desktop">
             <summary>
@@ -1191,53 +1188,6 @@
             正在输入法里打字，此时的键盘快捷键操作将无效
             </summary>
         </member>
-        <member name="T:EntryEngine.ITypist">
-            <summary>
-            只有实现此接口的对象允许使用文本输入设备
-            </summary>
-        </member>
-        <member name="M:EntryEngine.ITypist.Filter(System.Char@)">
-            <summary>文字筛选，用于例如只能输入数字</summary>
-            <param name="c">允许替换的单个字符</param>
-            <returns>true: 被筛选掉的非法字符 / false: 合法字符</returns>
-        </member>
-        <member name="M:EntryEngine.ITypist.OnStop(System.String)">
-            <summary>设备关闭时回调源的处理程序</summary>
-            <param name="result">最终文本属性</param>
-        </member>
-        <member name="P:EntryEngine.ITypist.ActiveSelect">
-            <summary>激活设备时是否要选中所有文字</summary>
-        </member>
-        <member name="P:EntryEngine.ITypist.Font">
-            <summary>计算光标位置</summary>
-        </member>
-        <member name="P:EntryEngine.ITypist.Text">
-            <summary>未经处理的源文字</summary>
-        </member>
-        <member name="P:EntryEngine.ITypist.Readonly">
-            <summary>只读则不允许输入和删除操作，不过可以复制</summary>
-        </member>
-        <member name="P:EntryEngine.ITypist.BreakLine">
-            <summary>控制是否超出文字区域自动换行，用于计算光标位置</summary>
-        </member>
-        <member name="P:EntryEngine.ITypist.Multiple">
-            <summary>用于判断回车是换行还是确定</summary>
-        </member>
-        <member name="P:EntryEngine.ITypist.IsMask">
-            <summary>遮挡(密码)模式时不可复制选中</summary>
-        </member>
-        <member name="P:EntryEngine.ITypist.TextArea">
-            <summary>文字区域，用于计算光标位置</summary>
-        </member>
-        <member name="P:EntryEngine.ITypist.ViewArea">
-            <summary>显示区域，用于点击取消编辑</summary>
-        </member>
-        <member name="P:EntryEngine.ITypist.MaxLength">
-            <summary>限制输入最大长度</summary>
-        </member>
-        <member name="P:EntryEngine.ITypist.IsActive">
-            <summary>使用输入设备的控件是否激活，用于控制设备自动关闭</summary>
-        </member>
         <member name="M:EntryEngine.ContentPipeline.Wait``1(EntryEngine.AsyncLoadContent,System.Collections.Generic.IEnumerable{``0},System.Byte,System.Func{EntryEngine.Content})">
             <summary>
             等待其它异步队列完成
@@ -1335,6 +1285,24 @@
         </member>
         <member name="P:EntryEngine.PipelineAnimation.FileType">
             <summary>mtseq: Metadata of Sequence</summary>
+        </member>
+        <member name="T:EntryEngine.TILE">
+            <summary>
+            未实现绘制指定SourceRectangle
+            待实现循环轮播的背景图片
+            </summary>
+        </member>
+        <member name="P:EntryEngine.TILE.TileX">
+            <summary>横向平铺的次数</summary>
+        </member>
+        <member name="P:EntryEngine.TILE.TileY">
+            <summary>纵向平铺的次数</summary>
+        </member>
+        <member name="T:EntryEngine.PICTURE">
+            <summary>
+            将多张小图按照一定的位置摆放成一张大图，需特殊编辑器
+            未实现绘制指定SourceRectangle
+            </summary>
         </member>
         <member name="M:EntryEngine.FONT.MeasureString(System.Func{System.Char,System.Single},System.Single,System.String)">
             <summary>
@@ -1492,8 +1460,73 @@
             不计算颜色的值
             </summary>
         </member>
-        <member name="M:EntryEngine.Network._DATABASE.Database.CreateConnection">
-            <summary>已打开可使用的数据库连接</summary>
+        <member name="T:EntryEngine._LOG">
+            <summary>
+            Debug   : 测试时信息
+            Info    : 功能关键信息
+            Warning : 错误的操作信息
+            Error   : 抛出且截获的异常
+            --Fatal   : 抛出且未截获的异常
+            </summary>
+        </member>
+        <member name="F:EntryEngine.Network.MergeTable.Where">
+            <summary>
+            <para>SELECT * FROM TABLE 后的筛选条件，符合条件的数据将被留下，如下</para>
+            <para>WHERE registTime > '2016/7/20'</para>
+            <para>JOIN ON playerinfo ON (TABLE.uid = playerinfo.uid) WHERE level > 10</para>
+            </summary>
+        </member>
+        <member name="F:EntryEngine.Network.EIndex.Index">
+            <summary>
+            索引：用于查询
+            </summary>
+        </member>
+        <member name="F:EntryEngine.Network.EIndex.Primary">
+            <summary>
+            主键：添加时要测重
+            <para>多主键时，每个主键生成Group</para>
+            <para>所有主键生成一个复合主键类型，由此类型生成</para>
+            </summary>
+        </member>
+        <member name="F:EntryEngine.Network.EIndex.Identity">
+            <summary>
+            自增：视为主键
+            </summary>
+        </member>
+        <member name="F:EntryEngine.Network.EIndex.Group">
+            <summary>
+            分组：例如同一个玩家的操作记录
+            </summary>
+        </member>
+        <member name="T:EntryEngine.Network.IgnoreAttribute">
+            <summary>数据库不生成标记此特性的字段</summary>
+        </member>
+        <member name="T:EntryEngine.Network.PagedModel`1">
+            <summary>翻页数据模型</summary>
+        </member>
+        <member name="T:EntryEngine.Network.IInnerCascade">
+            <summary>内部级联的树状关系，例如分类和二级分类，账号和邀请账号等</summary>
+        </member>
+        <member name="P:EntryEngine.Network.IInnerCascade.Parents">
+            <summary>父类的级联数组，格式为0,1,2，越靠前计别越高</summary>
+        </member>
+        <member name="T:EntryEngine.UI.STextHint">
+            <summary>屏幕中央弹出提示文字，常用于提示错误信息</summary>
+        </member>
+        <member name="T:EntryEngine.UI.SFade">
+            <summary>屏幕全黑或全白的淡入淡出，常用于切换场景</summary>
+        </member>
+        <member name="P:EntryEngine.UI.SFade.FadeOverSecond">
+            <summary>渐变完成所需时间，单位秒</summary>
+        </member>
+        <member name="T:EntryEngine.UI.SMask">
+            <summary>弹出子场景，子场景以外的部分遮罩</summary>
+        </member>
+        <member name="T:EntryEngine.UI.SPages">
+            <summary>翻页按钮场景</summary>
+        </member>
+        <member name="T:EntryEngine.UI.STip">
+            <summary>提示框</summary>
         </member>
         <member name="M:EntryEngine.VECTOR2.Towards(EntryEngine.VECTOR2@,EntryEngine.VECTOR2@,System.Single,System.Single@)">
             <summary>
@@ -1646,186 +1679,183 @@
             <param name="visitable">节点是否可以访问</param>
             <returns>指定节点广度周围的节点（包含指定节点）</returns>
         </member>
-        <member name="M:EntryEngine.Utility.LengthFloat(System.Single,System.Int32)">
+        <member name="P:EntryEngine.GameTime.FrameID">
+            <summary>不断累加的帧ID</summary>
+        </member>
+        <member name="P:EntryEngine.GameTime.OpenTime">
+            <summary>入口开放时间</summary>
+        </member>
+        <member name="P:EntryEngine.GameTime.OpenedTotalTime">
+            <summary>入口开放总时间</summary>
+        </member>
+        <member name="P:EntryEngine.GameTime.PreviousFrame">
+            <summary>上一帧时间</summary>
+        </member>
+        <member name="P:EntryEngine.GameTime.CurrentFrame">
+            <summary>当前帧时间</summary>
+        </member>
+        <member name="P:EntryEngine.GameTime.ElapsedTime">
+            <summary>一帧经过的理论时间</summary>
+        </member>
+        <member name="P:EntryEngine.GameTime.ElapsedRealTime">
+            <summary>一帧经过的真实时间</summary>
+        </member>
+        <member name="P:EntryEngine.GameTime.Elapsed">
+            <summary>一帧经过的理论时间毫秒数</summary>
+        </member>
+        <member name="P:EntryEngine.GameTime.ElapsedSecond">
+            <summary>经过的秒数</summary>
+        </member>
+        <member name="P:EntryEngine.GameTime.CurrentElapsed">
+            <summary>当前帧经过的实时时间</summary>
+        </member>
+        <member name="P:EntryEngine.GameTime.UpdateElapsedTime">
+            <summary>帧更新经过的时间</summary>
+        </member>
+        <member name="P:EntryEngine.GameTime.TickSecond">
+            <summary>是否经过整秒</summary>
+        </member>
+        <member name="P:EntryEngine.GameTime.TickMinute">
+            <summary>是否经过整分</summary>
+        </member>
+        <member name="P:EntryEngine.GameTime.TickHour">
+            <summary>是否经过整点</summary>
+        </member>
+        <member name="P:EntryEngine.GameTime.TickDay">
+            <summary>是否经过整天</summary>
+        </member>
+        <member name="P:EntryEngine.GameTime.TickMonth">
+            <summary>是否经过整月</summary>
+        </member>
+        <member name="P:EntryEngine.GameTime.TickYear">
+            <summary>是否经过整年</summary>
+        </member>
+        <!-- 对于成员“P:EntryEngine.GameTime.Second”忽略有格式错误的 XML 注释 -->
+        <member name="P:EntryEngine.GameTime.Minute">
+            <summary>经过到达的分</summary>
+        </member>
+        <member name="P:EntryEngine.GameTime.Hour">
+            <summary>经过到达的时</summary>
+        </member>
+        <member name="P:EntryEngine.GameTime.Day">
+            <summary>经过到达的天</summary>
+        </member>
+        <member name="P:EntryEngine.GameTime.Month">
+            <summary>经过到达的月</summary>
+        </member>
+        <member name="P:EntryEngine.GameTime.Year">
+            <summary>经过到达的年</summary>
+        </member>
+        <member name="T:EntryEngine.ADefaultValue">
             <summary>
-            显示指定小数点位数的float值
-            </summary>
-            <param name="value">值</param>
-            <param name="length">要显示的小数点后面的位数</param>
-            <returns>指定位数的float字符串</returns>
-        </member>
-        <member name="M:EntryEngine.Utility.LengthString(System.String,System.Int32)">
-            <summary>
-            显示指定长度的字符串
-            </summary>
-            <param name="value">字符串</param>
-            <param name="length">要显示的长度</param>
-            <returns>截取长度后的字符串</returns>
-        </member>
-        <member name="M:EntryEngine.Utility.GetFloatLength(System.Single)">
-            <summary>
-            获得一个浮点数的位数
-            </summary>
-            <param name="value">一个浮点值</param>
-            <returns>浮点数的位数</returns>
-        </member>
-        <member name="M:EntryEngine.Utility.Switch``1(System.Collections.Generic.List{``0},System.Boolean)">
-            <summary>
-            切换排序
-            </summary>
-            <typeparam name="T">任意类型</typeparam>
-            <param name="list">要切换的集合</param>
-            <param name="order">切换的顺序</param>
-        </member>
-        <member name="M:EntryEngine.Utility.SortQuit``1(System.Collections.Generic.IList{``0},System.Int32,System.Int32,System.Boolean,System.Func{``0,System.Int32})">
-            <summary>
-            快速排序
-            </summary>
-            <typeparam name="T">排序类型</typeparam>
-            <param name="array">要排序的数组</param>
-            <param name="low">排序起始项索引</param>
-            <param name="high">排序结束项索引</param>
-            <param name="asc">升序True/降序False</param>
-            <param name="comparer">要比较的对象代数</param>
-        </member>
-        <member name="M:EntryEngine.Utility.SortOrderDesc``1(System.Collections.Generic.IList{``0},System.Func{``0,System.Int32})">
-            <summary>
-            稳定排序，同分时顺序不变
-            </summary>
-        </member>
-        <member name="P:EntryEngine.Utility.UnixTimestamp">
-            <summary>2038年将超过int最大值</summary>
-        </member>
-        <member name="E:EntryEngine.UI.Selectable.SelectHandle">
-            <summary>返回true时会选中Hover的项</summary>
-        </member>
-        <member name="F:EntryEngine.UI.NumberBox.DragStep">
-            <summary>y+1px时对应的Value变化</summary>
-        </member>
-        <member name="F:EntryEngine.Network.LoginResult.Agent">
-            <summary>
-            Agent is null: Not a new client
-            </summary>
-        </member>
-        <member name="F:EntryEngine.Network.EAcceptClose.LinkCountOver">
-            <summary>服务器连接数过多</summary>
-        </member>
-        <member name="F:EntryEngine.Network.EAcceptClose.ClientClose">
-            <summary>登录流程中客户端关闭了连接</summary>
-        </member>
-        <member name="F:EntryEngine.Network.EAcceptClose.ServerClose">
-            <summary>登录流程中服务器关闭了连接</summary>
-        </member>
-        <member name="F:EntryEngine.Network.EAcceptClose.Refuse">
-            <summary>登录被拒绝</summary>
-        </member>
-        <member name="F:EntryEngine.Network.EAcceptClose.CannotLogin">
-            <summary>登录流程结束也没能正确登录</summary>
-        </member>
-        <member name="F:EntryEngine.Network.EAcceptClose.Exception">
-            <summary>登录流程发生了异常</summary>
-        </member>
-        <member name="F:EntryEngine.Network.EAcceptClose.Timeout">
-            <summary>登录超时</summary>
-        </member>
-        <member name="F:EntryEngine.Network.EAcceptClose.Login">
-            <summary>登录完毕</summary>
-        </member>
-        <member name="F:EntryEngine.Network.Proxy.PermitAcceptCount">
-            <summary>限定最大接入数</summary>
-        </member>
-        <member name="F:EntryEngine.Network.Proxy.PermitAcceptEndPoint">
-            <summary>限定指定终端接入</summary>
-        </member>
-        <member name="F:EntryEngine.Network.Proxy.LinkTimeout">
-            <summary>连接验证包超时(ms)</summary>
-        </member>
-        <member name="F:EntryEngine.Network.Proxy.PermitSameIPLinkPerSecord">
-            <summary>限定每秒允许同一个IP的接入数</summary>
-        </member>
-        <member name="F:EntryEngine.Network.Proxy.SameIPLinkPerSecondBlock">
-            <summary>限定每秒允许同一个IP的接入数，超过则禁止该IP登录</summary>
-        </member>
-        <member name="F:EntryEngine.Network.Proxy.PermitAcceptTimeout">
-            <summary>每帧Accept的最长时间</summary>
-        </member>
-        <member name="F:EntryEngine.Network.Proxy.PermitReceiveTimeout">
-            <summary>每个Client接收处理数据包最长时间</summary>
-        </member>
-        <member name="F:EntryEngine.Network.Proxy.CatchUpdate">
-            <summary>值为false时，OnUpdate的异常会被抛出，可能导致服务的关闭</summary>
-        </member>
-        <member name="F:EntryEngine.Network.Proxy.Heartbeat">
-            <summary>
-            <para>大于0. 到时间会发送心跳包，包发不出去将结束心跳</para>
-            <para>等于0. 不关心心跳</para>
-            <para>小于0. 到时间(绝对值)会直接视为断线</para>
+            <para>静态类里定义的内部类或接口</para>
+            <para>静态类将生成partial的部分，包含每个静态接口的一个对应的静态实例及调用实例的每个公开方法的静态方法</para>
             </summary>
         </member>
-        <member name="F:EntryEngine.Network.LinkHttpResponseShort.MAX_PUSH_CACHE_SIZE">
-            <summary>由于短连接的特性，未能由服务器主动推送出去的数据将会被缓存，超过此尺寸时，缓存将被清空，负数则允许无限增大</summary>
-        </member>
-        <member name="F:EntryEngine.Network.AgentHttp.OnReset">
-            <summary>一次OnProtocol处理完一个请求时触发</summary>
-        </member>
-        <member name="M:EntryEngine.Network.ParallelRouter`1.AddRouter(System.Func{`0,System.Int32},EntryEngine.Network.ParallelQueue{`0}[])">
-            <param name="getToken">返回值必须大于等于0时分配工作队列，相同的返回值会分配到相同的工作队列；返回值小于0时不工作</param>
-        </member>
-        <member name="F:EntryEngine.Network.ParallelQueue`1.tokenJobs">
-            <summary>key:某个角色 / value:工作数量</summary>
-        </member>
-        <member name="M:EntryEngine.Network.ParallelJsonHttpService.HotFixAgent(System.Reflection.MethodInfo)">
-            <summary>热更新Agent处理协议：StubHttp[] Method(Func&lt;HttpListenerContext> getData)</summary>
-        </member>
-        <member name="M:EntryEngine.Network.ParallelBinaryService`1.HotFixAgent(System.Reflection.MethodInfo)">
-            <summary>热更新Agent处理协议：Stub[] Method(Func&lt;T> getData)</summary>
-        </member>
-        <member name="F:EntryEngine.Network.MergeTable.Where">
+        <member name="P:EntryEngine.ADefaultValue.DefaultValue">
             <summary>
-            <para>SELECT * FROM TABLE 后的筛选条件，符合条件的数据将被留下，如下</para>
-            <para>WHERE registTime > '2016/7/20'</para>
-            <para>JOIN ON playerinfo ON (TABLE.uid = playerinfo.uid) WHERE level > 10</para>
+            生成的静态实例的默认值的类型(可以在非partial的静态类的静态构造函数手动构造默认值，此时需要增加#if !EntryBuilder)
             </summary>
         </member>
-        <member name="F:EntryEngine.Network.EIndex.Index">
+        <member name="T:EntryEngine.ADevice">
             <summary>
-            索引：用于查询
+            跨平台设备
             </summary>
         </member>
-        <member name="F:EntryEngine.Network.EIndex.Primary">
+        <member name="T:EntryEngine.ADeviceNew">
             <summary>
-            主键：添加时要测重
-            <para>多主键时，每个主键生成Group</para>
-            <para>所有主键生成一个复合主键类型，由此类型生成</para>
+            构造函数创建跨平台设备
             </summary>
         </member>
-        <member name="F:EntryEngine.Network.EIndex.Identity">
+        <member name="F:EntryEngine.ECode.ToBeContinue">
             <summary>
-            自增：视为主键
+            还未写完
             </summary>
         </member>
-        <member name="F:EntryEngine.Network.EIndex.Group">
+        <member name="F:EntryEngine.ECode.BeNotTest">
             <summary>
-            分组：例如同一个玩家的操作记录
+            写完还未测试
             </summary>
         </member>
-        <member name="T:EntryEngine.Network.IgnoreAttribute">
-            <summary>数据库不生成标记此特性的字段</summary>
+        <member name="F:EntryEngine.ECode.Expand">
+            <summary>
+            待扩展
+            </summary>
         </member>
-        <member name="T:EntryEngine.Network.PagedModel`1">
-            <summary>翻页数据模型</summary>
+        <member name="F:EntryEngine.ECode.MayBeReform">
+            <summary>
+            或许会重整
+            </summary>
         </member>
-        <member name="T:EntryEngine.UI.STextHint">
-            <summary>屏幕中央弹出提示文字，常用于提示错误信息</summary>
+        <member name="F:EntryEngine.ECode.LessUseful">
+            <summary>
+            不常用的
+            </summary>
         </member>
-        <member name="T:EntryEngine.UI.SFade">
-            <summary>屏幕全黑或全白的淡入淡出，常用于切换场景</summary>
+        <member name="F:EntryEngine.ECode.Test">
+            <summary>
+            测试用
+            </summary>
         </member>
-        <member name="P:EntryEngine.UI.SFade.FadeOverSecond">
-            <summary>渐变完成所需时间，单位秒</summary>
+        <member name="F:EntryEngine.ECode.BUG">
+            <summary>
+            有已知BUG
+            </summary>
         </member>
-        <member name="T:EntryEngine.UI.SMask">
-            <summary>弹出子场景，子场景以外的部分遮罩</summary>
+        <member name="F:EntryEngine.ECode.MayBeBUG">
+            <summary>
+            可能有BUG
+            </summary>
+        </member>
+        <member name="F:EntryEngine.ECode.Value">
+            <summary>
+            变量的跨平台通用值未定
+            </summary>
+        </member>
+        <member name="F:EntryEngine.ECode.Optimize">
+            <summary>
+            可以优化
+            </summary>
+        </member>
+        <member name="F:EntryEngine.ECode.Attention">
+            <summary>有需要注意的地方</summary>
+        </member>
+        <member name="T:EntryEngine.AInvariant">
+            <summary>标识此特性的类型或程序集在重构代码或转换语言代码时类型及其成员不进行重命名，[不进行优化无引用成员（暂未实现，优化掉也貌似可以）]</summary>
+        </member>
+        <member name="T:EntryEngine.AReflexible">
+            <summary>标识此特性的类型在重构代码时生成程序集信息</summary>
+        </member>
+        <member name="T:EntryEngine.ANonOptimize">
+            <summary>标识此特性则不会被优化掉</summary>
+        </member>
+        <member name="T:EntryEngine.PoolHeap`1">
+            <summary>
+            池堆
+            将BufferSize个对象视为一堆
+            整个池能放满PoolSize堆时溢出
+            </summary>
+        </member>
+        <member name="T:EntryEngine.CorDelegate">
+            <summary>自定义委托完成协程</summary>
+        </member>
+        <member name="M:EntryEngine.CorEnumerator`1.Update(`0@)">
+            <summary>执行下一项</summary>
+            <param name="item">当前项</param>
+            <returns>是否结束</returns>
+        </member>
+        <member name="F:EntryEngine.CLOCK.Duration">
+            <summary>起止时间</summary>
+        </member>
+        <member name="F:EntryEngine.CLOCK.TickTime">
+            <summary>时钟嘀嗒（取值-n仅一次:0每次:n间隔)</summary>
+        </member>
+        <member name="M:EntryEngine.Timeline`1.AddScriptFrame(System.Single,`0,System.Func{System.Single,`0,`0,`0})">
+            <summary>自定义脚本关键帧</summary>
+            <param name="script">时间，前一帧对象，后一帧对象，Return当前帧的值</param>
+        </member>
+        <member name="M:EntryEngine.Timeline`1.Expand(System.Single)">
+            <summary>整体调整时间线时间</summary>
         </member>
         <member name="F:EntryEngine.ParticleStream.Skip">
             <summary>当前流更新一次后下次粒子将跳到当前流的后一个流处开始执行</summary>
@@ -1856,6 +1886,64 @@
         </member>
         <member name="F:EntryEngine.ParticleSystem.Duration">
             <summary>粒子持续时间(s)</summary>
+        </member>
+        <member name="T:EntryEngine.SingleEncoding">
+            <summary>char[]与byte[]直接转换，char>255则抛出异常</summary>
+        </member>
+        <member name="F:EntryEngine.Serialize.JsonReader.EJson.CURLY_OPEN">
+            <summary>new object push</summary>
+        </member>
+        <member name="F:EntryEngine.Serialize.JsonReader.EJson.CURLY_CLOSE">
+            <summary>new object pop</summary>
+        </member>
+        <member name="F:EntryEngine.Serialize.JsonReader.EJson.SQUARED_OPEN">
+            <summary>'[' array object push</summary>
+        </member>
+        <member name="F:EntryEngine.Serialize.JsonReader.EJson.SQUARED_CLOSE">
+            <summary>']' array object pop</summary>
+        </member>
+        <member name="F:EntryEngine.Serialize.JsonReader.EJson.COMMA">
+            <summary>',' array object split</summary>
+        </member>
+        <member name="F:EntryEngine.Serialize.JsonReader.EJson.VALUE">
+            <summary>Value</summary>
+        </member>
+        <member name="M:EntryEngine.Game.BAG`1.Add(System.Int32,System.Int32,`0@)">
+            <summary>数量变化，正数直接加，负数检查数量后减</summary>
+        </member>
+        <member name="M:EntryEngine.Game.BAG`1.Insert(`0)">
+            <summary>数量添加，没有则加入背包</summary>
+            <returns>是否新增或删除</returns>
+        </member>
+        <member name="M:EntryEngine.Game.BAG`1.Update(System.Int32,System.Int32)">
+            <summary>数量变成</summary>
+        </member>
+        <member name="M:EntryEngine.Game.BAG`1.Save(System.Collections.Generic.List{EntryEngine.Game.BAG_PACKAGE},System.Int32)">
+            <summary>保存数据变动</summary>
+            <param name="output">SQL数据包，包括语句和参数</param>
+            <param name="batchLength">分批打包的sql语句长度，超过长度则分批，-1则不分批</param>
+            <returns>是否有保存数据</returns>
+        </member>
+        <member name="T:EntryEngine.Game.ITEM">
+            <summary>掉落权重变化在_MATH.WeightVary</summary>
+        </member>
+        <member name="M:EntryEngine.Game.ITEM.Drop(System.Collections.Generic.IEnumerable{EntryEngine.Game.IDrop},EntryEngine._RANDOM.Random,EntryEngine.Game.DROP[])">
+            <summary>掉落列表中掉落道具</summary>
+            <param name="list">掉落列表</param>
+            <param name="random">随机对象</param>
+            <param name="weightVary">权重变化量，可通过_MATH.WeightVary计算，权重变化的ID在掉落列表中不存在时，权重变化不起作用</param>
+            <returns>掉落的道具，ID为0则代表空道具</returns>
+        </member>
+        <member name="T:EntryEngine.Game.T_S_ONLINE">
+            <summary>统计时间点的在线人数</summary>
+        </member>
+        <member name="M:EntryEngine.Game.T_S_ONLINE.GetQuarter(System.DateTime)">
+            <summary>
+            <para>int quarter = T_S_ONLINE.GetQuarter(ref time);</para>
+            <para>if (quarter == 0) // 新的一天第一次插入数据库</para>
+            <para>else db.ExecuteNonQuery(string.Format("UPDATE T_S_ONLINE SET Quarter{0} = {1} WHERE Time = @p0", quarter, online), time);</para>
+            </summary>
+            <returns>0~95</returns>
         </member>
     </members>
 </doc>

@@ -4,6 +4,15 @@
         <name>Cmdline</name>
     </assembly>
     <members>
+        <member name="E:EntryEngine.Cmdline.CmdlineGate.Overheat">
+            <summary>程序Update用时超过FrameRate连续超过OverheatFrameCount时触发</summary>
+        </member>
+        <member name="E:EntryEngine.Cmdline.CmdlineGate.Loop">
+            <summary>每帧循环时触发，返回是否继续程序</summary>
+        </member>
+        <member name="E:EntryEngine.Cmdline.CmdlineGate.Error">
+            <summary>循环发生异常时触发，返回是否继续程序</summary>
+        </member>
         <member name="E:EntryEngine.Cmdline.Launcher.ConsoleLog">
             <summary>事件触发在异步线程上</summary>
         </member>
@@ -29,15 +38,6 @@
             <summary>
             <para>SVN操作都可能抛出异常</para>
             </summary>
-        </member>
-        <member name="E:EntryEngine.Cmdline.CmdlineGate.Overheat">
-            <summary>程序Update用时超过FrameRate连续超过OverheatFrameCount时触发</summary>
-        </member>
-        <member name="E:EntryEngine.Cmdline.CmdlineGate.Loop">
-            <summary>每帧循环时触发，返回是否继续程序</summary>
-        </member>
-        <member name="E:EntryEngine.Cmdline.CmdlineGate.Error">
-            <summary>循环发生异常时触发，返回是否继续程序</summary>
         </member>
     </members>
 </doc>

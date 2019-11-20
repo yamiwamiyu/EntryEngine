@@ -4,6 +4,16 @@
         <name>Xna</name>
     </assembly>
     <members>
+        <member name="T:EntryEngine.Xna.GraphicsXna">
+            <summary>矩阵平移有小数时，渲染的图像会有一条线</summary>
+        </member>
+        <member name="M:EntryEngine.Xna.ShaderXna.SetPass(System.Int32)">
+            <summary>
+            开关Shader
+            </summary>
+            <param name="pass">开启：1 ~ PassCount/关闭：-pass|0</param>
+            <returns>是否正常操作Shader</returns>
+        </member>
         <member name="M:EntryEngine.Xna._XNA.SetColor(Microsoft.Xna.Framework.Graphics.Texture2D,Microsoft.Xna.Framework.Graphics.Color[],EntryEngine.RECT)">
             <summary>
             设置图片颜色
@@ -20,13 +30,6 @@
             <param name="color">整张图片的颜色</param>
             <param name="source">图片上的像素区域</param>
             <param name="rec">要设置颜色的区域</param>
-        </member>
-        <member name="M:EntryEngine.Xna.ShaderXna.SetPass(System.Int32)">
-            <summary>
-            开关Shader
-            </summary>
-            <param name="pass">开启：1 ~ PassCount/关闭：-pass|0</param>
-            <returns>是否正常操作Shader</returns>
         </member>
     </members>
 </doc>
