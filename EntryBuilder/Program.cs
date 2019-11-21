@@ -506,7 +506,8 @@ namespace EntryBuilder
         [STAThread]
 		static void Main(string[] args)
         {
-            //PublishToWebGL(@"C:\Yamiwamiyu\Project\EntryEngineGit\trunk\", @"C:\Users\Freedom\Desktop\ChamberH5\Code", "", @"C:\Users\Freedom\Desktop\ChamberH5\Launch\h5.html", false, 1);
+            //PublishToWebGL(@"C:\Yamiwamiyu\Project\EntryEngineGit\trunk\", @"C:\Yamiwamiyu\Project\ChamberH5New\Code\Client", "", @"C:\Yamiwamiyu\Project\ChamberH5New\Publish\WebGL\index.html", false, 1);
+            //return;
             //_LOG._Logger = new LoggerConsole();
 
             //GaussianBlur gauss = new GaussianBlur(15);
@@ -700,6 +701,59 @@ namespace EntryBuilder
 		{
 			path = GetFullPath(path);
 		}
+        private static bool PublishCopyContent(string xnaContentDir, string publishOutputDir, Action<FileInfo, string> onCopyFile)
+        {
+            BuildDir(ref xnaContentDir, true);
+            BuildDir(ref publishOutputDir, true);
+            bool isDirDifference = xnaContentDir != publishOutputDir;
+            DirectoryInfo target = new DirectoryInfo(publishOutputDir);
+            if (!target.Exists)
+                target.Create();
+            // 筛选去除TexPiece,Pack命令已打包的图片源文件
+            HashSet<string> filter = new HashSet<string>();
+            foreach (var meta in Directory.GetFiles(xnaContentDir, "*.pcsv", SearchOption.AllDirectories))
+            {
+                PipelinePiece.Piece[] pieces = new CSVReader(File.ReadAllText(meta)).ReadObject<PipelinePiece.Piece[]>();
+                foreach (var piece in pieces)
+                    filter.Add(piece.File);
+            }
+            Action<DirectoryInfo> copy = null;
+            copy = (directory) =>
+            {
+                string targetDirName = directory.FullName.Substring(xnaContentDir.Length);
+                string temp = publishOutputDir + targetDirName;
+                Console.WriteLine(targetDirName);
+                target = new DirectoryInfo(temp);
+                if (isDirDifference && target.Exists && !string.IsNullOrEmpty(targetDirName))
+                    target.Delete(true);
+                bool createFlag = true;
+                foreach (var file in directory.GetFiles())
+                {
+                    string fileName = ContentManager.FilePathUnify(file.FullName.Substring(xnaContentDir.Length));
+                    if (filter.Contains(fileName))
+                        continue;
+                    if (createFlag)
+                    {
+                        // 没有文件的文件夹不创建
+                        target.Create();
+                        createFlag = false;
+                    }
+                    // 一些批处理之类的文件
+                    if (file.Name.StartsWith("#") || file.Name == ".empty")
+                        continue;
+                    if (onCopyFile != null)
+                        onCopyFile(file, fileName);
+                    if (isDirDifference)
+                        file.CopyTo(Path.Combine(temp, file.Name), true);
+                }
+                foreach (var dirc in directory.GetDirectories())
+                    if (!dirc.Name.StartsWith("#"))
+                        //ForeachDirectory(dirc, copy);
+                        copy(dirc);
+            };
+            copy(new DirectoryInfo(xnaContentDir));
+            return isDirDifference;
+        }
 
 		private static string[] DEFAULT_NAMESPACE =
 		{
@@ -9079,13 +9133,16 @@ namespace EntryBuilder
         {
             BuildDir(ref xnaDir);
             BuildDir(ref outputDir);
-            bool isDirDifference = xnaDir != outputDir;
 
-            // 将dll转为.bytes 文件放入StreamingAssets文件夹，并生成列表供Unity加载
             StringBuilder builder = new StringBuilder();
+            bool isDirDifference = PublishCopyContent(Path.Combine(xnaDir, "Content"), Path.Combine(outputDir, "Content"),
+                (file, fileName) =>
+                {
+                    // 文件名\t最后修改时间\t文件大小(字节)
+                    builder.AppendLine("{0}\t{1}\t{2}", fileName, file.LastWriteTime.Ticks, file.Length);
+                });
 
-            HashSet<string> filter = new HashSet<string>();
-
+            StringBuilder builderRet = new StringBuilder();
             foreach (var file in 
                 GetFiles(xnaDir, "*.dll")
                 .Concat(GetFiles(xnaDir, "*.pdb")
@@ -9095,75 +9152,18 @@ namespace EntryBuilder
                 //if (name.EndsWith("fmodex"))
                 //    continue;
                 FileInfo info = new FileInfo(file);
-                builder.AppendLine("{0}\t{1}\t{2}", name, info.LastWriteTime.Ticks, info.Length);
+                builderRet.AppendLine("{0}\t{1}\t{2}", name, info.LastWriteTime.Ticks, info.Length);
                 if (isDirDifference)
                     File.Copy(file, outputDir + name, true);
             }
+            builderRet.Append(builder.ToString());
             Console.WriteLine("复制dll列表完成");
 
-            string fileList = outputDir + "__filelist.txt";
-            string fileListVersion = outputDir + "__version.txt";
-
-            // 复制资源文件到StreamingAssets文件夹
-            string originDLL = Path.GetFullPath(xnaDir);
-            xnaDir = _IO.PathCombine(Path.GetFullPath(xnaDir), "Content\\");
-            outputDir = _IO.PathCombine(Path.GetFullPath(outputDir), "Content\\");
-            DirectoryInfo target = new DirectoryInfo(outputDir);
-            if (!target.Exists)
-                target.Create();
-            // 筛选去除TexPiece,Pack命令已打包的图片源文件
-            foreach (var meta in Directory.GetFiles(xnaDir, "*.pcsv", SearchOption.AllDirectories))
-            {
-                PipelinePiece.Piece[] pieces = new CSVReader(File.ReadAllText(meta)).ReadObject<PipelinePiece.Piece[]>();
-                foreach (var piece in pieces)
-                    filter.Add(piece.File);
-            }
-            Action<DirectoryInfo> copy = null;
-            copy = (directory) =>
-            {
-                string targetDirName = directory.FullName.Substring(xnaDir.Length);
-                string temp = outputDir + targetDirName;
-                Console.WriteLine(targetDirName);
-                target = new DirectoryInfo(temp);
-                if (isDirDifference && target.Exists && !string.IsNullOrEmpty(targetDirName))
-                    target.Delete(true);
-                bool createFlag = true;
-                foreach (var file in directory.GetFiles())
-                {
-                    string fileName = ContentManager.FilePathUnify(file.FullName.Substring(originDLL.Length));
-                    if (filter.Contains(fileName))
-                        continue;
-                    if (createFlag)
-                    {
-                        // 没有文件的文件夹不创建
-                        target.Create();
-                        createFlag = false;
-                    }
-                    // 一些批处理之类的文件
-                    if (file.Name.StartsWith("#"))
-                        continue;
-                    // 文件名\t最后修改时间\t文件大小(字节)
-                    builder.AppendLine("{0}\t{1}\t{2}", fileName, file.LastWriteTime.Ticks, file.Length);
-                    if (isDirDifference)
-                        file.CopyTo(Path.Combine(temp, file.Name), true);
-                }
-                foreach (var dirc in directory.GetDirectories())
-                    if (!dirc.Name.StartsWith("#"))
-                        //ForeachDirectory(dirc, copy);
-                        copy(dirc);
-            };
-            copy(new DirectoryInfo(xnaDir));
-            //ForeachDirectory(xnaDir, copy);
-            File.WriteAllText(fileList, builder.ToString(), Encoding.UTF8);
-            File.WriteAllBytes(fileListVersion, BitConverter.GetBytes(new FileInfo(fileList).LastWriteTime.Ticks));
+            string fileList = "__filelist.txt";
+            string fileListVersion = "__version.txt";
             // xna目录下也应该存在上面两个文件，否则没法对比版本号
-            //Console.WriteLine("拷贝版本文件到XNA目录 {0}", isDirDifference);
-            if (isDirDifference)
-            {
-                Console.WriteLine("拷贝版本文件到XNA目录");
-                File.Copy(fileList, originDLL + Path.GetFileName(fileList), true);
-                File.Copy(fileListVersion, originDLL + Path.GetFileName(fileListVersion), true);
-            }
+            File.WriteAllText(Path.Combine(outputDir, fileList), builderRet.ToString(), Encoding.UTF8);
+            File.WriteAllText(Path.Combine(outputDir, fileListVersion), new FileInfo(fileList).LastWriteTime.Ticks.ToString(), Encoding.ASCII);
             Console.WriteLine("复制资源完成");
         }
         public static void PublishToUnity(string xnaDir, string unityAssetsDir)
@@ -9173,6 +9173,7 @@ namespace EntryBuilder
 
             // 将dll转为.bytes 文件放入StreamingAssets文件夹，并生成列表供Unity加载
             string dir = _IO.PathCombine(Path.GetFullPath(unityAssetsDir), "StreamingAssets\\");
+
             StringBuilder builder = new StringBuilder();
 
             FileInfo runtime = new FileInfo(Path.Combine(dir, "UnityRuntime.bytes"));
@@ -9182,68 +9183,32 @@ namespace EntryBuilder
                 builder.AppendLine("UnityRuntime.bytes\t{0}\t{1}", runtime.LastWriteTime.Ticks, runtime.Length);
             }
 
-            HashSet<string> filter = new HashSet<string>();
-
             foreach (var dll in GetFiles(xnaDir, "*.dll"))
             {
                 string name = Path.GetFileNameWithoutExtension(dll);
-                if (name.EndsWith("fmodex"))
+                if (name == "d3dx9_31" ||
+                    name == "fmodex" ||
+                    name == "Microsoft.Xna.Framework" ||
+                    name == "Microsoft.Xna.Framework.Game" ||
+                    name == "X3DAudio1_6" ||
+                    name == "xinput1_3")
                     continue;
                 FileInfo info = new FileInfo(dll);
                 builder.AppendLine("{0}.bytes\t{1}\t{2}", name, info.LastWriteTime.Ticks, info.Length);
                 File.Copy(dll, dir + name + ".bytes", true);
             }
             Console.WriteLine("复制dll列表完成");
-            string fileList = dir + "__filelist.txt";
-            string fileListVersion = dir + "__version.txt";
 
             // 复制资源文件到StreamingAssets文件夹
-            xnaDir = _IO.PathCombine(Path.GetFullPath(xnaDir), "Content\\");
-            DirectoryInfo target = new DirectoryInfo(dir);
-            if (!target.Exists)
-                target.Create();
-            // 筛选去除TexPiece,Pack命令已打包的图片源文件
-            foreach (var meta in Directory.GetFiles(xnaDir, "*.pcsv", SearchOption.AllDirectories))
-            {
-                PipelinePiece.Piece[] pieces = new CSVReader(File.ReadAllText(meta)).ReadObject<PipelinePiece.Piece[]>();
-                foreach (var piece in pieces)
-                    filter.Add(piece.File);
-            }
-            Action<DirectoryInfo> copy = null;
-            copy = (directory) =>
+            PublishCopyContent(Path.Combine(xnaDir, "Content"), dir,
+                (file, fileName) =>
                 {
-                    string targetDirName = directory.FullName.Substring(xnaDir.Length);
-                    string temp = dir + targetDirName;
-                    Console.WriteLine(targetDirName);
-                    target = new DirectoryInfo(temp);
-                    if (target.Exists && !string.IsNullOrEmpty(targetDirName))
-                        target.Delete(true);
-                    bool createFlag = true;
-                    foreach (var file in directory.GetFiles())
-                    {
-                        string fileName = ContentManager.FilePathUnify(file.FullName.Substring(xnaDir.Length));
-                        if (filter.Contains(fileName))
-                            continue;
-                        if (createFlag)
-                        {
-                            // 没有文件的文件夹不创建
-                            target.Create();
-                            createFlag = false;
-                        }
-                        // 一些批处理之类的文件
-                        if (file.Name.StartsWith("#"))
-                            continue;
-                        // 文件名\t最后修改时间\t文件大小(字节)
-                        builder.AppendLine("{0}\t{1}\t{2}", fileName, file.LastWriteTime.Ticks, file.Length);
-                        file.CopyTo(Path.Combine(temp, file.Name), true);
-                    }
-                    foreach (var dirc in directory.GetDirectories())
-                        if (!dirc.Name.StartsWith("#"))
-                            //ForeachDirectory(dirc, copy);
-                            copy(dirc);
-                };
-            copy(new DirectoryInfo(xnaDir));
-            //ForeachDirectory(xnaDir, copy);
+                    // 文件名\t最后修改时间\t文件大小(字节)
+                    builder.AppendLine("{0}\t{1}\t{2}", fileName, file.LastWriteTime.Ticks, file.Length);
+                });
+
+            string fileList = dir + "__filelist.txt";
+            string fileListVersion = dir + "__version.txt";
             File.WriteAllText(fileList, builder.ToString(), Encoding.UTF8);
             File.WriteAllBytes(fileListVersion, BitConverter.GetBytes(new FileInfo(fileList).LastWriteTime.Ticks));
             Console.WriteLine("复制资源完成");
@@ -9415,6 +9380,11 @@ namespace EntryBuilder
 
             File.WriteAllText(outputFile, builder.ToString());
             _LOG.Debug("Write Code Time Elapsed: {0}", watch.ElapsedMilliseconds.ToString());
+
+            // 复制资源文件到StreamingAssets文件夹
+            string xnaDir = Path.Combine(projectCodeClientDir, @"..\..\Launch\Client\Content");
+            string outputDir = Path.Combine(Path.GetDirectoryName(outputFile), "Content\\");
+            PublishCopyContent(xnaDir, outputDir, null);
         }
         public static void CreateFileToEmptyDirectory(string inputDir, string defaultFile)
         {

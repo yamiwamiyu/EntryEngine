@@ -251,6 +251,31 @@ namespace __System.Linq
             }
             return default(TSource);
         }
+        public static int Min(this IEnumerable<int> source)
+        {
+	        int num = 0;
+	        bool flag = false;
+	        foreach (int current in source)
+	        {
+		        if (flag)
+		        {
+			        if (current < num)
+			        {
+				        num = current;
+			        }
+		        }
+		        else
+		        {
+			        num = current;
+			        flag = true;
+		        }
+	        }
+	        if (flag)
+	        {
+		        return num;
+	        }
+	        throw new InvalidOperationException("No Elements");
+        }
         public static IEnumerable<int> Range(int start, int count)
         {
             for (int i = start, n = start + count; i < n; i++)

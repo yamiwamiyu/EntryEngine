@@ -569,7 +569,7 @@ namespace EntryEngine
 
         public static IEnumerable<ICoroutine> Update()
         {
-            if (string.IsNullOrEmpty(ServerURL))
+            if (string.IsNullOrEmpty(ServerURL) || !File.Exists(VERSION))
                 yield break;
 
             ProcessText = "正在检测最新版本号";
@@ -577,12 +577,12 @@ namespace EntryEngine
             // 新版本号
             WebRequest request = HttpWebRequest.Create(ServerURL + VERSION);
             WebResponse response = request.GetResponse();
-            byte[] newVersionBuffer = _IO.ReadStream(response.GetResponseStream(), 8);
-            Version = BitConverter.ToInt64(newVersionBuffer, 0);
+            string newVersionBuffer = Encoding.ASCII.GetString(_IO.ReadStream(response.GetResponseStream(), 18));
+            Version = long.Parse(newVersionBuffer);
             
             // 旧版本号
-            byte[] oldVersionBuffer = File.ReadAllBytes(VERSION);
-            VersionOld = BitConverter.ToInt64(oldVersionBuffer, 0);
+            string oldVersionBuffer = File.ReadAllText(VERSION);
+            VersionOld = long.Parse(oldVersionBuffer);
 
             // 新旧版本比对
             if (oldVersionBuffer != null)
@@ -727,7 +727,7 @@ namespace EntryEngine
             }
 
             // 写入新版本列表
-            File.WriteAllBytes(VERSION, newVersionBuffer);
+            File.WriteAllText(VERSION, newVersionBuffer);
 
             if (withDLL)
             {

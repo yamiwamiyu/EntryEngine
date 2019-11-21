@@ -1,0 +1,1 @@
+..\..\EntryBuilder PublishToPC "" ..\..\Publish\XNA\

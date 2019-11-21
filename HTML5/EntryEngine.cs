@@ -281,7 +281,7 @@ namespace EntryEngine.HTML5
                     {
                         if (req.status == 200)
                         {
-                            async.SetData(SingleEncoding.UTF8.GetBytes(req.responseText));
+                            async.SetData(new Uint8ClampedArray((ArrayBuffer)req.response).GetBytes());
                         }
                         else
                         {
@@ -290,7 +290,8 @@ namespace EntryEngine.HTML5
                     }
                 };
                 req.open("GET", BuildNetUrl(file), true);
-                req.responseType = "text";
+                req.responseType = "arraybuffer";
+                req.setRequestHeader("Content-Type", "application/octet-stream;charset=ISO-8859-1");
                 req.send();
             }
 
@@ -302,19 +303,14 @@ namespace EntryEngine.HTML5
             if (data != null) return data;
             // 网络加载
             var req = new XMLHttpRequest();
-            //req.responseType = "text";
             req.open("GET", BuildNetUrl(file), false);
+            // 同步请求不能设置responseType
+            //req.responseType = "arraybuffer";
+            req.setRequestHeader("Content-Type", "application/octet-stream;charset=ISO-8859-1");
             req.send();
             if (req.readyState == 4 && req.status == 200)
             {
-                if (IOEncoding == Encoding.UTF8)
-                {
-                    return req.responseText;
-                }
-                else
-                {
-                    return IOEncoding.GetString(Encoding.UTF8.GetBytes(req.responseText));
-                }
+                return IOEncoding.GetString(SingleEncoding.Single.GetBytes(req.responseText));
             }
             else
             {
@@ -327,12 +323,14 @@ namespace EntryEngine.HTML5
             if (data != null) return data;
             // 网络加载
             var req = new XMLHttpRequest();
-            //req.responseType = "text";
             req.open("GET", BuildNetUrl(file), false);
+            // 同步请求不能设置responseType
+            //req.responseType = "arraybuffer";
+            req.setRequestHeader("Content-Type", "application/octet-stream;charset=ISO-8859-1");
             req.send();
             if (req.readyState == 4 && req.status == 200)
             {
-                return Encoding.UTF8.GetBytes(req.responseText);
+                return SingleEncoding.Single.GetBytes(req.responseText);
             }
             else
             {
@@ -1478,13 +1476,18 @@ namespace EntryEngine.HTML5
         }
         protected override ContentManager InternalNewContentManager()
         {
-            ContentManager manager = new ContentManager(NewiO(iO.RootDirectory));
-            manager.AddPipeline(new PipelineParticle());
-            manager.AddPipeline(new PipelineAnimation());
-            manager.AddPipeline(new PipelinePiece());
-            manager.AddPipeline(new PipelinePatch());
-            manager.AddPipeline(new PipelineTextureJSGL());
-            return manager;
+            ContentManager content = new ContentManager(NewiO(iO.RootDirectory));
+
+            content.AddPipeline(new PipelinePicture());
+            content.AddPipeline(new PipelineTile());
+            content.AddPipeline(new PipelineParticle());
+            content.AddPipeline(new PipelineAnimation());
+            content.AddPipeline(new PipelinePiece());
+            content.AddPipeline(new PipelinePatch());
+            content.AddPipeline(new PipelineFontStatic());
+            content.AddPipeline(new PipelineTextureJSGL());
+
+            return content;
         }
         protected override FONT InternalNewFONT(string name, float fontSize)
         {

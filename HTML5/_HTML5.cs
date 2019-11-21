@@ -7,23 +7,6 @@ namespace EntryEngine.HTML5
 {
     public static class _HTML5
     {
-        //public static Image
-        //public static WebGLTexture GetTextureGL(this TEXTURE texture)
-        //{
-        //    if (texture == null)
-        //        return null;
-        //    var t = texture as TextureJS;
-        //    if (t == null)
-        //    {
-        //        TEXTURE_Link tl = texture as TEXTURE_Link;
-        //        if (tl == null)
-        //            //throw new System.ArgumentException("Not supported texture type.");
-        //            return null;
-        //        return GetTextureGL(tl.Base);
-        //    }
-        //    else
-        //        return t.Texture;
-        //}
         public static byte[] GetBytes(this Uint8ClampedArray array)
         {
             int len = array.byteLength;

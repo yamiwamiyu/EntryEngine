@@ -2443,6 +2443,7 @@ namespace EntryBuilder.CodeAnalysis.Syntax
     }
     public class DefineConstructor : DefineMemberMethod
     {
+        /// <summary>调用其它构造函数，例如this(false)</summary>
         public InvokeMethod Base;
     }
     public class DefineMethod : DefineMemberMethod
@@ -4620,7 +4621,13 @@ namespace EntryBuilder.CodeAnalysis.Refactoring
                 if (type != null) return type;
 
                 CSharpMember member = _ref.Definition.Define as CSharpMember;
-                if (member != null) return member.ReturnType;
+                if (member != null)
+                {
+                    //if (member.IsConstructor && !member.IsStatic)
+                    //    return member.ContainingType;
+                    //else
+                        return member.ReturnType;
+                }
 
                 VAR _var = _ref.Definition.Define as VAR;
                 if (_var != null) return _var.Type;
@@ -6658,6 +6665,7 @@ namespace EntryBuilder.CodeAnalysis.Refactoring
                                 builder.Append(GetDefaultValueCode(DefiningMember.ReturnType));
                                 builder.AppendLine(";");
                             }
+                            // todo:考虑将委托右边，方法参数加上.bind(this)，就不需要在构造函数里bind所有方法了
                             foreach (var item in node.Properties.Where(m => (m.Modifier & EModifier.Static) == EModifier.None))
                             {
                                 if (!SetMember(item))
@@ -7007,8 +7015,12 @@ namespace EntryBuilder.CodeAnalysis.Refactoring
             builder.AppendBlockWithEnd(() =>
             {
                 CSharpMember constructor;
-                // 调用原型构造函数
-                WriteInvokeBaseDefaultConstructor(TypeName, false);
+
+                // 若是继承this的构造函数，则继承的构造函数已经调用了原型构造函数了，不重复调用
+                //if (node.Base == null || this.GetSyntaxType(node.Base) != DefiningType)
+                    // 调用原型构造函数
+                    WriteInvokeBaseDefaultConstructor(TypeName, false);
+
                 if (node.Base == null)
                 {
                     // 显示声明的无参构造函数
@@ -7036,6 +7048,7 @@ namespace EntryBuilder.CodeAnalysis.Refactoring
                         builder.AppendLine("this.constructor = {0}.{1};", TypeName, constructor.Name.Name);
                     else
                         builder.AppendLine("this.constructor = {0}.{1};", GetTypeName(constructor.ContainingType), constructor.Name.Name);
+
                     // 构造函数允许使用ref和out
                     constructorTarget = node.Base.Target;
                     node.Base.Target = CONSTRUCTOR;
@@ -7963,6 +7976,13 @@ namespace EntryBuilder.CodeAnalysis.Refactoring
             if ((node.Operator == EBinaryOperator.Assign || node.Operator == EBinaryOperator.AssignSubtract || node.Operator == EBinaryOperator.AssignAdd) &&
                 (refVar != null && refVar.Type.IsDelegate) || (refMember != null && refMember.ReturnType.IsDelegate) && !(node.Right is PrimitiveValue))
             {
+                //if (node.Right is ReferenceMember)
+                //{
+                //    int targetPoint = right.LastIndexOf('.');
+                //    if (targetPoint != -1)
+                //        right = string.Format("{0}.bind({1})", right, right.Substring(0, targetPoint));
+                //}
+
                 if (node.Operator == EBinaryOperator.Assign)
                 {
                 }
