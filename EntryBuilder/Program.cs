@@ -506,8 +506,6 @@ namespace EntryBuilder
         [STAThread]
 		static void Main(string[] args)
         {
-            //PublishToWebGL(@"C:\Yamiwamiyu\Project\EntryEngineGit\trunk\", @"C:\Yamiwamiyu\Project\ChamberH5New\Code\Client", "", @"C:\Yamiwamiyu\Project\ChamberH5New\Publish\WebGL\index.html", false, 1);
-            //return;
             //_LOG._Logger = new LoggerConsole();
 
             //GaussianBlur gauss = new GaussianBlur(15);
@@ -519,10 +517,11 @@ namespace EntryBuilder
             //}
 
             //PublishToPC(@"D:\Project\xss\xss\Launch\Client", @"D:\Project\xss\xss\Launch\Client");
-            //PublishToWebGL(@"..\..\..\", @"D:\Project\xss\xss\Code\Client", @"D:\Project\xss\xss\Code\Protocol\Protocol", @"D:\Project\xss\xss\Launch\Client\index.html", false, 5);
+            //PublishToWebGL(@"C:\Yamiwamiyu\Project\EntryEngineGit\trunk\", @"C:\Yamiwamiyu\Project\ChamberH5New\Code\Client", "", @"C:\Yamiwamiyu\Project\ChamberH5New\Publish\WebGL\index.html", false, 1);
             //BuildTableTranslate("", "");
             //BuildDatabaseMysql(@"D:\Project\xss\xss\Code\Protocol\Protocol\bin\Debug\Protocol.dll", "Server._DB", @"D:\Project\xss\xss\Code\Server\Server\_DB.cs", "", "", true);
             //BuildProtocolAgentHttp("", @"D:\Project2\xss\xss\Code\ServerImpl\", @"D:\Project2\xss\xss\Code\Protocol\Protocol\bin\Release\Protocol.dll", false);
+            //BuildCSVFromExcel(@"C:\Yamiwamiyu\Project\IslandChronicle\Design\Tables_Build", @"C:\Yamiwamiyu\Project\IslandChronicle\Design\Tables_Build", null, "12.0", "a.cs", false);
             //Console.ReadKey();
             //return;
 
@@ -2545,7 +2544,7 @@ namespace EntryBuilder
                 for (int j = 0; j < tableCount; j++)
                 {
                     string tableName = tables.Rows[j].ItemArray[2].ToString();
-                    if (tableName.StartsWith("_") || tableName.StartsWith("#"))
+                    if (tableName.StartsWith("_") || tableName.StartsWith("#") || tableName.StartsWith("'_") || tableName.StartsWith("'#"))
                         continue;
                     NamedStringTable table = new NamedStringTable();
                     OleDbCommand cmd = new OleDbCommand(string.Format("SELECT * FROM [{0}]", tableName), conn);
