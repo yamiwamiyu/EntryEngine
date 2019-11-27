@@ -1,4 +1,11 @@
-﻿2019/11/21
+﻿2019/11/27
+1. 更新深度调用
+2. 完善BuildDatabaseMysql
+  (2.1)没有外键不生成SelectJoin
+  (2.2)新增同表的多个Group键生成全部组合的SelectMultiple方法
+  (2.3)Update方法返回受影响的行数
+
+2019/11/21
 1. 完善WebGL编译器
 2. 完善EntryBuilder发布版本拷贝资源文件
 3. 热更新版本号由二进制码改为数字字符串

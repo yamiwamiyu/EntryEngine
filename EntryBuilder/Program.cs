@@ -6457,24 +6457,20 @@ namespace EntryBuilder
                 {
                     var fields = table.GetFields(flag).Where(f => !f.HasAttribute<IgnoreAttribute>()).ToArray();
                     var foreignFields = fields.Where(f => f.HasAttribute<ForeignAttribute>()).ToArray();
+                    if (foreignFields.Length > 0)
                     {
                         ForeignAttribute[] foreigns = new ForeignAttribute[foreignFields.Length];
                         for (int i = 0; i < foreigns.Length; i++)
                             foreigns[i] = foreignFields[i].GetAttribute<ForeignAttribute>();
-
-                        int foreignCount = foreigns.Length;
-                        int e = foreignCount - 1;
 
                         // 生成外包类型
                         builder.AppendLine("public class Join{0}", table.Name);
                         builder.AppendBlock(() =>
                         {
                             builder.AppendLine("public {0} {0};", table.Name);
-                            for (int i = 0; i <= e; i++)
+                            for (int i = 0; i < foreigns.Length; i++)
                             {
                                 builder.AppendLine("public {0} {1};", foreigns[i].ForeignTable.Name, foreignFields[i].Name);
-                                //if (i != e)
-                                //    builderOP.Append(", ");
                             }
                         });
                     }
@@ -6865,13 +6861,13 @@ namespace EntryBuilder
                         });
 
                         builderOP.AppendSummary("condition that 'where' or 'join' without ';'");
-                        builderOP.AppendLine("public {1}void Update({0} target, string condition, params E{0}[] fields)", table.Name, _static);
+                        builderOP.AppendLine("public {1}int Update({0} target, string condition, params E{0}[] fields)", table.Name, _static);
                         builderOP.AppendBlock(() =>
                         {
                             builderOP.AppendLine("StringBuilder builder = new StringBuilder();");
                             builderOP.AppendLine("List<object> values = new List<object>(fields.Length + {0});", primaryFields.Count);
                             builderOP.AppendLine("GetUpdateSQL(target, condition, builder, values, fields);");
-                            builderOP.AppendLine("_DAO.ExecuteNonQuery(builder.ToString(), values.ToArray());");
+                            builderOP.AppendLine("return _DAO.ExecuteNonQuery(builder.ToString(), values.ToArray());");
                         });
                     }
 
@@ -6991,25 +6987,73 @@ namespace EntryBuilder
                             group = groupFields;
                         else
                             group = primaryFields;
-                        foreach (var field in group)
+                        // 所有Group键的组合条件查询
+                        List<FieldInfo> __group = group.ToList();
+                        IEnumerable<IEnumerable<FieldInfo>> groups = _MATH.Combination(__group, 1);
+                        for (int i = 1; i < __group.Count; i++)
+                            groups = groups.Concat(_MATH.Combination(__group, i + 1));
+
+                        foreach (var g in groups)
                         {
-                            builderOP.AppendLine("public {1}List<{0}> SelectMultipleBy{2}(E{0}[] fields, {3} {2}, string conditionAfterWhere, params object[] param)", table.Name, _static, field.Name, field.FieldType.CodeName());
+                            builderOP.Append("public {1}List<{0}> SelectMultipleBy", table.Name, _static);
+                            var list = g.ToList();
+                            for (int i = 0, e = list.Count - 1; i <= e; i++)
+                            {
+                                builderOP.Append(list[i].Name);
+                                if (i != e)
+                                    builderOP.Append('_');
+                            }
+                            builderOP.Append("(E{0}[] fields, ", table.Name);
+                            for (int i = 0, e = list.Count - 1; i <= e; i++)
+                                builderOP.Append("{0} {1}, ", list[i].FieldType.CodeName(), list[i].Name);
+                            builderOP.Append("string conditionAfterWhere, params object[] param)");
+                            builderOP.AppendLine();
                             builderOP.AppendBlock(() =>
                             {
                                 builderOP.AppendLine("StringBuilder builder = GetSelectSQL(fields);");
-                                builderOP.AppendLine("builder.Append(\" WHERE `{0}` = @p{{0}}\", param.Length);", field.Name);
+                                builderOP.Append("builder.Append(\" WHERE ");
+                                for (int i = 0, e = list.Count - 1; i <= e; i++)
+                                {
+                                    builderOP.Append("`{0}` = @p{{{1}}}", list[i].Name, i);
+                                    if (i != e)
+                                        builderOP.Append(" AND ");
+                                }
+                                builderOP.Append("\"");
+                                for (int i = 0, e = list.Count - 1; i <= e; i++)
+                                    builderOP.Append(", param.Length + {0}", i);
+                                builderOP.AppendLine(");");
                                 builderOP.AppendLine("if (!string.IsNullOrEmpty(conditionAfterWhere)) builder.Append(\" {0}\", conditionAfterWhere);");
                                 builderOP.AppendLine("builder.Append(';');");
                                 if (table.Name == tableMapperName)
                                 {
-                                    builderOP.AppendLine("if (param.Length == 0) return _DAO.SelectObjects<{0}>(builder.ToString(), {1});", tableMapperName, field.Name);
-                                    builderOP.AppendLine("else return _DAO.SelectObjects<{0}>(builder.ToString(), param.Add({1}));", tableMapperName, field.Name);
+                                    builderOP.Append("if (param.Length == 0) return _DAO.SelectObjects<{0}>(builder.ToString()", tableMapperName);
+                                    for (int i = 0, e = list.Count - 1; i <= e; i++)
+                                        builderOP.Append(", {0}", list[i].Name);
+                                    builderOP.AppendLine(");");
+                                    builderOP.Append("else return _DAO.SelectObjects<{0}>(builder.ToString(), param.Add(", tableMapperName);
+                                    for (int i = 0, e = list.Count - 1; i <= e; i++)
+                                    {
+                                        builderOP.Append(list[i].Name);
+                                        if (i != e)
+                                            builderOP.Append(", ");
+                                    }
+                                    builderOP.AppendLine("));");
                                 }
                                 else
                                 {
                                     builderOP.AppendLine("List<{0}> __temp;", tableMapperName);
-                                    builderOP.AppendLine("if (param.Length == 0) __temp = _DAO.SelectObjects<{0}>(builder.ToString(), {1});", tableMapperName, field.Name);
-                                    builderOP.AppendLine("else __temp = _DAO.SelectObjects<{0}>(builder.ToString(), param.Add({1}));", tableMapperName, field.Name);
+                                    builderOP.Append("if (param.Length == 0) __temp = _DAO.SelectObjects<{0}>(builder.ToString()", tableMapperName);
+                                    for (int i = 0, e = list.Count - 1; i <= e; i++)
+                                        builderOP.Append(", {0}", list[i].Name);
+                                    builderOP.AppendLine(");");
+                                    builderOP.Append("else __temp = _DAO.SelectObjects<{0}>(builder.ToString(), param.Add(", tableMapperName);
+                                    for (int i = 0, e = list.Count - 1; i <= e; i++)
+                                    {
+                                        builderOP.Append(list[i].Name);
+                                        if (i != e)
+                                            builderOP.Append(", ");
+                                    }
+                                    builderOP.AppendLine("));");
                                     builderOP.AppendLine("return new List<{0}>(__temp.ToArray());", table.Name);
                                 }
                             });
@@ -7017,6 +7061,7 @@ namespace EntryBuilder
                     }
 
                     var foreignFields = fields.Where(f => f.HasAttribute<ForeignAttribute>()).ToArray();
+                    if (foreignFields.Length > 0)
                     {
                         ForeignAttribute[] foreigns = new ForeignAttribute[foreignFields.Length];
                         for (int i = 0; i < foreigns.Length; i++)

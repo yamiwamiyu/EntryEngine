@@ -119,5 +119,13 @@ namespace EntryEngine
             _iO.FileBrowser(suffix, multiple, onSelect);
             #endif
         }
+        public static void FileBrowserSave(string file, string[] suffix, System.Action<EntryEngine.SelectFile> onSelect)
+        {
+            #if EntryBuilder
+            throw new System.NotImplementedException();
+            #else
+            _iO.FileBrowserSave(file, suffix, onSelect);
+            #endif
+        }
     }
 }

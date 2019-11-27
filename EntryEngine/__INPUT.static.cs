@@ -84,6 +84,10 @@ namespace EntryEngine
         {
             return __instance.Mouse.GetComboClick(key);
         }
+        public static void MouseAddMultipleClick(params int[] keys)
+        {
+            __instance.Mouse.AddMultipleClick(keys);
+        }
         public static bool MouseIsClick(int key)
         {
             return __instance.Mouse.IsClick(key);
@@ -214,6 +218,10 @@ namespace EntryEngine
         {
             return __instance.Touch.GetComboClick(key);
         }
+        public static void TouchAddMultipleClick(params int[] keys)
+        {
+            __instance.Touch.AddMultipleClick(keys);
+        }
         public static void TouchUpdate(EntryEngine.Entry entry)
         {
             __instance.Touch.Update(entry);
@@ -255,6 +263,10 @@ namespace EntryEngine
         {
             get { return __instance.Keyboard.DefaultKey; }
         }
+        public static EntryEngine.ComboClick KeyboardGetComboClick(EntryEngine.PCKeys key)
+        {
+            return __instance.Keyboard.GetComboClick(key);
+        }
         public static bool KeyboardIsClick(EntryEngine.PCKeys key)
         {
             return __instance.Keyboard.IsClick(key);
@@ -278,6 +290,10 @@ namespace EntryEngine
         public static EntryEngine.ComboClick KeyboardGetComboClick(int key)
         {
             return __instance.Keyboard.GetComboClick(key);
+        }
+        public static void KeyboardAddMultipleClick(params int[] keys)
+        {
+            __instance.Keyboard.AddMultipleClick(keys);
         }
         public static bool KeyboardIsClick(int key)
         {

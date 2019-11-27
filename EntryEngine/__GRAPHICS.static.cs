@@ -152,6 +152,18 @@ namespace EntryEngine
         {
             __instance.BeginFromPrevious(matrix, rect);
         }
+        public static EntryEngine.MATRIX2x3 FromPrevious(EntryEngine.MATRIX2x3 matrix)
+        {
+            return __instance.FromPrevious(matrix);
+        }
+        public static EntryEngine.RECT FromPrevious(EntryEngine.RECT rect)
+        {
+            return __instance.FromPrevious(rect);
+        }
+        public static EntryEngine.RECT FromPreviousNonOffset(EntryEngine.RECT rect)
+        {
+            return __instance.FromPreviousNonOffset(rect);
+        }
         public static void Clear()
         {
             __instance.Clear();
