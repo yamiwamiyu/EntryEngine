@@ -6500,7 +6500,7 @@ namespace EntryBuilder
                                 tableMapperName = "_" + tableMapperName;
                             }
                             // 创建类型
-                            builder.AppendLine("public class {0} : {1}", tableMapperName, table.Name);
+                            builder.AppendLine("public partial class {0} : {1}", tableMapperName, table.Name);
                             builder.AppendLine("{");
                         }
                         builder.AppendLine("public new string {0}", field.Name);
@@ -6515,7 +6515,7 @@ namespace EntryBuilder
                     if (isStatic && !hasSpecial)
                     {
                         // 创建类型
-                        builder.AppendLine("public class {0} : {1}", tableMapperName, table.Name);
+                        builder.AppendLine("public partial class {0} : {1}", tableMapperName, table.Name);
                         builder.AppendLine("{");
                     }
 
