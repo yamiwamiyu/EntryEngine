@@ -54,9 +54,13 @@
   <PropertyGroup>
     <PostBuildEvent>IF NOT $(ConfigurationName) == Debug GOTO end
 
+copy $(TargetDir)\LauncherProtocolStructure.dll $(ProjectDir)..\EntryBuilder\bin\Debug\
+
 $(ProjectDir)..\EntryBuilder\bin\Debug\EntryBuilder.exe BuildProtocolAgentBinary $(ProjectDir)..\LauncherClient\ $(ProjectDir)..\LauncherServer\ $(TargetPath)\LauncherProtocol.ILauncherService
 
 $(ProjectDir)..\EntryBuilder\bin\Debug\EntryBuilder.exe BuildProtocolAgentBinary $(ProjectDir)..\LauncherServer\ $(ProjectDir)..\LauncherClient\ $(TargetPath)\LauncherProtocol.IManagerCall
+
+del $(ProjectDir)..\EntryBuilder\bin\Debug\LauncherProtocolStructure.dll
 
 :end</PostBuildEvent>
   </PropertyGroup>
