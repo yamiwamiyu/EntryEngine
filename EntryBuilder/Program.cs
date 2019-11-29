@@ -6876,7 +6876,7 @@ namespace EntryBuilder
                     builderOP.AppendBlock(() =>
                     {
                         // 连接查询用
-                        builderOP.AppendLine("if (string.IsNullOrEmpty(tableName)) tableName = \"{0}\";", table.Name);
+                        builderOP.AppendLine("if (string.IsNullOrEmpty(tableName)) tableName = \"`{0}`\";", table.Name);
                         builderOP.AppendLine("int count = fields == null ? 0 : fields.Length;");
                         builderOP.AppendLine("if (count == 0)");
                         builderOP.AppendBlock(() =>
@@ -6895,17 +6895,9 @@ namespace EntryBuilder
                     builderOP.AppendLine("public {0}StringBuilder GetSelectSQL(params E{1}[] fields)", _static, table.Name);
                     builderOP.AppendBlock(() =>
                     {
-                        builderOP.AppendLine("int count = fields == null ? 0 : fields.Length;");
-                        builderOP.AppendLine("if (count == 0) return new StringBuilder(\"SELECT * FROM `{0}`\");", table.Name);
                         builderOP.AppendLine("StringBuilder builder = new StringBuilder();");
-                        builderOP.AppendLine("builder.Append(\"SELECT\");");
-                        builderOP.AppendLine("count--;");
-                        builderOP.AppendLine("for (int i = 0; i <= count; i++)");
-                        builderOP.AppendBlock(() =>
-                        {
-                            builderOP.AppendLine("builder.Append(\" `{0}`\", fields[i].ToString());");
-                            builderOP.AppendLine("if (i != count) builder.Append(\",\");");
-                        });
+                        builderOP.AppendLine("builder.AppendLine(\"SELECT \");");
+                        builderOP.AppendLine("GetSelectField(null, builder, fields);");
                         builderOP.AppendLine("builder.AppendLine(\" FROM `{0}`\");", table.Name);
                         builderOP.AppendLine("return builder;");
                     });
@@ -7011,7 +7003,7 @@ namespace EntryBuilder
                             builderOP.AppendBlock(() =>
                             {
                                 builderOP.AppendLine("StringBuilder builder = GetSelectSQL(fields);");
-                                builderOP.Append("builder.Append(\" WHERE ");
+                                builderOP.Append("builder.AppendFormat(\" WHERE ");
                                 for (int i = 0, e = list.Count - 1; i <= e; i++)
                                 {
                                     builderOP.Append("`{0}` = @p{{{1}}}", list[i].Name, i);
@@ -7141,6 +7133,11 @@ namespace EntryBuilder
                     }
 
                     // 翻页查询
+                    builderOP.AppendLine("public {0}PagedModel<{1}> SelectPages(string __where, string selectSQL, string conditionAfterWhere, int page, int pageSize, params object[] param)", _static, tableMapperName);
+                    builderOP.AppendBlock(() =>
+                    {
+                        builderOP.AppendLine("return SelectPages<{0}>(__where, selectSQL, conditionAfterWhere, page, pageSize, param);", tableMapperName);
+                    });
                     builderOP.AppendLine("public {0}PagedModel<T> SelectPages<T>(string __where, string selectSQL, string conditionAfterWhere, int page, int pageSize, params object[] param) where T : new()", _static);
                     builderOP.AppendBlock(() =>
                     {
