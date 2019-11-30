@@ -7133,10 +7133,22 @@ namespace EntryBuilder
                     }
 
                     // 翻页查询
-                    builderOP.AppendLine("public {0}PagedModel<{1}> SelectPages(string __where, string selectSQL, string conditionAfterWhere, int page, int pageSize, params object[] param)", _static, tableMapperName);
+                    if (hasSpecial)
+                    {
+                        builderOP.AppendLine("public {0}PagedModel<{1}> ChangePageModel(PagedModel<{2}> model)", _static, table.Name, tableMapperName);
+                        builderOP.AppendBlock(() =>
+                        {
+                            builderOP.AppendLine("return model.ChangeModel<{0}>(m => ({1})m);", table.Name, tableMapperName);
+                        });
+                    }
+                    builderOP.AppendLine("public {0}PagedModel<{1}> SelectPages(string __where, E{1}[] fields, string conditionAfterWhere, int page, int pageSize, params object[] param)", _static, table.Name);
                     builderOP.AppendBlock(() =>
                     {
-                        builderOP.AppendLine("return SelectPages<{0}>(__where, selectSQL, conditionAfterWhere, page, pageSize, param);", tableMapperName);
+                        builderOP.AppendLine("var ret = SelectPages<{0}>(__where, GetSelectSQL(fields).ToString(), conditionAfterWhere, page, pageSize, param);", tableMapperName);
+                        if (hasSpecial)
+                            builderOP.AppendLine("return ChangePageModel(ret);");
+                        else
+                            builderOP.AppendLine("return ret;");
                     });
                     builderOP.AppendLine("public {0}PagedModel<T> SelectPages<T>(string __where, string selectSQL, string conditionAfterWhere, int page, int pageSize, params object[] param) where T : new()", _static);
                     builderOP.AppendBlock(() =>

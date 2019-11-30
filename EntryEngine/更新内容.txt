@@ -1,4 +1,7 @@
-﻿2019/11/27
+﻿2019/11/30
+1. 完善BuildDatabaseMysql使SelectPages更加方便
+
+2019/11/27
 1. 更新深度调用
 2. 完善BuildDatabaseMysql
   (2.1)没有外键不生成SelectJoin
