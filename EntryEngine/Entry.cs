@@ -4362,9 +4362,14 @@ namespace EntryEngine
         private IEnumerator<ICoroutine> anime;
         private ICoroutine wait;
         private int updatedFlag;
+        public override bool IsEnd
+        {
+            get { return anime == null; }
+        }
         protected abstract IEnumerable<ICoroutine> Action(GameTime time);
         public sealed override void Update(GameTime time)
         {
+            updatedFlag = time.FrameID;
             base.Update(time);
             if (anime == null)
             {
@@ -4376,9 +4381,10 @@ namespace EntryEngine
                 if (!wait.IsEnd)
                     return;
             }
-            anime.MoveNext();
-            wait = anime.Current;
-            updatedFlag = time.FrameID;
+            if (anime.MoveNext())
+                wait = anime.Current;
+            else
+                anime = null;
         }
         protected internal override bool Draw(GRAPHICS graphics, ref SpriteVertex vertex)
         {
