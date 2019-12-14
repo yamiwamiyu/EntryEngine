@@ -4357,6 +4357,36 @@ namespace EntryEngine
             Async = null;
         }
     }
+    public abstract class TEXTURE_ANIMATION : TEXTURE_Link
+    {
+        private IEnumerator<ICoroutine> anime;
+        private ICoroutine wait;
+        private int updatedFlag;
+        protected abstract IEnumerable<ICoroutine> Action(GameTime time);
+        public sealed override void Update(GameTime time)
+        {
+            base.Update(time);
+            if (anime == null)
+            {
+                anime = Action(time).GetEnumerator();
+            }
+            if (wait != null)
+            {
+                wait.Update(time);
+                if (!wait.IsEnd)
+                    return;
+            }
+            anime.MoveNext();
+            wait = anime.Current;
+            updatedFlag = time.FrameID;
+        }
+        protected internal override bool Draw(GRAPHICS graphics, ref SpriteVertex vertex)
+        {
+            if (updatedFlag != GameTime.Time.FrameID)
+                Update(GameTime.Time);
+            return base.Draw(graphics, ref vertex);
+        }
+    }
 
     public sealed class PIECE : TEXTURE_Link
     {

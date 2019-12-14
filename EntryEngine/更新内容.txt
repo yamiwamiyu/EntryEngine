@@ -1,5 +1,10 @@
-﻿2019/11/30
+﻿2019/12/08
+1. 新增TEXTURE_ANIMATION，方便使用协程定制图片动画
+
+2019/11/30
 1. 完善BuildDatabaseMysql使SelectPages更加方便
+2. RECT增加缩放功能
+3. 新增动画图片TEXTURE_ANIMATION
 
 2019/11/27
 1. 更新深度调用

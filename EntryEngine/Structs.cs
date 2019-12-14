@@ -4,6 +4,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using EntryEngine.UI;
 
 namespace EntryEngine
 {
@@ -7341,6 +7342,25 @@ namespace EntryEngine
 		{
 			return this.X <= x && this.Y <= y && x < this.Width && y < this.Height;
 		}
+        /// <summary>倍数缩放</summary>
+        /// <param name="pivot">缩放锚点</param>
+        /// <param name="x">横轴缩放倍数</param>
+        /// <param name="y">纵轴缩放倍数</param>
+        public void ScaleMultiple(EPivot pivot, float x, float y)
+        {
+            Scale(pivot, Width * x, Height * y);
+        }
+        /// <summary>量缩放</summary>
+        /// <param name="pivot">缩放锚点</param>
+        /// <param name="x">横轴缩放量</param>
+        /// <param name="y">纵轴缩放量</param>
+        public void Scale(EPivot pivot, float x, float y)
+        {
+            X -= x * UIElement.PivotX(pivot) * 0.5f;
+            Y -= y * UIElement.PivotY(pivot) * 0.5f;
+            Width += x;
+            Height += y;
+        }
 		public RECT ToLocation()
 		{
 			RECT result;
