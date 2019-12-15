@@ -2139,6 +2139,14 @@ namespace EntryEngine.Network
                 Agent = new AgentHttp(stubs);
             }
         }
+        public void HotFixAgent(Func<Func<HttpListenerContext>, StubHttp[]> method)
+        {
+            StubHttp[] stubs = (StubHttp[])method(GetContext);
+            lock (this)
+            {
+                Agent = new AgentHttp(stubs);
+            }
+        }
     }
     public abstract class ParallelBinaryService<T> : ParallelQueue<T>
     {
@@ -2152,6 +2160,14 @@ namespace EntryEngine.Network
             lock (this)
             {
                 Agent = new AgentProtocolStub(Link, stubs);
+            }
+        }
+        public void HotFixAgent(Func<Func<T>, Stub[]> method)
+        {
+            Stub[] stubs = (Stub[])method(GetContext);
+            lock (this)
+            {
+                Agent = new AgentProtocolStub(stubs);
             }
         }
     }
