@@ -1990,6 +1990,8 @@ namespace EntryBuilder
                                 {
                                     if (method.ReturnType.IsCustomType())
                                         builder.AppendLine("Response(__result);");
+                                    else if (method.ReturnType == typeof(string))
+                                        builder.AppendLine("Response(__result);");
                                     else
                                         builder.AppendLine("Response(__result.ToString());");
                                 });
@@ -3772,43 +3774,32 @@ namespace EntryBuilder
                 build(type);
             }
         }
-        public static void BuildProtocolAgentHttp(string outputClientPath, string outputServerPath, string dllOrWithType, bool isJs)
+        public static void BuildProtocolAgentHttp(string outputClientPath, string outputServerPath, string dllOrWithType, int csharp0js1ts2)
         {
             Action<Type> build;
-            if (isJs)
+            switch (csharp0js1ts2)
             {
-                //ProtocolHttpJS jsWriter = new ProtocolHttpJS();
-                build = (type) =>
-                {
-                    //ProtocolHttp writer = new ProtocolHttp();
-                    //writer.Write(type);
+                case 1:
+                    #region JS
+                    build = (type) =>
+                    {
+                        //ProtocolHttp writer = new ProtocolHttp();
+                        //writer.Write(type);
 
-                    ProtocolHttpJS jsWriter = new ProtocolHttpJS();
-                    jsWriter.Write(type);
+                        ProtocolHttpJS jsWriter = new ProtocolHttpJS();
+                        jsWriter.Write(type);
 
-                    string clientFile = Path.Combine(outputClientPath, type.Name + "Proxy.js");
-                    string serverFile = Path.Combine(outputServerPath, type.Name + "Stub.cs");
-                    SaveCode(clientFile, jsWriter.builder);
-                    SaveCode(serverFile, jsWriter.server);
-                    Console.WriteLine("生成协议类型{0}完成", type.FullName);
-                };
+                        string clientFile = Path.Combine(outputClientPath, type.Name + "Proxy.js");
+                        string serverFile = Path.Combine(outputServerPath, type.Name + "Stub.cs");
+                        SaveCode(clientFile, jsWriter.builder);
+                        SaveCode(serverFile, jsWriter.server);
+                        Console.WriteLine("生成协议类型{0}完成", type.FullName);
+                    };
+                    #endregion
+                    break;
+
+                default: throw new NotImplementedException();
             }
-            else
-            {
-                //build = (type) =>
-                //{
-                //    ProtocolHttp writer = new ProtocolHttp();
-                //    writer.Write(type);
-
-                //    string clientFile = Path.Combine(outputClientPath, type.Name + "Proxy.cs");
-                //    string serverFile = Path.Combine(outputServerPath, type.Name + "Stub.cs");
-                //    SaveCode(clientFile, writer.builder);
-                //    SaveCode(serverFile, writer.server);
-                //    Console.WriteLine("生成协议类型{0}完成", type.FullName);
-                //};
-                throw new NotImplementedException();
-            }
-
             // DLL文件将生成所有带
             if (File.Exists(dllOrWithType))
             {
