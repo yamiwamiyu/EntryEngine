@@ -13,6 +13,7 @@ using EntryEngine.Cmdline;
 using System.Net;
 using EntryEngine.Serialize;
 using System.IO;
+using Server.Impl;
 
 namespace Server
 {
@@ -140,16 +141,16 @@ namespace Server
         {
             Serializable.RecognitionChildType = false;
 
-            //var impl1 = new ImplP1();
-            //P1Stub _p1 = new P1Stub(impl1);
+            var impl1 = new ImplProtocol1();
+            Protocol1Stub _p1 = new Protocol1Stub(impl1);
 
-            //var impl2 = new ImplP2();
-            //P2Stub _p2 = new P2Stub(impl2);
-            //_p2.__GetAgent = () =>
-            //{
-            //    p2Impl.CheckToken(getContext());
-            //    return null;
-            //};
+            var impl2 = new ImplProtocol2();
+            Protocol2Stub _p2 = new Protocol2Stub(impl2);
+            _p2.__GetAgent = () =>
+            {
+                impl2.CheckToken(getContext());
+                return null;
+            };
 
 #if DEBUG
             Stub[]
@@ -158,8 +159,8 @@ namespace Server
 #endif
                 stubs = 
                 { 
-                    //_p1, 
-                    //_p2 
+                    _p1, 
+                    _p2 
                 };
             return stubs;
         }
@@ -198,19 +199,19 @@ namespace Server
     }
     public class StubBase
     {
-        //public T_PLAYER Player;
+        public T_PLAYER Player;
 
         public void OP(string op, string way, int sign, int statistic, string detail)
         {
-            //T_OPLog log = new T_OPLog();
-            //log.PID = Player.ID;
-            //log.Time = DateTime.Now;
-            //log.Operation = op;
-            //log.Way = way;
-            //log.Sign = sign;
-            //log.Statistic = statistic;
-            //log.Detail = detail;
-            //_DB._T_OPLog.Insert(log);
+            T_OPLog log = new T_OPLog();
+            log.PID = Player.ID;
+            log.Time = DateTime.Now;
+            log.Operation = op;
+            log.Way = way;
+            log.Sign = sign;
+            log.Statistic = statistic;
+            log.Detail = detail;
+            _DB._T_OPLog.Insert(log);
         }
         public void OP(string op, string way, int sign, int statistic)
         {
@@ -236,13 +237,13 @@ namespace Server
                 throw new InvalidOperationException("没有登录!");
 
             // 检查登录
-            //Player = _DB._T_PLAYER.Select(null, "WHERE Token=@p0", token);
-            //if (Player != null)
-            //{
-            //    Player.LastLoginTime = GameTime.Time.CurrentFrame;
-            //    _DB._T_PLAYER.Update(Player, null, ET_PLAYER.LastLoginTime);
-            //    return;
-            //}
+            Player = _DB._T_PLAYER.Select(null, "WHERE Token=@p0", token);
+            if (Player != null)
+            {
+                Player.LastLoginTime = GameTime.Time.CurrentFrame;
+                _DB._T_PLAYER.Update(Player, null, ET_PLAYER.LastLoginTime);
+                return;
+            }
             throw new InvalidOperationException("没有登录!");
         }
     }

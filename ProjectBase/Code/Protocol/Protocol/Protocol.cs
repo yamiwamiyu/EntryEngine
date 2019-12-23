@@ -14,3 +14,15 @@ using EntryEngine.Network;
 //{
 //    void OnGameRequest2(DateTime now);
 //}
+
+[ProtocolStub(1, null)]
+public interface Protocol1
+{
+    void Login(string name, string password, Action<T_PLAYER> callback);
+}
+
+[ProtocolStub(2, null)]
+public interface Protocol2
+{
+    void TestLogin(Action<T_PLAYER> callback);
+}
