@@ -19,15 +19,7 @@ namespace Server
             EntryLinkServer entry = new EntryLinkServer();
 
             // 可以先设置好日志，加载好你的配置
-            _LOG._Logger = new Logger();
-
-            // 数据表的加载最好放入命令行命令中，方便运维工具配置和动态执行
-            //_TABLE.Load("Tables");
-            //_LOG.Info("加载数据表完成");
-            //_C.Load(_IO.ReadText("Tables\\C.xml"));
-            //_LOG.Info("加载共用常量表完成");
-            //_CS.Load(_IO.ReadText("Tables\\CS.xml"));
-            //_LOG.Info("加载服务端常量表完成");
+            _LOG._Logger = new LoggerFile(new LoggerConsole());
 
             // 构建并设置你的服务
             Service service = new Service();
@@ -45,7 +37,7 @@ namespace Server
 
                 // 这里还可以侦听控制台输入命令
                 // 构建和初始化服务也可以放到控制台命令里来自行控制服务的行为
-                //gate.AppendCommand(...);
+                gate.AppendCommand(service, typeof(ICmd));
                 // 启动程序参数作为命令行输入，方便本地调试直接输入启动命令
                 //args = new string[] { "Launch 1 \"\" 1025" };
                 if (args.Length > 0)
