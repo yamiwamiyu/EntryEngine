@@ -4536,8 +4536,34 @@ namespace EntryBuilder
                 }
             }
 
+            // 生成全表类型，方便发送给客户端
+            writer.AppendLine("public partial class ALL_TABLE");
+            writer.AppendBlock(() =>
+            {
+                foreach (var file in files)
+                {
+                    string name = Path.GetFileNameWithoutExtension(file);
+                    writer.AppendLine("public {0}[] _{0};", name);
+                }
+            });
+
 			writer.AppendLine("public static partial class {0}", className);
 			writer.AppendLine("{");
+            writer.AppendLine("public static ALL_TABLE AllTables");
+            writer.AppendBlock(() =>
+            {
+                writer.AppendLine("get");
+                writer.AppendBlock(() =>
+                {
+                    writer.AppendLine("ALL_TABLE all = new ALL_TABLE();");
+                    foreach (var file in files)
+                    {
+                        string name = Path.GetFileNameWithoutExtension(file);
+                        writer.AppendLine("all._{0} = _{0};", name);
+                    }
+                    writer.AppendLine("return all;");
+                });
+            });
 			writer.AppendLine("public static string {0} {{ get; private set; }}", PATH);
 
 			foreach (var file in files)
