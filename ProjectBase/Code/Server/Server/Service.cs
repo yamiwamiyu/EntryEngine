@@ -27,8 +27,8 @@ namespace Server
     partial class Service : ProxyHttpAsync, ICmd
     {
         ParallelRouter<HttpListenerContext> router = new ParallelRouter<HttpListenerContext>();
-        ParallelQueue[] nonLogin = new ParallelQueue[2];
-        ParallelQueue[] doneLogin = new ParallelQueue[4];
+        ParallelQueue[] nonLogin = new ParallelQueue[8];
+        ParallelQueue[] doneLogin = new ParallelQueue[8];
 
         protected override Link InternalAccept(System.Net.HttpListenerContext context)
         {
