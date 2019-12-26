@@ -21,6 +21,10 @@ public class T_PLAYER
     [Index]
     public string Token;
     public DateTime LastLoginTime;
+
+    /// <summary>用户Session缓存，每次请求不需要频繁刷新LastLoginTime，优化接口访问速度</summary>
+    [Ignore]
+    public DateTime LastRefreshLoginTime;
 }
 /// <summary>操作日志</summary>
 [MemoryTable]

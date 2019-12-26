@@ -205,6 +205,7 @@ namespace Server
     public class StubBase
     {
         public T_PLAYER Player;
+        protected static Dictionary<string, T_PLAYER> _cachePlayer = new Dictionary<string, T_PLAYER>();
 
         public void OP(string op, string way, int sign, int statistic, string detail)
         {
@@ -241,13 +242,51 @@ namespace Server
             if (string.IsNullOrEmpty(token))
                 throw new InvalidOperationException("没有登录!");
 
+            // 做分布式使用多进程时，请不要使用以下缓存机制
+
+            // 缓存
+            lock (_cachePlayer)
+            {
+                _cachePlayer.TryGetValue(token, out Player);
+            }
+            bool hasCache = Player != null;
+            if (!hasCache)
+            {
+                Player = _DB._T_PLAYER.Select(null, "WHERE Token=@p0", token);
+                if (Player != null)
+                {
+                    Player.LastRefreshLoginTime = Player.LastLoginTime;
+                    lock (_cachePlayer)
+                    {
+                        _cachePlayer.Add(token, Player);
+                    }
+                }
+            }
             // 检查登录
-            Player = _DB._T_PLAYER.Select(null, "WHERE Token=@p0", token);
             if (Player != null)
             {
-                Player.LastLoginTime = GameTime.Time.CurrentFrame;
-                _DB._T_PLAYER.Update(Player, null, ET_PLAYER.LastLoginTime);
-                return;
+                var now = GameTime.Time.CurrentFrame;
+                var elapsed = (now - Player.LastLoginTime).TotalMinutes;
+                // Token过期时间
+                if (elapsed < 30)
+                {
+                    // 刷新Token过期时间到数据库
+                    if (elapsed > 5)
+                    {
+                        Player.LastLoginTime = now;
+                        Player.LastRefreshLoginTime = now;
+                        _DB._T_PLAYER.Update(Player, null, ET_PLAYER.LastLoginTime);
+                    }
+                    return;
+                }
+                else
+                {
+                    _LOG.Debug("用户:{0}缓存过期", Player.Name);
+                    lock (_cachePlayer)
+                    {
+                        _cachePlayer.Remove(token);
+                    }
+                }
             }
             throw new InvalidOperationException("没有登录!");
         }
