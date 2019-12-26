@@ -8,9 +8,13 @@ namespace Server.Impl
 {
     class ImplProtocol1 : _Protocol1
     {
-        void _Protocol1.Login(string name, string password, CBProtocol1_Login callback)
+        void _Protocol1.PlayerExists(string name, CBProtocol1_PlayerExists callback)
         {
-            var player = _DB._T_PLAYER.Select(null, "WHERE Name=@p0", name);
+            callback.Callback(_DB._DAO.ExecuteScalar<bool>("SELECT EXISTS(SELECT ID FROM T_PLAYER WHERE Name=@p0)", name));
+        }
+        T_PLAYER Login(string name, string password, T_PLAYER player)
+        {
+            // 没有角色则自动创建角色
             bool isRegister = player == null;
             if (isRegister)
             {
@@ -42,7 +46,23 @@ namespace Server.Impl
                 PID = player.ID,
                 Time = DateTime.Now,
             });
-            callback.Callback(player);
+            return player;
+        }
+        void _Protocol1.Register(string name, string password, CBProtocol1_Register callback)
+        {
+            bool exists = _DB._DAO.ExecuteScalar<bool>("SELECT EXISTS(SELECT ID FROM T_PLAYER WHERE Name=@p0)", name);
+            if (exists)
+                throw new InvalidOperationException("账号已存在");
+            callback.Callback(Login(name, password, null));
+        }
+        void _Protocol1.Login(string name, string password, CBProtocol1_Login callback)
+        {
+            var player = _DB._T_PLAYER.Select(null, "WHERE Name=@p0", name);
+            // 并行时用此接口创建角色会创建多个相同角色
+            // 仅方便测试的话，可以不需要这个检测，以自动创建角色或登录角色
+            if (player == null)
+                throw new InvalidOperationException("账号不存在");
+            callback.Callback(Login(name, password, player));
         }
     }
 }

@@ -99,8 +99,13 @@ namespace Server
                 {
                     string token = c.Request.Headers["AccessToken"];
                     if (string.IsNullOrEmpty(token))
+                    {
+                        // 注册时，必须队列执行（否则可能创建多个相同账号），所以必须分配到相同线程
+                        if (c.Request.Url.LocalPath == "/Action/1/Register")
+                            return 1024;
                         // 随机分配线程
                         return _RANDOM.Next(0, 1000);
+                    }
                     else
                         // 不处理
                         return -1;

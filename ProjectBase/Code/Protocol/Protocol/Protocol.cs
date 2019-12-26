@@ -18,6 +18,8 @@ using EntryEngine.Network;
 [ProtocolStub(1, null)]
 public interface Protocol1
 {
+    void PlayerExists(string name, Action<bool> callback);
+    void Register(string name, string password, Action<T_PLAYER> callback);
     void Login(string name, string password, Action<T_PLAYER> callback);
 }
 
