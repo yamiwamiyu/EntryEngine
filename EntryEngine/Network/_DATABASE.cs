@@ -633,7 +633,7 @@ namespace EntryEngine.Network
             }
             connection.Idle = true;
             lock (pools)
-                pools.Remove(connection);
+                pools.RemoveAt(connection);
         }
 
         protected internal override IDbConnection CreateConnection()
