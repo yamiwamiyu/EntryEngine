@@ -390,6 +390,43 @@
         <member name="M:EntryEngine.Network._DATABASE.Database.CreateConnection">
             <summary>已打开可使用的数据库连接</summary>
         </member>
+        <member name="M:EntryEngine.Game.BAG`1.Add(System.Int32,System.Int32,`0@)">
+            <summary>数量变化，正数直接加，负数检查数量后减</summary>
+        </member>
+        <member name="M:EntryEngine.Game.BAG`1.Insert(`0)">
+            <summary>数量添加，没有则加入背包</summary>
+            <returns>是否新增或删除</returns>
+        </member>
+        <member name="M:EntryEngine.Game.BAG`1.Update(System.Int32,System.Int32)">
+            <summary>数量变成</summary>
+        </member>
+        <member name="M:EntryEngine.Game.BAG`1.Save(System.Collections.Generic.List{EntryEngine.Game.BAG_PACKAGE},System.Int32)">
+            <summary>保存数据变动</summary>
+            <param name="output">SQL数据包，包括语句和参数</param>
+            <param name="batchLength">分批打包的sql语句长度，超过长度则分批，-1则不分批</param>
+            <returns>是否有保存数据</returns>
+        </member>
+        <member name="T:EntryEngine.Game.ITEM">
+            <summary>掉落权重变化在_MATH.WeightVary</summary>
+        </member>
+        <member name="M:EntryEngine.Game.ITEM.Drop(System.Collections.Generic.IEnumerable{EntryEngine.Game.IDrop},EntryEngine._RANDOM.Random,EntryEngine.Game.DROP[])">
+            <summary>掉落列表中掉落道具</summary>
+            <param name="list">掉落列表</param>
+            <param name="random">随机对象</param>
+            <param name="weightVary">权重变化量，可通过_MATH.WeightVary计算，权重变化的ID在掉落列表中不存在时，权重变化不起作用</param>
+            <returns>掉落的道具，ID为0则代表空道具</returns>
+        </member>
+        <member name="T:EntryEngine.Game.T_S_ONLINE">
+            <summary>统计时间点的在线人数</summary>
+        </member>
+        <member name="M:EntryEngine.Game.T_S_ONLINE.GetQuarter(System.DateTime)">
+            <summary>
+            <para>int quarter = T_S_ONLINE.GetQuarter(ref time);</para>
+            <para>if (quarter == 0) // 新的一天第一次插入数据库</para>
+            <para>else db.ExecuteNonQuery(string.Format("UPDATE T_S_ONLINE SET Quarter{0} = {1} WHERE Time = @p0", quarter, online), time);</para>
+            </summary>
+            <returns>0~95</returns>
+        </member>
         <member name="F:EntryEngine._MATH.DIVIDE_BY_1">
             <summary>1 ~ 2048的倒数(reciprocal)</summary>
         </member>
@@ -1644,6 +1681,18 @@
         <member name="M:EntryEngine.LINE.LineInterceptY(System.Single,System.Single)">
             <summary>斜截式 y = kx + b</summary>
         </member>
+        <member name="M:EntryEngine.RECT.ScaleMultiple(EntryEngine.UI.EPivot,System.Single,System.Single)">
+            <summary>倍数缩放</summary>
+            <param name="pivot">缩放锚点</param>
+            <param name="x">横轴缩放倍数</param>
+            <param name="y">纵轴缩放倍数</param>
+        </member>
+        <member name="M:EntryEngine.RECT.Scale(EntryEngine.UI.EPivot,System.Single,System.Single)">
+            <summary>量缩放</summary>
+            <param name="pivot">缩放锚点</param>
+            <param name="x">横轴缩放量</param>
+            <param name="y">纵轴缩放量</param>
+        </member>
         <member name="M:EntryEngine.CIRCLE.TangentLine(System.Single,System.Single,EntryEngine.LINE@,EntryEngine.LINE@)">
             <summary>过一点得出圆的切线</summary>
         </member>
@@ -1907,43 +1956,6 @@
         </member>
         <member name="F:EntryEngine.Serialize.JsonReader.EJson.VALUE">
             <summary>Value</summary>
-        </member>
-        <member name="M:EntryEngine.Game.BAG`1.Add(System.Int32,System.Int32,`0@)">
-            <summary>数量变化，正数直接加，负数检查数量后减</summary>
-        </member>
-        <member name="M:EntryEngine.Game.BAG`1.Insert(`0)">
-            <summary>数量添加，没有则加入背包</summary>
-            <returns>是否新增或删除</returns>
-        </member>
-        <member name="M:EntryEngine.Game.BAG`1.Update(System.Int32,System.Int32)">
-            <summary>数量变成</summary>
-        </member>
-        <member name="M:EntryEngine.Game.BAG`1.Save(System.Collections.Generic.List{EntryEngine.Game.BAG_PACKAGE},System.Int32)">
-            <summary>保存数据变动</summary>
-            <param name="output">SQL数据包，包括语句和参数</param>
-            <param name="batchLength">分批打包的sql语句长度，超过长度则分批，-1则不分批</param>
-            <returns>是否有保存数据</returns>
-        </member>
-        <member name="T:EntryEngine.Game.ITEM">
-            <summary>掉落权重变化在_MATH.WeightVary</summary>
-        </member>
-        <member name="M:EntryEngine.Game.ITEM.Drop(System.Collections.Generic.IEnumerable{EntryEngine.Game.IDrop},EntryEngine._RANDOM.Random,EntryEngine.Game.DROP[])">
-            <summary>掉落列表中掉落道具</summary>
-            <param name="list">掉落列表</param>
-            <param name="random">随机对象</param>
-            <param name="weightVary">权重变化量，可通过_MATH.WeightVary计算，权重变化的ID在掉落列表中不存在时，权重变化不起作用</param>
-            <returns>掉落的道具，ID为0则代表空道具</returns>
-        </member>
-        <member name="T:EntryEngine.Game.T_S_ONLINE">
-            <summary>统计时间点的在线人数</summary>
-        </member>
-        <member name="M:EntryEngine.Game.T_S_ONLINE.GetQuarter(System.DateTime)">
-            <summary>
-            <para>int quarter = T_S_ONLINE.GetQuarter(ref time);</para>
-            <para>if (quarter == 0) // 新的一天第一次插入数据库</para>
-            <para>else db.ExecuteNonQuery(string.Format("UPDATE T_S_ONLINE SET Quarter{0} = {1} WHERE Time = @p0", quarter, online), time);</para>
-            </summary>
-            <returns>0~95</returns>
         </member>
     </members>
 </doc>

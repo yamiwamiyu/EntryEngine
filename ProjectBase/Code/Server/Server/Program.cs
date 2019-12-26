@@ -12,6 +12,8 @@ namespace Server
     {
         static void Main(string[] args)
         {
+            // 修改服务器标题，可以让你方便找到服务器的控制台程序
+            Console.Title = "服务器标题";
             // 初始化你的入口，入口类型有以下几个（EntryService，Entry，EntryLinkServer）
             // EntryEngine.EntryService: 通用入口，可以通过继承此入口重写InternalUpdate来自定义程序逻辑
             // EntryEngine.Entry: 客户端用入口，服务器可能用不上；若需要制作带有操作界面的服务端，或许可以使用，不过需要重新设置特殊的运行环境

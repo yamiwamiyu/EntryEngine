@@ -79,11 +79,11 @@ namespace Server
         void ICmd.Launch(ushort port, string dbconn, string dbname)
         {
             // 设置数据库
-            //_DB.IsDropColumn = true;
-            //_DB.DatabaseName = dbname;
-            //_DB._DAO = new ConnectionPool(new MYSQL_DATABASE());
-            //_DB._DAO.ConnectionString = dbconn;
-            //_DB._DAO.TestConnection();
+            _DB.IsDropColumn = true;
+            _DB.DatabaseName = dbname;
+            _DB._DAO = new ConnectionPool(new MYSQL_DATABASE());
+            _DB._DAO.ConnectionString = dbconn;
+            _DB._DAO.TestConnection();
 
             this.RegistServeiceUriPrefix(string.Format("http://*:{0}/Action/", port));
             this.Initialize(System.Net.IPAddress.Loopback, port);

@@ -4,4 +4,8 @@
     <StartAction>Program</StartAction>
     <StartProgram>..\Launch\Server\Cmdline.exe</StartProgram>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|x86'">
+    <StartAction>Program</StartAction>
+    <StartProgram>..\Launch\Server\Cmdline.exe</StartProgram>
+  </PropertyGroup>
 </Project>
