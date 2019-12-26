@@ -44,6 +44,18 @@ http {
 
 }
 
+#TCP反向代理，做读写分离时，可将读服务器做反向代理，所有读服务器的连接字符串就统一成一个了
+stream {
+	upstream dblist {
+		server 127.0.0.1:3306;
+		server 127.0.0.1:3307;
+	}
+	server {
+		listen 81;
+		proxy_pass dblist;
+	}
+}
+
 常用命令
 1. 启动nginx：start nginx
 2. 查看nginx进程：tasklist /fi "imagename eq nginx.exe"
@@ -98,4 +110,5 @@ stop slave
 
 
 ########读写分离
-BuildDatabaseMysql.isStatis设置为false，目前暂时用多实例的数据库对象将读写操作人为分别写代码即可
+BuildDatabaseMysql.isStatis设置为false，用多实例的数据库对象将读写操作人为分别写代码即可
+多个读库只需要用nginx统一代理即可
