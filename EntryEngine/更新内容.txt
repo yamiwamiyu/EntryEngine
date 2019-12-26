@@ -1,4 +1,8 @@
-﻿2019/12/25
+﻿2019/12/26
+1. 新增Network\项目实战技巧.txt，对项目开发中，nginx分布式，数据库主从复制，读写分离做了说明
+2. ParallelRouter并行处理优化
+
+2019/12/25
 1. EntryBuilder.BuildTableFromCSV新增类型包含所有表的数组数据，方便传输给客户端
 
 2019/12/08

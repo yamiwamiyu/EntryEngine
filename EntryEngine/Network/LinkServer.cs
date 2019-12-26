@@ -1940,10 +1940,22 @@ namespace EntryEngine.Network
         {
             if (workers == null || workers.Length == 0)
                 throw new ArgumentException("Worker's count must bigger than 0.");
+            for (int i = 0; i < workers.Length; i++)
+                if (workers[i] == null)
+                    throw new ArgumentNullException("worker");
             for (int i = 0; i < routers.Count; i++)
                 if (routers[i].RouteToken == getToken)
                     return false;
             routers.Add(new Router(getToken, workers));
+            return true;
+        }
+        /// <summary>队列工作，用于例如注册接口，检测之前是否有A账号，之后又要插入A账号，若并行处理则可能会插入多个相同账号</summary>
+        /// <param name="getToken">true:工作 / false:不工作</param>
+        public bool AddRouter(Func<T, bool> getToken, ParallelQueue<T> worker)
+        {
+            if (worker == null)
+                throw new ArgumentNullException("worker");
+            routers.Add(new Router(t => getToken(t) ? 0 : -1, new ParallelQueue<T>[] { worker }));
             return true;
         }
         public bool RemoveRouter(Func<T, int> getToken)
@@ -2008,6 +2020,7 @@ namespace EntryEngine.Network
         /// <summary>key:某个角色 / value:工作数量</summary>
         private Dictionary<int, int> tokenJobs = new Dictionary<int, int>();
         public int QueueCount { get { return jobs.Count; } }
+        public bool Idle { get; private set; }
 
         public ParallelQueue()
         {
@@ -2019,8 +2032,12 @@ namespace EntryEngine.Network
         {
             while (running)
             {
+                Idle = true;
+                OnIdle();
                 handle.Reset();
                 handle.WaitOne();
+                Idle = false;
+                OnWork();
 
                 while (true)
                 {
@@ -2058,6 +2075,8 @@ namespace EntryEngine.Network
             }
         }
         protected abstract void Work(T data);
+        protected virtual void OnIdle() { }
+        protected virtual void OnWork() { }
         protected T GetContext()
         {
             return request.Context;
@@ -2092,6 +2111,7 @@ namespace EntryEngine.Network
     {
         public AgentHttp Agent { get; protected set; }
         public LinkHttpResponseShort Link { get; protected set; }
+        private AgentHttp hotFixAgent;
 
         public ParallelJsonHttpService() : this(null) { }
         public ParallelJsonHttpService(StubHttp[] stubs)
@@ -2112,63 +2132,73 @@ namespace EntryEngine.Network
             }
             else
             {
-                lock (Agent)
+                Agent.Context = data;
+                data.Response.AppendHeader("Access-Control-Allow-Origin", "*");
+                data.Response.AppendHeader("Access-Control-Allow-Headers", "AccessToken");
+                data.Response.ContentType = "text/plain; charset=utf-8";
+                data.Response.ContentEncoding = Encoding.UTF8;
+                if (data.Request.HttpMethod.ToLower() == "options")
                 {
-                    Agent.Context = data;
-                    data.Response.AppendHeader("Access-Control-Allow-Origin", "*");
-                    data.Response.AppendHeader("Access-Control-Allow-Headers", "AccessToken");
-                    data.Response.ContentType = "text/plain; charset=utf-8";
-                    data.Response.ContentEncoding = Encoding.UTF8;
-                    if (data.Request.HttpMethod.ToLower() == "options")
-                    {
-                        data.Response.Close();
-                    }
-                    else
-                    {
-                        Agent.OnProtocol(null);
-                    }
+                    data.Response.Close();
                 }
+                else
+                {
+                    Agent.OnProtocol(null);
+                }
+            }
+        }
+        protected override void OnIdle()
+        {
+            if (hotFixAgent != null)
+            {
+                this.Agent = hotFixAgent;
+                hotFixAgent = null;
             }
         }
         /// <summary>热更新Agent处理协议：StubHttp[] Method(Func&lt;HttpListenerContext> getData)</summary>
         public void HotFixAgent(MethodInfo method)
         {
-            StubHttp[] stubs = (StubHttp[])method.Invoke(null, new object[] { new Func<HttpListenerContext>(GetContext) });
-            lock (this)
-            {
-                Agent = new AgentHttp(stubs);
-            }
+            HotFix((StubHttp[])method.Invoke(null, new object[] { new Func<HttpListenerContext>(GetContext) }));
         }
         public void HotFixAgent(Func<Func<HttpListenerContext>, StubHttp[]> method)
         {
-            StubHttp[] stubs = (StubHttp[])method(GetContext);
-            lock (this)
-            {
-                Agent = new AgentHttp(stubs);
-            }
+            HotFix((StubHttp[])method(GetContext));
+        }
+        void HotFix(StubHttp[] stubs)
+        {
+            hotFixAgent = new AgentHttp(stubs);
+            if (Idle)
+                OnIdle();
         }
     }
     public abstract class ParallelBinaryService<T> : ParallelQueue<T>
     {
         public Agent Agent { get; protected set; }
         public Link Link { get; protected set; }
+        private Agent hotFixAgent;
 
+        protected override void OnIdle()
+        {
+            if (hotFixAgent != null)
+            {
+                this.Agent = hotFixAgent;
+                hotFixAgent = null;
+            }
+        }
         /// <summary>热更新Agent处理协议：Stub[] Method(Func&lt;T> getData)</summary>
         public void HotFixAgent(MethodInfo method)
         {
-            Stub[] stubs = (Stub[])method.Invoke(null, new object[] { new Func<T>(GetContext) });
-            lock (this)
-            {
-                Agent = new AgentProtocolStub(Link, stubs);
-            }
+            HotFix((Stub[])method.Invoke(null, new object[] { new Func<T>(GetContext) }));
         }
         public void HotFixAgent(Func<Func<T>, Stub[]> method)
         {
-            Stub[] stubs = (Stub[])method(GetContext);
-            lock (this)
-            {
-                Agent = new AgentProtocolStub(stubs);
-            }
+            HotFix((Stub[])method(GetContext));
+        }
+        void HotFix(Stub[] stubs)
+        {
+            hotFixAgent = new AgentProtocolStub(stubs);
+            if (Idle)
+                OnIdle();
         }
     }
     public class ParallelBinaryHttpService : ParallelBinaryService<HttpListenerContext>
@@ -2189,17 +2219,14 @@ namespace EntryEngine.Network
             {
                 // 函数路由
                 ((LinkHttpResponseShort)Link).Enqueue(data);
-                lock (Agent)
+                /* 每帧需要手动发出客户端的请求数据 */
+                while (Link.CanRead)
                 {
-                    /* 每帧需要手动发出客户端的请求数据 */
-                    while (Link.CanRead)
-                    {
-                        byte[] package = Link.Read();
-                        if (package != null)
-                            Agent.OnProtocol(package);
-                        else
-                            break;
-                    }
+                    byte[] package = Link.Read();
+                    if (package != null)
+                        Agent.OnProtocol(package);
+                    else
+                        break;
                 }
                 Link.Flush();
             }

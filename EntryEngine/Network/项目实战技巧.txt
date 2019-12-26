@@ -1,0 +1,101 @@
+﻿########使用nginx实现服务器分布式
+
+配置文件在conf/nginx.conf中
+
+配置示例
+
+#user  nobody;
+worker_processes  1;
+
+events {
+    worker_connections  1024;
+}
+
+
+http {
+    include       mime.types;
+    default_type  application/octet-stream;
+
+    sendfile        on;
+
+    #keepalive_timeout  0;
+    keepalive_timeout  65;
+
+    #gzip  on;
+
+	upstream serverlist  { 
+        #ip_hash; # 指定支持的调度算法
+		#下面就是服务器列表
+        server   127.0.0.1:888;  
+        server   127.0.0.1:889;
+    }
+
+    server {
+		#侦听80则访问80之后内部转发给其它服务器
+        listen       80;
+        server_name  localhost;
+
+        location /Action/ {
+			#proxy_pass参数的http://这里的url就是upstream的名字
+            proxy_pass   http://serverlist;
+        }
+
+    }
+
+}
+
+常用命令
+1. 启动nginx：start nginx
+2. 查看nginx进程：tasklist /fi "imagename eq nginx.exe"
+3. 关闭nginx进程：taskkill /fi "imagename eq nginx.exe" /f
+
+
+
+########MySQL单机多实例
+
+:: 以下为单机创建多个MySQL数据库服务的方法，在单机上创建多个MySQL服务以测试主从复制等
+:: MySQL Server 8.0文件夹需要复制一份，然后对复制的MySQL执行以下操作来新增一个MySQL服务
+:: 新MySQL服务的my.ini中需要修改port以免和之前的MySQL服务的端口冲突
+:: 初始化MySQL服务，会生成一个数据文件夹，后面数据库的内容都在文件夹中，文件夹可在my.ini中指定(datadir=指定路径)
+"C:\Program Files\MySQL\MySQL Server 8.0 - 2\bin\mysqld.exe" --defaults-file="C:\ProgramData\MySQL\MySQL Server 8.0 - 2\my.ini" --initialize --console
+:: 以上代码会生成一个随机的root账号密码，后面要用，所以记得在控制台上复制出来
+:: 使用以上密码第一次连接数据库时会提示修改密码，修改密码后再用修改后的密码登录一次就成功修改了root密码了
+:: 安装新的MySQL服务到"我的电脑->管理->服务和应用程序->服务"中，名字在install后指定，不要和其它服务重名即可
+"C:\Program Files\MySQL\MySQL Server 8.0 - 2\bin\mysqld.exe" install MySQL80T --defaults-file="C:\ProgramData\MySQL\MySQL Server 8.0 - 2\my.ini"
+:: 启动MySQL服务，也可以到服务中自己启动
+::net start MySQL80T
+:: 删除MySQL服务
+::"C:\Program Files\MySQL\MySQL Server 8.0 - 2\bin\mysqld.exe" -remove MySQL80T
+pause
+
+以上复制到.bat文件中，用管理员身份运行即可新增一个数据库服务实例
+
+
+############MySQL主从复制
+主库设置
+1. 主库配置文件
+log-bin="日志文件名，随意"
+binlog-do-db=要主从复制的数据库名字
+2. 新建主从复制用的账号，Administrative Roles勾上全部，Schema Privileges勾上全部
+3. 执行SQL语句show master status，记录下File和Position
+
+从库设置
+1. 从库配置文件
+log-bin="日志文件名，随意"
+2. 从库执行SQL语句指定主库
+change master to
+    master_host='主库IP',
+    master_user='连接主库用的账号',
+    master_password='连接主库用的密码',
+    master_log_file='主库[show master status].File',
+    master_log_pos=主库[show master status].Position;
+3. 开启从库同步
+start slave
+4. 确认从库同步已正常开启
+执行SQL语句show slave status,确认Slave_IO_Running和Slave_SQL_Running都是Yes
+5. 停止从库同步
+stop slave
+
+
+########读写分离
+BuildDatabaseMysql.isStatis设置为false，目前暂时用多实例的数据库对象将读写操作人为分别写代码即可
