@@ -87,6 +87,7 @@ pause
 主库设置
 1. 主库配置文件
 log-bin="日志文件名，随意"
+server-id=1
 binlog-do-db=要主从复制的数据库名字
 2. 新建主从复制用的账号，Administrative Roles勾上全部，Schema Privileges勾上全部
 3. 执行SQL语句show master status，记录下File和Position
@@ -94,6 +95,8 @@ binlog-do-db=要主从复制的数据库名字
 从库设置
 1. 从库配置文件
 log-bin="日志文件名，随意"
+#server-id要与主库不一样，一般用机子IP的最后3位
+server-id=2
 2. 从库执行SQL语句指定主库
 change master to
     master_host='主库IP',

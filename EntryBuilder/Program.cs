@@ -5799,7 +5799,7 @@ namespace EntryBuilder
             //        });
             //    });
 
-            // build mysql structure
+            #region build mysql structure
             if (string.IsNullOrEmpty(mysqlClassOrEmpty))
             {
                 mysqlClassOrEmpty = "MYSQL_DATABASE";
@@ -5816,6 +5816,43 @@ namespace EntryBuilder
                     });
                 });
             }
+            builder.AppendLine("public class MYSQL_TABLE_COLUMN");
+            builder.AppendBlock(() =>
+            {
+                builder.AppendLine("public string COLUMN_NAME;");
+                builder.AppendLine("public string COLUMN_KEY;");
+                builder.AppendLine("public string EXTRA;");
+                builder.AppendLine("public string DATA_TYPE;");
+                builder.AppendLine("public bool IsPrimary { get { return COLUMN_KEY == \"PRI\"; } }");
+                builder.AppendLine("public bool IsIndex { get { return COLUMN_KEY == \"MUL\"; } }");
+                builder.AppendLine("public bool IsUnique { get { return COLUMN_KEY == \"UNI\"; } }");
+                builder.AppendLine("public bool IsIdentity { get { return EXTRA == \"auto_increment\"; } }");
+            });
+            builder.AppendLine("public class MASTER_STATUS");
+            builder.AppendBlock(() =>
+            {
+                builder.AppendLine("public string File;");
+                builder.AppendLine("public int Position;");
+                builder.AppendLine("public string Binlog_Do_DB;");
+            });
+            builder.AppendLine("public class SLAVE_STATUS");
+            builder.AppendBlock(() =>
+            {
+                builder.AppendLine("public string Master_Host;");
+                builder.AppendLine("public string Master_User;");
+                builder.AppendLine("public int Master_Port;");
+                builder.AppendLine("public string Master_Log_File;");
+                builder.AppendLine("public int Read_Master_Log_Pos;");
+                builder.AppendLine("public string Slave_IO_Running;");
+                builder.AppendLine("public string Slave_SQL_Running;");
+                builder.AppendLine("public string Replicate_Do_DB;");
+                builder.AppendLine("public string Last_Error;");
+                builder.AppendLine("public int Exec_Master_Log_Pos;");
+                builder.AppendLine("public int Master_Server_Id;");
+                builder.AppendLine("public bool IsRunning { get { return Slave_IO_Running == \"Yes\" && Slave_SQL_Running == \"Yes\"; } }");
+                builder.AppendLine("public bool IsSynchronous { get { return Read_Master_Log_Pos == Exec_Master_Log_Pos; } }");
+            });
+            #endregion
 
             string _static = isStatic ? "static " : string.Empty;
             // build database operation
@@ -7170,7 +7207,7 @@ namespace EntryBuilder
                     builderOP.AppendLine("public {0}PagedModel<T> SelectPages<T>(string __where, string selectSQL, string conditionAfterWhere, int page, int pageSize, params object[] param) where T : new()", _static);
                     builderOP.AppendBlock(() =>
                     {
-                        builderOP.AppendLine("return _DAO.SelectPages<T>(\"SELECT count(`{0}`.`{1}`) FROM `{0}`\", __where, selectSQL, conditionAfterWhere, page, pageSize, param);", table.Name, fields[0].Name);
+                        builderOP.AppendLine("return {2}.SelectPages<T>(_DAO, \"SELECT count(`{0}`.`{1}`) FROM `{0}`\", __where, selectSQL, conditionAfterWhere, page, pageSize, param);", table.Name, fields[0].Name, nsOrEmptyDotDBnameOrEmpty);
                     });
                     
                     // ___类型结束
@@ -7188,6 +7225,91 @@ namespace EntryBuilder
                         // 静态时操作方法肯定在映射类中
                         builder.AppendLine("}");
                 }
+                #endregion
+
+                #region 针对对应数据库的分页查询等通用操作
+                builder.AppendLine("public static PagedModel<T> SelectPages<T>(_DATABASE.Database db, string selectCountSQL, string __where, string selectSQL, string conditionAfterWhere, int page, int pageSize, params object[] param) where T : new()");
+                builder.AppendBlock(() =>
+                {
+                    builder.AppendLine("StringBuilder builder = new StringBuilder();");
+                    builder.AppendLine("builder.AppendLine(\"{0} {1};\", selectCountSQL, __where);");
+                    builder.AppendLine("builder.AppendLine(\"{0} {1} {2} LIMIT @p{3},@p{4};\", selectSQL, __where, conditionAfterWhere, param.Length, param.Length + 1);");
+                    builder.AppendLine("object[] __param = new object[param.Length + 2];");
+                    builder.AppendLine("Array.Copy(param, __param, param.Length);");
+                    builder.AppendLine("__param[param.Length] = page * pageSize;");
+                    builder.AppendLine("__param[param.Length + 1] = pageSize;");
+                    builder.AppendLine("PagedModel<T> result = new PagedModel<T>();");
+                    builder.AppendLine("result.Page = page;");
+                    builder.AppendLine("result.PageSize = pageSize;");
+                    builder.AppendLine("db.ExecuteReader((reader) =>");
+                    builder.AppendBlock(() =>
+                    {
+                        builder.AppendLine("reader.Read();");
+                        builder.AppendLine("result.Count = (int)(long)reader[0];");
+                        builder.AppendLine("result.Models = new List<T>();");
+                        builder.AppendLine("reader.NextResult();");
+                        builder.AppendLine("while (reader.Read())");
+                        builder.AppendBlock(() =>
+                        {
+                            builder.AppendLine("result.Models.Add(_DATABASE.ReadObject<T>(reader, 0, reader.FieldCount));");
+                        });
+                    });
+                    builder.AppendLine(", builder.ToString(), __param);");
+                    builder.AppendLine("return result;");
+                });
+                builder.AppendLine("public static void MasterSlave(string masterConnString, string slaveConnStrings)");
+                builder.AppendBlock(() =>
+                {
+                    builder.AppendLine("Dictionary<string, string> dic = _DATABASE.ParseConnectionString(masterConnString, true);");
+                    builder.AppendLine("string host = dic[\"server\"];");
+                    builder.AppendLine("string port = dic[\"port\"];");
+                    builder.AppendLine("string user = dic[\"user\"];");
+                    builder.AppendLine("string password = dic[\"password\"];");
+                    builder.AppendLine("MASTER_STATUS masterStatus;");
+                    builder.AppendLine("using (MYSQL_DATABASE master = new MYSQL_DATABASE())");
+                    builder.AppendBlock(() =>
+                    {
+                        builder.AppendLine("master.ConnectionString = masterConnString;");
+                        builder.AppendLine("master.TestConnection();");
+                        builder.AppendLine("masterStatus = master.SelectObject<MASTER_STATUS>(\"SHOW MASTER STATUS\");");
+                    });
+                    builder.AppendLine("string user2 = null;");
+                    builder.AppendLine("string password2 = null;");
+                    builder.AppendLine("StringBuilder builder = new StringBuilder();");
+                    builder.AppendLine("builder.AppendLine(\"stream {\");");
+                    builder.AppendLine("builder.AppendFormat(\"    upstream {0} {{\", masterStatus.Binlog_Do_DB);");
+                    builder.AppendLine("builder.AppendLine();");
+                    builder.AppendLine("string[] slaves = slaveConnStrings.Split(',');");
+                    builder.AppendLine("for (int i = 0; i < slaves.Length; i++)");
+                    builder.AppendBlock(() =>
+                    {
+                        builder.AppendLine("using (MYSQL_DATABASE slave = new MYSQL_DATABASE())");
+                        builder.AppendBlock(() =>
+                        {
+                            builder.AppendLine("var dic2 = _DATABASE.ParseConnectionString(slaves[i], true);");
+                            builder.AppendLine("if (user2 == null) user2 = dic2[\"user\"];");
+                            builder.AppendLine("else if (user2 != dic2[\"user\"]) throw new InvalidOperationException(\"从库作为分布式读库时登录用户名必须一致\");");
+                            builder.AppendLine("if (password2 == null) password2 = dic2[\"password\"];");
+                            builder.AppendLine("else if (password2 != dic2[\"password\"]) throw new InvalidOperationException(\"从库作为分布式读库时登录密码必须一致\");");
+                            builder.AppendLine("builder.AppendLine(\"        server {0}:{1};\", dic2[\"server\"], dic2[\"port\"]);");
+                            builder.AppendLine("slave.ConnectionString = slaves[i];");
+                            builder.AppendLine("slave.TestConnection();");
+                            builder.AppendLine("var slaveStatus = slave.SelectObject<SLAVE_STATUS>(\"SHOW SLAVE STATUS\");");
+                            builder.AppendLine("if (slaveStatus == null || slaveStatus.IsRunning) continue;");
+                            builder.AppendLine("slave.ExecuteNonQuery(\"CHANGE MASTER TO MASTER_HOST=@p0,MASTER_PORT=@p1,MASTER_USER=@p2,MASTER_PASSWORD=@p3,MASTER_LOG_FILE=@p4,MASTER_LOG_POS=@p5;\", host, port, user, password, masterStatus.File, masterStatus.Position);");
+                        });
+                    });
+                    builder.AppendLine("builder.AppendLine(\"    }\");");
+                    builder.AppendLine("builder.AppendLine(\"    server {\");");
+                    builder.AppendLine("builder.AppendLine(\"        listen nginxport;\");");
+                    builder.AppendLine("builder.AppendLine(\"        proxy_pass {0};\", masterStatus.Binlog_Do_DB);");
+                    builder.AppendLine("builder.AppendLine(\"    }\");");
+                    builder.AppendLine("builder.AppendLine(\"}\");");
+                    builder.AppendLine("_LOG.Debug(\"Nginx配置文件代码\\r\\n{0}\", builder.ToString());");
+                    builder.AppendLine("_LOG.Debug(\"服务器启动的主从数据库连接字符串配置命令\");");
+                    builder.AppendLine("_LOG.Info(\"\\\"Server={0};Port={1};User={2};Password={3}; {4} Server=nginxip;Port=nginxport;User={5};Password={6};\\\"\", host, port, user, password, masterStatus.Binlog_Do_DB, user2, password2);");
+                });
+
                 #endregion
             });
             builder.AppendLine("}");

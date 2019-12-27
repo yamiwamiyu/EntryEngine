@@ -382,41 +382,7 @@ namespace EntryEngine.Network
                     }
             }
         }
-        //private static object ChangeType(object value, Type type)
-        //{
-        //    if (type.IsEnum)
-        //    {
-        //        var underlying = type.UnderlyingSystemType;
-
-        //    }
-        //}
-        public static PagedModel<T> SelectPages<T>(this _DATABASE.Database db, string selectCountSQL, string __where, string selectSQL, string conditionAfterWhere, int page, int pageSize, params object[] param) where T : new()
-        {
-            StringBuilder builder = new StringBuilder();
-            builder.AppendLine("{0} {1};", selectCountSQL, __where);
-            builder.AppendLine("{0} {1} {2} LIMIT @p{3},@p{4};", selectSQL, __where, conditionAfterWhere, param.Length, param.Length + 1);
-            object[] __param = new object[param.Length + 2];
-            Array.Copy(param, __param, param.Length);
-            __param[param.Length] = page * pageSize;
-            __param[param.Length + 1] = pageSize;
-            PagedModel<T> result = new PagedModel<T>();
-            result.Page = page;
-            result.PageSize = pageSize;
-            db.ExecuteReader((reader) =>
-            {
-                reader.Read();
-                result.Count = (int)(long)reader[0];
-                result.Models = new List<T>();
-
-                reader.NextResult();
-                while (reader.Read())
-                {
-                    result.Models.Add(_DATABASE.ReadObject<T>(reader, 0, reader.FieldCount));
-                }
-
-            }, builder.ToString(), __param);
-            return result;
-        }
+        // SelectPages已改为生成的数据库代码中
         public static int[] ToCascadeParentsArray(string parents)
         {
             if (string.IsNullOrEmpty(parents))
@@ -534,6 +500,19 @@ namespace EntryEngine.Network
                     item.Parents = builder.ToString();
                 }
             }
+        }
+        public static Dictionary<string, string> ParseConnectionString(string connString, bool keyToLower)
+        {
+            Dictionary<string, string> dic = new Dictionary<string, string>();
+            string[] datas = connString.Split(';');
+            for (int i = 0; i < datas.Length; i++)
+            {
+                if (string.IsNullOrEmpty(datas[i])) continue;
+                string[] keyvalue = datas[i].Split('=');
+                string key = keyToLower ? keyvalue[0].ToLower() : keyvalue[0];
+                dic[key] = keyvalue[1];
+            }
+            return dic;
         }
     }
     public abstract class Database_Link : EntryEngine.Network._DATABASE.Database
@@ -792,18 +771,6 @@ namespace EntryEngine.Network
             return load;
         }
         public abstract void Dispose();
-    }
-
-    public class MYSQL_TABLE_COLUMN
-    {
-        public string COLUMN_NAME;
-        public string COLUMN_KEY;
-        public string EXTRA;
-        public string DATA_TYPE;
-        public bool IsPrimary { get { return COLUMN_KEY == "PRI"; } }
-        public bool IsIndex { get { return COLUMN_KEY == "MUL"; } }
-        public bool IsUnique { get { return COLUMN_KEY == "UNI"; } }
-        public bool IsIdentity { get { return EXTRA == "auto_increment"; } }
     }
 
     public class MergeDatabase
