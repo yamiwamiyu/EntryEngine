@@ -345,41 +345,41 @@ namespace EntryEngine.Network
         private static void Read(IDataReader reader, Type type, int offset, int count, object instance)
         {
             SerializeSetting setting = SerializeSetting.DefaultSerializeAll;
-            var properties = setting.GetProperties(type);
-            var fields = setting.GetFields(type);
+            var properties = setting.GetProperties(type).ToDictionary(v => v.Name);
+            var fields = setting.GetFields(type).ToDictionary(v => v.Name);
+            PropertyInfo property;
+            FieldInfo field;
             for (int i = offset, e = offset + count; i < e; i++)
             {
                 object value = reader[i];
+                if (value == DBNull.Value)
+                    continue;
 
                 string name = reader.GetName(i);
 
-                var property = properties.FirstOrDefault(p => p.Name == name);
-                if (property != null)
+                if (properties.TryGetValue(name, out property))
                 {
-                    if (!(value is DBNull))
-                        try
-                        {
-                            property.SetValue(instance, value, null);
-                        }
-                        catch
-                        {
-                            property.SetValue(instance, Convert.ChangeType(value, property.PropertyType), null);
-                        }
-                    continue;
-                }
-
-                var field = fields.FirstOrDefault(f => f.Name == name);
-                if (field == null)
-                    continue;
-                if (!(value is DBNull))
                     try
                     {
-                        field.SetValue(instance, value);
+                        property.SetValue(instance, value, null);
                     }
                     catch
                     {
-                        field.SetValue(instance, Convert.ChangeType(value, field.FieldType));
+                        property.SetValue(instance, Convert.ChangeType(value, property.PropertyType), null);
                     }
+                    continue;
+                }
+
+                if (!fields.TryGetValue(name, out field))
+                    continue;
+                try
+                {
+                    field.SetValue(instance, value);
+                }
+                catch
+                {
+                    field.SetValue(instance, Convert.ChangeType(value, field.FieldType));
+                }
             }
         }
         // SelectPages已改为生成的数据库代码中
