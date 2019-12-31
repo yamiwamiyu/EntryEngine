@@ -6868,12 +6868,13 @@ namespace EntryBuilder
                                 builderOP.AppendLine("{0} _{1} = new {0}({1});", tableMapperName, target);
                                 target = "_" + target;
                             }
-                            builderOP.AppendLine("if (fields.Length == 0) fields = FIELD_UPDATE;");
+                            //builderOP.AppendLine("if (fields.Length == 0) fields = FIELD_UPDATE;");
+                            builderOP.AppendLine("bool all = fields.Length == 0 || fields == FIELD_UPDATE;");
                             builderOP.AppendLine("builder.Append(\"UPDATE `{0}` SET\");", table.Name);
 
                             foreach (var field in canUpdate)
                             {
-                                builderOP.AppendLine("if (fields.Contains(E{0}.{1}))", table.Name, field.Name);
+                                builderOP.AppendLine("if (all || fields.Contains(E{0}.{1}))", table.Name, field.Name);
                                 builderOP.AppendBlock(() =>
                                 {
                                     builderOP.AppendLine("builder.AppendFormat(\" `{0}` = @p{{0}},\", index++);", field.Name);
