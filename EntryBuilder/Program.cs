@@ -6690,6 +6690,11 @@ namespace EntryBuilder
                     {
                         builderOP.AppendLine("return _DATABASE.ReadObject<{0}>(reader, offset, fieldCount);", tableMapperName);
                     });
+                    builderOP.AppendLine("public {1}{0} MultiRead(IDataReader reader, int offset, int fieldCount, List<PropertyInfo> properties, List<FieldInfo> fields, int[] indices)", tableMapperName, _static);
+                    builderOP.AppendBlock(() =>
+                    {
+                        builderOP.AppendLine("return _DATABASE.MultiRead<{0}>(reader, offset, fieldCount, properties, fields, indices);", tableMapperName);
+                    });
 
                     // 增
                     builderOP.AppendLine("public {1}void GetInsertSQL({0} target, StringBuilder builder, List<object> values)", table.Name, _static);
@@ -7159,14 +7164,30 @@ namespace EntryBuilder
                             builderOP.AppendLine("_DAO.ExecuteReader((reader) =>");
                             builderOP.AppendBlock(() =>
                             {
-                                builderOP.AppendLine("int offset;");
+                                builderOP.AppendLine("int offset = 0;");
+                                builderOP.AppendLine("int[] indices = new int[reader.FieldCount];");
+                                builderOP.AppendLine("List<PropertyInfo> _p{0};", table.Name);
+                                builderOP.AppendLine("List<FieldInfo> _f{0};", table.Name);
+                                builderOP.AppendLine("_DATABASE.MultiReadPrepare(reader, typeof({1}_{0}), 0, f{0}.Length, out _p{0}, out _f{0}, ref indices);", table.Name, dbInstanceName);
+                                builderOP.AppendLine("offset = f{0}.Length;", table.Name);
+                                for (int i = 0; i <= e; i++)
+                                {
+                                    builderOP.AppendLine("List<PropertyInfo> _p{0} = null;", foreignFields[i].Name);
+                                    builderOP.AppendLine("List<FieldInfo> _f{0} = null;", foreignFields[i].Name);
+                                    builderOP.AppendLine("if (f{0} != null)", foreignFields[i].Name);
+                                    builderOP.AppendBlock(() =>
+                                    {
+                                        builderOP.AppendLine("_DATABASE.MultiReadPrepare(reader, typeof({2}_{1}), offset, f{0}.Length, out _p{0}, out _f{0}, ref indices);", foreignFields[i].Name, foreigns[i].ForeignTable.Name, dbInstanceName);
+                                        builderOP.AppendLine("offset += f{0}.Length;", foreignFields[i].Name);
+                                    });
+                                }
                                 builderOP.AppendLine("while (reader.Read())");
                                 builderOP.AppendBlock(() =>
                                 {
                                     builderOP.AppendLine("Join{0} join = new Join{0}();", table.Name);
                                     builderOP.AppendLine("results.Add(join);");
                                     //builderOP.AppendLine("t{0}.Add(_{0}.Read(reader, 0, f{0}.Length));", table.Name);
-                                    builderOP.AppendLine("join.{0} = {1}_{0}.Read(reader, 0, f{0}.Length);", table.Name, dbInstanceName);
+                                    builderOP.AppendLine("join.{0} = {1}_{0}.MultiRead(reader, 0, f{0}.Length, _p{0}, _f{0}, indices);", table.Name, dbInstanceName);
                                     builderOP.AppendLine("offset = f{0}.Length;", table.Name);
                                     for (int i = 0; i <= e; i++)
                                     {
@@ -7174,7 +7195,7 @@ namespace EntryBuilder
                                         builderOP.AppendBlock(() =>
                                         {
                                             //builderOP.AppendLine("t{0}.Add(_{1}.Read(reader, offset, f{0}.Length));", foreignFields[i].Name, foreigns[i].ForeignTable.Name);
-                                            builderOP.AppendLine("join.{0} = {2}_{1}.Read(reader, offset, f{0}.Length);", foreignFields[i].Name, foreigns[i].ForeignTable.Name, dbInstanceName);
+                                            builderOP.AppendLine("join.{0} = {2}_{1}.MultiRead(reader, offset, f{0}.Length, _p{0}, _f{0}, indices);", foreignFields[i].Name, foreigns[i].ForeignTable.Name, dbInstanceName);
                                             builderOP.AppendLine("offset += f{0}.Length;", foreignFields[i].Name);
                                         });
                                     }

@@ -268,11 +268,15 @@ namespace EntryEngine.Network
                     {
                         Type type = typeof(T);
                         int count = reader.FieldCount;
+                        List<PropertyInfo> properties;
+                        List<FieldInfo> fields;
+                        int[] indices = new int[count];
+                        MultiReadPrepare(reader, type, 0, count, out properties, out fields, ref indices);
 
                         while (reader.Read())
                         {
                             T instance = Activator.CreateInstance<T>();
-                            Read(reader, type, 0, count, instance);
+                            MultiRead(reader, 0, count, instance, properties, fields, indices);
                             list.Add(instance);
                         }
                     }, sql, parameters);
@@ -299,10 +303,27 @@ namespace EntryEngine.Network
 
         public static IEnumerable<T> ReadMultiple<T>(IDataReader reader) where T : new()
         {
+            Type type = typeof(T);
+            int count = reader.FieldCount;
+            List<PropertyInfo> properties;
+            List<FieldInfo> fields;
+            int[] indices = new int[count];
+            MultiReadPrepare(reader, type, 0, count, out properties, out fields, ref indices);
             while (reader.Read())
             {
                 T instance = new T();
-                Read(reader, typeof(T), 0, reader.FieldCount, instance);
+                MultiRead(reader, 0, count, instance, properties, fields, indices);
+                yield return instance;
+            }
+        }
+        public static IEnumerable<T> ReadMultiple<T>(IDataReader reader, List<PropertyInfo> properties, List<FieldInfo> fields, int[] indices) where T : new()
+        {
+            Type type = typeof(T);
+            int count = reader.FieldCount;
+            while (reader.Read())
+            {
+                T instance = new T();
+                MultiRead(reader, 0, count, instance, properties, fields, indices);
                 yield return instance;
             }
         }
@@ -316,13 +337,6 @@ namespace EntryEngine.Network
             }
             return default(T);
         }
-        public static T ReadObject<T>(IDataReader reader, int offset) where T : new()
-        {
-            Type type = typeof(T);
-            T instance = new T();
-            Read(reader, type, offset, type.GetFields().Length, instance);
-            return instance;
-        }
         public static T ReadObject<T>(IDataReader reader, int offset, int fieldCount) where T : new()
         {
             T instance = new T();
@@ -332,11 +346,6 @@ namespace EntryEngine.Network
         public static void ReadObject(IDataReader reader, object instance)
         {
             Read(reader, instance.GetType(), 0, reader.FieldCount, instance);
-        }
-        public static void ReadObject(IDataReader reader, object instance, int offset)
-        {
-            Type type = instance.GetType();
-            Read(reader, type, offset, type.GetFields().Length, instance);
         }
         public static void ReadObject(IDataReader reader, object instance, int offset, int fieldCount)
         {
@@ -381,6 +390,114 @@ namespace EntryEngine.Network
                     field.SetValue(instance, Convert.ChangeType(value, field.FieldType));
                 }
             }
+        }
+        /// <summary>连续读取多个对象时，一次性把属性和字段都准备好，加速反射效率</summary>
+        /// <param name="indices">0:不需要读取 / 负数:-(属性的索引+1) / 正数:字段的索引+1</param>
+        public static void MultiReadPrepare(IDataReader reader, Type type, int offset, int count,
+            out List<PropertyInfo> properties, out List<FieldInfo> fields, ref int[] indices)
+        {
+            SerializeSetting setting = SerializeSetting.DefaultSerializeAll;
+            properties = setting.GetProperties(type).ToList();
+            fields = setting.GetFields(type).ToList();
+            if (indices == null || indices.Length != reader.FieldCount)
+                indices = new int[reader.FieldCount];
+            for (int i = offset, e = offset + count; i < e; i++)
+            {
+                string name = reader.GetName(i);
+                int index = properties.IndexOf(p => p.Name == name);
+                if (index != -1)
+                {
+                    indices[i] = -(index + 1);
+                    continue;
+                }
+                index = fields.IndexOf(f => f.Name == name);
+                if (index != -1)
+                    indices[i] = index + 1;
+            }
+        }
+        /// <summary>使用MultiReadPrepare准备好的参数，快速读取一个对象</summary>
+        /// <param name="properties">MultiReadPrepare的输出参数</param>
+        /// <param name="fields">MultiReadPrepare的输出参数</param>
+        /// <param name="indices">MultiReadPrepare的输出参数</param>
+        public static void MultiRead(IDataReader reader, int offset, int count, object instance,
+            List<PropertyInfo> properties, List<FieldInfo> fields, int[] indices)
+        {
+            PropertyInfo property;
+            FieldInfo field;
+            for (int i = offset, e = offset + count; i < e; i++)
+            {
+                int index = indices[i];
+                if (index == 0) continue;
+
+                object value = reader[i];
+                if (value == DBNull.Value)
+                    continue;
+
+                if (index < 0)
+                {
+                    property = properties[-index - 1];
+                    try
+                    {
+                        property.SetValue(instance, value, null);
+                    }
+                    catch
+                    {
+                        property.SetValue(instance, Convert.ChangeType(value, property.PropertyType), null);
+                    }
+                    continue;
+                }
+
+                field = fields[index - 1];
+                try
+                {
+                    field.SetValue(instance, value);
+                }
+                catch
+                {
+                    field.SetValue(instance, Convert.ChangeType(value, field.FieldType));
+                }
+            }
+        }
+        public static T MultiRead<T>(IDataReader reader, int offset, int count,
+            List<PropertyInfo> properties, List<FieldInfo> fields, int[] indices) where T : new()
+        {
+            T instance = new T();
+            PropertyInfo property;
+            FieldInfo field;
+            for (int i = offset, e = offset + count; i < e; i++)
+            {
+                int index = indices[i];
+                if (index == 0) continue;
+
+                object value = reader[i];
+                if (value == DBNull.Value)
+                    continue;
+
+                if (index < 0)
+                {
+                    property = properties[-index - 1];
+                    try
+                    {
+                        property.SetValue(instance, value, null);
+                    }
+                    catch
+                    {
+                        property.SetValue(instance, Convert.ChangeType(value, property.PropertyType), null);
+                    }
+                    continue;
+                }
+
+                field = fields[index - 1];
+                try
+                {
+                    field.SetValue(instance, value);
+                }
+                catch
+                {
+                    field.SetValue(instance, Convert.ChangeType(value, field.FieldType));
+                }
+            }
+            return instance;
         }
         // SelectPages已改为生成的数据库代码中
         public static int[] ToCascadeParentsArray(string parents)
