@@ -73,7 +73,7 @@ namespace EntryEngine.Cmdline
             if (instance == null)
                 throw new ArgumentNullException("Listen cmd interface must has a implement instance that is not be null.");
 
-            AppendCommand(instance, cmdInterface.GetMethods().MethodOnly());
+            AppendCommand(instance, cmdInterface.GetMethods().Where(m => !m.IsSpecialName || m.Name.StartsWith("op_")));
         }
         public void AppendCommand(object instance, params MethodInfo[] commands)
         {

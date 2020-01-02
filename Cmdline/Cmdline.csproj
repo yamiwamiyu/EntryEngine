@@ -47,10 +47,6 @@
       <Project>{424D14E4-1661-42E9-A192-B1C60D4669FF}</Project>
       <Name>EntryEngine</Name>
     </ProjectReference>
-    <ProjectReference Include="..\ReflectionHelper\ReflectionHelper.csproj">
-      <Project>{D6E12A5C-CD9D-4671-9BD7-5D3E79CE3543}</Project>
-      <Name>ReflectionHelper</Name>
-    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
