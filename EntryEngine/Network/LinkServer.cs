@@ -1359,6 +1359,12 @@ namespace EntryEngine.Network
         }
     }
 
+    public class FileUpload
+    {
+        public string Filename;
+        public string ContentType;
+        public byte[] Content;
+    }
     // link
     //public class LinkHttpResponse : LinkBinary
     //{
@@ -1687,8 +1693,52 @@ namespace EntryEngine.Network
             if (Param == null)
             {
                 byte[] data = _IO.ReadStream(Context.Request.InputStream, (int)Context.Request.ContentLength64);
-                string str = _NETWORK.UrlDecode(data, Context.Request.ContentEncoding);
-                Param = _NETWORK.ParseQueryString(str);
+                string ctype = context.Request.ContentType;
+                if (ctype.Contains("multipart/form-data;"))
+                {
+                    Param = new System.Collections.Specialized.NameValueCollection();
+                    string bondary = "--" + ctype.Substring(ctype.IndexOf("boundary=") + 9);
+                    string str = SingleEncoding.Single.GetString(data);
+                    StringStreamReader reader = new StringStreamReader(str);
+                    while (!reader.IsEnd)
+                    {
+                        reader.EatAfterSign(bondary);
+                        // 最后的--\n
+                        if (reader.Pos + 4 >= reader.str.Length)
+                            break;
+                        reader.EatAfterSign("form-data; name=\"");
+                        string name = reader.NextToSignAfter("\"");
+                        if (reader.PeekChar == ';')
+                        {
+                            // 文件; filename="白.txt"
+                            reader.ToPosition(reader.Pos + 2);
+                            if (reader.PeekNext("=") != "filename")
+                                throw new ArgumentException("filename");
+                            Param.Add(name, reader.NextToSign(bondary));
+                        }
+                        else
+                        {
+                            // 普通表单数据
+                            reader.EatLine();
+                            while (true)
+                            {
+                                reader.EatLine();
+                                if (reader.PeekChar == '\r')
+                                {
+                                    // 空行之后是数据
+                                    reader.EatLine();
+                                    break;
+                                }
+                            }
+                            Param.Add(name, _NETWORK.UrlDecode(SingleEncoding.Single.GetBytes(reader.Next("\r\n")), Encoding.UTF8));
+                        }
+                    }
+                }
+                else
+                {
+                    string str = _NETWORK.UrlDecode(data, Context.Request.ContentEncoding);
+                    Param = _NETWORK.ParseQueryString(str);
+                }
             }
             return Param[paramName];
         }
@@ -1745,6 +1795,28 @@ namespace EntryEngine.Network
         public string GetParam(string paramName)
         {
             return ProtocolAgent.GetParam(paramName);
+        }
+        public static FileUpload GetFile(string data)
+        {
+            FileUpload ret = new FileUpload();
+            StringStreamReader reader = new StringStreamReader(data);
+            reader.EatAfterSign("filename=\"");
+            ret.Filename = reader.NextToSignAfter("\"");
+            reader.EatAfterSign("Content-Type: ");
+            ret.ContentType = reader.Next("\r\n");
+            reader.EatLine();
+            while (true)
+            {
+                reader.EatLine();
+                if (reader.PeekChar == '\r')
+                {
+                    // 空行之后是数据
+                    reader.EatLine();
+                    break;
+                }
+            }
+            ret.Content = SingleEncoding.Single.GetBytes(reader.Tail);
+            return ret;
         }
         public void Response(object obj)
         {

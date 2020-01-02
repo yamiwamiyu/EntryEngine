@@ -1787,7 +1787,7 @@ namespace EntryBuilder
                     builder.AppendLine("public class {0} : IDisposable", name);
                     builder.AppendBlock(() =>
                     {
-                        builder.AppendLine("private StubHttp __link;");
+                        builder.AppendLine("internal StubHttp __link { get; private set; }");
                         //builder.AppendLine("\tinternal int? Delay;");
                         builder.AppendLine("internal bool IsCallback { get; private set; }");
                         builder.AppendLine("public {0}(StubHttp link)", name);
@@ -1942,6 +1942,10 @@ namespace EntryBuilder
                                         else if (param.ParameterType.IsEnum)
                                         {
                                             builder.AppendLine("({0}){1}.Parse(__temp);", typeCodeName, Enum.GetUnderlyingType(param.ParameterType).CodeName());
+                                        }
+                                        else if (param.ParameterType == typeof(FileUpload))
+                                        {
+                                            builder.AppendLine("GetFile(__temp);", typeCodeName);
                                         }
                                         else
                                         {
