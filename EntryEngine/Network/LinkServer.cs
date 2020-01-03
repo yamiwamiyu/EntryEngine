@@ -1736,8 +1736,7 @@ namespace EntryEngine.Network
                 }
                 else
                 {
-                    string str = _NETWORK.UrlDecode(data, Context.Request.ContentEncoding);
-                    Param = _NETWORK.ParseQueryString(str);
+                    Param = _NETWORK.ParseQueryString(Encoding.ASCII.GetString(data), Context.Request.ContentEncoding);
                 }
             }
             return Param[paramName];

@@ -1,4 +1,7 @@
-﻿2020/01/02
+﻿2020/01/03
+1. 修复UrlDecode的BUG
+
+2020/01/02
 1. AgentHttp可以解析multipart/form-data的数据，可以正常上传文件
 
 2019/12/31

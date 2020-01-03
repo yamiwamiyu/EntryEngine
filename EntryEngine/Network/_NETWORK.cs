@@ -737,6 +737,7 @@ namespace EntryEngine.Network
                         byte b = (byte)(num5 << 4 | num6);
                         i += 2;
                         urlDecoder.AddByte(b);
+                        continue;
                     }
                 }
                 if ((c & 'ﾀ') == '\0')
