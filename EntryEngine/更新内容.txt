@@ -1,5 +1,6 @@
 ﻿2020/01/04
 1. 修复BuildDatabaseMysql.SelectJoin中非静态时代码的错误
+2. 修改内部级联为类型InnerCascade，BuildDatabaseMysql新增相关更新方法
 
 2020/01/03
 1. 修复UrlDecode的BUG

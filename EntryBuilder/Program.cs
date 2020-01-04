@@ -6939,6 +6939,34 @@ namespace EntryBuilder
                             builderOP.AppendLine("return _DAO.ExecuteNonQuery(builder.ToString(), values.ToArray());");
                         });
                     }
+                    // 内部级联更新级联关系
+                    if (table.BaseType != null && typeof(InnerCascade).IsAssignableFrom(table))
+                    {
+                        builderOP.AppendLine("public static readonly E{0}[] CASCADE_PARENTS = new E{0}[] {{ E{0}.Parents }};", table.Name);
+                        builderOP.AppendLine("public static readonly E{0}[] CASCADE_PARENTID = new E{0}[] {{ E{0}.ParentID, E{0}.Parents }};", table.Name);
+                        builderOP.AppendLine("public int UpdateInnerCascade(int id, int newParentID)");
+                        builderOP.AppendBlock(() =>
+                        {
+                            builderOP.AppendLine("var list = SelectMultiple(new E{0}[] {{ E{0}.ID, E{0}.ParentID }}, null);", table.Name);
+                            builderOP.AppendLine("InnerCascade.UpdateCascadeParentID(list, id, newParentID);");
+                            builderOP.AppendLine("StringBuilder builder = new StringBuilder();");
+                            builderOP.AppendLine("List<object> param = new List<object>();");
+                            builderOP.AppendLine("foreach (var item in list)");
+                            builderOP.AppendBlock(() =>
+                            {
+                                builderOP.AppendLine("switch (item.ModifiedFlag)");
+                                builderOP.AppendBlock(() =>
+                                {
+                                    builderOP.AppendLine("case InnerCascade.EModifiedFlag.Parents:");
+                                    builderOP.AppendLine("GetUpdateSQL(item, null, builder, param, CASCADE_PARENTS); break;");
+                                    builderOP.AppendLine("case InnerCascade.EModifiedFlag.ParentID:");
+                                    builderOP.AppendLine("GetUpdateSQL(item, null, builder, param, CASCADE_PARENTID); break;");
+                                    builderOP.AppendLine("default: continue;");
+                                });
+                            });
+                            builderOP.AppendLine("return _DAO.ExecuteNonQuery(builder.ToString(), param.ToArray());");
+                        });
+                    }
 
                     // 查
                     builderOP.AppendLine("public {1}void GetSelectField(string tableName, StringBuilder builder, params E{0}[] fields)", table.Name, _static);
