@@ -1,4 +1,7 @@
-﻿2020/01/03
+﻿2020/01/04
+1. 修复BuildDatabaseMysql.SelectJoin中非静态时代码的错误
+
+2020/01/03
 1. 修复UrlDecode的BUG
 
 2020/01/02
