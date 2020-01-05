@@ -519,7 +519,7 @@ namespace EntryBuilder
             //PublishToPC(@"D:\Project\xss\xss\Launch\Client", @"D:\Project\xss\xss\Launch\Client");
             //PublishToWebGL(@"C:\Yamiwamiyu\Project\EntryEngineGit\trunk\", @"C:\Yamiwamiyu\Project\ChamberH5New\Code\Client", "", @"C:\Yamiwamiyu\Project\ChamberH5New\Publish\WebGL\index.html", false, 1);
             //BuildTableTranslate("", "");
-            //BuildDatabaseMysql(@"D:\Project\xss\xss\Code\Protocol\Protocol\bin\Debug\Protocol.dll", "Server._DB", @"D:\Project\xss\xss\Code\Server\Server\_DB.cs", "", "", true);
+            //BuildDatabaseMysql(@"C:\Yamiwamiyu\Project\YMHY\Code\Protocol\Protocol\bin\Release\Protocol.dll", "Server._DB", @"C:\Yamiwamiyu\Project\YMHY\Code\Server\Server\_DB.design.cs", "", "", false);
             //BuildProtocolAgentHttp("", @"D:\Project2\xss\xss\Code\ServerImpl\", @"D:\Project2\xss\xss\Code\Protocol\Protocol\bin\Release\Protocol.dll", false);
             //BuildCSVFromExcel(@"C:\Yamiwamiyu\Project\IslandChronicle\Design\Tables_Build", @"C:\Yamiwamiyu\Project\IslandChronicle\Design\Tables_Build", null, "12.0", "a.cs", false);
             //Console.ReadKey();
@@ -896,7 +896,7 @@ namespace EntryBuilder
             }
             public Type Table
             {
-                get { return Field.DeclaringType; }
+                get { return Field.ReflectedType; }
             }
             public TreeField()
             {
@@ -5679,6 +5679,7 @@ namespace EntryBuilder
 
             // 外键：tree的第一层为主键表，主键表下有所有引用它的外键表，外键表可能有主键表
             TreeField tree = new TreeField();
+            // 自增列
             Dictionary<Type, List<FieldInfo>> identities = new Dictionary<Type, List<FieldInfo>>();
             foreach (var table in types)
             {
@@ -5694,8 +5695,11 @@ namespace EntryBuilder
                         var parentField = foreign.ForeignTable.GetField(foreignKey);
                         if (parentField == null)
                             throw new ArgumentNullException(string.Format("{0}.{1} required foreign key {2}.{3} is not exists.", table.Name, field.Name, foreign.ForeignTable.Name, foreignKey));
+                        // 外键是内联表自身的某字段时且被继承时，ForeignTable改为继承类型
+                        if (foreign.ForeignTable == parentField.DeclaringType && foreign.ForeignTable.IsAssignableFrom(table))
+                            parentField = table.GetField(foreignKey);
                         var parentIndex = parentField.GetAttribute<IndexAttribute>();
-                        if (parentIndex == null || parentIndex.Index == EIndex.Group)
+                        if (parentIndex == null || (parentIndex.Index != EIndex.Identity && parentIndex.Index != EIndex.Primary))
                             throw new NotSupportedException("Be refferenced foreign field must be a unique key.");
                         //var myIndex = field.GetAttribute<IndexAttribute>();
                         //if (myIndex == null)
@@ -6440,6 +6444,7 @@ namespace EntryBuilder
                 #endregion
 
                 #region 修改键
+                // 外键
                 tree.ForeachParentPriority(
                     field => field.ChildCount == 0,
                     field =>
@@ -6471,6 +6476,7 @@ namespace EntryBuilder
                             builder.AppendLine("_DAO.ExecuteNonQuery(builder.ToString(), target, origin);");
                         });
                     });
+                // 自增列
                 foreach (var item in identities)
                 {
                     foreach (var field in item.Value)
@@ -7149,21 +7155,24 @@ namespace EntryBuilder
                         }
                     }
 
+                    // 外键列
                     var foreignFields = fields.Where(f => f.HasAttribute<ForeignAttribute>()).ToArray();
                     if (foreignFields.Length > 0)
                     {
-                        ForeignAttribute[] foreigns = new ForeignAttribute[foreignFields.Length];
-                        for (int i = 0; i < foreigns.Length; i++)
-                            foreigns[i] = foreignFields[i].GetAttribute<ForeignAttribute>();
+                        // 外键列引用的表
+                        Type[] refferenceTypes = new Type[foreignFields.Length];
+                        for (int i = 0; i < refferenceTypes.Length; i++)
+                            refferenceTypes[i] = tree.Find(f => f.Field == foreignFields[i]).Parent.Table;
 
-                        int foreignCount = foreigns.Length;
+                        // 外键连接查询
+                        int foreignCount = foreignFields.Length;
                         builderOP.Append("public {0}List<Join{1}> SelectJoin(", _static, table.Name);
                         int e = foreignCount - 1;
 
                         builderOP.Append("E{0}[] f{0}", table.Name);
                         for (int i = 0; i <= e; i++)
                         {
-                            builderOP.Append(", E{0}[] f{1}", foreigns[i].ForeignTable.Name, foreignFields[i].Name);
+                            builderOP.Append(", E{0}[] f{1}", refferenceTypes[i].Name, foreignFields[i].Name);
                             //if (i != e)
                             //    builderOP.Append(", ");
                         }
@@ -7184,16 +7193,16 @@ namespace EntryBuilder
                                 builderOP.AppendBlock(() =>
                                 {
                                     builderOP.AppendLine("builder.Append(\", \");");
-                                    builderOP.AppendLine("{3}_{0}.GetSelectField(\"t{2}\", builder, f{1});", foreigns[i].ForeignTable.Name, foreignFields[i].Name, (i + 1), dbInstanceName);
+                                    builderOP.AppendLine("{3}_{0}.GetSelectField(\"t{2}\", builder, f{1});", refferenceTypes[i].Name, foreignFields[i].Name, (i + 1), dbInstanceName);
                                     //builderOP.AppendLine("t{0} = new List<{1}>();", foreignFields[i].Name, foreigns[i].ForeignTable.Name);
-                                    builderOP.AppendLine("if (f{0}.Length == 0) f{0} = {2}_{1}.FIELD_ALL;", foreignFields[i].Name, foreigns[i].ForeignTable.Name, dbInstanceName);
+                                    builderOP.AppendLine("if (f{0}.Length == 0) f{0} = {2}_{1}.FIELD_ALL;", foreignFields[i].Name, refferenceTypes[i].Name, dbInstanceName);
                                 });
                                 //builderOP.AppendLine("else t{0} = null;", foreignFields[i].Name);
                             }
                             builderOP.AppendLine("builder.Append(\" FROM `{0}` as t0\");", table.Name);
                             for (int i = 0; i <= e; i++)
                             {
-                                builderOP.AppendLine("if (f{1} != null) builder.Append(\" LEFT JOIN `{0}` as t{2} ON (t0.{1} = t{2}.{3})\");", foreigns[i].ForeignTable.Name, foreignFields[i].Name, (i + 1), string.IsNullOrEmpty(foreigns[i].ForeignField) ? foreignFields[i].Name : foreigns[i].ForeignField);
+                                builderOP.AppendLine("if (f{1} != null) builder.Append(\" LEFT JOIN `{0}` as t{2} ON (t0.{1} = t{2}.{3})\");", refferenceTypes[i].Name, foreignFields[i].Name, (i + 1), foreignFields[i].Name);
                             }
 
                             // 查询读取数据
@@ -7215,7 +7224,7 @@ namespace EntryBuilder
                                     builderOP.AppendLine("if (f{0} != null)", foreignFields[i].Name);
                                     builderOP.AppendBlock(() =>
                                     {
-                                        builderOP.AppendLine("{2}_{1}.MultiReadPrepare(reader, offset, f{0}.Length, out _p{0}, out _f{0}, ref indices);", foreignFields[i].Name, foreigns[i].ForeignTable.Name, dbInstanceName);
+                                        builderOP.AppendLine("{2}_{1}.MultiReadPrepare(reader, offset, f{0}.Length, out _p{0}, out _f{0}, ref indices);", foreignFields[i].Name, refferenceTypes[i].Name, dbInstanceName);
                                         builderOP.AppendLine("offset += f{0}.Length;", foreignFields[i].Name);
                                     });
                                 }
@@ -7233,7 +7242,7 @@ namespace EntryBuilder
                                         builderOP.AppendBlock(() =>
                                         {
                                             //builderOP.AppendLine("t{0}.Add(_{1}.Read(reader, offset, f{0}.Length));", foreignFields[i].Name, foreigns[i].ForeignTable.Name);
-                                            builderOP.AppendLine("join.{0} = {2}_{1}.MultiRead(reader, offset, f{0}.Length, _p{0}, _f{0}, indices);", foreignFields[i].Name, foreigns[i].ForeignTable.Name, dbInstanceName);
+                                            builderOP.AppendLine("join.{0} = {2}_{1}.MultiRead(reader, offset, f{0}.Length, _p{0}, _f{0}, indices);", foreignFields[i].Name, refferenceTypes[i].Name, dbInstanceName);
                                             builderOP.AppendLine("offset += f{0}.Length;", foreignFields[i].Name);
                                         });
                                     }
