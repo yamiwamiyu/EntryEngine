@@ -978,10 +978,10 @@ namespace EntryEngine.Network
         }
         [Index(EIndex.Identity)]
         public int ID;
-        /// <summary>父类的级联数组，格式为0,1,2，越靠前计别越高</summary>
         [Index(EIndex.Group)]
         [Foreign(typeof(InnerCascade), "ID")]
         public int ParentID;
+        /// <summary>父类的级联数组，格式为0,1,2，越靠前计别越高</summary>
         [Index]
         public string Parents;
         public int[] ParentsIDs
