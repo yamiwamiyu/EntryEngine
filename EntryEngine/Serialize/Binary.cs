@@ -2380,7 +2380,7 @@ namespace EntryEngine.Serialize
         }
         public static byte[] Serialize(object value, Type type, SerializeSetting setting, Func<ByteRefWriter, object, Type, bool> onSerialize)
         {
-            if (value == null || type == null)
+            if (value == null && type == null)
                 throw new ArgumentNullException();
             if (value != null && type == null)
                 type = value.GetType();

@@ -198,7 +198,7 @@ namespace EntryEngine.Serialize
         }
         public static string Serialize(object value, Type type, SerializeSetting setting)
         {
-            if (value == null || type == null)
+            if (value == null && type == null)
                 throw new ArgumentNullException();
             if (value != null && type == null)
                 type = value.GetType();
