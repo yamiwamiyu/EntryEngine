@@ -5700,7 +5700,7 @@ namespace EntryBuilder
                             parentField = table.GetField(foreignKey);
                         var parentIndex = parentField.GetAttribute<IndexAttribute>();
                         if (parentIndex == null || (parentIndex.Index != EIndex.Identity && parentIndex.Index != EIndex.Primary))
-                            throw new NotSupportedException("Be refferenced foreign field must be a unique key.");
+                            throw new NotSupportedException(string.Format("Table[{0}] is refferenced foreign field[{1}] must be a unique key.", parentField.ReflectedType.Name, foreignKey));
                         //var myIndex = field.GetAttribute<IndexAttribute>();
                         //if (myIndex == null)
                         //    throw new NotSupportedException(string.Format("Foreign key {0}.{1} must have a IndexAttribute.", table.Name, field.Name));
@@ -5984,7 +5984,7 @@ namespace EntryBuilder
                             {
                                 builder.Append(" PRIMARY KEY AUTO_INCREMENT");
                                 if (primary.Length > 0)
-                                    throw new NotSupportedException("Can't has other primary key where table column has AUTO_INCREMENT as a primary key.");
+                                    throw new NotSupportedException(string.Format("Table[{0}] can't has other primary key where table column has AUTO_INCREMENT as a primary key.", table.Name));
                             }
                         },
                         (field) =>
@@ -7272,11 +7272,14 @@ namespace EntryBuilder
                         else
                             builderOP.AppendLine("return ret;");
                     });
-                    builderOP.AppendLine("public {0}PagedModel<T> SelectPages<T>(string __where, string selectSQL, string conditionAfterWhere, int page, int pageSize, params object[] param) where T : new()", _static);
-                    builderOP.AppendBlock(() =>
+                    if (fields.Length > 0)
                     {
-                        builderOP.AppendLine("return {2}.SelectPages<T>(_DAO, \"SELECT count(`{0}`.`{1}`) FROM `{0}`\", __where, selectSQL, conditionAfterWhere, page, pageSize, param);", table.Name, fields[0].Name, nsOrEmptyDotDBnameOrEmpty);
-                    });
+                        builderOP.AppendLine("public {0}PagedModel<T> SelectPages<T>(string __where, string selectSQL, string conditionAfterWhere, int page, int pageSize, params object[] param) where T : new()", _static);
+                        builderOP.AppendBlock(() =>
+                        {
+                            builderOP.AppendLine("return {2}.SelectPages<T>(_DAO, \"SELECT count(`{0}`.`{1}`) FROM `{0}`\", __where, selectSQL, conditionAfterWhere, page, pageSize, param);", table.Name, fields[0].Name, nsOrEmptyDotDBnameOrEmpty);
+                        });
+                    }
                     
                     // ___类型结束
                     if (!isStatic)
