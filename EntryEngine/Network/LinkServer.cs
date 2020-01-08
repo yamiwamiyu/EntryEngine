@@ -877,7 +877,8 @@ namespace EntryEngine.Network
         {
             if (handle == null)
                 handle = new HttpListener();
-            handle.Prefixes.Add(string.Format("http://{0}:{1}/", address, port));
+            if (handle.Prefixes.Count == 0)
+                handle.Prefixes.Add(string.Format("http://{0}:{1}/", address, port));
             handle.Start();
             handle.BeginGetContext(Accept, handle);
         }

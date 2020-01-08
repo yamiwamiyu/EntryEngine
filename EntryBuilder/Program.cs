@@ -9710,5 +9710,11 @@ namespace EntryBuilder
 
             Clipboard.SetText(builder.ToString());
         }
+        public static void ReplaceText(string file, string old, string replace)
+        {
+            string text = File.ReadAllText(file);
+            File.WriteAllText(file, text.Replace(old, replace));
+            Console.WriteLine("替换文件{0}字符串 {1} => {2} 完成", file, old, replace);
+        }
 	}
 }

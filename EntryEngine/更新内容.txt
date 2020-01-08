@@ -1,4 +1,8 @@
-﻿2020/01/04
+﻿2020/01/08
+1. EntryBuilder新增ReplaceText方便替换字符串，批处理太难写
+2. ProxyHttpAsync.RegistServeiceUriPrefix添加自定义侦听地址后，Launch时将不再追加IP:Port侦听
+
+2020/01/04
 1. 修复BuildDatabaseMysql.SelectJoin中非静态时代码的错误
 2. 修改内部级联为类型InnerCascade，BuildDatabaseMysql新增相关更新方法
 
