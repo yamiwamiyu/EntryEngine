@@ -1636,10 +1636,7 @@ namespace EntryEngine.Network
                 }
 
                 if (agent == null)
-                {
-                    _LOG.Warning("No agent! URL: {0}", path);
-                    return;
-                }
+                    throw new ArgumentException(string.Format("No agent! URL: {0}", path));
 
                 string stub = path.Substring(agent.Protocol.Length + 1);
                 int paramIndex = stub.IndexOf('?');
@@ -1660,6 +1657,7 @@ namespace EntryEngine.Network
                     else
                     {
                         Context.Response.StatusCode = 500;
+                        Context.Response.StatusDescription = ex.Message;
                         Context.Response.Close();
                     }
                 }
@@ -2200,6 +2198,7 @@ namespace EntryEngine.Network
             {
                 _LOG.Warning("No Agent");
                 data.Response.StatusCode = 403;
+                data.Response.StatusDescription = "No Agent";
                 data.Response.Close();
             }
             else
