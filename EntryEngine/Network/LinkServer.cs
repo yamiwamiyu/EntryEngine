@@ -2267,7 +2267,7 @@ namespace EntryEngine.Network
         }
         void HotFix(Stub[] stubs)
         {
-            hotFixAgent = new AgentProtocolStub(stubs);
+            hotFixAgent = new AgentProtocolStub(Link, stubs);
             if (Idle)
                 OnIdle();
         }
