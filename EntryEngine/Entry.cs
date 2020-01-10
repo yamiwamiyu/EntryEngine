@@ -5069,6 +5069,22 @@ namespace EntryEngine
         {
             get { return sequences[current]; }
         }
+        public float SequenceElapsedTime
+        {
+            get
+            {
+                Sequence sequence = Sequence;
+                int loop = this.loop;
+                if (sequence.Loop < 0)
+                    loop = 0;
+                float time = sequence.Time;
+                float current = elapsedTime;
+                for (int i = 0; i < currentFrame; i++)
+                    current += sequence[i].Interval;
+                current += time * loop;
+                return current;
+            }
+        }
         public float FullSequenceTime
         {
             get { return GetSequenceTime(Sequence, new HashSet<string>()); }
