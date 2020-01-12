@@ -2425,7 +2425,7 @@ namespace EntryEngine
     }
     public class COROUTINE : PoolItem, ICoroutine, IDisposable
     {
-        private struct CorSingleEnumerator : IEnumerator<ICoroutine>
+        public struct CorSingleEnumerator : IEnumerator<ICoroutine>
         {
             private ICoroutine coroutine;
             private bool moved;
@@ -2468,25 +2468,46 @@ namespace EntryEngine
             get { return coroutine == null; }
         }
 
+        public COROUTINE() { }
         public COROUTINE(ICoroutine coroutine)
         {
-            if (coroutine == null)
-                throw new ArgumentNullException("coroutine");
-            this.coroutine = new CorSingleEnumerator(coroutine);
+            Set(coroutine);
         }
         public COROUTINE(IEnumerator<ICoroutine> coroutine)
         {
-            if (coroutine == null)
-                throw new ArgumentNullException("coroutine");
-            this.coroutine = coroutine;
+            Set(coroutine);
         }
         public COROUTINE(IEnumerable<ICoroutine> coroutine)
         {
+            Set(coroutine);
+        }
+
+        public void Set(ICoroutine coroutine)
+        {
             if (coroutine == null)
                 throw new ArgumentNullException("coroutine");
-            this.coroutine = coroutine.GetEnumerator();
-            if (this.coroutine == null)
+            InternalSet(new CorSingleEnumerator(coroutine));
+        }
+        public void Set(IEnumerator<ICoroutine> coroutine)
+        {
+            if (coroutine == null)
                 throw new ArgumentNullException("coroutine");
+            InternalSet(coroutine);
+        }
+        public void Set(IEnumerable<ICoroutine> coroutine)
+        {
+            if (coroutine == null)
+                throw new ArgumentNullException("coroutine");
+            var c = coroutine.GetEnumerator();
+            if (c == null)
+                throw new ArgumentNullException("coroutine");
+            InternalSet(c);
+        }
+        private void InternalSet(IEnumerator<ICoroutine> coroutine)
+        {
+            this.coroutine = coroutine;
+            this.current = null;
+            this.last = false;
         }
 
         void ICoroutine.Update(GameTime time)
@@ -2497,6 +2518,8 @@ namespace EntryEngine
         {
             if (current == null)
             {
+                if (coroutine == null)
+                    return;
                 last = !coroutine.MoveNext();
                 // MoveNext may dispose this
                 if (coroutine == null)
