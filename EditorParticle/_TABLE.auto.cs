@@ -77,8 +77,23 @@ using EntryEngine.Serialize;
     }
     
 }
+public partial class ALL_TABLE
+{
+    public PF[] _PF;
+    public TEXT[] _TEXT;
+}
 public static partial class _TABLE
 {
+    public static ALL_TABLE AllTables
+    {
+        get
+        {
+            ALL_TABLE all = new ALL_TABLE();
+            all._PF = _PF;
+            all._TEXT = _TEXT;
+            return all;
+        }
+    }
     public static string _path { get; private set; }
     public static PF[] _PF;
     public static TEXT[] _TEXT;

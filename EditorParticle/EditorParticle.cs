@@ -523,7 +523,7 @@ public partial class EditorParticle : SceneEditorEntry
             TimeSpan span;
             if (TimeSpan.TryParse(text, out span))
             {
-                ps.Duration = (float)span.TotalMilliseconds;
+                ps.Duration = (float)span.TotalSeconds;
             }
         }
 
