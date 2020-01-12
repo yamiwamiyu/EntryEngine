@@ -916,22 +916,35 @@ namespace EntryEngine
                 return default(U);
             return selector(target);
         }
+        public static void Shuffle<T>(this IList<T> array)
+        {
+            Shuffle(array, _RANDOM._Random, 0, array.Count);
+        }
         public static void Shuffle<T>(this IList<T> array, _RANDOM.Random random)
+        {
+            Shuffle(array, random, 0, array.Count);
+        }
+        public static void Shuffle<T>(this IList<T> array, _RANDOM.Random random, int startIndex)
+        {
+            Shuffle(array, random, startIndex, array.Count);
+        }
+        /// <summary>对数组里的对象进行洗牌交换位置</summary>
+        /// <param name="array">要洗牌的数组</param>
+        /// <param name="random">随机种子</param>
+        /// <param name="startIndex">洗牌起始索引（随机包含）</param>
+        /// <param name="endIndex">洗牌结束索引（随机不包含）</param>
+        public static void Shuffle<T>(this IList<T> array, _RANDOM.Random random, int startIndex, int endIndex)
         {
             T temp;
             int index;
-            for (int i = 0; i < array.Count; ++i)
+            for (int i = startIndex; i < endIndex; ++i)
             {
-                index = random.Next(array.Count);
+                index = random.Next(startIndex, endIndex);
                 temp = array[index];
                 array[index] = array[i];
                 array[i] = temp;
             }
         }
-		public static void Shuffle<T>(this IList<T> array)
-		{
-            Shuffle(array, _RANDOM._Random);
-		}
 		static int Partition<T>(IList<T> array, int low, int high, bool asc, Func<T, int> comparer)
 		{
 			T temp = array[low];
