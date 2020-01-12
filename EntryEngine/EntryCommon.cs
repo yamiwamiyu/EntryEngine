@@ -2510,11 +2510,7 @@ namespace EntryEngine
             this.last = false;
         }
 
-        void ICoroutine.Update(GameTime time)
-        {
-            Update(time);
-        }
-        internal void Update(GameTime time)
+        public void Update(GameTime time)
         {
             if (current == null)
             {
