@@ -446,3 +446,24 @@ Release版本导出
 Release APK导出
 1. 同上创建keystore
 2. Publishing Settings -> Use Existing Keystore -> 选择路径 -> 输入密码 -> 选择Alias -> 输入密码 -> 导出
+
+APK反编译，需要工具apktool.jar
+1. 安装java环境
+2. 命令行执行反编译命令
+java -jar apktool_2.4.0.jar d 反编译目标.apk
+会生成反编译的apk内容
+3. 根据ILSpy找到的要修改的地方 -> 打开ildasm -> 拖入要修改的dll -> 文件>>存储得到il文件 -> 修改il文件
+4. 重新编译il回dll
+C:\Windows\Microsoft.NET\Framework\v2.0.50727\ilasm 编译目标.il /output=编译目标.dll /dll
+或exe
+C:\Windows\Microsoft.NET\Framework\v2.0.50727\ilasm 编译目标.il /output=编译目标.exe /exe
+5. 将修改好的dll覆盖到第二步反编译出来的内容里
+6. java -jar apktool_2.4.0.jar b 反编译目录 -o 重编译目标.apk
+7. 重新签名apk
+错误1：无法打开jar文件 xxx.apk
+解决1：修改AndroidManifest.xml里的compileSdkVersionCodename和platformBuildVersionName降低版本
+"C:\Program Files\Java\jdk1.8.0_111\bin\jarsigner" -signedjar signed.apk -verbose -sigalg SHA1withRSA -digestalg SHA1 -keystore alias.keystore -storepass yamiwamiyu0 -keypass yamiwamiyu0 rebuild.apk alias
+
+读取APK版本号，包名等信息，需要sdk里的工具build-tools\android-4.4W\aapt.exe，仅需此一个文件
+执行批处理命令：aapt.exe dump badging 目标APP.apk
+程序执行：_CMDLINE.RunExe
