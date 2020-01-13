@@ -379,6 +379,15 @@ public class MainActivity extends UnityPlayerActivity
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
 
+			<!-- 浏览器唤起APP配置 -->
+			<intent-filter>
+		        <action android:name="android.intent.action.VIEW"/>
+		        <category android:name="android.intent.category.DEFAULT"/>
+		        <category android:name="android.intent.category.BROWSABLE"/>
+				<!-- 如下配置可在浏览器执行js代码 location.href='protocol://yoururl/action?param=value' 唤起app -->
+		        <data android:scheme="protocol"/>
+    		</intent-filter>
+
 			<!-- Unity -->
             <meta-data android:name="unityplayer.ForwardNativeEventsToDalvik" android:value="true" />
         </activity>
