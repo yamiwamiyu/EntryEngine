@@ -46,6 +46,7 @@ namespace Server.Impl
                 PID = player.ID,
                 Time = DateTime.Now,
             });
+            player.Password = null;
             return player;
         }
         void _Protocol1.Register(string name, string password, CBProtocol1_Register callback)
