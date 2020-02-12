@@ -1981,9 +1981,13 @@ namespace EntryEngine.Network
             get;
             private set;
         }
-        public HttpException(HttpStatusCode code)
+        public HttpException(HttpStatusCode code, string msg) : base(msg)
         {
             this.StatusCode = code;
+        }
+        public HttpException(int code, string msg) : base(msg)
+        {
+            this.StatusCode = (HttpStatusCode)code;
         }
     }
 

@@ -1540,16 +1540,13 @@ namespace EntryEngine.Network
                 if (value == null)
                     throw new ArgumentNullException("context");
                 context = value;
+                Param = null;
                 if (OnChangeContext != null)
                     OnChangeContext(value);
             }
         }
 
-        protected bool IsPost
-        {
-            get;
-            private set;
-        }
+        protected bool IsPost { get { return Context.Request.HttpMethod == "POST"; } }
         protected System.Collections.Specialized.NameValueCollection Param
         {
             get;
@@ -1599,8 +1596,6 @@ namespace EntryEngine.Network
             if (Context == null)
                 throw new ArgumentNullException("Context");
 
-            IsPost = Context.Request.HttpMethod == "POST";
-
             StubHttp agent = null;
             try
             {
@@ -1622,6 +1617,7 @@ namespace EntryEngine.Network
                 }
                 if (splitIndex == -1)
                 {
+                    Context.Response.StatusCode = 404;
                     throw new ArgumentException("错误的请求地址");
                 }
                 string path = Context.Request.Url.LocalPath.Substring(splitIndex + 1);
@@ -1636,7 +1632,10 @@ namespace EntryEngine.Network
                 }
 
                 if (agent == null)
+                {
+                    Context.Response.StatusCode = 404;
                     throw new ArgumentException(string.Format("No agent! URL: {0}", path));
+                }
 
                 string stub = path.Substring(agent.Protocol.Length + 1);
                 int paramIndex = stub.IndexOf('?');
@@ -1650,13 +1649,26 @@ namespace EntryEngine.Network
                 _LOG.Error(ex, "协议处理错误！URL: {0}", Context.Request.Url.LocalPath);
                 try
                 {
-                    if (agent != null)
+                    int err = Context.Response.StatusCode;
+                    HttpException ex2 = ex as HttpException;
+                    if (ex2 != null)
                     {
-                        agent.Response(new HttpError(500, ex.Message));
+                        err = (int)ex2.StatusCode;
                     }
                     else
                     {
-                        Context.Response.StatusCode = 500;
+                        if (err == 200)
+                        {
+                            err = 500;
+                        }
+                    }
+                    if (agent != null)
+                    {
+                        agent.Response(new HttpError(err, ex.Message));
+                    }
+                    else
+                    {
+                        Context.Response.StatusCode = err;
                         Context.Response.StatusDescription = ex.Message;
                         Context.Response.Close();
                     }
@@ -2197,7 +2209,7 @@ namespace EntryEngine.Network
             if (Agent == null)
             {
                 _LOG.Warning("No Agent");
-                data.Response.StatusCode = 403;
+                data.Response.StatusCode = 404;
                 data.Response.StatusDescription = "No Agent";
                 data.Response.Close();
             }
@@ -2283,7 +2295,7 @@ namespace EntryEngine.Network
             if (Agent == null)
             {
                 _LOG.Warning("No Agent");
-                data.Response.StatusCode = 403;
+                data.Response.StatusCode = 404;
                 data.Response.Close();
             }
             else

@@ -2206,7 +2206,7 @@ namespace EntryBuilder
             protected override void WCCallProxy(StringBuilder builder, MethodInfo[] call, MethodInfo[] callback, Dictionary<int, Type> asyncCB)
             {
                 string name = type.Name + "Proxy";
-                builder.AppendLine("var {0} = {{}};", name);
+                builder.AppendLine("const {0} = {{}};", name);
                 builder.AppendLine("export {{{0}}}", name);
                 builder.AppendLine("{0}.onSend = null;", name);
                 builder.AppendLine("{0}.onCallback = null;", name);
@@ -2296,6 +2296,7 @@ namespace EntryBuilder
                         builder.AppendLine("{0}.send(\"{1}/{2}\", str.join(\"&\"), callback);", name, agent.Protocol, method.Name);
                     });
                 }
+                builder.AppendLine("export default {0};", name);
             }
             protected override void WCCallProxy(StringBuilder builder, MethodInfo[] call, Dictionary<int, Type> asyncCB)
             {
@@ -7202,7 +7203,7 @@ namespace EntryBuilder
                             builderOP.AppendLine("builder.Append(\" FROM `{0}` as t0\");", table.Name);
                             for (int i = 0; i <= e; i++)
                             {
-                                builderOP.AppendLine("if (f{1} != null) builder.Append(\" LEFT JOIN `{0}` as t{2} ON (t0.{1} = t{2}.{3})\");", refferenceTypes[i].Name, foreignFields[i].Name, (i + 1), foreignFields[i].Name);
+                                builderOP.AppendLine("if (f{1} != null) builder.Append(\" LEFT JOIN `{0}` as t{2} ON (t0.{1} = t{2}.{3})\");", refferenceTypes[i].Name, foreignFields[i].Name, (i + 1), foreignFields[i].GetAttribute<ForeignAttribute>().ForeignField);
                             }
 
                             // 查询读取数据
