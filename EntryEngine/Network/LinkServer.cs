@@ -1750,7 +1750,7 @@ namespace EntryEngine.Network
                 }
                 else
                 {
-                    Param = _NETWORK.ParseQueryString(Encoding.ASCII.GetString(data), Encoding.UTF8);
+                    Param = _NETWORK.ParseQueryString(Encoding.ASCII.GetString(data), Context.Request.ContentEncoding);
                 }
             }
             return Param[paramName];

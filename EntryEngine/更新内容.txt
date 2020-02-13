@@ -1,5 +1,5 @@
 ﻿2020/02/13
-1. AgentHttp.ParseParamGet和ParseParamPost强制使用UTF8进行解码，解决中文乱码问题
+1. AgentHttp.ParseParamGet强制使用UTF8进行解码，解决中文乱码问题
 2. EntryBuilder生成js代码加上请求头Content-Type，解决中文乱码问题
 
 2020/02/12
