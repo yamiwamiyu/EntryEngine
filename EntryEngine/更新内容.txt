@@ -1,6 +1,7 @@
 ﻿2020/02/13
 1. AgentHttp.ParseParamGet强制使用UTF8进行解码，解决中文乱码问题
 2. EntryBuilder生成js代码加上请求头Content-Type，解决中文乱码问题
+3. 修复AgentHttp.ParseParamPost编码错误BUG
 
 2020/02/12
 1. AgentHttp能方便定制返回的ErrorCode和Message
