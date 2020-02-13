@@ -2247,6 +2247,7 @@ namespace EntryBuilder
                     });
                     builder.AppendLine("req.open(\"POST\", {0}.url + url, true);", name);
                     builder.AppendLine("req.responseType = \"text\";");
+                    builder.AppendLine("req.setRequestHeader(\"Content-Type\", \"application/x-www-form-urlencoded;charset=utf-8\");");
                     builder.AppendLine("if ({0}.onSend) {{ {0}.onSend(req); }}", name);
                     builder.AppendLine("req.send(str);");
                 });

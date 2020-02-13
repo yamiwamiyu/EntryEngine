@@ -1696,7 +1696,10 @@ namespace EntryEngine.Network
         protected virtual string ParseParamGet(string paramName)
         {
             if (Param == null)
-                Param = Context.Request.QueryString;
+            {
+                Param = _NETWORK.ParseQueryString(_NETWORK.UrlDecode(Context.Request.Url.Query, Encoding.UTF8));
+                //Param = Context.Request.QueryString;
+            }
             return Param[paramName];
         }
         protected virtual string ParseParamPost(string paramName)
@@ -1747,7 +1750,7 @@ namespace EntryEngine.Network
                 }
                 else
                 {
-                    Param = _NETWORK.ParseQueryString(Encoding.ASCII.GetString(data), Context.Request.ContentEncoding);
+                    Param = _NETWORK.ParseQueryString(Encoding.ASCII.GetString(data), Encoding.UTF8);
                 }
             }
             return Param[paramName];
