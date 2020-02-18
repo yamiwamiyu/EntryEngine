@@ -1,5 +1,7 @@
 ﻿2021/02/18
 1. 修复文件上传的BUG
+2. 路由添加仅路由的API
+3. JsonRead添加读取JsonObject的API
 
 2020/02/13
 1. AgentHttp.ParseParamGet强制使用UTF8进行解码，解决中文乱码问题

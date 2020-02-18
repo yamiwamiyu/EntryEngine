@@ -1243,6 +1243,10 @@ namespace EntryEngine.Serialize
         {
             return (T)Deserialize(buffer, typeof(T), setting);
         }
+        public static JsonObject Deserialize(string buffer)
+        {
+            return new JsonObject(new JsonReader(buffer).ReadValue());
+        }
     }
     public struct JsonObject
     {

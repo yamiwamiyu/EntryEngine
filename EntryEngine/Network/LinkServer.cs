@@ -2024,6 +2024,8 @@ namespace EntryEngine.Network
         /// <param name="getToken">返回值必须大于等于0时分配工作队列，相同的返回值会分配到相同的工作队列；返回值小于0时不工作</param>
         public bool AddRouter(Func<T, int> getToken, ParallelQueue<T>[] workers)
         {
+            if (getToken == null)
+                throw new ArgumentNullException("getToken");
             if (workers == null || workers.Length == 0)
                 throw new ArgumentException("Worker's count must bigger than 0.");
             for (int i = 0; i < workers.Length; i++)
@@ -2039,9 +2041,19 @@ namespace EntryEngine.Network
         /// <param name="getToken">true:工作 / false:不工作</param>
         public bool AddRouter(Func<T, bool> getToken, ParallelQueue<T> worker)
         {
+            if (getToken == null)
+                throw new ArgumentNullException("getToken");
             if (worker == null)
                 throw new ArgumentNullException("worker");
             routers.Add(new Router(t => getToken(t) ? 0 : -1, new ParallelQueue<T>[] { worker }));
+            return true;
+        }
+        /// <summary>不用队列处理协议，但参与路由；适合快速响应的同步处理</summary>
+        public bool AddRouter(Action<T> getToken)
+        {
+            if (getToken == null)
+                throw new ArgumentNullException("getToken");
+            routers.Add(new Router((t) => { getToken(t); return -1; }, null));
             return true;
         }
         public bool RemoveRouter(Func<T, int> getToken)
