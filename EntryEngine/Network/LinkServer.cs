@@ -1733,7 +1733,6 @@ namespace EntryEngine.Network
                         else
                         {
                             // 普通表单数据
-                            reader.EatLine();
                             while (true)
                             {
                                 reader.EatLine();
@@ -1744,7 +1743,9 @@ namespace EntryEngine.Network
                                     break;
                                 }
                             }
-                            Param.Add(name, _NETWORK.UrlDecode(SingleEncoding.Single.GetBytes(reader.Next("\r\n")), Encoding.UTF8));
+                            Param.Add(name, _NETWORK.UrlDecode(SingleEncoding.Single.GetBytes(reader.Next("\r\n")),
+                                // multipart/form-data;的数据貌似都是默认UTF8编码
+                                Encoding.UTF8));
                         }
                     }
                 }
@@ -1814,21 +1815,21 @@ namespace EntryEngine.Network
             FileUpload ret = new FileUpload();
             StringStreamReader reader = new StringStreamReader(data);
             reader.EatAfterSign("filename=\"");
-            ret.Filename = reader.NextToSignAfter("\"");
+            // multipart/form-data;的数据貌似都是默认UTF8编码
+            ret.Filename = Encoding.UTF8.GetString(SingleEncoding.Single.GetBytes(reader.NextToSignAfter("\"")));
             reader.EatAfterSign("Content-Type: ");
             ret.ContentType = reader.Next("\r\n");
-            reader.EatLine();
             while (true)
             {
                 reader.EatLine();
-                if (reader.PeekChar == '\r')
+                if (reader.IsEnd || reader.PeekChar == '\r')
                 {
                     // 空行之后是数据
                     reader.EatLine();
                     break;
                 }
             }
-            ret.Content = SingleEncoding.Single.GetBytes(reader.Tail);
+            ret.Content = SingleEncoding.Single.GetBytes(reader.str.Substring(reader.Pos, reader.str.Length - reader.Pos - 2));
             return ret;
         }
         public void Response(object obj)
