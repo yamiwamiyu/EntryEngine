@@ -2280,10 +2280,8 @@ namespace EntryBuilder
                             var param = parameters[j];
                             if (hasAsync && param.ParameterType.IsDelegate())
                                 continue;
-                            //builder.Append("if ({0}) {{ ", param.Name);
+                            builder.Append("if ({0}) ", param.Name);
                             builder.Append("str.push(");
-                            //if (j != 0)
-                            //    builder.Append("&");
                             builder.Append("\"{0}=\" + ", param.Name);
                             if (param.ParameterType == typeof(DateTime))
                                 //builder.Append("JSON.stringify({0}).replace(\"T\", \" \").replace(\"Z\", \"\")", param.Name);
