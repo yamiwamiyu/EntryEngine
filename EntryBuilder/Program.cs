@@ -2301,6 +2301,324 @@ namespace EntryBuilder
             {
             }
         }
+        class ProtocolJsonJs : ProtocolDefault
+        {
+            protected override void Write(MethodInfo[] call, MethodInfo[] callback, Dictionary<int, Type> asyncCB)
+            {
+                WNamespace(server);
+
+                WSInterface(server, call, asyncCB);
+                WSCallbackType(server, call, asyncCB);
+                WSCallbackProxy(server, call, callback, asyncCB);
+                WSAgentStub(server, call, asyncCB);
+
+                WCCallProxy(builder, call, callback, asyncCB);
+            }
+
+            protected override void WNamespace(StringBuilder builder)
+            {
+                builder.AppendLine("using System.Text;");
+                base.WNamespace(builder);
+            }
+            protected override void WSCallbackType(StringBuilder builder, MethodInfo[] call, Dictionary<int, Type> asyncCB)
+            {
+                if (asyncCB.Count > 0)
+                    throw new InvalidOperationException("WebSocket暂不支持回调式的调用");
+            }
+            protected override void WSCallbackProxy(StringBuilder builder, MethodInfo[] call, MethodInfo[] callback, Dictionary<int, Type> asyncCB)
+            {
+                // 生成调用类型
+                for (int i = 0, len = call.Length; i < len; i++)
+                {
+                    MethodInfo method = call[i];
+                    // 回调参数生成类型
+                    builder.AppendLine("class {0}_{1}", type.Name, method.Name);
+                    builder.AppendBlock(() =>
+                    {
+                        ParameterInfo[] parameters = method.GetParameters();
+                        for (int j = 0, n = parameters.Length - 1; j <= n; j++)
+                        {
+                            var param = parameters[j];
+                            builder.AppendLine("public {0} {1};", param.ParameterType.CodeName(), param.Name);
+                        }
+                    });
+                }
+
+                // 生成回调类型
+                WriteCallbackObject(builder, callback);
+
+                if (agent.Callback == null)
+                    builder.AppendLine("static class {0}CallbackProxy", type.Name);
+                else
+                    builder.AppendLine("static class {0}Proxy", agent.Callback.Name);
+                builder.AppendBlock(() =>
+                {
+                    for (int i = 0, len = callback.Length; i < len; i++)
+                    {
+                        // 调用中含有委托参数的方法和回调接口都需要生成回调函数
+                        MethodInfo method = callback[i];
+
+                        // 方法头
+                        ParameterInfo[] parameters = method.GetParameters();
+                        builder.Append("public static {0} {1}(Link __link", method.ReturnType.CodeName(), method.Name);
+                        foreach (ParameterInfo param in parameters)
+                            builder.AppendFormat(", {0} {1}", param.ParameterType.CodeName(), param.Name);
+                        builder.AppendLine(")");
+
+                        // 方法体
+                        builder.AppendBlock(() =>
+                        {
+                            builder.AppendLine("if (__link == null) return;");
+                            builder.AppendLine("var __cb = new RET_{0}_{1}();", type.Name, method.Name);
+                            // 协议
+                            builder.AppendLine("__cb.Protocol = ((byte){0});", agent.Protocol);
+                            builder.AppendLine("__cb.Stub = ((ushort){0});", i);
+                            // 回调参数内容
+                            foreach (ParameterInfo param in parameters)
+                                builder.AppendLine("__cb.{0} = {0};", param.Name);
+                            builder.AppendLine("var __buffer = Encoding.UTF8.GetBytes(JsonWriter.Serialize(__cb));");
+                            // 日志
+                            builder.AppendLine("#if DEBUG");
+                            builder.AppendFormat("_LOG.Debug(\"{0}({{0}} bytes)", method.Name);
+                            for (int j = 0, m = parameters.Length - 1; j <= m; j++)
+                            {
+                                ParameterInfo param = parameters[j];
+                                builder.Append(" {0}: {{{1}}}", param.Name, j + 1);
+                                if (j != m)
+                                    builder.Append(",");
+                            }
+                            builder.Append("\", __buffer.Length");
+                            for (int j = 0, m = parameters.Length - 1; j <= m; j++)
+                            {
+                                ParameterInfo param = parameters[j];
+                                if (!param.ParameterType.IsCustomType())
+                                    builder.AppendFormat(", {0}", param.Name);
+                                else
+                                    builder.AppendFormat(", JsonWriter.Serialize({0})", param.Name);
+                            }
+                            builder.AppendLine(");");
+                            builder.AppendLine("#endif");
+                            builder.AppendLine("__link.Write(__buffer);");
+                        });
+                    }
+                });
+                builder.AppendLine();
+            }
+            protected override void WSAgentStub(StringBuilder builder, MethodInfo[] call, Dictionary<int, Type> asyncCB)
+            {
+                bool hasAgent = !string.IsNullOrEmpty(agent.AgentType);
+
+                string name = type.Name + "Stub";
+                builder.AppendLine("class {0} : {1}", name, typeof(StubJson).Name);
+                builder.AppendBlock(() =>
+                {
+                    string name2 = hasAgent ? agent.AgentType : "_" + type.Name;
+
+                    builder.AppendLine("public _{0} __Agent;", type.Name);
+                    builder.AppendLine("public Func<_{0}> __GetAgent;", type.Name);
+                    builder.AppendLine("public Func<string, {0}> __ReadAgent;", name2);
+                    builder.AppendLine("public {0}(_{1} agent) : base({2})", name, type.Name, agent.Protocol);
+                    builder.AppendBlock(() =>
+                    {
+                        builder.AppendLine("this.__Agent = agent;");
+                        foreach (var method in call)
+                            builder.AppendLine("AddMethod({0});", method.Name);
+                    });
+                    builder.AppendLine("public {0}(Func<_{1}> agent) : this((_{1})null)", name, type.Name, agent.Protocol);
+                    builder.AppendBlock(() =>
+                    {
+                        builder.AppendLine("this.__GetAgent = agent;");
+                    });
+                    builder.AppendLine("public {0}(Func<string, {1}> agent) : this((_{2})null)", name, name2, type.Name);
+                    builder.AppendBlock(() =>
+                    {
+                        builder.AppendLine("this.__ReadAgent = agent;");
+                    });
+                    // 根据方法参数生成对应的处理方法存根
+                    for (int i = 0; i < call.Length; i++)
+                    {
+                        MethodInfo method = call[i];
+                        bool isDelegate = asyncCB.ContainsKey(i);
+                        // 方法头
+                        builder.AppendLine("{0} {1}(string __stream)", method.ReturnType.CodeName(), method.Name);
+
+                        ParameterInfo[] parameters = method.GetParameters();
+                        builder.AppendBlock(() =>
+                        {
+                            //builder.AppendLine("Timer timer = Timer.StartNew();");    // 统计方法调用次数，可用于分析用户操作
+                            builder.AppendLine("var agent = __Agent;");
+                            builder.AppendLine("if (__GetAgent != null) { var temp = __GetAgent(); if (temp != null) agent = temp; }");
+                            if (hasAgent)
+                            {
+                                // 指定了代理人类型时，处理方法首个参数将可由读取委托来获得
+                                builder.AppendLine("var __client = default({0});", agent.AgentType);
+                                builder.AppendLine("if (__ReadAgent != null) { var temp = __ReadAgent(__stream);if (temp != null) __client = temp; }");
+                            }
+                            else
+                            {
+                                // 没有指定代理人类型时，将采用默认代理人
+                                builder.AppendLine("if (__ReadAgent != null) { var temp = __ReadAgent(__stream); if (temp != null) agent = temp; }");
+                            }
+                            // 参数声明
+                            //builder.AppendLine("var __obj = JsonReader.Deserialize<{0}_{1}>(__stream);", type.Name, method.Name);
+                            builder.AppendLine("var __obj = JsonReader.Deserialize<{0}_{1}>(__stream);", type.Name, method.Name);
+                            foreach (ParameterInfo param in parameters)
+                            {
+                                if (isDelegate && param.ParameterType.Is(typeof(Delegate)))
+                                {
+                                    builder.AppendLine("byte {0};", param.Name);
+                                    name = param.Name;
+                                }
+                                else
+                                    builder.AppendLine("{0} {1};", param.ParameterType.CodeName(), param.Name);
+                            }
+                            // 参数读取赋值
+                            foreach (ParameterInfo param in parameters)
+                                builder.AppendLine("{0} = __obj.{0};", param.Name);
+                            // 日志
+                            builder.AppendLine("#if DEBUG");
+                            builder.AppendFormat("_LOG.Debug(\"{0}", method.Name);
+                            for (int j = 0, n = parameters.Length - 1; j <= n; j++)
+                            {
+                                ParameterInfo param = parameters[j];
+                                builder.AppendFormat(" {0}: {{{1}}}", param.Name, j);
+                                if (j != n)
+                                    builder.Append(",");
+                            }
+                            builder.Append("\"");
+                            for (int j = 0; j < parameters.Length; j++)
+                            {
+                                ParameterInfo param = parameters[j];
+                                if (param.ParameterType.Is(typeof(Delegate)))
+                                    builder.AppendFormat(", \"{0}\"", param.ParameterType.CodeName());
+                                else if (!param.ParameterType.IsCustomType())
+                                    builder.AppendFormat(", {0}", param.Name);
+                                else
+                                    builder.AppendFormat(", JsonWriter.Serialize({0})", param.Name);
+                            }
+                            builder.AppendLine(");");
+                            builder.AppendLine("#endif");
+                            builder.AppendFormat("agent.{0}({1}", method.Name, hasAgent ? (parameters.Length == 0 ? "__client" : "__client, ") : "");
+                            for (int j = 0, n = parameters.Length - 1; j <= n; j++)
+                            {
+                                ParameterInfo param = parameters[j];
+                                builder.Append("{0}", param.Name);
+                                if (j != n)
+                                    builder.Append(", ");
+                            }
+                            builder.AppendLine(");");
+                        });
+                    }
+                });
+            }
+
+            protected override void WCCallProxy(StringBuilder builder, MethodInfo[] call, MethodInfo[] callback, Dictionary<int, Type> asyncCB)
+            {
+                string name = type.Name + "Proxy";
+                builder.AppendLine("const {0} = {{}};", name);
+                builder.AppendLine("export {{{0}}}", name);
+                builder.AppendLine("{0}.ws = null;", name);
+                foreach (var method in callback)
+                {
+                    builder.Append("{0}.{1} = function(", name, method.Name);
+                    ParameterInfo[] parameters = method.GetParameters();
+                    for (int i = 0, n = parameters.Length - 1; i <= n; i++)
+                    {
+                        builder.Append(parameters[i].Name);
+                        if (i != n)
+                            builder.Append(", ");
+                    }
+                    builder.AppendLine("){};");
+                }
+                // 收到服务端回调的处理
+                builder.AppendLine("{0}.callback = function(ret)", name);
+                builder.AppendBlock(() =>
+                {
+                    builder.AppendLine("if (ret.Protocol != {0}) return;", agent.Protocol);
+                    builder.AppendLine("switch (ret.Stub)");
+                    builder.AppendBlock(() =>
+                    {
+                        for (int i = 0; i < callback.Length; i++)
+                        {
+                            var method = callback[i];
+                            builder.Append("case {0}: if ({1}.{2}) {1}.{2}(", i, name, method.Name);
+                            ParameterInfo[] parameters = method.GetParameters();
+                            for (int j = 0, n = parameters.Length - 1; j <= n; j++)
+                            {
+                                builder.AppendFormat("ret.{0}", parameters[j].Name);
+                                if (j != n)
+                                    builder.Append(", ");
+                            }
+                            builder.AppendLine("); break;");
+                        }
+                    });
+                });
+                // 通过代理调用接口方法
+                //WCCallProxy(builder, call, asyncCB);
+                for (int i = 0; i < call.Length; i++)
+                {
+                    MethodInfo method = call[i];
+                    ParameterInfo[] parameters = method.GetParameters();
+
+                    // 方法头
+                    bool hasAsync = asyncCB.ContainsKey(i);
+                    builder.Append("{0}.{1} = function(", name, method.Name);
+                    // 分别传每个值
+                    for (int j = 0, n = parameters.Length - 1; j <= n; j++)
+                    {
+                        if (j != 0)
+                            builder.Append(", ");
+                        var param = parameters[j];
+                        builder.Append("{0}", param.Name);
+                    }
+                    // 直接传对象
+                    //builder.Append("data, callback");
+                    builder.AppendLine(")");
+                    builder.AppendBlock(() =>
+                    {
+                        builder.AppendLine("var obj = {};");
+                        builder.AppendLine("obj.Protocol = {0};", agent.Protocol);
+                        builder.AppendLine("obj.Stub = {0};", i);
+                        builder.AppendLine("obj.JO = {};");
+                        for (int j = 0, n = parameters.Length - 1; j <= n; j++)
+                        {
+                            var param = parameters[j];
+                            if (hasAsync && param.ParameterType.IsDelegate())
+                                continue;
+                            builder.Append("if ({0}) ", param.Name);
+                            builder.Append("obj.JO.{0} = ", param.Name);
+                            if (param.ParameterType == typeof(DateTime))
+                                //builder.Append("JSON.stringify({0}).replace(\"T\", \" \").replace(\"Z\", \"\")", param.Name);
+                                builder.Append("{0}", param.Name);
+                            //else if (param.ParameterType.IsCustomType())
+                            //    builder.Append("JSON.stringify({0})", param.Name);
+                            else
+                                builder.Append("{0}", param.Name);
+                            builder.AppendLine(";");
+                        }
+                        builder.AppendLine("obj.JO = JSON.stringify(obj.JO);");
+                        builder.AppendLine("{0}.ws.send(JSON.stringify(obj));", name, agent.Protocol, method.Name);
+                    });
+                }
+                builder.AppendLine("export default {0};", name);
+            }
+
+            private void WriteCallbackObject(StringBuilder builder, MethodInfo[] callback)
+            {
+                foreach (var method in callback)
+                {
+                    builder.AppendLine("public class RET_{0}_{1} : ProtocolPack", type.Name, method.Name);
+                    builder.AppendBlock(() =>
+                    {
+                        var parameters = method.GetParameters();
+                        foreach (var param in parameters)
+                        {
+                            builder.AppendLine("public {0} {1};", param.ParameterType.CodeName(), param.Name);
+                        }
+                    });
+                }
+            }
+        }
 
         protected static void WSCallbackType(Type type, StringBuilder builder, MethodInfo[] call, Dictionary<int, Type> asyncCB)
         {
@@ -3778,10 +4096,10 @@ namespace EntryBuilder
                 build(type);
             }
         }
-        public static void BuildProtocolAgentHttp(string outputClientPath, string outputServerPath, string dllOrWithType, int csharp0js1ts2)
+        public static void BuildProtocolAgentHttp(string outputClientPath, string outputServerPath, string dllOrWithType, int csharp0js1ws2)
         {
             Action<Type> build;
-            switch (csharp0js1ts2)
+            switch (csharp0js1ws2)
             {
                 case 1:
                     #region JS
@@ -3797,6 +4115,22 @@ namespace EntryBuilder
                         string serverFile = Path.Combine(outputServerPath, type.Name + "Stub.cs");
                         SaveCode(clientFile, jsWriter.builder);
                         SaveCode(serverFile, jsWriter.server);
+                        Console.WriteLine("生成协议类型{0}完成", type.FullName);
+                    };
+                    #endregion
+                    break;
+
+                case 2:
+                    #region MyRegion
+                    build = (type) =>
+                    {
+                        ProtocolJsonJs writer = new ProtocolJsonJs();
+                        writer.Write(type);
+
+                        string clientFile = Path.Combine(outputClientPath, type.Name + "Proxy.js");
+                        string serverFile = Path.Combine(outputServerPath, type.Name + "Stub.cs");
+                        SaveCode(clientFile, writer.builder);
+                        SaveCode(serverFile, writer.server);
                         Console.WriteLine("生成协议类型{0}完成", type.FullName);
                     };
                     #endregion

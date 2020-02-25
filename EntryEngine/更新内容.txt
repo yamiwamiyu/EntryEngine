@@ -1,4 +1,7 @@
-﻿2020/02/19
+﻿2020/02/25
+1. 基于.net4.5实现WebSocket服务，EntryBuilder.BuildProtocolAgentHttp生成相应代码
+
+2020/02/19
 1. 生成的JS接口参数，默认值可以不传
 
 2020/02/18

@@ -1176,6 +1176,130 @@ namespace EntryEngine.Network
             }
         }
     }
+#if dotnet45
+    public class LinkWebSocket : LinkBinary
+    {
+        private Task<WebSocketReceiveResult> received;
+        public WebSocketMessageType MessageType = WebSocketMessageType.Binary;
+        public Action<HttpListenerWebSocketContext> OnConnected;
+
+        public HttpListenerContext Context { get; internal set; }
+        public Task<HttpListenerWebSocketContext> Connecting { get; private set; }
+        public WebSocket Socket { get; internal set; }
+        public override bool IsConnected
+        {
+            get
+            {
+                if (Socket == null)
+                {
+                    if (Connecting.IsCompleted)
+                    {
+                        Socket = Connecting.Result.WebSocket;
+                        if (OnConnected != null)
+                            OnConnected(Connecting.Result);
+                    }
+                    else
+                        return false;
+                }
+                return Connecting.IsCompleted && Socket.State == WebSocketState.Open;
+            }
+        }
+        public override bool CanRead
+        {
+            get { return received == null || received.IsCompleted; }
+        }
+        protected override int DataLength
+        {
+            get { return received == null ? MAX_BUFFER_SIZE : MAX_BUFFER_SIZE + received.Result.Count; }
+        }
+        public override IPEndPoint EndPoint
+        {
+            get { return Context.Request.RemoteEndPoint; }
+        }
+
+        internal LinkWebSocket(HttpListenerContext context)
+        {
+            this.Context = context;
+            this.ValidateCRC = false;
+            this.Connecting = context.AcceptWebSocketAsync(null);
+        }
+
+        public override void Write(byte[] buffer, int offset, int size)
+        {
+            writer.WriteBytes(buffer, offset, size);
+            // 防止粘包，每次写入都释放掉所有内容
+            Flush();
+        }
+        protected override int PeekSize(byte[] buffer, out int peek)
+        {
+            peek = 0;
+            if (received == null)
+            {
+                received = Socket.ReceiveAsync(new ArraySegment<byte>(buffer, 0, buffer.Length), CancellationToken.None);
+                return 0;
+            }
+            if (!received.IsCompleted)
+                return 0;
+            // WebSocket不需要传输包长，为了兼容传统TCP，这里手动加上包长
+            int count = received.Result.Count;
+            Array.Copy(buffer, 0, buffer, MAX_BUFFER_SIZE, count);
+            int size = count + MAX_BUFFER_SIZE;
+            Binary.GetBytes(buffer, 0, size);
+            return size;
+        }
+        protected override void InternalFlush(byte[] buffer)
+        {
+            Socket.SendAsync(new ArraySegment<byte>(buffer), MessageType, true, CancellationToken.None);
+        }
+        protected override int InternalRead(byte[] buffer, int offset, int size)
+        {
+            var result = received.Result;
+            received = null;
+            return result.Count + MAX_BUFFER_SIZE;
+        }
+        public override void Close()
+        {
+            Socket.CloseAsync(WebSocketCloseStatus.NormalClosure, "关闭连接", CancellationToken.None);
+        }
+
+        public static bool IsWebSocketHandshake(HttpListenerContext c)
+        {
+            string socket = c.Request.Headers["Sec-WebSocket-Key"];
+            return !string.IsNullOrEmpty(socket);
+        }
+    }
+    public abstract class ServiceWebSocket : ProxyHttpAsync
+    {
+        protected override Link InternalAccept(HttpListenerContext context)
+        {
+            if (!LinkWebSocket.IsWebSocketHandshake(context))
+                throw new InvalidCastException("非WebSocket连接");
+            return new LinkWebSocket(context) { MessageType = WebSocketMessageType.Text };
+        }
+        //protected override IEnumerator<LoginResult> Login(Link link)
+        //{
+        //    LoginResult result = new LoginResult();
+        //    LinkWebSocket lws = (LinkWebSocket)link;
+
+        //    var time = GameTime.Time.CurrentFrame;
+        //    while (!lws.IsConnected)
+        //    {
+        //        // 连接超时
+        //        if ((GameTime.Time.CurrentFrame - time).Seconds > 5)
+        //        {
+        //            result.Result = EAcceptPermit.Refuse;
+        //            yield return result;
+        //            yield break;
+        //        }
+        //        yield return null;
+        //    }
+
+        //    result.Agent = new AgentProtocolStubJson(link, new _IWSStub(ws));
+        //    result.Result = EAcceptPermit.Permit;
+        //    yield return result;
+        //}
+    }
+#endif
 
     public class LinkHttpResponseShort : LinkBinary
     {

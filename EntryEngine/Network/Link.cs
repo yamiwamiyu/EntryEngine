@@ -5,6 +5,7 @@ using System.Net.Sockets;
 using EntryEngine.Serialize;
 using System.IO;
 using System.Linq;
+using System.Text;
 
 namespace EntryEngine.Network
 {
@@ -559,6 +560,106 @@ namespace EntryEngine.Network
                     }
                 }
             }
+        }
+    }
+
+    // web socket
+    public class AgentProtocolStubJson : AgentProtocolStub
+    {
+        private Dictionary<byte, StubJson> protocols = new Dictionary<byte, StubJson>();
+
+        public AgentProtocolStubJson()
+        {
+        }
+        public AgentProtocolStubJson(Link link)
+        {
+            this.Link = link;
+        }
+        public AgentProtocolStubJson(params StubJson[] stubs)
+        {
+            foreach (var stub in stubs)
+                AddAgent(stub);
+        }
+        public AgentProtocolStubJson(Link link, params StubJson[] stubs)
+        {
+            this.Link = link;
+            foreach (var stub in stubs)
+                AddAgent(stub);
+        }
+
+        public void AddAgent(StubJson stub)
+        {
+            if (stub == null)
+                throw new ArgumentNullException("agent");
+            stub.ProtocolAgent = this;
+            protocols.Add(stub.Protocol, stub);
+        }
+        public override void OnProtocol(byte[] data)
+        {
+            var pack = JsonReader.Deserialize<ProtocolCall>(Encoding.UTF8.GetString(data));
+
+            StubJson agent;
+            if (!protocols.TryGetValue(pack.Protocol, out agent))
+                throw new NotImplementedException("no procotol: " + pack.Protocol);
+
+            agent[pack.Stub](pack.JO);
+        }
+    }
+    public abstract class StubJson
+    {
+        private Dictionary<ushort, Action<string>> stubs = new Dictionary<ushort, Action<string>>();
+        protected internal byte Protocol
+        {
+            get;
+            protected set;
+        }
+        protected internal AgentProtocolStub ProtocolAgent;
+        public Link Link
+        {
+            get { return ProtocolAgent.Link; }
+        }
+        internal Action<string> this[ushort index]
+        {
+            get
+            {
+                Action<string> stub;
+                if (!stubs.TryGetValue(index, out stub))
+                    throw new ArgumentOutOfRangeException(string.Format("protocol: {0} method stub {1} not find!", Protocol, index));
+                return stub;
+            }
+        }
+        protected StubJson()
+        {
+        }
+        public StubJson(byte protocol)
+        {
+            this.Protocol = protocol;
+        }
+        protected void AddMethod(Action<string> method)
+        {
+            AddMethod((ushort)stubs.Count, method);
+        }
+        protected void AddMethod(ushort id, Action<string> method)
+        {
+            if (method == null)
+                throw new ArgumentNullException("method");
+            stubs.Add(id, method);
+        }
+    }
+    public abstract class ProtocolPack
+    {
+        public byte Protocol;
+        public ushort Stub;
+    }
+    public class ProtocolCall : ProtocolPack
+    {
+        /// <summary>Json Object String</summary>
+        public string JO;
+        public ProtocolCall() { }
+        public ProtocolCall(byte protocol, ushort stub)
+        {
+            this.Protocol = protocol;
+            this.Stub = stub;
         }
     }
 
@@ -1239,7 +1340,7 @@ namespace EntryEngine.Network
         {
             beat = true;
         }
-        public sealed override void Write(byte[] buffer, int offset, int size)
+        public override void Write(byte[] buffer, int offset, int size)
         {
             int count = size + MAX_BUFFER_SIZE;
             if (size != 0 && ValidateCRC)
