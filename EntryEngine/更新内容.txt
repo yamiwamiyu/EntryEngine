@@ -1,5 +1,6 @@
 ﻿2020/02/25
 1. 基于.net4.5实现WebSocket服务，EntryBuilder.BuildProtocolAgentHttp生成相应代码
+2. BuildDatabaseMysql生成SelectJoinPages方便翻页连接查询
 
 2020/02/19
 1. 生成的JS接口参数，默认值可以不传

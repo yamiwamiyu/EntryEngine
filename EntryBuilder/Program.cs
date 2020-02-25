@@ -7498,27 +7498,21 @@ namespace EntryBuilder
                         for (int i = 0; i < refferenceTypes.Length; i++)
                             refferenceTypes[i] = tree.Find(f => f.Field == foreignFields[i]).Parent.Table;
 
-                        // 外键连接查询
                         int foreignCount = foreignFields.Length;
-                        builderOP.Append("public {0}List<Join{1}> SelectJoin(", _static, table.Name);
                         int e = foreignCount - 1;
 
-                        builderOP.Append("E{0}[] f{0}", table.Name);
+                        // 构造查询的字段
+                        builderOP.Append("public {0}StringBuilder GetSelectJoinSQL(", _static);
+                        builderOP.Append("ref E{0}[] f{0}", table.Name);
                         for (int i = 0; i <= e; i++)
-                        {
-                            builderOP.Append(", E{0}[] f{1}", refferenceTypes[i].Name, foreignFields[i].Name);
-                            //if (i != e)
-                            //    builderOP.Append(", ");
-                        }
-                        builderOP.AppendLine(", string condition, params object[] param)");
+                            builderOP.Append(", ref E{0}[] f{1}", refferenceTypes[i].Name, foreignFields[i].Name);
+                        builderOP.AppendLine(")");
                         builderOP.AppendBlock(() =>
                         {
                             builderOP.AppendLine("StringBuilder builder = new StringBuilder();");
                             builderOP.AppendLine("builder.Append(\"SELECT \");");
                             builderOP.AppendLine("{1}_{0}.GetSelectField(\"t0\", builder, f{0});", table.Name, dbInstanceName);
                             builderOP.AppendLine("if (f{0} == null || f{0}.Length == 0) f{0} = FIELD_ALL;", table.Name);
-                            // 构造查询的字段
-                            builderOP.AppendLine("List<Join{0}> results = new List<Join{0}>();", table.Name);
                             //builderOP.AppendLine("List<{0}> t{0} = new List<{0}>();", table.Name);
                             for (int i = 0; i <= e; i++)
                             {
@@ -7538,54 +7532,113 @@ namespace EntryBuilder
                             {
                                 builderOP.AppendLine("if (f{1} != null) builder.Append(\" LEFT JOIN `{0}` as t{2} ON (t0.{1} = t{2}.{3})\");", refferenceTypes[i].Name, foreignFields[i].Name, (i + 1), foreignFields[i].GetAttribute<ForeignAttribute>().ForeignField);
                             }
+                            builderOP.AppendLine("return builder;");
+                        });
 
-                            // 查询读取数据
-                            builderOP.AppendLine("if (!string.IsNullOrEmpty(condition)) builder.Append(\" {0}\", condition);");
-                            builderOP.AppendLine("builder.Append(';');");
-                            builderOP.AppendLine("_DAO.ExecuteReader((reader) =>");
+                        // 读取Join对象
+                        builderOP.Append("public {0}void SelectJoinRead(IDataReader reader, List<Join{1}> list, ", _static, table.Name);
+                        builderOP.Append("E{0}[] f{0}", table.Name);
+                        for (int i = 0; i <= e; i++)
+                            builderOP.Append(", E{0}[] f{1}", refferenceTypes[i].Name, foreignFields[i].Name);
+                        builderOP.AppendLine(")");
+                        builderOP.AppendBlock(() =>
+                        {
+                            builderOP.AppendLine("int offset = 0;");
+                            builderOP.AppendLine("int[] indices = new int[reader.FieldCount];");
+                            builderOP.AppendLine("List<PropertyInfo> _p{0};", table.Name);
+                            builderOP.AppendLine("List<FieldInfo> _f{0};", table.Name);
+                            builderOP.AppendLine("{1}_{0}.MultiReadPrepare(reader, 0, f{0}.Length, out _p{0}, out _f{0}, ref indices);", table.Name, dbInstanceName);
+                            builderOP.AppendLine("offset = f{0}.Length;", table.Name);
+                            for (int i = 0; i <= e; i++)
+                            {
+                                builderOP.AppendLine("List<PropertyInfo> _p{0} = null;", foreignFields[i].Name);
+                                builderOP.AppendLine("List<FieldInfo> _f{0} = null;", foreignFields[i].Name);
+                                builderOP.AppendLine("if (f{0} != null)", foreignFields[i].Name);
+                                builderOP.AppendBlock(() =>
+                                {
+                                    builderOP.AppendLine("{2}_{1}.MultiReadPrepare(reader, offset, f{0}.Length, out _p{0}, out _f{0}, ref indices);", foreignFields[i].Name, refferenceTypes[i].Name, dbInstanceName);
+                                    builderOP.AppendLine("offset += f{0}.Length;", foreignFields[i].Name);
+                                });
+                            }
+                            builderOP.AppendLine("while (reader.Read())");
                             builderOP.AppendBlock(() =>
                             {
-                                builderOP.AppendLine("int offset = 0;");
-                                builderOP.AppendLine("int[] indices = new int[reader.FieldCount];");
-                                builderOP.AppendLine("List<PropertyInfo> _p{0};", table.Name);
-                                builderOP.AppendLine("List<FieldInfo> _f{0};", table.Name);
-                                builderOP.AppendLine("{1}_{0}.MultiReadPrepare(reader, 0, f{0}.Length, out _p{0}, out _f{0}, ref indices);", table.Name, dbInstanceName);
+                                builderOP.AppendLine("Join{0} join = new Join{0}();", table.Name);
+                                builderOP.AppendLine("list.Add(join);");
+                                //builderOP.AppendLine("t{0}.Add(_{0}.Read(reader, 0, f{0}.Length));", table.Name);
+                                builderOP.AppendLine("join.{0} = {1}_{0}.MultiRead(reader, 0, f{0}.Length, _p{0}, _f{0}, indices);", table.Name, dbInstanceName);
                                 builderOP.AppendLine("offset = f{0}.Length;", table.Name);
                                 for (int i = 0; i <= e; i++)
                                 {
-                                    builderOP.AppendLine("List<PropertyInfo> _p{0} = null;", foreignFields[i].Name);
-                                    builderOP.AppendLine("List<FieldInfo> _f{0} = null;", foreignFields[i].Name);
                                     builderOP.AppendLine("if (f{0} != null)", foreignFields[i].Name);
                                     builderOP.AppendBlock(() =>
                                     {
-                                        builderOP.AppendLine("{2}_{1}.MultiReadPrepare(reader, offset, f{0}.Length, out _p{0}, out _f{0}, ref indices);", foreignFields[i].Name, refferenceTypes[i].Name, dbInstanceName);
+                                        //builderOP.AppendLine("t{0}.Add(_{1}.Read(reader, offset, f{0}.Length));", foreignFields[i].Name, foreigns[i].ForeignTable.Name);
+                                        builderOP.AppendLine("join.{0} = {2}_{1}.MultiRead(reader, offset, f{0}.Length, _p{0}, _f{0}, indices);", foreignFields[i].Name, refferenceTypes[i].Name, dbInstanceName);
                                         builderOP.AppendLine("offset += f{0}.Length;", foreignFields[i].Name);
                                     });
                                 }
-                                builderOP.AppendLine("while (reader.Read())");
-                                builderOP.AppendBlock(() =>
-                                {
-                                    builderOP.AppendLine("Join{0} join = new Join{0}();", table.Name);
-                                    builderOP.AppendLine("results.Add(join);");
-                                    //builderOP.AppendLine("t{0}.Add(_{0}.Read(reader, 0, f{0}.Length));", table.Name);
-                                    builderOP.AppendLine("join.{0} = {1}_{0}.MultiRead(reader, 0, f{0}.Length, _p{0}, _f{0}, indices);", table.Name, dbInstanceName);
-                                    builderOP.AppendLine("offset = f{0}.Length;", table.Name);
-                                    for (int i = 0; i <= e; i++)
-                                    {
-                                        builderOP.AppendLine("if (f{0} != null)", foreignFields[i].Name);
-                                        builderOP.AppendBlock(() =>
-                                        {
-                                            //builderOP.AppendLine("t{0}.Add(_{1}.Read(reader, offset, f{0}.Length));", foreignFields[i].Name, foreigns[i].ForeignTable.Name);
-                                            builderOP.AppendLine("join.{0} = {2}_{1}.MultiRead(reader, offset, f{0}.Length, _p{0}, _f{0}, indices);", foreignFields[i].Name, refferenceTypes[i].Name, dbInstanceName);
-                                            builderOP.AppendLine("offset += f{0}.Length;", foreignFields[i].Name);
-                                        });
-                                    }
-                                });
                             });
+                        });
+
+                        // 外键连接查询
+                        builderOP.Append("public {0}List<Join{1}> SelectJoin(", _static, table.Name);
+                        builderOP.Append("E{0}[] f{0}", table.Name);
+                        for (int i = 0; i <= e; i++)
+                            builderOP.Append(", E{0}[] f{1}", refferenceTypes[i].Name, foreignFields[i].Name);
+                        builderOP.AppendLine(", string condition, params object[] param)");
+                        builderOP.AppendBlock(() =>
+                        {
+                            // 查询读取数据
+                            builderOP.Append("StringBuilder builder = GetSelectJoinSQL(");
+                            builderOP.Append("ref f{0}", table.Name);
+                            for (int i = 0; i <= e; i++)
+                                builderOP.Append(", ref f{0}", foreignFields[i].Name);
+                            builderOP.AppendLine(");");
+                            builderOP.AppendLine("if (!string.IsNullOrEmpty(condition)) builder.Append(\" {0}\", condition);");
+                            builderOP.AppendLine("builder.Append(';');");
+
+                            builderOP.AppendLine("List<Join{0}> results = new List<Join{0}>();", table.Name);
+                            builderOP.Append("_DAO.ExecuteReader((reader) => SelectJoinRead(reader, results");
+                            builderOP.Append(", f{0}", table.Name);
+                            for (int i = 0; i <= e; i++)
+                                builderOP.Append(", f{0}", foreignFields[i].Name);
+                            builderOP.Append(")");
                             builderOP.AppendLine(", builder.ToString(), param);");
 
                             builderOP.AppendLine("return results;");
                         });
+
+                        // 外键连接翻页查询
+                        if (fields.Length > 0)
+                        {
+                            builderOP.Append("public {0}PagedModel<Join{1}> SelectJoinPages(", _static, table.Name);
+                            builderOP.Append("E{0}[] f{0}", table.Name);
+                            for (int i = 0; i <= e; i++)
+                                builderOP.Append(", E{0}[] f{1}", refferenceTypes[i].Name, foreignFields[i].Name);
+                            builderOP.AppendLine(", string __where, string conditionAfterWhere, int page, int pageSize, params object[] param)");
+                            builderOP.AppendBlock(() =>
+                            {
+                                builderOP.Append("StringBuilder builder = GetSelectJoinSQL(");
+                                builderOP.Append("ref f{0}", table.Name);
+                                for (int i = 0; i <= e; i++)
+                                    builderOP.Append(", ref f{0}", foreignFields[i].Name);
+                                builderOP.AppendLine(");");
+
+                                builderOP.AppendLine("StringBuilder builder2 = new StringBuilder();");
+                                builderOP.AppendLine("builder2.Append(\"SELECT count(t0.`{1}`) FROM `{0}` as t0\");", table.Name, fields[0].Name);
+                                for (int i = 0; i <= e; i++)
+                                {
+                                    builderOP.AppendLine("if (f{1} != null) builder2.Append(\" LEFT JOIN `{0}` as t{2} ON (t0.{1} = t{2}.{3})\");", refferenceTypes[i].Name, foreignFields[i].Name, (i + 1), foreignFields[i].GetAttribute<ForeignAttribute>().ForeignField);
+                                }
+
+                                builderOP.Append("return {2}.SelectPages<Join{0}>(_DAO, builder2.ToString(), __where, builder.ToString(), conditionAfterWhere, page, pageSize, (reader, list) => SelectJoinRead(reader, list, ", table.Name, fields[0].Name, nsOrEmptyDotDBnameOrEmpty);
+                                builderOP.Append("f{0}", table.Name);
+                                for (int i = 0; i <= e; i++)
+                                    builderOP.Append(", f{0}", foreignFields[i].Name);
+                                builderOP.AppendLine("), param);");
+                            });
+                        }
                     }
 
                     // 翻页查询
@@ -7597,17 +7650,17 @@ namespace EntryBuilder
                             builderOP.AppendLine("return model.ChangeModel<{0}>(m => ({1})m);", table.Name, tableMapperName);
                         });
                     }
-                    builderOP.AppendLine("public {0}PagedModel<{1}> SelectPages(string __where, E{1}[] fields, string conditionAfterWhere, int page, int pageSize, params object[] param)", _static, table.Name);
-                    builderOP.AppendBlock(() =>
-                    {
-                        builderOP.AppendLine("var ret = SelectPages<{0}>(__where, GetSelectSQL(fields).ToString(), conditionAfterWhere, page, pageSize, param);", tableMapperName);
-                        if (hasSpecial)
-                            builderOP.AppendLine("return ChangePageModel(ret);");
-                        else
-                            builderOP.AppendLine("return ret;");
-                    });
                     if (fields.Length > 0)
                     {
+                        builderOP.AppendLine("public {0}PagedModel<{1}> SelectPages(string __where, E{1}[] fields, string conditionAfterWhere, int page, int pageSize, params object[] param)", _static, table.Name);
+                        builderOP.AppendBlock(() =>
+                        {
+                            builderOP.AppendLine("var ret = SelectPages<{0}>(__where, GetSelectSQL(fields).ToString(), conditionAfterWhere, page, pageSize, param);", tableMapperName);
+                            if (hasSpecial)
+                                builderOP.AppendLine("return ChangePageModel(ret);");
+                            else
+                                builderOP.AppendLine("return ret;");
+                        });
                         builderOP.AppendLine("public {0}PagedModel<T> SelectPages<T>(string __where, string selectSQL, string conditionAfterWhere, int page, int pageSize, params object[] param) where T : new()", _static);
                         builderOP.AppendBlock(() =>
                         {
@@ -7636,6 +7689,11 @@ namespace EntryBuilder
                 builder.AppendLine("public static PagedModel<T> SelectPages<T>(_DATABASE.Database db, string selectCountSQL, string __where, string selectSQL, string conditionAfterWhere, int page, int pageSize, params object[] param) where T : new()");
                 builder.AppendBlock(() =>
                 {
+                    builder.AppendLine("return SelectPages(db, selectCountSQL, __where, selectSQL, conditionAfterWhere, page, pageSize, new Action<IDataReader, List<T>>((reader, list) => list.Add(_DATABASE.ReadObject<T>(reader, 0, reader.FieldCount))), param);");
+                });
+                builder.AppendLine("public static PagedModel<T> SelectPages<T>(_DATABASE.Database db, string selectCountSQL, string __where, string selectSQL, string conditionAfterWhere, int page, int pageSize, Action<IDataReader, List<T>> read, params object[] param) where T : new()");
+                builder.AppendBlock(() =>
+                {
                     builder.AppendLine("StringBuilder builder = new StringBuilder();");
                     builder.AppendLine("builder.AppendLine(\"{0} {1};\", selectCountSQL, __where);");
                     builder.AppendLine("builder.AppendLine(\"{0} {1} {2} LIMIT @p{3},@p{4};\", selectSQL, __where, conditionAfterWhere, param.Length, param.Length + 1);");
@@ -7653,11 +7711,7 @@ namespace EntryBuilder
                         builder.AppendLine("result.Count = (int)(long)reader[0];");
                         builder.AppendLine("result.Models = new List<T>();");
                         builder.AppendLine("reader.NextResult();");
-                        builder.AppendLine("while (reader.Read())");
-                        builder.AppendBlock(() =>
-                        {
-                            builder.AppendLine("result.Models.Add(_DATABASE.ReadObject<T>(reader, 0, reader.FieldCount));");
-                        });
+                        builder.AppendLine("read(reader, result.Models);");
                     });
                     builder.AppendLine(", builder.ToString(), __param);");
                     builder.AppendLine("return result;");
