@@ -7388,6 +7388,44 @@ namespace EntryBuilder
                         //builderOP.AppendLine("builder.AppendLine(\" FROM {0} {{0}};\", condition);", table.Name);
                         builderOP.AppendLine("return _DAO.SelectObject<{0}>(builder.ToString(), param);", tableMapperName);
                     });
+                    // Exists
+                    builderOP.Append("public {0}bool Exists(", _static);
+                    for (int i = 0, n = primaryFields.Count - 1; i <= n; i++)
+                    {
+                        var field = primaryFields[i];
+                        builderOP.Append("{0} __{1}", field.FieldType.CodeName(), field.Name);
+                        if (i != n)
+                            builderOP.Append(", ");
+                    }
+                    builderOP.AppendLine(")");
+                    builderOP.AppendBlock(() =>
+                    {
+                        builderOP.Append("return _DAO.ExecuteScalar<bool>(\"SELECT EXISTS(SELECT 1 FROM `{0}`", table.Name);
+                        if (primaryFields.Count > 0)
+                        {
+                            builderOP.Append(" WHERE ");
+                            for (int i = 0, n = primaryFields.Count - 1; i <= n; i++)
+                            {
+                                var field = primaryFields[i];
+                                builderOP.Append("`{0}` = @p{1}", field.Name, i);
+                                if (i != n)
+                                    builderOP.Append(" AND ");
+                            }
+                        }
+                        builderOP.Append(")\"");
+                        if (primaryFields.Count > 0)
+                        {
+                            foreach (var field in primaryFields)
+                                builderOP.Append(", __{0}", field.Name);
+                        }
+                        builderOP.AppendLine(");");
+                    });
+                    // Exists2
+                    builderOP.AppendLine("public {0}bool Exists(string condition)", _static);
+                    builderOP.AppendBlock(() =>
+                    {
+                        builderOP.AppendLine("return _DAO.ExecuteScalar<bool>(string.Format(\"SELECT EXISTS(SELECT 1 FROM `{0}` {{0}})\", condition));", table.Name);
+                    });
 
                     builderOP.AppendLine("public {1}List<{0}> SelectMultiple(E{0}[] fields, string condition, params object[] param)", table.Name, _static);
                     builderOP.AppendBlock(() =>
