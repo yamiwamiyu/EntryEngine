@@ -7421,10 +7421,10 @@ namespace EntryBuilder
                         builderOP.AppendLine(");");
                     });
                     // Exists2
-                    builderOP.AppendLine("public {0}bool Exists2(string condition)", _static);
+                    builderOP.AppendLine("public {0}bool Exists2(string condition, params object[] param)", _static);
                     builderOP.AppendBlock(() =>
                     {
-                        builderOP.AppendLine("return _DAO.ExecuteScalar<bool>(string.Format(\"SELECT EXISTS(SELECT 1 FROM `{0}` {{0}})\", condition));", table.Name);
+                        builderOP.AppendLine("return _DAO.ExecuteScalar<bool>(string.Format(\"SELECT EXISTS(SELECT 1 FROM `{0}` {{0}})\", condition), param);", table.Name);
                     });
 
                     builderOP.AppendLine("public {1}List<{0}> SelectMultiple(E{0}[] fields, string condition, params object[] param)", table.Name, _static);
