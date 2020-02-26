@@ -7421,7 +7421,7 @@ namespace EntryBuilder
                         builderOP.AppendLine(");");
                     });
                     // Exists2
-                    builderOP.AppendLine("public {0}bool Exists(string condition)", _static);
+                    builderOP.AppendLine("public {0}bool Exists2(string condition)", _static);
                     builderOP.AppendBlock(() =>
                     {
                         builderOP.AppendLine("return _DAO.ExecuteScalar<bool>(string.Format(\"SELECT EXISTS(SELECT 1 FROM `{0}` {{0}})\", condition));", table.Name);
