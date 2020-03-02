@@ -1484,11 +1484,38 @@ namespace EntryEngine.Network
         }
     }
 
-    public class FileUpload
+    public sealed class FileUpload : IDisposable
     {
-        public string Filename;
-        public string ContentType;
-        public byte[] Content;
+        private AgentHttp agent;
+        public string Filename { get; internal set; }
+        public string ContentType { get; internal set; }
+        /// <summary>文件流</summary>
+        public FileStream File
+        {
+            get;
+            internal set;
+        }
+
+        internal FileUpload(AgentHttp agent)
+        {
+        }
+
+        public byte[] ReadAsByte()
+        {
+            if (File.Length > int.MaxValue)
+                throw new InvalidOperationException("文件过大，不能读取字节内容");
+            File.Seek(0, SeekOrigin.Begin);
+            return _IO.ReadStream(File);
+        }
+        public void SaveAs(string fullFilePath)
+        {
+            System.IO.File.Copy(File.Name, fullFilePath, true);
+        }
+        public void Dispose()
+        {
+            if (File != null)
+                File.Close();
+        }
     }
     // link
     //public class LinkHttpResponse : LinkBinary
@@ -1655,6 +1682,12 @@ namespace EntryEngine.Network
         /// <summary>一次OnProtocol处理完一个请求时触发</summary>
         public Action OnReset;
         private HttpListenerContext context;
+        /// <summary>当前请求的表单参数</summary>
+        private System.Collections.Specialized.NameValueCollection parameters;
+        /// <summary>当前请求的上传文件</summary>
+        private Dictionary<string, FileUpload> files = new Dictionary<string, FileUpload>();
+        private int uploadFileBufferSize = 4 * 1024 * 1024;
+        private byte[] uploadFileBuffer;
         public Action<HttpListenerContext> OnChangeContext;
         public HttpListenerContext Context
         {
@@ -1664,17 +1697,33 @@ namespace EntryEngine.Network
                 if (value == null)
                     throw new ArgumentNullException("context");
                 context = value;
-                Param = null;
+                parameters = null;
+                ReleaseFiles();
                 if (OnChangeContext != null)
                     OnChangeContext(value);
             }
         }
-
-        protected bool IsPost { get { return Context.Request.HttpMethod == "POST"; } }
-        protected System.Collections.Specialized.NameValueCollection Param
+        public bool IsPost { get { return Context.Request.HttpMethod == "POST"; } }
+        public int UploadFileBufferSize
         {
-            get;
-            set;
+            get { return uploadFileBufferSize; }
+            set
+            {
+                if (value < 256)
+                    value = 256;
+                if (uploadFileBufferSize != value)
+                    uploadFileBuffer = null;
+                uploadFileBufferSize = value;
+            }
+        }
+        internal byte[] UploadFileBuffer
+        {
+            get
+            {
+                if (uploadFileBuffer == null)
+                    uploadFileBuffer = new byte[uploadFileBufferSize];
+                return uploadFileBuffer;
+            }
         }
 
         public AgentHttp()
@@ -1805,85 +1854,266 @@ namespace EntryEngine.Network
             finally
             {
                 context = null;
-                Param = null;
+                parameters = null;
                 if (OnReset != null)
                     OnReset();
             }
         }
-        internal string GetParam(string paramName)
+        public string GetParam(string paramName)
         {
             if (IsPost)
-                return ParseParamPost(paramName);
+                return GetParamPost(paramName);
             else
-                return ParseParamGet(paramName);
+                return GetParamGet(paramName);
         }
-        protected virtual string ParseParamGet(string paramName)
+        public FileUpload GetFile(string paramName)
         {
-            if (Param == null)
+            ParsePostParam();
+            FileUpload file;
+            files.TryGetValue(paramName, out file);
+            return file;
+        }
+        private string GetParamGet(string paramName)
+        {
+            if (parameters == null)
             {
-                Param = _NETWORK.ParseQueryString(_NETWORK.UrlDecode(Context.Request.Url.Query, Encoding.UTF8));
+                parameters = _NETWORK.ParseQueryString(_NETWORK.UrlDecode(Context.Request.Url.Query, Encoding.UTF8));
                 //Param = Context.Request.QueryString;
             }
-            return Param[paramName];
+            return parameters[paramName];
         }
-        protected virtual string ParseParamPost(string paramName)
+        /// <summary>解析PostBody中的所有参数，文件内容；参数在parameters中，文件在files中</summary>
+        private void ParsePostParam()
         {
-            if (Param == null)
+            if (parameters != null) return;
+            string ctype = context.Request.ContentType;
+            if (ctype.Contains("multipart/form-data;"))
+            {
+                parameters = new System.Collections.Specialized.NameValueCollection();
+
+                var stream = Context.Request.InputStream;
+                MultipartReader reader = new MultipartReader(stream);
+                reader.Buffer = UploadFileBuffer;
+
+                byte[] bound = Encoding.ASCII.GetBytes(reader.ReadLine());
+                while (!reader.IsEnd)
+                {
+                    string paramName = null;
+                    FileUpload file = null;
+
+                    // 读取参数名，文件则读取文件名和类型
+                    while (true)
+                    {
+                        string line = reader.ReadLine();
+                        if (string.IsNullOrEmpty(line))
+                            break;
+                        else if (line.StartsWith("Content-Disposition"))
+                        {
+                            // 参数名
+                            int index = line.IndexOf("name=\"");
+                            if (index == -1)
+                                throw new ArgumentException("无效的Content-Disposition");
+                            index += 6;
+                            paramName = line.Substring(index, line.IndexOf('\"', index) - index);
+
+                            // 文件名
+                            index = line.IndexOf("filename=\"");
+                            if (index != -1)
+                            {
+                                index += 10;
+                                file = new FileUpload(this);
+                                // multipart/form-data;的数据貌似都是默认UTF8编码
+                                file.Filename = line.Substring(index, line.IndexOf('\"', index) - index);
+                            }
+                        }
+                        else if (file != null && line.StartsWith("Content-Type"))
+                            file.ContentType = line.Substring(14);
+                    }
+
+                    if (file == null)
+                    {
+                        StringBuilder builder = new StringBuilder();
+                        // 普通参数
+                        while (true)
+                        {
+                            bool result = reader.ReadSign(bound);
+                            int position = reader.Position;
+                            // 会多出一个\r\n
+                            if (result)
+                                position -= 2;
+                            if (position > 0)
+                                builder.Append(Encoding.UTF8.GetString(reader.Buffer, 0, position));
+                            reader.Flush();
+                            if (result)
+                                break;
+                        }
+
+                        parameters.Add(paramName, builder.ToString());
+                    }
+                    else
+                    {
+                        // 文件
+                        file.File = new FileStream(Guid.NewGuid().ToString("n"), FileMode.Create, FileAccess.ReadWrite, FileShare.Read, uploadFileBufferSize, FileOptions.DeleteOnClose);
+                        while (true)
+                        {
+                            bool result = reader.ReadSign(bound);
+                            int position = reader.Position;
+                            // 会多出一个\r\n
+                            if (result)
+                                position -= 2;
+                            if (position > 0)
+                                file.File.Write(reader.Buffer, 0, position);
+                            reader.Flush();
+                            if (result)
+                                break;
+                        }
+                        file.File.Flush();
+
+                        files.Add(paramName, file);
+                    }
+
+                    reader.ReadLine();
+                } // end of 读取一个参数
+            }
+            else
             {
                 byte[] data = _IO.ReadStream(Context.Request.InputStream, (int)Context.Request.ContentLength64);
-                string ctype = context.Request.ContentType;
-                if (ctype.Contains("multipart/form-data;"))
-                {
-                    Param = new System.Collections.Specialized.NameValueCollection();
-                    string bondary = "--" + ctype.Substring(ctype.IndexOf("boundary=") + 9);
-                    string str = SingleEncoding.Single.GetString(data);
-                    StringStreamReader reader = new StringStreamReader(str);
-                    while (!reader.IsEnd)
-                    {
-                        reader.EatAfterSign(bondary);
-                        // 最后的--\n
-                        if (reader.Pos + 4 >= reader.str.Length)
-                            break;
-                        reader.EatAfterSign("form-data; name=\"");
-                        string name = reader.NextToSignAfter("\"");
-                        if (reader.PeekChar == ';')
-                        {
-                            // 文件; filename="白.txt"
-                            reader.ToPosition(reader.Pos + 2);
-                            if (reader.PeekNext("=") != "filename")
-                                throw new ArgumentException("filename");
-                            Param.Add(name, reader.NextToSign(bondary));
-                        }
-                        else
-                        {
-                            // 普通表单数据
-                            while (true)
-                            {
-                                reader.EatLine();
-                                if (reader.PeekChar == '\r')
-                                {
-                                    // 空行之后是数据
-                                    reader.EatLine();
-                                    break;
-                                }
-                            }
-                            Param.Add(name, _NETWORK.UrlDecode(SingleEncoding.Single.GetBytes(reader.Next("\r\n")),
-                                // multipart/form-data;的数据貌似都是默认UTF8编码
-                                Encoding.UTF8));
-                        }
-                    }
-                }
-                else
-                {
-                    Param = _NETWORK.ParseQueryString(_NETWORK.UrlDecode(data, Context.Request.ContentEncoding));
-                }
+                parameters = _NETWORK.ParseQueryString(_NETWORK.UrlDecode(data, Context.Request.ContentEncoding));
             }
-            return Param[paramName];
+        }
+        private string GetParamPost(string paramName)
+        {
+            ParsePostParam();
+            return parameters[paramName];
+        }
+        private void ReleaseFiles()
+        {
+            if (files.Count > 0)
+            {
+                foreach (var item in files)
+                    item.Value.File.Close();
+                files.Clear();
+            }
         }
         public void Dispose()
         {
+            ReleaseFiles();
             while (queue.Count > 0)
                 queue.Dequeue().Response.Close();
+        }
+
+        class MultipartReader
+        {
+            private Stream stream;
+            public byte[] Buffer;
+            public int Offset;
+            private byte[] signBuffer;
+            private int signIndex;
+            private bool end;
+            /// <summary>查找Sign的索引</summary>
+            public int SignedIndex
+            {
+                get;
+                private set;
+            }
+            public int Position { get { return SignedIndex == -1 ? Offset : SignedIndex; } }
+            public bool IsEnd { get { return end && Offset == 0; } }
+
+            public MultipartReader(Stream stream)
+            {
+                this.stream = stream;
+            }
+
+            private void ReadBuffer()
+            {
+                if (end) return;
+                int read = stream.Read(Buffer, Offset, Buffer.Length - Offset);
+                Offset += read;
+                end = read == 0;
+            }
+            public string ReadLine()
+            {
+                ReadBuffer();
+                int offset = Offset;
+                for (int i = 0; i < offset; i++)
+                {
+                    if (Buffer[i] == 10)
+                    {
+                        int line = i;
+                        if (i > 0 && Buffer[i - 1] == 13)
+                            line--;
+
+                        string result = Encoding.UTF8.GetString(Buffer, 0, line);
+
+                        i++;
+                        Offset -= i;
+                        Array.Copy(Buffer, i, Buffer, 0, Offset);
+
+                        return result;
+                    }
+                }
+                throw new InvalidOperationException("不能读取到完整的行，请扩大Buffer容量");
+            }
+            public bool ReadSign(byte[] sign)
+            {
+                if (sign.Length > Buffer.Length)
+                    throw new InvalidOperationException("不能读取到完整的标记，请扩大Buffer容量");
+
+                ReadBuffer();
+
+                if (!Utility.Equals(signBuffer, sign))
+                {
+                    signBuffer = sign;
+                    signIndex = 0;
+                    SignedIndex = -1;
+                }
+
+                for (int i = 0; i < Offset; i++)
+                {
+                    if (Buffer[i] == signBuffer[signIndex])
+                    {
+                        signIndex++;
+                        if (signIndex == signBuffer.Length)
+                        {
+                            // 匹配
+                            SignedIndex = i + 1 - signIndex;
+                            return true;
+                        }
+                    }
+                    else
+                    {
+                        signIndex = 0;
+                    }
+                }
+
+                if (signIndex != 0)
+                {
+                    SignedIndex = Offset - signIndex;
+                    signIndex = 0;
+                }
+                return false;
+            }
+            public bool ReadSign(string sign)
+            {
+                return ReadSign(Encoding.UTF8.GetBytes(sign));
+            }
+            /// <summary>将Buffer积累读取的数据读截取掉</summary>
+            public void Flush()
+            {
+                if (SignedIndex != -1)
+                {
+                    if (signIndex == signBuffer.Length)
+                    {
+                        SignedIndex += signBuffer.Length;
+                    }
+                    Array.Copy(Buffer, SignedIndex, Buffer, 0, Offset - SignedIndex);
+                    Offset -= SignedIndex;
+                }
+                else
+                    Offset = 0;
+                SignedIndex = -1;
+                signIndex = 0;
+            }
         }
     }
     public abstract class StubHttp
@@ -1934,28 +2164,33 @@ namespace EntryEngine.Network
         {
             return ProtocolAgent.GetParam(paramName);
         }
-        public static FileUpload GetFile(string data)
+        public FileUpload GetFile(string paramName)
         {
-            FileUpload ret = new FileUpload();
-            StringStreamReader reader = new StringStreamReader(data);
-            reader.EatAfterSign("filename=\"");
-            // multipart/form-data;的数据貌似都是默认UTF8编码
-            ret.Filename = Encoding.UTF8.GetString(SingleEncoding.Single.GetBytes(reader.NextToSignAfter("\"")));
-            reader.EatAfterSign("Content-Type: ");
-            ret.ContentType = reader.Next("\r\n");
-            while (true)
-            {
-                reader.EatLine();
-                if (reader.IsEnd || reader.PeekChar == '\r')
-                {
-                    // 空行之后是数据
-                    reader.EatLine();
-                    break;
-                }
-            }
-            ret.Content = SingleEncoding.Single.GetBytes(reader.str.Substring(reader.Pos, reader.str.Length - reader.Pos - 2));
-            return ret;
+            return ProtocolAgent.GetFile(paramName);
         }
+        //public static FileUpload GetFile(string data)
+        //{
+        //    FileUpload ret = new FileUpload();
+        //    StringStreamReader reader = new StringStreamReader(data);
+        //    //File.ReadAllBytes(file);
+        //    reader.EatAfterSign("filename=\"");
+        //    // multipart/form-data;的数据貌似都是默认UTF8编码
+        //    ret.Filename = Encoding.UTF8.GetString(SingleEncoding.Single.GetBytes(reader.NextToSignAfter("\"")));
+        //    reader.EatAfterSign("Content-Type: ");
+        //    ret.ContentType = reader.Next("\r\n");
+        //    while (true)
+        //    {
+        //        reader.EatLine();
+        //        if (reader.IsEnd || reader.PeekChar == '\r')
+        //        {
+        //            // 空行之后是数据
+        //            reader.EatLine();
+        //            break;
+        //        }
+        //    }
+        //    //ret.Content = SingleEncoding.Single.GetBytes(reader.str.Substring(reader.Pos, reader.str.Length - reader.Pos - 2));
+        //    return ret;
+        //}
         public void Response(object obj)
         {
             Response(JsonWriter.Serialize(obj));

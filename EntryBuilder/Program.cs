@@ -1914,6 +1914,11 @@ namespace EntryBuilder
                                     if (param.ParameterType.Is(typeof(Delegate)))
                                         continue;
                                     string typeCodeName = param.ParameterType.CodeName();
+                                    if (param.ParameterType == typeof(FileUpload))
+                                    {
+                                        builder.AppendLine("{0} {1} = GetFile(\"{1}\");", typeCodeName, param.Name);
+                                        continue;
+                                    }
                                     builder.AppendLine("__temp = GetParam(\"{0}\");", param.Name);
                                     if (param.ParameterType == typeof(string))
                                         builder.AppendLine("{0} {1} = __temp;", typeCodeName, param.Name);
@@ -1943,10 +1948,10 @@ namespace EntryBuilder
                                         {
                                             builder.AppendLine("({0}){1}.Parse(__temp);", typeCodeName, Enum.GetUnderlyingType(param.ParameterType).CodeName());
                                         }
-                                        else if (param.ParameterType == typeof(FileUpload))
-                                        {
-                                            builder.AppendLine("GetFile(__temp);", typeCodeName);
-                                        }
+                                        //else if (param.ParameterType == typeof(FileUpload))
+                                        //{
+                                        //    builder.AppendLine("GetFile(__temp);", typeCodeName);
+                                        //}
                                         else
                                         {
                                             builder.AppendLine("JsonReader.Deserialize<{0}>(__temp);", typeCodeName);
@@ -2023,6 +2028,13 @@ namespace EntryBuilder
                                 {
                                     builder.AppendMethodInvoke(method, "agent", "__context", null);
                                 }
+                            }
+
+                            if (parameters.Length > 0)
+                            {
+                                foreach (var param in parameters)
+                                    if (param.ParameterType == typeof(FileUpload))
+                                        builder.AppendLine("{0}.Dispose();", param.Name);
                             }
                         });
                     }

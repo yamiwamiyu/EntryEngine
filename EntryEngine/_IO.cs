@@ -144,7 +144,7 @@ namespace EntryEngine
             }
             public string ReadPreambleText(byte[] bytes)
             {
-                return ReadPreambleText(bytes, ioEncoding);
+                return _IO.ReadPreambleText(bytes, ioEncoding);
             }
             public void WriteText(string file, string content)
             {
@@ -200,23 +200,6 @@ namespace EntryEngine
             protected internal virtual byte[] ReadSelectFile(SelectFile select)
             {
                 return _ReadByte(select.file);
-            }
-
-            public static string ReadPreambleText(string text, Encoding encoding)
-            {
-                return ReadPreambleText(encoding.GetBytes(text), encoding);
-            }
-            public static string ReadPreambleText(byte[] bytes, Encoding encoding)
-            {
-                using (MemoryStream stream = new MemoryStream(bytes))
-                {
-                    return ReadPreambleText(stream, encoding);
-                }
-            }
-            public static string ReadPreambleText(Stream stream, Encoding encoding)
-            {
-                StreamReader reader = new StreamReader(stream, encoding);
-                return reader.ReadToEnd();
             }
         }
 
@@ -349,9 +332,36 @@ namespace EntryEngine
             else
                 return dir + SPLIT;
         }
+        public static string ReadPreambleText(string text, Encoding encoding)
+        {
+            return ReadPreambleText(encoding.GetBytes(text), encoding);
+        }
+        public static string ReadPreambleText(byte[] bytes, Encoding encoding)
+        {
+            using (MemoryStream stream = new MemoryStream(bytes))
+            {
+                return ReadPreambleText(stream, encoding);
+            }
+        }
+        public static string ReadPreambleText(Stream stream, Encoding encoding)
+        {
+            StreamReader reader = new StreamReader(stream, encoding);
+            return reader.ReadToEnd();
+        }
         public static byte[] ReadStream(Stream stream)
         {
-            return ReadStream(stream, 128);
+            int length = 128;
+            try
+            {
+                if (stream.Length > int.MaxValue)
+                    length = int.MaxValue;
+                else
+                    length = (int)stream.Length;
+            }
+            catch
+            {
+            }
+            return ReadStream(stream, length);
         }
         public static int ReadStream(ref byte[] buffer, Stream stream)
         {
@@ -359,6 +369,8 @@ namespace EntryEngine
             while (true)
             {
                 int length = buffer.Length - offset;
+                //if (length > int.MaxValue)
+                //    length = int.MaxValue;
                 int read = stream.Read(buffer, offset, length);
                 offset += read;
                 if (read == 0)
