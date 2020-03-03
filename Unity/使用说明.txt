@@ -467,3 +467,60 @@ C:\Windows\Microsoft.NET\Framework\v2.0.50727\ilasm 编译目标.il /output=编�
 读取APK版本号，包名等信息，需要sdk里的工具build-tools\android-4.4W\aapt.exe，仅需此一个文件
 执行批处理命令：aapt.exe dump badging 目标APP.apk
 程序执行：_CMDLINE.RunExe
+
+
+
+
+
+APK动态写入内容
+1. APK的压缩方式是ZIP
+2. C#使用Ionic.Zip.ZipFile库修改APK的Comment，Save成新的APK
+3. JAVA通过以下代码可以读取到APK的Comment信息，APK安装后会复制到/data/app/包名-随即名/base.apk，不需要担心原apk被删掉
+
+// Context.getPackageCodePath() = /data/app/包名-随即名/base.apk
+extractZipComment(Context.getPackageCodePath());
+
+public static String extractZipComment (String filename) {
+	String retStr = null;
+	try {
+		File file = new File(filename);
+		int fileLen = (int)file.length();
+	
+		FileInputStream in = new FileInputStream(file);
+
+		byte[] buffer = new byte[Math.min(fileLen, 8192)];
+		int len;
+	
+		in.skip(fileLen - buffer.length);
+	
+		if ((len = in.read(buffer)) > 0) {
+			retStr = getZipCommentFromBuffer (buffer, len);
+		}
+
+		in.close();
+	} catch (Exception e) {
+		e.printStackTrace();
+	}
+	return retStr;
+}
+
+private static String getZipCommentFromBuffer (byte[] buffer, int len) {
+	byte[] magicDirEnd = {0x50, 0x4b, 0x05, 0x06};
+	int buffLen = Math.min(buffer.length, len);
+	for (int i = buffLen-magicDirEnd.length-22; i >= 0; i--) {
+		boolean isMagicStart = true;
+		for (int k=0; k < magicDirEnd.length; k++) {
+			if (buffer[i+k] != magicDirEnd[k]) {
+			isMagicStart = false;
+			break;
+			}
+		}
+		if (isMagicStart) {
+			int commentLen = buffer[i+20] + buffer[i+22]*256;
+			int realLen = buffLen - i - 22;
+			String comment = new String (buffer, i+22, Math.min(commentLen, realLen));
+			return comment;
+		}
+	}
+	return null;
+}
