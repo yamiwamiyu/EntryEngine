@@ -1781,7 +1781,7 @@ namespace EntryEngine.Network
                     {
                         if (flag)
                         {
-                            splitIndex = i;
+                            splitIndex = i + 1;
                             break;
                         }
                         else
@@ -1793,13 +1793,16 @@ namespace EntryEngine.Network
                     Context.Response.StatusCode = 404;
                     throw new ArgumentException("错误的请求地址");
                 }
-                string path = Context.Request.Url.LocalPath.Substring(splitIndex + 1);
 
-                foreach (var protocol in protocols)
+                int index2 = localPath.IndexOf('/', splitIndex);
+                string protocol = localPath.Substring(splitIndex, index2 - splitIndex);
+
+                foreach (var item in protocols)
                 {
-                    if (path.StartsWith(protocol.Key))
+                    //if (path.StartsWith(protocol.Key))
+                    if (protocol == item.Key)
                     {
-                        agent = protocol.Value;
+                        agent = item.Value;
                         break;
                     }
                 }
@@ -1807,10 +1810,10 @@ namespace EntryEngine.Network
                 if (agent == null)
                 {
                     Context.Response.StatusCode = 404;
-                    throw new ArgumentException(string.Format("No agent! URL: {0}", path));
+                    throw new ArgumentException(string.Format("No agent! URL: {0}", protocol));
                 }
 
-                string stub = path.Substring(agent.Protocol.Length + 1);
+                string stub = localPath.Substring(index2 + 1);
                 int paramIndex = stub.IndexOf('?');
                 if (paramIndex != -1)
                     stub = stub.Substring(0, paramIndex);
