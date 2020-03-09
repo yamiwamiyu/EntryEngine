@@ -7113,7 +7113,9 @@ namespace EntryBuilder
                         if (identity != null)
                         {
                             builderOP.AppendLine("builder.Append(\"SELECT LAST_INSERT_ID();\");");
-                            builderOP.AppendLine("return _DAO.SelectValue<{0}>(builder.ToString(), values.ToArray());", identity.FieldType.CodeName());
+                            //builderOP.AppendLine("return _DAO.SelectValue<{0}>(builder.ToString(), values.ToArray());", identity.FieldType.CodeName());
+                            builderOP.AppendLine("target.{1} = _DAO.SelectValue<{0}>(builder.ToString(), values.ToArray());", identity.FieldType.CodeName(), identity.Name);
+                            builderOP.AppendLine("return target.{0};", identity.Name);
                         }
                         else
                         {
