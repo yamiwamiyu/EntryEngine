@@ -129,6 +129,7 @@ namespace LauncherManager
                     Agent = null;
                     Proxy = null;
 
+                    _LOG.Info("开始链接服务器：{0}:{1}", ip, port);
                     var async = Link.Connect(ip, port);
                     yield return async;
 

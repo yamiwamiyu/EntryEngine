@@ -12,6 +12,7 @@ namespace LauncherManager
     {
         protected override IEnumerable<ICoroutine> Loading()
         {
+            _LOG._Logger = new LoggerFile(new LoggerConsole());
             _SAVE.Load();
             //_LANGUAGE.Load(_IO.ReadText("Content\\Language.csv"), "");
             //_TABLE.Load("Content\\");

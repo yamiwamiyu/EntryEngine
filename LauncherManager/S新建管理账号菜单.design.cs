@@ -266,9 +266,9 @@ public partial class S新建管理账号菜单
             R = 0,
             A = 255,
         };
-        DD权限.UIText.TextAlignment = (EPivot)16;
+        DD权限.UIText.TextAlignment = (EPivot)18;
         DD权限.UIText.TextShader = null;
-        DD权限.UIText.Padding.X = 40f;
+        DD权限.UIText.Padding.X = 680f;
         DD权限.UIText.Padding.Y = 0f;
         DD权限.UIText.FontSize = 16f;
         DD权限.DropDownList = S160613103204;
