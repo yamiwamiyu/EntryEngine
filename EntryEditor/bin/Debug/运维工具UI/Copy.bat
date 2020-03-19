@@ -1,0 +1,1 @@
+xcopy /Y UI\*.design.cs ..\..\..\..\LauncherManager\
