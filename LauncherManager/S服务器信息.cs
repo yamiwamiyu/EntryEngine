@@ -41,17 +41,17 @@ public partial class S服务器信息 : UIScene
             Server.Services.Where(s => s.Status != EServiceStatus.Stop).Count(),
             Server.Services.Length);
 
-        if (e.GameTime.TickSecond && e.GameTime.Second % 5 == 0)
-        {
-            Maintainer.Proxy.GetServerStatusStatistic(Server.ID,
-                data =>
-                {
-                    L内存.Text = data.Memory + " MB";
-                    L人数.Text = data.Connections.ToString();
-                    L网络.Text = (data.Network / 1024) + " kb/s";
-                    LCPU.Text = data.Cpu + "%";
-                    L硬盘.Text = (data.Disk / 1024) + " kb/s";
-                });
-        }
+        //if (e.GameTime.TickSecond && e.GameTime.Second % 5 == 0)
+        //{
+        //    Maintainer.Proxy.GetServerStatusStatistic(Server.ID,
+        //        data =>
+        //        {
+        //            L内存.Text = data.Memory + " MB";
+        //            L人数.Text = data.Connections.ToString();
+        //            L网络.Text = (data.Network / 1024) + " kb/s";
+        //            LCPU.Text = data.Cpu + "%";
+        //            L硬盘.Text = (data.Disk / 1024) + " kb/s";
+        //        });
+        //}
     }
 }

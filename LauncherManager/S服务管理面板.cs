@@ -143,28 +143,37 @@ public partial class S服务管理面板 : UIScene
     }
     void B同服务器_Clicked(UIElement sender, Entry e)
     {
-        var service = Selected.FirstOrDefault();
-        if (service == null)
+        HashSet<Server> types = new HashSet<Server>();
+        foreach (var item in Selected)
+            types.Add(Maintainer.FindServer(item));
+        if (types.Count == 0)
             return;
-        Maintainer maintainer = Maintainer.Find(service);
+        
         foreach (var item in scenes)
         {
             if (!item.CB单选.Checked)
             {
-                var temp = Maintainer.Find(item.Service);
-                if (maintainer.Name == temp.Name)
+                if (types.Contains(Maintainer.FindServer(item.Service)))
                     item.CB单选.Checked = true;
             }
         }
     }
     void B同类型_Clicked(UIElement sender, Entry e)
     {
-        var service = Selected.FirstOrDefault();
-        if (service == null)
+        HashSet<string> types = new HashSet<string>();
+        foreach (var item in Selected)
+            types.Add(item.Type);
+        if (types.Count == 0)
             return;
+
         foreach (var item in scenes)
-            if (!item.CB单选.Checked && item.Service.Type == service.Type)
-                item.CB单选.Checked = true;
+        {
+            if (!item.CB单选.Checked)
+            {
+                if (types.Contains(item.Service.Type))
+                    item.CB单选.Checked = true;
+            }
+        }
     }
     void B全选_Clicked(UIElement sender, Entry e)
     {
