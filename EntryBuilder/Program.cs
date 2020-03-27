@@ -2287,11 +2287,15 @@ namespace EntryBuilder
                     builder.AppendBlock(() =>
                     {
                         builder.AppendLine("var str = [];");
+                        string callbackName = "callback";
                         for (int j = 0, n = parameters.Length - 1; j <= n; j++)
                         {
                             var param = parameters[j];
                             if (hasAsync && param.ParameterType.IsDelegate())
+                            {
+                                callbackName = param.Name;
                                 continue;
+                            }
                             builder.Append("if ({0}) ", param.Name);
                             builder.Append("str.push(");
                             builder.Append("\"{0}=\" + ", param.Name);
@@ -2304,7 +2308,7 @@ namespace EntryBuilder
                                 builder.Append("{0}", param.Name);
                             builder.AppendLine(");");
                         }
-                        builder.AppendLine("{0}.send(\"{1}/{2}\", str.join(\"&\"), callback);", name, agent.Protocol, method.Name);
+                        builder.AppendLine("{0}.send(\"{1}/{2}\", str.join(\"&\"), {3});", name, agent.Protocol, method.Name, callbackName);
                     });
                 }
                 builder.AppendLine("export default {0};", name);
@@ -4133,7 +4137,7 @@ namespace EntryBuilder
                     break;
 
                 case 2:
-                    #region MyRegion
+                    #region WebSocket JS
                     build = (type) =>
                     {
                         ProtocolJsonJs writer = new ProtocolJsonJs();

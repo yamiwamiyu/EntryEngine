@@ -1890,7 +1890,7 @@ namespace EntryEngine.Network
         {
             if (parameters != null) return;
             string ctype = context.Request.ContentType;
-            if (ctype.Contains("multipart/form-data;"))
+            if (!string.IsNullOrEmpty(ctype) && ctype.Contains("multipart/form-data;"))
             {
                 parameters = new System.Collections.Specialized.NameValueCollection();
 
