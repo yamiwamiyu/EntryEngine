@@ -164,51 +164,6 @@ namespace EntryEngine.Network
                     }
                 }
             }
-            internal void FillFromEncodedBytes(byte[] bytes, Encoding encoding)
-            {
-                int num = (bytes != null) ? bytes.Length : 0;
-                for (int i = 0; i < num; i++)
-                {
-                    int num2 = i;
-                    int num3 = -1;
-                    while (i < num)
-                    {
-                        byte b = bytes[i];
-                        if (b == 61)
-                        {
-                            if (num3 < 0)
-                            {
-                                num3 = i;
-                            }
-                        }
-                        else
-                        {
-                            if (b == 38)
-                            {
-                                break;
-                            }
-                        }
-                        i++;
-                    }
-                    string name;
-                    string value;
-                    if (num3 >= 0)
-                    {
-                        name = UrlDecode(bytes, num2, num3 - num2, encoding);
-                        value = UrlDecode(bytes, num3 + 1, i - num3 - 1, encoding);
-                    }
-                    else
-                    {
-                        name = null;
-                        value = UrlDecode(bytes, num2, i - num2, encoding);
-                    }
-                    base.Add(name, value);
-                    if (i == num - 1 && bytes[i] == 38)
-                    {
-                        base.Add(null, string.Empty);
-                    }
-                }
-            }
             internal void Reset()
             {
                 base.Clear();
@@ -342,6 +297,10 @@ namespace EntryEngine.Network
         }
         public static NameValueCollection ParseQueryString(string query, Encoding encoding)
         {
+            return ParseQueryString(query, true, encoding);
+        }
+        public static NameValueCollection ParseQueryString(string query, bool urlencoded, Encoding encoding)
+        {
             if (query == null)
             {
                 throw new ArgumentNullException("query");
@@ -354,7 +313,7 @@ namespace EntryEngine.Network
             {
                 query = query.Substring(1);
             }
-            return new HttpValueCollection(query, false, true, encoding);
+            return new HttpValueCollection(query, false, urlencoded, encoding);
         }
         public static string UrlEncode(string str)
         {
