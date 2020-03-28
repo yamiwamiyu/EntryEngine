@@ -2221,6 +2221,7 @@ namespace EntryBuilder
                 builder.AppendLine("const {0} = {{}};", name);
                 builder.AppendLine("export {{{0}}}", name);
                 builder.AppendLine("{0}.onSend = null;", name);
+                builder.AppendLine("{0}.onSendOnce = null;", name);
                 builder.AppendLine("{0}.onCallback = null;", name);
                 builder.AppendLine("{0}.onErrorMsg = null;", name);
                 builder.AppendLine("{0}.onError = null;", name);
@@ -2259,8 +2260,9 @@ namespace EntryBuilder
                     });
                     builder.AppendLine("req.open(\"POST\", {0}.url + url, true);", name);
                     builder.AppendLine("req.responseType = \"text\";");
-                    builder.AppendLine("req.setRequestHeader(\"Content-Type\", \"application/x-www-form-urlencoded;charset=utf-8\");");
+                    builder.AppendLine("if (!{0}.onSendOnce) {{ req.setRequestHeader(\"Content-Type\", \"application/x-www-form-urlencoded;charset=utf-8\"); }}", name);
                     builder.AppendLine("if ({0}.onSend) {{ {0}.onSend(req); }}", name);
+                    builder.AppendLine("if ({0}.onSendOnce) {{ var __send = {0}.onSendOnce(req); {0}.onSendOnce = null; if (__send) {{ return; }} }}", name);
                     builder.AppendLine("req.send(str);");
                 });
                 // 通过代理调用接口方法
