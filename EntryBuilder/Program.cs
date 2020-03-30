@@ -7381,11 +7381,13 @@ namespace EntryBuilder
                                 }
                                 builderOP.AppendLine(";\");");
                             }
-                            //builderOP.AppendLine("builder.Append(';');");
-                            builderOP.Append("return _DAO.SelectObject<{0}>(builder.ToString()", tableMapperName);
+                            builderOP.Append("var ret = _DAO.SelectObject<{0}>(builder.ToString()", tableMapperName);
                             foreach (var field in primaryFields)
                                 builderOP.Append(", __{0}", field.Name);
                             builderOP.AppendLine(");");
+                            foreach (var field in primaryFields)
+                                builderOP.AppendLine("ret.{0} = __{0};", field.Name);
+                            builderOP.AppendLine("return ret;");
                         });
                     }
                     // 条件查询
