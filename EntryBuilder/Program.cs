@@ -7385,8 +7385,12 @@ namespace EntryBuilder
                             foreach (var field in primaryFields)
                                 builderOP.Append(", __{0}", field.Name);
                             builderOP.AppendLine(");");
-                            foreach (var field in primaryFields)
-                                builderOP.AppendLine("ret.{0} = __{0};", field.Name);
+                            builderOP.AppendLine("if (ret != default({0}))", table.Name);
+                            builderOP.AppendBlock(() =>
+                            {
+                                foreach (var field in primaryFields)
+                                    builderOP.AppendLine("ret.{0} = __{0};", field.Name);
+                            });
                             builderOP.AppendLine("return ret;");
                         });
                     }
