@@ -90,7 +90,7 @@ namespace EntryEngine
                 }
 
                 name = string.Join(".", names.ToArray());
-                if (full)
+                if (full && !string.IsNullOrEmpty(type.Namespace))
                     name = string.Format("{0}.{1}", type.Namespace, name);
             }
             else
