@@ -2536,6 +2536,7 @@ namespace EntryBuilder
                 builder.AppendLine("const {0} = {{}};", name);
                 builder.AppendLine("export {{{0}}}", name);
                 builder.AppendLine("{0}.ws = null;", name);
+                builder.AppendLine("{0}.onError = null;", name);
                 foreach (var method in callback)
                 {
                     builder.Append("{0}.{1} = function(", name, method.Name);
@@ -2552,6 +2553,7 @@ namespace EntryBuilder
                 builder.AppendLine("{0}.callback = function(ret)", name);
                 builder.AppendBlock(() =>
                 {
+                    builder.AppendLine("if (ret.errCode && {0}.onError) {0}.onError(ret);", name);
                     builder.AppendLine("if (ret.Protocol != {0}) return;", agent.Protocol);
                     builder.AppendLine("switch (ret.Stub)");
                     builder.AppendBlock(() =>
@@ -2895,8 +2897,6 @@ namespace EntryBuilder
                     table.Name = tableName;
                     OleDbDataReader reader = cmd.ExecuteReader();
                     int count = reader.FieldCount;
-                    //if (readTitle)
-                    //{
                     if (reader.Read())
                     {
                         for (int i = 0; i < count; i++)
@@ -2907,19 +2907,8 @@ namespace EntryBuilder
                     else
                     {
                         reader.Close();
-                        //results.Add(table);
                         continue;
                     }
-                    //}
-                    //else
-                    //{
-                    //    for (int i = 1; i <= count; i++)
-                    //    {
-                    //        table.AddColumn("Column" + i);
-                    //    }
-                    //}
-                    //reader.Read();
-                    //reader.Read();
                     while (reader.Read())
                     {
                         bool dbnull = true;

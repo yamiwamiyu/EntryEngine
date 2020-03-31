@@ -596,13 +596,35 @@ namespace EntryEngine.Network
         }
         public override void OnProtocol(byte[] data)
         {
-            var pack = JsonReader.Deserialize<ProtocolCall>(Encoding.UTF8.GetString(data));
+            //var pack = JsonReader.Deserialize<ProtocolCall>(Encoding.UTF8.GetString(data));
+            try
+            {
+                var pack = JsonReader.Deserialize<ProtocolCall>(Encoding.UTF8.GetString(data));
 
-            StubJson agent;
-            if (!protocols.TryGetValue(pack.Protocol, out agent))
-                throw new NotImplementedException("no procotol: " + pack.Protocol);
+                StubJson agent;
+                if (!protocols.TryGetValue(pack.Protocol, out agent))
+                    throw new NotImplementedException("no procotol: " + pack.Protocol);
 
-            agent[pack.Stub](pack.JO);
+                agent[pack.Stub](pack.JO);
+            }
+            catch (Exception ex)
+            {
+                _LOG.Error(ex, "协议处理错误！");
+                try
+                {
+                    int err = 500;
+                    HttpException ex2 = ex as HttpException;
+                    if (ex2 != null)
+                    {
+                        err = (int)ex2.StatusCode;
+                    }
+                    Link.Write(Encoding.UTF8.GetBytes(JsonWriter.Serialize(new HttpError(err, ex.Message))));
+                }
+                catch (Exception exInner)
+                {
+                    _LOG.Error(exInner, "协议异常回调错误！");
+                }
+            }
         }
     }
     public abstract class StubJson
