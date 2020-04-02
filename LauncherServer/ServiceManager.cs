@@ -719,9 +719,10 @@ namespace LauncherServer
                 item.Proxy.UpdateLauncher();
             string UPDATE = "update.bat";
             StringBuilder builder = new StringBuilder();
-            builder.AppendLine("taskkill /PID {0}", System.Diagnostics.Process.GetCurrentProcess().Id);
+            var process = System.Diagnostics.Process.GetCurrentProcess();
+            builder.AppendLine("taskkill /PID {0}", process.Id);
             builder.AppendLine("svn update {0}", Environment.CurrentDirectory);
-            builder.AppendLine("start EntryEngine.exe");
+            builder.AppendLine("start {0}.exe", process.ProcessName);
             builder.AppendLine("del {0}", UPDATE);
             System.IO.File.WriteAllText(UPDATE, builder.ToString());
             System.Diagnostics.Process.Start(UPDATE);

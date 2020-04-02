@@ -5,7 +5,7 @@ using EntryEngine.Network;
 using EntryEngine.Serialize;
 using LauncherProtocol;
 
-class ILauncherServiceProxy : StubClientAsync
+class ILauncherServiceProxy : StubClientAsync, ILauncherService
 {
     public Action<ByteWriter> __WriteAgent;
     

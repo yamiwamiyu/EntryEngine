@@ -211,7 +211,15 @@ namespace LauncherClient
                         else
                             Proxy.LogServer(name, record);
                     }
-                    return !(service.Status != EServiceStatus.Stop && launcher.Running);
+                    try
+                    {
+                        return !(service.Status != EServiceStatus.Stop && launcher.Running);
+                    }
+                    catch (Exception ex)
+                    {
+                        _LOG.Error(ex, "日志打印协程异常");
+                        return true;
+                    }
                 });
             SetCoroutine(logCoroutine);
 
@@ -323,9 +331,10 @@ namespace LauncherClient
 
             string UPDATE = "update.bat";
             StringBuilder builder = new StringBuilder();
-            builder.AppendLine("taskkill /PID {0}", System.Diagnostics.Process.GetCurrentProcess().Id);
+            var process = System.Diagnostics.Process.GetCurrentProcess();
+            builder.AppendLine("taskkill /PID {0}", process.Id);
             builder.AppendLine("svn update {0}", Environment.CurrentDirectory);
-            builder.AppendLine("start EntryEngine.exe");
+            builder.AppendLine("start {0}.exe", process.ProcessName);
             builder.AppendLine("del {0}", UPDATE);
             File.WriteAllText(UPDATE, builder.ToString());
             System.Diagnostics.Process.Start(UPDATE);
