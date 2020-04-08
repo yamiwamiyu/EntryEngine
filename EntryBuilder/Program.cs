@@ -7142,7 +7142,7 @@ namespace EntryBuilder
                                 if (i != n)
                                     builderOP.Append(" AND ");
                             }
-                            builderOP.Append("\"");
+                            builderOP.Append(";\"");
                             foreach (var field in primaryFields)
                             {
                                 builderOP.Append(", index++", field.Name);
