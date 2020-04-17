@@ -248,8 +248,8 @@ namespace EntryEngine.Serialize
 			if (property.GetIndexParameters().Length > 0)
 				return true;
 			// abstract
-			MethodInfo set = property.GetSetMethod();
-			if (set == null || set.IsAbstract)
+			MethodInfo get = property.GetGetMethod();
+			if (get == null || get.IsAbstract)
 				return true;
 			// NonSerialized property
 			object[] nonSerialized = property.GetCustomAttributes(true);
@@ -272,15 +272,15 @@ namespace EntryEngine.Serialize
 		}
 		public bool SkipProperty(PropertyInfo property)
 		{
-			// get set
+			// get
 			if (!property.CanRead)
 				return true;
 			// index
 			if (property.GetIndexParameters().Length > 0)
 				return true;
 			// abstract
-			MethodInfo set = property.GetGetMethod();
-			if (set == null || set.IsAbstract)
+			MethodInfo get = property.GetGetMethod();
+			if (get == null || get.IsAbstract)
 				return true;
 			// NonSerialized property
 			object[] nonSerialized = property.GetCustomAttributes(true);
@@ -291,6 +291,38 @@ namespace EntryEngine.Serialize
 			return false;
 		}
 	}
+    /// <summary>默认值不传，匿名类型的属性会传</summary>
+    public class SerializeValidatorTransfer : ISerializeFilter
+    {
+        public bool SkipField(FieldInfo field)
+        {
+            return (field.IsInitOnly || field.IsNotSerialized);
+        }
+        public bool SkipProperty(PropertyInfo property)
+        {
+            // get
+            if (!property.CanRead)
+                return true;
+            // index
+            if (property.GetIndexParameters().Length > 0)
+                return true;
+            // abstract
+            MethodInfo get = property.GetGetMethod();
+            if (get == null || get.IsAbstract)
+                return true;
+            // 匿名类型
+            if (property.DeclaringType.Name[0] != '<')
+            {
+                // NonSerialized property
+                object[] nonSerialized = property.GetCustomAttributes(true);
+                if (nonSerialized.Length > 0 &&
+                    nonSerialized.Any(SerializeValidatorDefault.IsNonSerializeProperty))
+                    return true;
+            }
+
+            return false;
+        }
+    }
     /// <summary>
     /// 反射GetField(string name)被调用后，接着调用GetFields()
     /// 类型的Field顺序将被打乱，GetField的字段将被提到第一位
@@ -696,7 +728,10 @@ namespace EntryEngine.Serialize
 		protected void WriteDateTime(DateTime value)
 		{
 			//WriteNumber(Utility.ToUnixTimestamp(value));
-			WriteString(value.ToString("yyyy-MM-dd HH:mm:ss"));
+            if (value.Ticks == 0)
+                WriteString("");
+            else
+			    WriteString(value.ToString("yyyy-MM-dd HH:mm:ss"));
 		}
 		protected virtual void WriteArray(IEnumerable value, Type type)
 		{
@@ -1220,6 +1255,8 @@ namespace EntryEngine.Serialize
                 long timestamp = (long)ReadNumber(typeof(long));
                 return Utility.ToTime(timestamp);
             }
+            if (string.IsNullOrEmpty(strValue))
+                return default(DateTime);
             return DateTime.Parse(strValue);
         }
         protected virtual object ReadArray(Type type, Type elementType)
@@ -1632,6 +1669,11 @@ namespace EntryEngine.Serialize
 	{
         public static readonly string Name = typeof(ANonSerializedP).Name;
 	}
+    [AttributeUsage(AttributeTargets.Property)]
+    [AReflexible]public class ASerializedP : Attribute
+    {
+        public static readonly string Name = typeof(ASerializedP).Name;
+    }
 	[AttributeUsage(AttributeTargets.All)]
 	public class ASummary : Attribute
 	{
