@@ -231,14 +231,13 @@ namespace EntryEngine.Network
                 ExecuteReader(
                     (reader) =>
                     {
-                        Type type = typeof(T);
                         while (reader.Read())
                         {
                             object value = reader[0];
                             if (value == null || value is DBNull)
                                 list.Add(default(T));
                             else
-                                list.Add((T)Convert.ChangeType(reader[0], type));
+                                list.Add((T)reader[0]);
                         }
                     }, sql, parameters);
                 return list;
@@ -365,30 +364,21 @@ namespace EntryEngine.Network
                     continue;
 
                 string name = reader.GetName(i);
+                var _type = reader.GetFieldType(i);
 
                 if (properties.TryGetValue(name, out property))
                 {
-                    try
-                    {
-                        property.SetValue(instance, value, null);
-                    }
-                    catch
-                    {
-                        property.SetValue(instance, Convert.ChangeType(value, property.PropertyType), null);
-                    }
+                    if (_type != property.PropertyType)
+                        value = Convert.ChangeType(value, property.PropertyType);
+                    property.SetValue(instance, value, null);
                     continue;
                 }
 
                 if (!fields.TryGetValue(name, out field))
                     continue;
-                try
-                {
-                    field.SetValue(instance, value);
-                }
-                catch
-                {
-                    field.SetValue(instance, Convert.ChangeType(value, field.FieldType));
-                }
+                if (_type != field.FieldType)
+                    value = Convert.ChangeType(value, field.FieldType);
+                field.SetValue(instance, value);
             }
         }
         /// <summary>连续读取多个对象时，一次性把属性和字段都准备好，加速反射效率</summary>
@@ -433,29 +423,21 @@ namespace EntryEngine.Network
                 if (value == DBNull.Value)
                     continue;
 
+                var type = reader.GetFieldType(i);
+
                 if (index < 0)
                 {
                     property = properties[-index - 1];
-                    try
-                    {
-                        property.SetValue(instance, value, null);
-                    }
-                    catch
-                    {
-                        property.SetValue(instance, Convert.ChangeType(value, property.PropertyType), null);
-                    }
+                    if (type != property.PropertyType)
+                        value = Convert.ChangeType(value, property.PropertyType);
+                    property.SetValue(instance, value, null);
                     continue;
                 }
 
                 field = fields[index - 1];
-                try
-                {
-                    field.SetValue(instance, value);
-                }
-                catch
-                {
-                    field.SetValue(instance, Convert.ChangeType(value, field.FieldType));
-                }
+                if (type != field.FieldType)
+                    value = Convert.ChangeType(value, field.FieldType);
+                field.SetValue(instance, value);
             }
         }
         public static T MultiRead<T>(IDataReader reader, int offset, int count,
@@ -473,29 +455,21 @@ namespace EntryEngine.Network
                 if (value == DBNull.Value)
                     continue;
 
+                var type = reader.GetFieldType(i);
+
                 if (index < 0)
                 {
                     property = properties[-index - 1];
-                    try
-                    {
-                        property.SetValue(instance, value, null);
-                    }
-                    catch
-                    {
-                        property.SetValue(instance, Convert.ChangeType(value, property.PropertyType), null);
-                    }
+                    if (type != property.PropertyType)
+                        value = Convert.ChangeType(value, property.PropertyType);
+                    property.SetValue(instance, value, null);
                     continue;
                 }
 
                 field = fields[index - 1];
-                try
-                {
-                    field.SetValue(instance, value);
-                }
-                catch
-                {
-                    field.SetValue(instance, Convert.ChangeType(value, field.FieldType));
-                }
+                if (type != field.FieldType)
+                    value = Convert.ChangeType(value, field.FieldType);
+                field.SetValue(instance, value);
             }
             return instance;
         }

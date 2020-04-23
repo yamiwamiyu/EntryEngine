@@ -658,7 +658,8 @@ namespace EntryEngine.Serialize
 				|| value is float
 				|| value is long
 				|| value is ulong
-				|| value is double)
+				|| value is double
+                || value is decimal)
 			{
 				WriteNumber(value);
 			}
