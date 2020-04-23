@@ -164,7 +164,7 @@ namespace EntryEngine.Network
                 object value = ExecuteScalar(sql, parameters);
                 if (value == null || value == DBNull.Value)
                     return default(T);
-                return (T)Convert.ChangeType(value, typeof(T));
+                return (T)ChangeType(value, typeof(T));
             }
             public T SelectValue<T>(string sql, params object[] parameters)
             {
@@ -173,7 +173,7 @@ namespace EntryEngine.Network
                     return default(T);
                 else
                     //return (T)value;
-                    return (T)Convert.ChangeType(value, typeof(T));
+                    return (T)ChangeType(value, typeof(T));
             }
             [Obsolete("instead of public void ExecuteReader")]
             protected IDataReader ExecuteReader(string sql, params object[] parameters)
@@ -369,7 +369,7 @@ namespace EntryEngine.Network
                 if (properties.TryGetValue(name, out property))
                 {
                     if (_type != property.PropertyType)
-                        value = Convert.ChangeType(value, property.PropertyType);
+                        value = ChangeType(value, property.PropertyType);
                     property.SetValue(instance, value, null);
                     continue;
                 }
@@ -377,7 +377,7 @@ namespace EntryEngine.Network
                 if (!fields.TryGetValue(name, out field))
                     continue;
                 if (_type != field.FieldType)
-                    value = Convert.ChangeType(value, field.FieldType);
+                    value = ChangeType(value, field.FieldType);
                 field.SetValue(instance, value);
             }
         }
@@ -429,14 +429,14 @@ namespace EntryEngine.Network
                 {
                     property = properties[-index - 1];
                     if (type != property.PropertyType)
-                        value = Convert.ChangeType(value, property.PropertyType);
+                        value = ChangeType(value, property.PropertyType);
                     property.SetValue(instance, value, null);
                     continue;
                 }
 
                 field = fields[index - 1];
                 if (type != field.FieldType)
-                    value = Convert.ChangeType(value, field.FieldType);
+                    value = ChangeType(value, field.FieldType);
                 field.SetValue(instance, value);
             }
         }
@@ -461,14 +461,14 @@ namespace EntryEngine.Network
                 {
                     property = properties[-index - 1];
                     if (type != property.PropertyType)
-                        value = Convert.ChangeType(value, property.PropertyType);
+                        value = ChangeType(value, property.PropertyType);
                     property.SetValue(instance, value, null);
                     continue;
                 }
 
                 field = fields[index - 1];
                 if (type != field.FieldType)
-                    value = Convert.ChangeType(value, field.FieldType);
+                    value = ChangeType(value, field.FieldType);
                 field.SetValue(instance, value);
             }
             return instance;
@@ -485,6 +485,14 @@ namespace EntryEngine.Network
                 dic[key] = keyvalue[1];
             }
             return dic;
+        }
+        public static object ChangeType(object value, Type type)
+        {
+            if (type.IsEnum)
+            {
+                return Enum.ToObject(type, value);
+            }
+            return Convert.ChangeType(value, type);
         }
     }
     public abstract class Database_Link : EntryEngine.Network._DATABASE.Database
