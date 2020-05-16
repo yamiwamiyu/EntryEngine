@@ -1,4 +1,7 @@
-﻿2020/03/30
+﻿2020/05/16
+1. 修复StringWriter，Excel对集合，字典等IEnumerable<T>类型反射子类型错误的BUG
+
+2020/03/30
 1. 生成Select查询主键的方法自动将主键赋值到对象中
 2. WebSocket生成JS增加onError事件
 

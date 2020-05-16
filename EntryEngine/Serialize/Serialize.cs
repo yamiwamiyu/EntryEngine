@@ -291,38 +291,6 @@ namespace EntryEngine.Serialize
 			return false;
 		}
 	}
-    /// <summary>默认值不传，匿名类型的属性会传</summary>
-    public class SerializeValidatorTransfer : ISerializeFilter
-    {
-        public bool SkipField(FieldInfo field)
-        {
-            return (field.IsInitOnly || field.IsNotSerialized);
-        }
-        public bool SkipProperty(PropertyInfo property)
-        {
-            // get
-            if (!property.CanRead)
-                return true;
-            // index
-            if (property.GetIndexParameters().Length > 0)
-                return true;
-            // abstract
-            MethodInfo get = property.GetGetMethod();
-            if (get == null || get.IsAbstract)
-                return true;
-            // 匿名类型
-            if (property.DeclaringType.Name[0] != '<')
-            {
-                // NonSerialized property
-                object[] nonSerialized = property.GetCustomAttributes(true);
-                if (nonSerialized.Length > 0 &&
-                    nonSerialized.Any(SerializeValidatorDefault.IsNonSerializeProperty))
-                    return true;
-            }
-
-            return false;
-        }
-    }
     /// <summary>
     /// 反射GetField(string name)被调用后，接着调用GetFields()
     /// 类型的Field顺序将被打乱，GetField的字段将被提到第一位
@@ -678,16 +646,15 @@ namespace EntryEngine.Serialize
 			else if (type.IsArray || value is IEnumerable)
 			{
 				Type childType;
-				if (type.IsGenericType)
+				if (type.IsArray)
 				{
-					Type[] temp = type.GetGenericArguments();
-					childType = temp[0];
+                    childType = type.GetElementType();
+                    if (childType == null)
+                        throw new NotSupportedException("不支持非泛型非数组的IEnumerable类型");
 				}
 				else
 				{
-					childType = type.GetElementType();
-                    if (childType == null)
-                        throw new NotSupportedException("不支持非泛型非数组的IEnumerable类型");
+                    childType = type.GetInterface("IEnumerable`1").GetGenericArguments()[0];
 				}
 				WriteArray((IEnumerable)value, childType);
 			}

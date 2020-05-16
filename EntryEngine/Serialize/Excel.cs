@@ -112,6 +112,11 @@ namespace EntryEngine.Serialize
                     type = this.type.GetElementType();
                     this.type = type;
                 }
+                else if (this.type.Is(typeof(System.Collections.IEnumerable)) && this.type.IsGenericType)
+                {
+                    type = this.type.GetInterface("IEnumerable`1").GetGenericArguments()[0];
+                    this.type = type;
+                }
                 Setting.Serialize(type, value, field => { columnCount++; });
             }
 
