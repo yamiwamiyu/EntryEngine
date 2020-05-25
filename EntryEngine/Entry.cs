@@ -1080,7 +1080,7 @@ namespace EntryEngine
         {
             get { return previous; }
         }
-        protected Dictionary<int, ComboClick> ComboClicks
+        public Dictionary<int, ComboClick> ComboClicks
         {
             get { return comboClicks; }
         }
