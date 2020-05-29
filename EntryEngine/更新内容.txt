@@ -1,4 +1,7 @@
-﻿2020/05/16
+﻿2020/05/29
+1. 修复序列化ReadNumber的BUG
+
+2020/05/16
 1. 修复StringWriter，Excel对集合，字典等IEnumerable<T>类型反射子类型错误的BUG
 
 2020/03/30

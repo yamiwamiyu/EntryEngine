@@ -1184,7 +1184,11 @@ namespace EntryEngine.Serialize
         }
         protected virtual object ReadNumber(Type type)
         {
-            char c = PeekChar;
+            string value = ReadNextString();
+
+            if (string.IsNullOrEmpty(value)) return _SERIALIZE.ParseNumber(type, null);
+
+            char c = value[0];
             switch (c)
             {
                 case '0':
@@ -1199,7 +1203,7 @@ namespace EntryEngine.Serialize
                 case '9':
                 case '-':
                 case '.':
-                    return _SERIALIZE.ParseNumber(type, ReadNextString());
+                    return _SERIALIZE.ParseNumber(type, value);
 
                 default: throw new FormatException("错误的数字格式");
             }
