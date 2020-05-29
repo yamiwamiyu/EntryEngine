@@ -2298,14 +2298,23 @@ namespace EntryBuilder
                                 callbackName = param.Name;
                                 continue;
                             }
+
+                            if (param.ParameterType == typeof(FileUpload))
+                            {
+                                builder.AppendLine("throw '尚未实现该方法';");
+                                continue;
+                            }
+
                             builder.Append("if ({0}) ", param.Name);
                             builder.Append("str.push(");
                             builder.Append("\"{0}=\" + ", param.Name);
-                            if (param.ParameterType == typeof(DateTime))
-                                //builder.Append("JSON.stringify({0}).replace(\"T\", \" \").replace(\"Z\", \"\")", param.Name);
-                                builder.Append("{0}", param.Name);
+                            if (param.ParameterType == typeof(string))
+                                builder.Append("encodeURIComponent({0})", param.Name);
+                            //else if (param.ParameterType == typeof(DateTime))
+                            //    //builder.Append("JSON.stringify({0}).replace(\"T\", \" \").replace(\"Z\", \"\")", param.Name);
+                            //    builder.Append("{0}", param.Name);
                             else if (param.ParameterType.IsCustomType())
-                                builder.Append("JSON.stringify({0})", param.Name);
+                                builder.Append("encodeURIComponent(JSON.stringify({0}))", param.Name);
                             else
                                 builder.Append("{0}", param.Name);
                             builder.AppendLine(");");
