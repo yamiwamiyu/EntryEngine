@@ -608,8 +608,10 @@ namespace EntryEngine.Serialize
 					return;
 				}
 			}
-			if (type.IsEnum)
+			if (value is Enum)
 			{
+                if (!type.IsEnum)
+                    type = value.GetType();
 				WriteEnum(value, type);
 			}
 			else if (value is bool)
