@@ -2503,13 +2503,10 @@ namespace EntryEngine.Network
 
                 while (true)
                 {
-                    lock (jobs)
-                    {
-                        if (jobs.Count > 0)
-                            request = jobs.Dequeue();
-                        else
-                            break;
-                    }
+                    if (jobs.Count > 0)
+                        request = jobs.Peek();
+                    else
+                        break;
 
                     try
                     {
@@ -2519,6 +2516,12 @@ namespace EntryEngine.Network
                     {
                         lock (_LOG._Logger)
                             _LOG.Error(ex, "并行[{0}]异常, ", typeof(T).Name);
+                    }
+
+                    // 工作处理完后再移除，防止工作时间较长时也被视为空闲
+                    lock (jobs)
+                    {
+                        jobs.Dequeue();
                     }
 
                     lock (tokenJobs)
