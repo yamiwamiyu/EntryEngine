@@ -372,6 +372,7 @@ public partial class EditorParticle : SceneEditorEntry
     VIEW vflow = new VIEW();
     VIEW vdisplay = new VIEW();
     VECTOR2 psPos;
+    TEXTURE bgDisplay;
 
 
     public override string DirectoryProject
@@ -396,6 +397,20 @@ public partial class EditorParticle : SceneEditorEntry
         UtilityEditor.OnExit += () =>
         {
             File.WriteAllText(CONSTANT, new XmlWriter().WriteStatic(typeof(_C)));
+        };
+        UtilityEditor.DragFiles = (files) =>
+        {
+            if (PViewDisplay.ViewClip.Contains(__INPUT.Pointer.Position))
+            {
+                try
+                {
+                    bgDisplay = Content.Load<TEXTURE>("DisplayView", files[0]);
+                }
+                catch (Exception)
+                {
+                    _LOG.Warning("错误的图片格式");
+                }
+            }
         };
 
         Content = Entry.NewContentManager();
@@ -855,6 +870,11 @@ public partial class EditorParticle : SceneEditorEntry
             psPos.X = 0;
             psPos.Y = 0;
         }
+        else if (__INPUT.Keyboard.IsClick(PCKeys.D))
+        {
+            bgDisplay.Dispose();
+            bgDisplay = null;
+        }
         else if (__INPUT.Keyboard.IsClick(PCKeys.Space))
         {
             if (__INPUT.Keyboard.Alt)
@@ -1245,6 +1265,10 @@ public partial class EditorParticle : SceneEditorEntry
             MATRIX2x3 matrix = vdisplay.GetTransform() * MATRIX2x3.CreateTranslation(clip.Center.X, clip.Center.Y);
 
             spriteBatch.Begin(matrix, PViewDisplay.ViewClip);
+
+            if (bgDisplay != null)
+                spriteBatch.Draw(bgDisplay, VECTOR2.Zero, 0, 0.5f, 0.5f);
+
             spriteBatch.Draw(ps, psPos);
 
             // edit mode
