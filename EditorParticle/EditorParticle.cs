@@ -373,6 +373,7 @@ public partial class EditorParticle : SceneEditorEntry
     VIEW vdisplay = new VIEW();
     VECTOR2 psPos;
     TEXTURE bgDisplay;
+    ContentManager bgContent;
 
 
     public override string DirectoryProject
@@ -400,15 +401,17 @@ public partial class EditorParticle : SceneEditorEntry
         };
         UtilityEditor.DragFiles = (files) =>
         {
+            if (bgContent == null) bgContent = Entry.NewContentManager();
             if (PViewDisplay.ViewClip.Contains(__INPUT.Pointer.Position))
             {
+                _LOG.Info("加载背景图片：{0}", files[0]);
                 try
                 {
-                    bgDisplay = Content.Load<TEXTURE>("DisplayView", files[0]);
+                    bgDisplay = bgContent.Load<TEXTURE>("DisplayView", files[0]);
                 }
-                catch (Exception)
+                catch (Exception ex)
                 {
-                    _LOG.Warning("错误的图片格式");
+                    _LOG.Warning("错误的图片格式：{0}", ex.Message);
                 }
             }
         };
