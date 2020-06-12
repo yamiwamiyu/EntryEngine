@@ -663,8 +663,11 @@ namespace EntryEngine.Xna
         {
             RESULT result;
             result = FMOD.Factory.System_Create(ref System);
+            if (result != RESULT.OK) throw new Exception(result.ToString());
             result = System.init(128, INITFLAGS.NORMAL, (IntPtr)null);
+            if (result != RESULT.OK) throw new Exception(result.ToString());
             result = System.getMasterChannelGroup(ref master);
+            if (result != RESULT.OK) throw new Exception(result.ToString());
         }
 
         protected override void Play(ref SoundSource source, SOUND wave)
@@ -1480,7 +1483,15 @@ namespace EntryEngine.Xna
             GRAPHICS.ScreenSize = new VECTOR2(960, 540);
 
 #if CLIENT
-            AUDIO = new AudioFmod();
+            try
+            {
+                AUDIO = new AudioFmod();
+            }
+            catch (Exception ex)
+            {
+                _LOG.Error(ex, "初始化声音设备异常");
+                AUDIO = new AudioEmpty();
+            }
 #else
             AUDIO = null;
 #endif
