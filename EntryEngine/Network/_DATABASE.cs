@@ -1020,15 +1020,22 @@ namespace EntryEngine.Network
             if (current.ParentID == newParentID)
                 return;
 
-            // 上级项
+            // 上级项，为null时则是顶级项
             InnerCascade parent = items.FirstOrDefault(i => i.ID == newParentID);
             if (parent == null)
-                throw new InvalidOperationException("没有找到上级项");
+            {
+                // 可能是顶级项，那么曾经必须有其它顶级项
+                var top = items.FirstOrDefault(i => i.ParentID == newParentID);
+                if (top == null)
+                    throw new InvalidOperationException("没有找到上级项");
+            }
 
             var dic = items.ToDictionary(t => t.ID, t => t.ParentID);
-            bool parentChange = false;
 
+            // 上下级颠倒
+            bool upside_down = false;
             // 如果新的上级是目标原来的下级,那么这个新上级的上级改为目标原来的上级
+            if (parent != null)
             {
                 int currentID = newParentID;
                 int parentID;
@@ -1036,16 +1043,16 @@ namespace EntryEngine.Network
                 {
                     if (!dic.TryGetValue(currentID, out parentID))
                         break;
-                    if (parentID == current.ID || parentID == 0)
+                    if (currentID == parentID) break;
+                    if (parentID == current.ID)
+                    {
+                        parent.ParentID = current.ParentID;
+                        parent.ModifiedFlag = EModifiedFlag.ParentID;
+                        dic[parent.ID] = current.ParentID;
+                        upside_down = true;
                         break;
+                    }
                     currentID = parentID;
-                }
-                if (parentID != 0)
-                {
-                    parent.ParentID = current.ParentID;
-                    parent.ModifiedFlag = EModifiedFlag.ParentID;
-                    dic[parent.ID] = current.ParentID;
-                    parentChange = true;
                 }
             }
 
@@ -1061,23 +1068,22 @@ namespace EntryEngine.Network
                 foreach (var item in items)
                 {
                     stack.Clear();
-                    bool flag = item.ID == id || (parentChange && item.ID == newParentID);
-                    int currentID = item.ID;
+                    bool flag = item.ID == id || (upside_down && item.ID == newParentID);
+                    int currentID = item.ParentID;
                     int parentID;
                     while (true)
                     {
                         if (!dic.TryGetValue(currentID, out parentID))
                             break;
+                        if (currentID == parentID) break;
                         if (
                             // 目标更换了上级，所以其所有下级都需要更新级联数组
-                            parentID == id
+                            currentID == id
                             // 若新上级是原来自己的下级，则也相当于更换了上级，所以其所有下级都需要更新级联数组
-                            || (parentChange && parentID == newParentID)
+                            || (upside_down && currentID == newParentID)
                             )
                             flag = true;
-                        if (parentID == 0)
-                            break;
-                        stack.Push(parentID);
+                        stack.Push(currentID);
                         currentID = parentID;
                     }
                     if (!flag)
