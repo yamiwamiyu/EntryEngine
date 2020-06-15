@@ -4880,7 +4880,7 @@ namespace EntryBuilder
                     }
                     else
                     {
-                        writer.AppendLine("public struct {0}", typeName);
+                        writer.AppendLine("public partial struct {0}", typeName);
                         writer.AppendBlock(() =>
                         {
                             foreach (var f in field.Value.Fields)
