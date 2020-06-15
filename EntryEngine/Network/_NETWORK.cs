@@ -18,7 +18,6 @@ namespace EntryEngine.Network
     public static class _NETWORK
     {
         public readonly static string HostIP = Resolve();
-        private static MD5 md5;
 
         public static bool NetworkAvailable
         {
@@ -27,15 +26,6 @@ namespace EntryEngine.Network
         public static IPAddress Host
         {
             get { return IPAddress.Parse(HostIP); }
-        }
-        public static MD5 MD5
-        {
-            get
-            {
-                if (md5 == null)
-                    md5 = new MD5CryptoServiceProvider();
-                return md5;
-            }
         }
 
         public static bool IsPort(int port)
@@ -83,7 +73,10 @@ namespace EntryEngine.Network
         public static string ValidMD5toBase64(string text)
         {
             byte[] encrypt = Encoding.UTF8.GetBytes(text);
-            encrypt = MD5.ComputeHash(encrypt);
+            using (var md5 = new MD5CryptoServiceProvider())
+            {
+                encrypt = md5.ComputeHash(encrypt);
+            }
             return Convert.ToBase64String(encrypt);
         }
 
