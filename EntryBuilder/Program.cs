@@ -6440,7 +6440,7 @@ namespace EntryBuilder
                             temp.Append("builder.AppendLine(\"ALTER TABLE `{1}` {{0}} `{0}` {2}{{1}}", field.Name, table.Name, GetMySqlType(field.FieldType));
                             IndexAttribute index = field.GetAttribute<IndexAttribute>();
                             if (index != null && index.Index == EIndex.Identity)
-                                temp.Append(" AUTO_INCREMENT");
+                                temp.Append("PRIMARY KEY AUTO_INCREMENT");
                             temp.Append(";\");");
 
                             //string result = temp.ToString();
