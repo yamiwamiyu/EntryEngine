@@ -1,7 +1,7 @@
 :: 拷贝代码文件到项目
 call _CopyToCode.bat
 :: 重新编译项目
-..\EntryBuilder.exe BuildDll ..\Code\Client\Client\ ..\Launch\Client\Client.dll 3.5 "..\Code\EntryEngine.dll" false
+..\EntryBuilder.exe BuildDll ..\Code\Client\Client\ ..\Launch\Client\Client.dll 3.5 "..\Code\EntryEngine.dll" false ""
 :: 拷贝可能新生成的翻译表到运行目录
 copy ..\Design\LANGUAGE.csv ..\Launch\Client\Content\Tables\LANGUAGE.csv
 :: 输出最终翻译表
