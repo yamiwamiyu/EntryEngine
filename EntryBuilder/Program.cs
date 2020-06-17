@@ -6388,7 +6388,7 @@ namespace EntryBuilder
                         var primary = fields.Where(f =>
                         {
                             var index = f.GetAttribute<IndexAttribute>();
-                            return index != null && index.Index == EIndex.Primary;
+                            return index != null && (index.Index == EIndex.Primary || index.Index == EIndex.Identity);
                         }).ToArray();
 
                         // 更换主键
@@ -6518,7 +6518,7 @@ namespace EntryBuilder
                         });
 
                         // 添加主键 & 索引
-                        if (primary.Length > 0)
+                        if (primary.Length > 0 && (primary.Length > 1 || primary[0].GetAttribute<IndexAttribute>().Index != EIndex.Identity))
                         {
                             builder.AppendLine("if (!__noneChangePrimary)");
                             builder.AppendBlock(() =>
