@@ -6440,16 +6440,10 @@ namespace EntryBuilder
                             temp.Append("builder.AppendLine(\"ALTER TABLE `{1}` {{0}} `{0}` {2}{{1}}", field.Name, table.Name, GetMySqlType(field.FieldType));
                             IndexAttribute index = field.GetAttribute<IndexAttribute>();
                             if (index != null && index.Index == EIndex.Identity)
-                                temp.Append("PRIMARY KEY AUTO_INCREMENT");
+                                temp.Append(" AUTO_INCREMENT");
                             temp.Append(";\");");
-
-                            //string result = temp.ToString();
-                            //builder.Append("if (__columns.Remove(\"{0}\")) ", field.Name);
-                            //builder.AppendLine(result, "CHANGE COLUMN `" + field.Name + "`", "");
-                            //builder.Append("else ");
-                            //builder.AppendLine(result, "ADD COLUMN", (index != null && index.Index == EIndex.Identity ? " PRIMARY KEY" : ""));
-
                             string result = temp.ToString();
+
                             builder.AppendLine("if (__columns.TryGetValue(\"{0}\", out __value))", field.Name);
                             builder.AppendBlock(() =>
                             {
@@ -6466,7 +6460,9 @@ namespace EntryBuilder
                                         builder.AppendLine("_LOG.Debug(\"Drop index[`{0}`].\", __value.COLUMN_NAME);");
                                     });
                                 }
-                                builder.AppendLine(result, "CHANGE COLUMN `" + field.Name + "`", "");
+                                builder.AppendLine(result, "CHANGE COLUMN `" + field.Name + "`",
+                                    (index != null && index.Index == EIndex.Identity ? "\" + (__value.IsPrimary ? \"\" : \" PRIMARY KEY\") + \"" : ""));
+
                                 if (isHasIndex)
                                 {
                                     // ADD_INDEX: 当前是索引，以前不是索引时添加索引
