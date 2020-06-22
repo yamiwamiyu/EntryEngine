@@ -596,9 +596,11 @@ namespace EntryEngine.Network
             }
             finally
             {
-                connection.Idle = true;
                 lock (pools)
+                {
                     pools.RemoveAt(connection);
+                    connection.Idle = true;
+                }
             }
         }
 
@@ -626,6 +628,7 @@ namespace EntryEngine.Network
                 if (conn == null)
                 {
                     conn = pools.Allot();
+                    conn.Idle = false;
                     if (conn == null)
                     {
                         conn = new CONNECTION();
