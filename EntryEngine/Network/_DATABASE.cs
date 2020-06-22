@@ -628,10 +628,10 @@ namespace EntryEngine.Network
                 if (conn == null)
                 {
                     conn = pools.Allot();
-                    conn.Idle = false;
                     if (conn == null)
                     {
                         conn = new CONNECTION();
+                        conn.Idle = false;
                         pools.Add(conn);
                     }
                     try
