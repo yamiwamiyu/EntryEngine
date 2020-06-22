@@ -584,15 +584,22 @@ namespace EntryEngine.Network
         }
         private void ReleaseConnection(CONNECTION connection)
         {
-            if (connection.Connection != null)
+            try
             {
-                connection.Connection.Close();
-                connection.Connection.Dispose();
-                connection.Connection = null;
+                // 这里的错误导致连接没有变得可用，进而导致连接会越来越多
+                if (connection.Connection != null)
+                {
+                    connection.Connection.Close();
+                    connection.Connection.Dispose();
+                    connection.Connection = null;
+                }
             }
-            connection.Idle = true;
-            lock (pools)
-                pools.RemoveAt(connection);
+            finally
+            {
+                connection.Idle = true;
+                lock (pools)
+                    pools.RemoveAt(connection);
+            }
         }
 
         protected internal override IDbConnection CreateConnection()
@@ -624,7 +631,15 @@ namespace EntryEngine.Network
                         conn = new CONNECTION();
                         pools.Add(conn);
                     }
-                    conn.Connection = base.CreateConnection();
+                    try
+                    {
+                        conn.Connection = base.CreateConnection();
+                    }
+                    catch
+                    {
+                        ReleaseConnection(conn);
+                        throw;
+                    }
                 }
                 conn.Idle = false;
                 conn.LastUseTime = DateTime.Now;
