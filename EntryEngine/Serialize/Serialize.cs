@@ -692,8 +692,7 @@ namespace EntryEngine.Serialize
 		}
 		protected void WriteTimeSpan(TimeSpan value)
 		{
-			//WriteNumber(value.Ticks);
-			WriteString(value.ToString());
+			WriteNumber(value.Ticks);
 		}
 		protected void WriteDateTime(DateTime value)
 		{

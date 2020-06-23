@@ -86,19 +86,13 @@ namespace EntryEngine.Network
 		}
     }
 
-	public enum EBlockReason
-	{
-		Unknow,
-		AcceptCountOver,
-
-		Relock = 128,
-		ByGM,
-		AcceptRefuse,
-	}
+    /// <summary>请求限制</summary>
 	public class AcceptLimit
 	{
+        /// <summary>允许请求的IP，null代表不限制IP，匹配规则为{0}%</summary>
 		public string LimitIP;
-		public ushort? LimitPort;
+        /// <summary>允许请求的端口，0代表不限制端口</summary>
+		public ushort LimitPort;
 
 		public AcceptLimit()
 		{
@@ -122,39 +116,39 @@ namespace EntryEngine.Network
 			this.LimitPort = (ushort)endpoint.Port;
 		}
 
+        /// <summary>是否允许终端访问，true代表可以访问</summary>
 		public bool Permit(IPEndPoint endpoint)
 		{
+            // 限制IP
 			if (!string.IsNullOrEmpty(LimitIP) &&
-				LimitIP != IPAddress.Any.ToString() &&
-				LimitIP != IPAddress.IPv6Any.ToString() &&
                 !endpoint.Address.ToString().StartsWith(LimitIP))
-			{
 				return false;
-			}
 
-			if (LimitPort.HasValue &&
-				LimitPort.Value != endpoint.Port)
-			{
+            // 限制端口
+			if (LimitPort != 0 && LimitPort != endpoint.Port)
 				return false;
-			}
 
 			return true;
 		}
 	}
+    /// <summary>请求封禁</summary>
 	public class AcceptBlock
 	{
-		public AcceptLimit Block;
+        public AcceptLimit Block;
+        /// <summary>开始封禁时间</summary>
 		public DateTime BlockTime;
-		public TimeSpan? BlockDuration;
+        /// <summary>封禁时长，0代表永久</summary>
+		public TimeSpan BlockDuration;
+        /// <summary>封禁原因</summary>
 		public string Reason;
 
 		public DateTime? ReleaseTime
 		{
 			get
 			{
-				if (BlockDuration.HasValue)
+				if (BlockDuration.Ticks > 0)
 				{
-					return BlockTime + BlockDuration.Value;
+					return BlockTime + BlockDuration;
 				}
 				else
 				{
@@ -166,9 +160,9 @@ namespace EntryEngine.Network
 		{
 			get
 			{
-				if (BlockDuration.HasValue)
+				if (BlockDuration.Ticks > 0)
 				{
-					return DateTime.Now >= BlockTime + BlockDuration.Value;
+					return DateTime.Now >= BlockTime + BlockDuration;
 				}
 				else
 				{
@@ -231,9 +225,9 @@ namespace EntryEngine.Network
 			}
 		}
 
+        private const string BLOCK_FILE = "BlockIP.blist";
 		private static TimeSpan SECOND = TimeSpan.FromSeconds(1);
 
-		public event Func<AcceptBlock, IPEndPoint, EBlockReason, AcceptBlock> OnLock;
 		private TIMER secondTimer = new TIMER();
 		private Dictionary<IPAddress, int> loginCountPerSecondByIP = new Dictionary<IPAddress, int>();
 		private Dictionary<string, Agent> clients = new Dictionary<string, Agent>();
@@ -249,10 +243,8 @@ namespace EntryEngine.Network
         public AcceptLimit[] PermitAcceptEndPoint;
         /// <summary>连接验证包超时(ms)</summary>
         public uint LinkTimeout = 1000;
-        /// <summary>限定每秒允许同一个IP的接入数</summary>
-        public uint? PermitSameIPLinkPerSecord = 1;
         /// <summary>限定每秒允许同一个IP的接入数，超过则禁止该IP登录</summary>
-        public uint SameIPLinkPerSecondBlock = 5;
+        public uint? PermitSameIPLinkPerSecord = 1;
         /// <summary>每帧Accept的最长时间</summary>
         public TimeSpan? PermitAcceptTimeout = TimeSpan.FromMilliseconds(10);
         /// <summary>每个Client接收处理数据包最长时间</summary>
@@ -267,7 +259,7 @@ namespace EntryEngine.Network
         public TimeSpan Heartbeat = TimeSpan.FromSeconds(-60);
 
         public event Action<Link> ClientDisconnect;
-        public event Func<Link, EAcceptClose, bool> AcceptDisconnect;
+        public event Action<Link, EAcceptClose> AcceptDisconnect;
         public event Action Stop;
 
 		public Link Link
@@ -294,6 +286,7 @@ namespace EntryEngine.Network
 			get { return clients.Count; }
 		}
 		protected abstract bool HasAcceptRequest { get; }
+        public Dictionary<IPAddress, AcceptBlock> BlockIP { get { return blockIP; } }
 		public Agent this[IPEndPoint endpoint]
 		{
 			get { return this[endpoint.ToString()]; }
@@ -321,6 +314,7 @@ namespace EntryEngine.Network
 			this.Port = port;
 			try
 			{
+                LoadBlock();
 				Launch(address, port);
 			}
 			catch (Exception ex)
@@ -506,7 +500,7 @@ namespace EntryEngine.Network
                                 break;
 
                             case EAcceptPermit.Block:
-                                Block(link.Link.EndPoint, EBlockReason.AcceptRefuse);
+                                Block("锁定登录", TimeSpan.FromDays(1), link.Link.EndPoint.Address);
                                 goto case EAcceptPermit.Refuse;
 
                             case EAcceptPermit.Refuse:
@@ -561,13 +555,7 @@ namespace EntryEngine.Network
             if (!newLink.Remove(link))
                 return;
             if (AcceptDisconnect != null)
-            {
-                if (AcceptDisconnect(link.Link, status))
-                {
-                    _LOG.Info("AcceptDisconnect锁定用户 EndPoint={0}:{1} 关闭步骤={2}", link.EndPoint.Address.ToString(), link.EndPoint.Port, status);
-                    Block(link.EndPoint, EBlockReason.AcceptRefuse);
-                }
-            }
+                AcceptDisconnect(link.Link, status);
         }
 		protected virtual void OnConnect(ref Agent agent)
 		{
@@ -593,90 +581,80 @@ namespace EntryEngine.Network
 
 				Link client = null;
 				try
-				{
-					client = Accept();
+                {
+                    client = Accept();
                     if (client == null)
                         continue;
-					acceptCount++;
-					OnAccept(ref client, acceptCount);
+                    acceptCount++;
+
+                    IPEndPoint endPoint = client.EndPoint;
+                    string key = endPoint.ToString();
+                    IPAddress address = endPoint.Address;
+
+                    // 封禁IP不能登录
+                    AcceptBlock block;
+                    if (blockIP.TryGetValue(address, out block) && block.Block.Permit(endPoint))
+                    {
+                        _LOG.Warning("封禁的IP {0} 尝试访问!", address);
+                        client.Close();
+                        continue;
+                    }
+
+                    // 记录每秒登录次数，若过于频繁则不允许登录甚至封禁
+                    {
+                        int loginCount;
+                        if (loginCountPerSecondByIP.TryGetValue(address, out loginCount))
+                        {
+                            loginCount++;
+                            loginCountPerSecondByIP[address] = loginCount;
+                            if (loginCount > PermitSameIPLinkPerSecord)
+                            {
+                                client.Close();
+                                Block("相同IP每秒访问次数过多", TimeSpan.MinValue, address);
+                                continue;
+                            }
+                        }
+                        else
+                        {
+                            loginCountPerSecondByIP.Add(address, 1);
+                        }
+                    }
+
+                    // 只允许指定的终端登录
+                    if (PermitAcceptEndPoint != null)
+                    {
+                        bool permit = false;
+                        foreach (var item in PermitAcceptEndPoint)
+                        {
+                            if (item.Permit(endPoint))
+                            {
+                                permit = true;
+                                break;
+                            }
+                        }
+                        if (!permit)
+                        {
+                            _LOG.Warning("don't permit accept end point: {0}", key);
+                            client.Close();
+                            continue;
+                        }
+                    }
+                    OnAccept(ref client, acceptCount);
                     if (client == null)
                     {
                         _LOG.Debug("Accepted client is ignored.");
                         continue;
                     }
 
-					_LOG.Debug("accept = {0}", client.EndPoint);
-
-					IPEndPoint endPoint = client.EndPoint;
-					string key = endPoint.ToString();
-					IPAddress address = endPoint.Address;
-
-                    // 封禁IP不能登录
-					AcceptBlock block;
-					if (blockIP.TryGetValue(address, out block))
-					{
-						_LOG.Warning("block {0} try accept!", address);
-						if (OnLock != null)
-						{
-							blockIP[address] = OnLock(block, endPoint, EBlockReason.Relock);
-						}
-						client.Close();
-						continue;
-					}
-
-                    // 记录每秒登录次数，若过于频繁则不允许登录甚至封禁
-					if (!loginCountPerSecondByIP.ContainsKey(address))
-						loginCountPerSecondByIP.Add(address, 0);
-					int count = loginCountPerSecondByIP[address] + 1;
-					loginCountPerSecondByIP[address] = count;
-					if (count > PermitSameIPLinkPerSecord)
-					{
-						_LOG.Warning("{0} try connect {1} times in second!", address, count);
-						client.Close();
-						if (count > SameIPLinkPerSecondBlock)
-						{
-							_LOG.Info("block {0} because connect in second over!", address);
-							Block(endPoint, EBlockReason.AcceptCountOver);
-						}
-						continue;
-					}
-
-                    // 只允许指定的终端登录
-					if (PermitAcceptEndPoint != null)
-					{
-						bool permit = false;
-						foreach (var item in PermitAcceptEndPoint)
-						{
-							if (item.Permit(endPoint))
-							{
-								permit = true;
-								break;
-							}
-						}
-						if (!permit)
-						{
-							_LOG.Warning("don't permit accept end point: {0}", key);
-							client.Close();
-							continue;
-						}
-					}
-
-					//IAgent temp;
-					//if (clients.TryGetValue(key, out temp))
-					//{
-					//    Log.Waring("connection repeat! end point={0}", key);
-					//    temp.Link.Close();
-					//    clients.Remove(key);
-					//}
-
-					newLink.Add(new NewLink(client));
-					acceptSuccessCount++;
+                    _LOG.Debug("accept = {0}", client.EndPoint);
+                    newLink.Add(new NewLink(client));
+                    acceptSuccessCount++;
 
                     LinkBinary heartbeatLink = client as LinkBinary;
                     if (heartbeatLink != null)
                         heartbeatLink.Heartbeat = Heartbeat;
-					OnAcceptSuccess(client, acceptSuccessCount);
-				}
+                    OnAcceptSuccess(client, acceptSuccessCount);
+                }
 				catch (Exception ex)
 				{
 					_LOG.Error(ex, "accept server error!");
@@ -691,53 +669,61 @@ namespace EntryEngine.Network
 		{
 			secondTimer.StopAndStart();
 			loginCountPerSecondByIP.Clear();
+            OnResetSecond();
 		}
-		public void BlockIP(params IPAddress[] address)
+        protected virtual void OnResetSecond() { }
+        private void SaveBlock()
+        {
+            _IO.WriteText(BLOCK_FILE, JsonWriter.Serialize(blockIP.Values.ToList()));
+        }
+        private void LoadBlock()
+        {
+            if (File.Exists(_IO.BuildPath(BLOCK_FILE)))
+            {
+                blockIP = JsonReader.Deserialize<List<AcceptBlock>>(_IO.ReadText(BLOCK_FILE)).ToDictionary(b => IPAddress.Parse(b.Block.LimitIP));
+                _LOG.Info("加载了被锁定的IP");
+            }
+        }
+        /// <summary>封禁IP的请求</summary>
+        /// <param name="reason">封禁原因</param>
+        /// <param name="duration">封禁时长，0代表永久</param>
+        /// <param name="address"></param>
+		public void Block(string reason, TimeSpan duration, params IPAddress[] address)
 		{
 			foreach (IPAddress item in address)
 			{
-				if (!blockIP.ContainsKey(item))
-				{
-					_LOG.Info("block IP: {0} by gm", item);
-					Block(new IPEndPoint(item, 0), EBlockReason.ByGM);
-				}
+                AcceptBlock block;
+                if (!blockIP.TryGetValue(item, out block))
+                {
+                    block = new AcceptBlock();
+                    block.Block = new AcceptLimit();
+                    block.Block.LimitIP = item.ToString();
+                    blockIP.Add(item, block);
+                }
+                block.BlockTime = DateTime.Now;
+                block.Reason = reason;
+                block.BlockDuration = duration;
+                _LOG.Warning("封禁IP: {0} 时长：{1} 原因：{2}", item, duration.Ticks <= 0 ? "永久" : block.ReleaseTime.Value.ToString("yyyy-MM-dd HH:mm:ss"), reason);
 			}
+            SaveBlock();
 		}
-		private void Block(IPEndPoint endpoint, EBlockReason reason)
-		{
-			AcceptBlock block = null;
-			if (OnLock != null)
-			{
-				block = OnLock(null, endpoint, reason);
-			}
-			if (reason >= EBlockReason.Relock)
-			{
-				if (block == null)
-				{
-					block = new AcceptBlock();
-					block.Block = new AcceptLimit(endpoint.Address.ToString());
-					block.BlockTime = DateTime.Now;
-					block.Reason = reason.ToString();
-				}
-			}
-			if (block != null)
-			{
-				blockIP[endpoint.Address] = block;
-                _LOG.Info("Block {0} to {1} by {2}.", endpoint, 
-                    block.ReleaseTime.HasValue ? block.ReleaseTime.Value.ToString() : "forever", 
-                    reason);
-			}
-		}
-		public void ReleaseIP(params IPAddress[] address)
+		public void ReleaseBlock(params IPAddress[] address)
 		{
 			foreach (IPAddress item in address)
 			{
 				if (blockIP.Remove(item))
 				{
-					_LOG.Info("release IP: {0} by gm", item);
+                    _LOG.Info("Release IP: {0}", item);
 				}
 			}
+            SaveBlock();
 		}
+        public void ClearBlock()
+        {
+            _LOG.Info("Clear Block IP");
+            blockIP.Clear();
+            SaveBlock();
+        }
 		public void Dispose()
 		{
 			if (!Started)
@@ -846,8 +832,64 @@ namespace EntryEngine.Network
 	}
     public abstract class ProxyHttpAsync : Proxy
     {
+        class LinkHttpListenerContext : Link
+        {
+            public HttpListenerContext Context;
+
+            public LinkHttpListenerContext(HttpListenerContext context)
+            {
+                this.Context = context;
+            }
+
+            public override IPEndPoint EndPoint
+            {
+                get
+                {
+                    string nginxRemoteIP = Context.Request.Headers["X-Real-IP"];
+                    if (!string.IsNullOrEmpty(nginxRemoteIP)) return new IPEndPoint(IPAddress.Parse(nginxRemoteIP), Context.Request.RemoteEndPoint.Port);
+                    return Context.Request.RemoteEndPoint;
+                }
+            }
+            public override bool IsConnected
+            {
+                get { throw new NotImplementedException(); }
+            }
+            public override bool CanRead
+            {
+                get { throw new NotImplementedException(); }
+            }
+            public override void Write(byte[] buffer, int offset, int size)
+            {
+                throw new NotImplementedException();
+            }
+            protected internal override void WriteBytes(byte[] buffer, int offset, int size)
+            {
+                throw new NotImplementedException();
+            }
+            public override byte[] Read()
+            {
+                throw new NotImplementedException();
+            }
+            public override byte[] Flush()
+            {
+                throw new NotImplementedException();
+            }
+            public override void Close()
+            {
+                if (this.Context != null)
+                {
+                    this.Context.Response.StatusCode = 403;
+                    this.Context.Response.Close();
+                }
+                this.Context = null;
+            }
+        }
+
+        /// <summary>限定每秒允许同一个接口的接入数，超过则禁止该IP登录</summary>
+        public uint? PermitSameIPHandlePerSecord = 3;
         private HttpListener handle;
         private Queue<HttpListenerContext> contexts = new Queue<HttpListenerContext>();
+        private Dictionary<IPAddress, Dictionary<string, int>> sameIPHandlePerSecond = new Dictionary<IPAddress, Dictionary<string, int>>();
 
         protected override bool HasAcceptRequest
         {
@@ -904,30 +946,54 @@ namespace EntryEngine.Network
                 }
             }
         }
-        protected override Link Accept()
+        protected sealed override Link Accept()
         {
             HttpListenerContext context;
-            IPEndPoint ep;
-            string url;
             lock (contexts)
-            {
                 context = contexts.Dequeue();
-                ep = context.Request.RemoteEndPoint;
-                url = context.Request.Url.ToString();
+            return new LinkHttpListenerContext(context);
+        }
+        protected sealed override void OnAccept(ref Link link, int acceptCount)
+        {
+            LinkHttpListenerContext __link = (LinkHttpListenerContext)link;
+
+            // 检查同一IP访问同一地址的情况，访问多了进行封禁
+            {
+                IPEndPoint ep = __link.Context.Request.RemoteEndPoint;
+                string url = __link.Context.Request.Url.AbsolutePath;
+                Dictionary<string, int> temp;
+                if (sameIPHandlePerSecond.TryGetValue(ep.Address, out temp))
+                {
+                    int count;
+                    if (temp.TryGetValue(url, out count))
+                    {
+                        temp[url] = ++count;
+                        if (count > PermitSameIPHandlePerSecord)
+                        {
+                            Block("相同IP每秒访问相同接口次数过多", TimeSpan.MinValue, ep.Address);
+                            __link.Close();
+                            return;
+                        }
+                    }
+                    else
+                        temp.Add(url, 1);
+                }
+                else
+                {
+                    temp = new Dictionary<string, int>();
+                    sameIPHandlePerSecond.Add(ep.Address, temp);
+                    temp.Add(url, 1);
+                }
             }
 
-            try
-            {
-                return InternalAccept(context);
-            }
-            catch (Exception ex)
-            {
-                _LOG.Error(ex, "ProxyHttpAsync InternalAccept error! ip: {0}:{1} url: {2}", ep.Address.ToString(), ep.Port, url);
-                context.Response.Close();
-                throw ex;
-            }
+            link = InternalAccept(__link.Context);
+            __link.Context = null;
         }
         protected abstract Link InternalAccept(HttpListenerContext context);
+        protected override void OnResetSecond()
+        {
+            sameIPHandlePerSecond.Clear();
+        }
         protected override void InternalDispose()
         {
             lock (contexts)
