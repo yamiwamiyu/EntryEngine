@@ -97,6 +97,8 @@ binlog-do-db=要主从复制的数据库名字
 log-bin="日志文件名，随意"
 #server-id要与主库不一样，一般用机子IP的最后3位
 server-id=2
+#1062是同步时可能主键重复的错误，跳过这个错误
+slave-skip-errors = 1062
 2. 从库执行SQL语句指定主库
 change master to
     master_host='主库IP',
