@@ -1886,24 +1886,12 @@ namespace EntryEngine.Network
 
                 agent[stub](Context);
             }
-            catch (Exception ex)
+            catch (HttpException ex)
             {
-                _LOG.Error(ex, "协议处理错误！URL: {0}", Context.Request.Url.LocalPath);
+                _LOG.Warning("协议错误信息！URL: {0} EX: {1}", Context.Request.Url.LocalPath, ex.Message);
                 try
                 {
-                    int err = Context.Response.StatusCode;
-                    HttpException ex2 = ex as HttpException;
-                    if (ex2 != null)
-                    {
-                        err = (int)ex2.StatusCode;
-                    }
-                    else
-                    {
-                        if (err == 200)
-                        {
-                            err = 500;
-                        }
-                    }
+                    int err = (int)ex.StatusCode;
                     if (agent != null)
                     {
                         agent.Response(new HttpError(err, ex.Message));
@@ -1917,7 +1905,29 @@ namespace EntryEngine.Network
                 }
                 catch (Exception exInner)
                 {
-                    _LOG.Error(exInner, "协议异常回调错误！URL: {0}", Context.Request.Url.LocalPath);
+                    _LOG.Error(exInner, "HttpException协议异常回调错误！URL: {0}", Context.Request.Url.LocalPath);
+                }
+            }
+            catch (Exception ex)
+            {
+                _LOG.Error(ex, "协议处理错误！URL: {0}", Context.Request.Url.LocalPath);
+                try
+                {
+                    int err = Context.Response.StatusCode;
+                    if (agent != null)
+                    {
+                        agent.Response(new HttpError(err, ex.Message));
+                    }
+                    else
+                    {
+                        Context.Response.StatusCode = err;
+                        Context.Response.StatusDescription = ex.Message;
+                        Context.Response.Close();
+                    }
+                }
+                catch (Exception exInner)
+                {
+                    _LOG.Error(exInner, "Exception协议异常回调错误！URL: {0}", Context.Request.Url.LocalPath);
                 }
             }
             finally
