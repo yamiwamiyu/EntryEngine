@@ -2655,7 +2655,7 @@ namespace EntryEngine.Network
         private AgentHttp hotFixAgent;
 
         public ParallelJsonHttpService() : this(null) { }
-        public ParallelJsonHttpService(StubHttp[] stubs)
+        public ParallelJsonHttpService(params StubHttp[] stubs)
         {
             Link = new LinkHttpResponseShort();
             Link.ValidateCRC = false;
