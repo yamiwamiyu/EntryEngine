@@ -3308,4 +3308,17 @@ namespace EntryEngine
             return Single;
         }
     }
+    public static class _S<T> where T : class, new()
+    {
+        private static T value;
+        public static T Value
+        {
+            get
+            {
+                if (value == null)
+                    value = new T();
+                return value;
+            }
+        }
+    }
 }
