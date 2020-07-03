@@ -2361,13 +2361,16 @@ namespace EntryEngine.Network
             get { return localPath; }
             set
             {
-                if (string.IsNullOrEmpty(value) || value.EndsWith("/") || value.EndsWith("\\"))
+                if (string.IsNullOrEmpty(value))
                 {
                     localPath = string.Empty;
                 }
                 else
                 {
-                    localPath = value + "/";
+                    if (value.EndsWith("/") || value.EndsWith("\\"))
+                        localPath = value;
+                    else
+                        localPath = value + "/";
                 }
             }
         }
@@ -2434,7 +2437,6 @@ namespace EntryEngine.Network
             }
             //finally
             //{
-
             //}
         }
         public void Stop()
