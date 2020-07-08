@@ -7749,7 +7749,7 @@ namespace EntryBuilder
                 {
                     builder.AppendLine("return SelectPages(db, selectCountSQL, __where, selectSQL, conditionAfterWhere, page, pageSize, new Action<IDataReader, List<T>>((reader, list) => { while (reader.Read()) list.Add(_DATABASE.ReadObject<T>(reader, 0, reader.FieldCount)); }), param);");
                 });
-                builder.AppendLine("public static PagedModel<T> SelectPages<T>(_DATABASE.Database db, string selectCountSQL, string __where, string selectSQL, string conditionAfterWhere, int page, int pageSize, Action<IDataReader, List<T>> read, params object[] param) where T : new()");
+                builder.AppendLine("public static PagedModel<T> SelectPages<T>(_DATABASE.Database db, string selectCountSQL, string __where, string selectSQL, string conditionAfterWhere, int page, int pageSize, Action<IDataReader, List<T>> read, params object[] param)");
                 builder.AppendBlock(() =>
                 {
                     builder.AppendLine("StringBuilder builder = new StringBuilder();");
