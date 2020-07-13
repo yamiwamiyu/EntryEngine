@@ -1576,7 +1576,10 @@ namespace EntryEngine.Network
         public void Dispose()
         {
             if (File != null)
+            {
                 File.Close();
+                File = null;
+            }
         }
     }
     // link
@@ -2387,26 +2390,28 @@ namespace EntryEngine.Network
         void Accept(IAsyncResult ar)
         {
             HttpListener handle = (HttpListener)ar.AsyncState;
+            HttpListenerResponse response = null;
+            byte[] bytes;
             try
             {
                 HttpListenerContext context = handle.EndGetContext(ar);
                 handle.BeginGetContext(Accept, handle);
-                context.Response.AppendHeader("Access-Control-Allow-Origin", "*");
-                context.Response.ContentType = "application/octet-stream;charset=ISO-8859-1";
+                response = context.Response;
+                response.AppendHeader("Access-Control-Allow-Origin", "*");
+                response.ContentType = "application/octet-stream;charset=ISO-8859-1";
                 if (OnAccept != null)
                     OnAccept(context);
                 string path = context.Request.Url.LocalPath.Substring(1);
-                _LOG.Debug(path);
+                _LOG.Debug("文件下载：{0}", path);
                 string fullPath = localPath + path;
                 if (!File.Exists(fullPath))
                 {
-                    context.Response.StatusCode = 404;
+                    response.StatusCode = 404;
                 }
                 else
                 {
                     if (path.Contains(".html"))
-                        context.Response.ContentType = "text/html";
-                    byte[] bytes;
+                        response.ContentType = "text/html";
                     if (UseCache)
                     {
                         bool cache;
@@ -2414,7 +2419,7 @@ namespace EntryEngine.Network
                             cache = Cache.TryGetValue(path, out bytes);
                         if (!cache)
                         {
-                            bytes = File.ReadAllBytes(path);
+                            bytes = File.ReadAllBytes(fullPath);
                             lock (Cache)
                                 Cache[path] = bytes;
                         }
@@ -2423,17 +2428,22 @@ namespace EntryEngine.Network
                     {
                         bytes = File.ReadAllBytes(fullPath);
                     }
-                    context.Response.OutputStream.Write(bytes, 0, bytes.Length);
+                    response.OutputStream.Write(bytes, 0, bytes.Length);
                 }
-                context.Response.Close();
             }
             catch (Exception ex)
             {
                 _LOG.Error(ex, "文件服务器错误");
             }
-            //finally
-            //{
-            //}
+            finally
+            {
+                if (response != null)
+                {
+                    response.OutputStream.Close();
+                    response.Close();
+                }
+                bytes = null;
+            }
         }
         public void Stop()
         {
