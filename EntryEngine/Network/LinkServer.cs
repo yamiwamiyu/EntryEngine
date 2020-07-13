@@ -2071,7 +2071,12 @@ namespace EntryEngine.Network
             if (files.Count > 0)
             {
                 foreach (var item in files)
-                    item.Value.File.Close();
+                {
+                    if (item.Value.File != null)
+                    {
+                        item.Value.File.Close();
+                    }
+                }
                 files.Clear();
             }
         }
