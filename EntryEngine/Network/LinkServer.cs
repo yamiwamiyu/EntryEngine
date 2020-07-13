@@ -2429,7 +2429,7 @@ namespace EntryEngine.Network
             }
             catch (Exception ex)
             {
-                _LOG.Debug("async GetContext error! msg={0}", ex.Message);
+                _LOG.Error(ex, "文件服务器错误");
             }
             //finally
             //{
