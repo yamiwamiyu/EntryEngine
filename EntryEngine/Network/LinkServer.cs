@@ -640,11 +640,7 @@ namespace EntryEngine.Network
                         }
                     }
                     OnAccept(ref client, acceptCount);
-                    if (client == null)
-                    {
-                        _LOG.Debug("Accepted client is ignored.");
-                        continue;
-                    }
+                    if (client == null) continue;
 
                     _LOG.Debug("accept = {0}", client.EndPoint);
                     newLink.Add(new NewLink(client));
