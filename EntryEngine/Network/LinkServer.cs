@@ -2300,17 +2300,19 @@ namespace EntryEngine.Network
             hasResponsed = true;
             Context.Response.OutputStream.BeginWrite(buffer, offset, count, EndResponse, Context);
         }
-        public void EndResponse(IAsyncResult ar)
+        private void EndResponse(IAsyncResult ar)
         {
             var context = (HttpListenerContext)ar.AsyncState;
-            try
+            using (context.Response)
             {
-                context.Response.OutputStream.EndWrite(ar);
-                context.Response.Close();
-            }
-            catch (Exception ex)
-            {
-                _LOG.Error(ex, "Error EndResponse");
+                try
+                {
+                    context.Response.OutputStream.EndWrite(ar);
+                }
+                catch
+                {
+                    _LOG.Warning("请求已关闭");
+                }
             }
         }
     }
