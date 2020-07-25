@@ -2358,11 +2358,12 @@ namespace EntryBuilder
                 for (int i = 0, len = call.Length; i < len; i++)
                 {
                     MethodInfo method = call[i];
+                    ParameterInfo[] parameters = method.GetParameters();
+                    if (parameters.Length == 0) continue;
                     // 回调参数生成类型
                     builder.AppendLine("class {0}_{1}", type.Name, method.Name);
                     builder.AppendBlock(() =>
                     {
-                        ParameterInfo[] parameters = method.GetParameters();
                         for (int j = 0, n = parameters.Length - 1; j <= n; j++)
                         {
                             var param = parameters[j];
@@ -2380,6 +2381,7 @@ namespace EntryBuilder
                     builder.AppendLine("static class {0}Proxy", agent.Callback.Name);
                 builder.AppendBlock(() =>
                 {
+                    builder.AppendLine("public static Func<object, byte[]> __Serialize = (obj) => Encoding.UTF8.GetBytes(JsonWriter.Serialize(obj));");
                     for (int i = 0, len = callback.Length; i < len; i++)
                     {
                         // 调用中含有委托参数的方法和回调接口都需要生成回调函数
@@ -2403,7 +2405,7 @@ namespace EntryBuilder
                             // 回调参数内容
                             foreach (ParameterInfo param in parameters)
                                 builder.AppendLine("__cb.{0} = {0};", param.Name);
-                            builder.AppendLine("var __buffer = Encoding.UTF8.GetBytes(JsonWriter.Serialize(__cb));");
+                            builder.AppendLine("var __buffer = __Serialize(__cb);");
                             // 日志
                             builder.AppendLine("#if DEBUG");
                             builder.AppendFormat("_LOG.Debug(\"{0}({{0}} bytes)", method.Name);
@@ -2486,45 +2488,47 @@ namespace EntryBuilder
                                 // 没有指定代理人类型时，将采用默认代理人
                                 builder.AppendLine("if (__ReadAgent != null) { var temp = __ReadAgent(__stream); if (temp != null) agent = temp; }");
                             }
-                            // 参数声明
-                            //builder.AppendLine("var __obj = JsonReader.Deserialize<{0}_{1}>(__stream);", type.Name, method.Name);
-                            builder.AppendLine("var __obj = JsonReader.Deserialize<{0}_{1}>(__stream);", type.Name, method.Name);
-                            foreach (ParameterInfo param in parameters)
+                            if (parameters.Length > 0)
                             {
-                                if (isDelegate && param.ParameterType.Is(typeof(Delegate)))
+                                // 参数声明
+                                builder.AppendLine("var __obj = JsonReader.Deserialize<{0}_{1}>(__stream);", type.Name, method.Name);
+                                foreach (ParameterInfo param in parameters)
                                 {
-                                    builder.AppendLine("byte {0};", param.Name);
-                                    name = param.Name;
+                                    if (isDelegate && param.ParameterType.Is(typeof(Delegate)))
+                                    {
+                                        builder.AppendLine("byte {0};", param.Name);
+                                        name = param.Name;
+                                    }
+                                    else
+                                        builder.AppendLine("{0} {1};", param.ParameterType.CodeName(), param.Name);
                                 }
-                                else
-                                    builder.AppendLine("{0} {1};", param.ParameterType.CodeName(), param.Name);
+                                // 参数读取赋值
+                                foreach (ParameterInfo param in parameters)
+                                    builder.AppendLine("{0} = __obj.{0};", param.Name);
+                                // 日志
+                                builder.AppendLine("#if DEBUG");
+                                builder.AppendFormat("_LOG.Debug(\"{0}", method.Name);
+                                for (int j = 0, n = parameters.Length - 1; j <= n; j++)
+                                {
+                                    ParameterInfo param = parameters[j];
+                                    builder.AppendFormat(" {0}: {{{1}}}", param.Name, j);
+                                    if (j != n)
+                                        builder.Append(",");
+                                }
+                                builder.Append("\"");
+                                for (int j = 0; j < parameters.Length; j++)
+                                {
+                                    ParameterInfo param = parameters[j];
+                                    if (param.ParameterType.Is(typeof(Delegate)))
+                                        builder.AppendFormat(", \"{0}\"", param.ParameterType.CodeName());
+                                    else if (!param.ParameterType.IsCustomType())
+                                        builder.AppendFormat(", {0}", param.Name);
+                                    else
+                                        builder.AppendFormat(", JsonWriter.Serialize({0})", param.Name);
+                                }
+                                builder.AppendLine(");");
+                                builder.AppendLine("#endif");
                             }
-                            // 参数读取赋值
-                            foreach (ParameterInfo param in parameters)
-                                builder.AppendLine("{0} = __obj.{0};", param.Name);
-                            // 日志
-                            builder.AppendLine("#if DEBUG");
-                            builder.AppendFormat("_LOG.Debug(\"{0}", method.Name);
-                            for (int j = 0, n = parameters.Length - 1; j <= n; j++)
-                            {
-                                ParameterInfo param = parameters[j];
-                                builder.AppendFormat(" {0}: {{{1}}}", param.Name, j);
-                                if (j != n)
-                                    builder.Append(",");
-                            }
-                            builder.Append("\"");
-                            for (int j = 0; j < parameters.Length; j++)
-                            {
-                                ParameterInfo param = parameters[j];
-                                if (param.ParameterType.Is(typeof(Delegate)))
-                                    builder.AppendFormat(", \"{0}\"", param.ParameterType.CodeName());
-                                else if (!param.ParameterType.IsCustomType())
-                                    builder.AppendFormat(", {0}", param.Name);
-                                else
-                                    builder.AppendFormat(", JsonWriter.Serialize({0})", param.Name);
-                            }
-                            builder.AppendLine(");");
-                            builder.AppendLine("#endif");
                             builder.AppendFormat("agent.{0}({1}", method.Name, hasAgent ? (parameters.Length == 0 ? "__client" : "__client, ") : "");
                             for (int j = 0, n = parameters.Length - 1; j <= n; j++)
                             {
