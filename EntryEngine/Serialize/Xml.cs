@@ -375,7 +375,7 @@ namespace EntryEngine.Serialize
 		}
 		protected override void WriteClassObject(object value, Type type)
 		{
-			bool specialType = IsAbstractType(value, ref type);
+			bool specialType = Setting.IsAbstractType(value, ref type);
 
 			if (specialType)
 			{

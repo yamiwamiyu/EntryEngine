@@ -352,7 +352,9 @@ namespace EntryEngine.Serialize
 		/// 序列化属性
 		/// </summary>
 		public bool Property;
+        public ESerializeType SerializeType;
 		public ISerializeFilter Filter;
+        
 
 		public BindingFlags BuildingFlags
 		{
@@ -369,6 +371,37 @@ namespace EntryEngine.Serialize
 			}
 		}
 
+        public bool IsAbstractType(object value, ref Type type)
+        {
+            Type temp;
+            if (type.IsNullable(out temp))
+            {
+                type = temp;
+                return false;
+            }
+
+            // 不序列化类型，也不修改类型
+            if (SerializeType == ESerializeType.None) return false;
+
+            // 修改类型
+            if (value != null)
+            {
+                temp = value.GetType();
+                if (temp != type)
+                {
+                    type = temp;
+                    return SerializeType == ESerializeType.SerializeType;
+                }
+                else
+                    return false;
+            }
+
+            if (SerializeType == ESerializeType.SerializeType)
+                // 对于抽象类和接口，需要序列化类型
+                return (type.IsAbstract && !type.IsSealed);
+            else
+                return false;
+        }
 		public void SerializeField(Type type, Action<FieldInfo> func)
 		{
 			FieldInfo[] fields = type.GetFields(BuildingFlags);
@@ -533,35 +566,38 @@ namespace EntryEngine.Serialize
             return dic;
         }
 	}
+    /// <summary>
+    /// 序列化时会遇到抽象类型或object类型的字段
+    /// 若不记录当时的类型，反序列化时将无法正确还原序列化时的对象
+    /// </summary>
+    public enum ESerializeType
+    {
+        /// <summary>
+        /// <para>序列化类型</para>
+        /// <para>序列化子类型字段</para>
+        /// <para>使用场景：字段是父类型，对象是子类型时，例如字段类型是object</para>
+        /// <para>多用于前后端都是C#且使用EntryEngine的情况，否则解析不了子类型</para>
+        /// </summary>
+        SerializeType,
+        /// <summary>
+        /// <para>不序列化类型</para>
+        /// <para>序列化子类型字段</para>
+        /// <para>使用场景：字段是父类型，对象是子类型时，例如字段类型是object</para>
+        /// <para>多用于后端接口使用，直接将子类型字段发送给前端，不用考虑自己反序列化</para>
+        /// </summary>
+        Child,
+        /// <summary>
+        /// <para>不序列化类型</para>
+        /// <para>不序列化子类型字段</para>
+        /// <para>使用场景：数据库字段为string[]，生成数据库表对应子类型字段类型为string，用Json字符串存储</para>
+        /// <para>此时对于后端接口传输时，应用父类型的原始类型string[]做传输</para>
+        /// </summary>
+        None,
+    }
 	public abstract class Serializable
 	{
-        public const string ABSTRACT_TYPE = "#";
+        internal const string ABSTRACT_TYPE = "#";
 		public SerializeSetting Setting = SerializeSetting.DefaultSetting;
-        /// <summary>
-        /// <para>true: value.GetType() != type时，则将序列化value.GetType()的类型名以便反序列化</para>
-        /// <para>false: 数据库自动生成的数据表子类型可能直接用于传输，此时序列化类型名将加大传输数据量</para>
-        /// </summary>
-        public static bool RecognitionChildType = true;
-
-		public static bool IsAbstractType(object value, ref Type type)
-		{
-			Type temp;
-			if (type.IsNullable(out temp))
-			{
-				type = temp;
-				return false;
-			}
-			if (RecognitionChildType && value != null)
-			{
-				temp = value.GetType();
-				if (temp != type)
-				{
-					type = temp;
-					return true;
-				}
-			}
-			return (type.IsAbstract && !type.IsSealed);
-		}
 	}
 	public abstract class StringWriter : Serializable, IWriter
 	{

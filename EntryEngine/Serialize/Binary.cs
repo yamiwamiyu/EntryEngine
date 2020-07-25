@@ -475,7 +475,7 @@ namespace EntryEngine.Serialize
                             Write(false);
                             return;
                         }
-                        else if (IsAbstractType(value, ref type))
+                        else if (Setting.IsAbstractType(value, ref type))
                         {
                             Write((byte)2);
                             //Write(value.GetType().AssemblyQualifiedName);
@@ -2243,7 +2243,7 @@ namespace EntryEngine.Serialize
                                     Write(-1);
                                     return;
                                 }
-                                else if (IsAbstractType(value, ref type))
+                                else if (Setting.IsAbstractType(value, ref type))
                                 {
                                     if (index == 0)
                                     {

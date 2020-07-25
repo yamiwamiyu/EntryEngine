@@ -133,7 +133,7 @@ namespace EntryEngine.Serialize
 		{
 			builder.Append('{');
 
-			bool abs = IsAbstractType(value, ref type);
+			bool abs = Setting.IsAbstractType(value, ref type);
 			if (abs)
 			{
 				type = value.GetType();
