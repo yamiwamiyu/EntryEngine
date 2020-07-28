@@ -6049,8 +6049,10 @@ namespace EntryBuilder
                         var parentField = foreign.ForeignTable.GetField(foreignKey);
                         if (parentField == null)
                             throw new ArgumentNullException(string.Format("{0}.{1} required foreign key {2}.{3} is not exists.", table.Name, field.Name, foreign.ForeignTable.Name, foreignKey));
-                        // 外键是内联表自身的某字段时且被继承时，ForeignTable改为继承类型
-                        if (foreign.ForeignTable == parentField.DeclaringType && foreign.ForeignTable.IsAssignableFrom(table))
+                        // 外键是内联表自身的某字段时，ForeignTable改为继承类型
+                        if (foreign.ForeignTable == parentField.DeclaringType 
+                            && foreign.ForeignTable == field.DeclaringType
+                            && foreign.ForeignTable.IsAssignableFrom(table))
                             parentField = table.GetField(foreignKey);
                         var parentIndex = parentField.GetAttribute<IndexAttribute>();
                         if (parentIndex == null || (parentIndex.Index != EIndex.Identity && parentIndex.Index != EIndex.Primary))
@@ -6802,7 +6804,7 @@ namespace EntryBuilder
                         if (field == tree)
                             return;
                         // 删除
-                        builder.AppendLine("public {3}void DeleteForeignKey_{0}_{1}({2} target)", field.Table.Name, field.Field.Name, field.Field.FieldType.CodeName(), _static);
+                        builder.AppendLine("public {3}int DeleteForeignKey_{0}_{1}({2} target)", field.Table.Name, field.Field.Name, field.Field.FieldType.CodeName(), _static);
                         builder.AppendBlock(() =>
                         {
                             builder.AppendLine("StringBuilder builder = new StringBuilder();");
@@ -6811,10 +6813,10 @@ namespace EntryBuilder
                                 {
                                     builder.AppendLine("builder.AppendLine(\"DELETE FROM `{0}` WHERE `{1}` = @p0;\");", foreign.Table.Name, foreign.Field.Name);
                                 });
-                            builder.AppendLine("_DAO.ExecuteNonQuery(builder.ToString(), target);");
+                            builder.AppendLine("return _DAO.ExecuteNonQuery(builder.ToString(), target);");
                         });
                         // 修改
-                        builder.AppendLine("public {3}void UpdateForeignKey_{0}_{1}({2} origin, {2} target)", field.Table.Name, field.Field.Name, field.Field.FieldType.CodeName(), _static);
+                        builder.AppendLine("public {3}int UpdateForeignKey_{0}_{1}({2} origin, {2} target)", field.Table.Name, field.Field.Name, field.Field.FieldType.CodeName(), _static);
                         builder.AppendBlock(() =>
                         {
                             builder.AppendLine("StringBuilder builder = new StringBuilder();");
@@ -6823,7 +6825,7 @@ namespace EntryBuilder
                                 {
                                     builder.AppendLine("builder.AppendLine(\"UPDATE `{0}` SET `{1}` = @p0 WHERE `{1}` = @p1;\");", foreign.Table.Name, foreign.Field.Name);
                                 });
-                            builder.AppendLine("_DAO.ExecuteNonQuery(builder.ToString(), target, origin);");
+                            builder.AppendLine("return _DAO.ExecuteNonQuery(builder.ToString(), target, origin);");
                         });
                     });
                 // 自增列
