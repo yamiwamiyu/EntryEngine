@@ -2333,6 +2333,7 @@ namespace EntryEngine.Network
         Dictionary<string, byte[]> Cache;
         HttpListener listener;
         string localPath;
+        int bigFileSize;
 
         public Action<HttpListenerContext> OnAccept;
 
@@ -2385,7 +2386,26 @@ namespace EntryEngine.Network
             get;
             private set;
         }
+        /// <summary>
+        /// <para>文件尺寸超过这个值时属于大文件</para>
+        /// <para>大文件将不使用缓存</para>
+        /// <para>大文件的下载将使用文件流的形式进行文件传输</para>
+        /// </summary>
+        public int BigFileSize
+        {
+            get { return bigFileSize; }
+            set
+            {
+                if (value < 0)
+                    value = 0;
+                bigFileSize = value;
+            }
+        }
 
+        public bool IsBigFile(long size)
+        {
+            return size >= bigFileSize;
+        }
         public void Start(ushort port)
         {
             listener = new HttpListener();
@@ -2398,7 +2418,7 @@ namespace EntryEngine.Network
         {
             HttpListener handle = (HttpListener)ar.AsyncState;
             HttpListenerResponse response = null;
-            byte[] bytes;
+            byte[] bytes = null;
             try
             {
                 HttpListenerContext context = handle.EndGetContext(ar);
@@ -2419,23 +2439,44 @@ namespace EntryEngine.Network
                 {
                     if (path.Contains(".html"))
                         response.ContentType = "text/html";
+
                     if (UseCache)
                     {
                         bool cache;
                         lock (Cache)
                             cache = Cache.TryGetValue(path, out bytes);
-                        if (!cache)
-                        {
-                            bytes = File.ReadAllBytes(fullPath);
-                            lock (Cache)
-                                Cache[path] = bytes;
-                        }
+                    }
+
+                    if (bytes != null)
+                    {
+                        response.OutputStream.Write(bytes, 0, bytes.Length);
                     }
                     else
                     {
-                        bytes = File.ReadAllBytes(fullPath);
+                        using (FileStream stream = new FileStream(fullPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite, 2048, FileOptions.Asynchronous))
+                        {
+                            // 不是大文件才可以使用缓存
+                            if (!IsBigFile(stream.Length) && UseCache)
+                            {
+                                bytes = _IO.ReadStream(stream);
+                                lock (Cache)
+                                    Cache[path] = bytes;
+                            }
+
+                            if (bytes != null)
+                                response.OutputStream.Write(bytes, 0, bytes.Length);
+                            else
+                            {
+                                bytes = new byte[1024 * 1024];
+                                while (true)
+                                {
+                                    int read = stream.Read(bytes, 0, bytes.Length);
+                                    if (read == 0) break;
+                                    response.OutputStream.Write(bytes, 0, bytes.Length);
+                                }
+                            }
+                        }
                     }
-                    response.OutputStream.Write(bytes, 0, bytes.Length);
                 }
             }
             catch (Exception ex)
@@ -2449,6 +2490,7 @@ namespace EntryEngine.Network
                     response.OutputStream.Close();
                     response.Close();
                 }
+                response = null;
                 bytes = null;
             }
         }
