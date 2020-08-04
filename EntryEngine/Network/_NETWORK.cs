@@ -79,6 +79,39 @@ namespace EntryEngine.Network
             }
             return Convert.ToBase64String(encrypt);
         }
+        /// <summary>更新花生壳域名绑定的外网IP</summary>
+        /// <param name="username">花生壳账号名</param>
+        /// <param name="password">花生壳密码</param>
+        /// <param name="hostname">花生壳域名</param>
+        /// <param name="result">成功时返回IP，否则参见http://service.oray.com/question/3820.html</param>
+        /// <returns>是否更新成功</returns>
+        public static bool OrayHostNameIPUpdate(string username, string password, string hostname, out string result)
+        {
+            string secret = string.Format("{0}:{1}", username, password);
+            HttpWebRequest request = (HttpWebRequest)WebRequest.Create(
+                string.Format("http://{0}@ddns.oray.com/ph/update?hostname={1}", secret, hostname));
+            request.Method = "GET";
+            request.KeepAlive = true;
+            request.UserAgent = "Oray";
+            request.Headers["Authorization"] = "Basic " + Convert.ToBase64String(Encoding.UTF8.GetBytes(secret));
+
+            var response = (HttpWebResponse)request.GetResponse();
+            using (var stream = response.GetResponseStream())
+            {
+                using (var reader = new StreamReader(stream, Encoding.UTF8))
+                {
+                    result = reader.ReadToEnd();
+                    if (result.StartsWith("good") || result.StartsWith("nochg"))
+                    {
+                        int index = result.IndexOf(' ') + 1;
+                        result = result.Substring(index);
+                        return true;
+                    }
+                }
+            }
+
+            return false;
+        }
 
 
 
