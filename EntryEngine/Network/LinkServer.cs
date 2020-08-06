@@ -2335,7 +2335,8 @@ namespace EntryEngine.Network
         string localPath;
         int bigFileSize;
 
-        public Action<HttpListenerContext> OnAccept;
+        /// <summary>收到请求后，返回下载的完整路径，返回null则使用LocalPath进行下载</summary>
+        public Func<HttpListenerContext, string> OnDownload;
 
         public bool UseCache
         {
@@ -2418,26 +2419,31 @@ namespace EntryEngine.Network
         {
             HttpListener handle = (HttpListener)ar.AsyncState;
             HttpListenerResponse response = null;
-            byte[] bytes = null;
             try
             {
+                byte[] bytes = null;
+
                 HttpListenerContext context = handle.EndGetContext(ar);
                 handle.BeginGetContext(Accept, handle);
                 response = context.Response;
                 response.AppendHeader("Access-Control-Allow-Origin", "*");
                 response.ContentType = "application/octet-stream;charset=ISO-8859-1";
-                if (OnAccept != null)
-                    OnAccept(context);
+                string download = null;
                 string path = context.Request.Url.LocalPath.Substring(1);
-                _LOG.Debug("文件下载：{0}", path);
-                string fullPath = localPath + path;
-                if (!File.Exists(fullPath))
+                if (OnDownload != null)
+                    download = OnDownload(context);
+                if (string.IsNullOrEmpty(download))
+                    download = localPath + path;
+                _LOG.Debug("文件下载：{0}", download);
+                if (OnDownload != null)
+                    OnDownload(context);
+                if (!File.Exists(download))
                 {
                     response.StatusCode = 404;
                 }
                 else
                 {
-                    if (path.Contains(".html"))
+                    if (download.Contains(".html"))
                         response.ContentType = "text/html";
 
                     if (UseCache)
@@ -2453,7 +2459,7 @@ namespace EntryEngine.Network
                     }
                     else
                     {
-                        using (FileStream stream = new FileStream(fullPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite, 2048, FileOptions.Asynchronous))
+                        using (FileStream stream = new FileStream(download, FileMode.Open, FileAccess.Read, FileShare.ReadWrite, 2048, FileOptions.Asynchronous))
                         {
                             // 不是大文件才可以使用缓存
                             if (!IsBigFile(stream.Length) && UseCache)
@@ -2472,7 +2478,7 @@ namespace EntryEngine.Network
                                 {
                                     int read = stream.Read(bytes, 0, bytes.Length);
                                     if (read == 0) break;
-                                    response.OutputStream.Write(bytes, 0, bytes.Length);
+                                    response.OutputStream.Write(bytes, 0, read);
                                 }
                             }
                         }
@@ -2491,7 +2497,6 @@ namespace EntryEngine.Network
                     response.Close();
                 }
                 response = null;
-                bytes = null;
             }
         }
         public void Stop()
