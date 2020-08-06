@@ -91,8 +91,9 @@ namespace EntryEngine.Network
             HttpWebRequest request = (HttpWebRequest)WebRequest.Create(
                 string.Format("http://{0}@ddns.oray.com/ph/update?hostname={1}", secret, hostname));
             request.Method = "GET";
+            request.Timeout = 10000;
             request.KeepAlive = true;
-            request.UserAgent = "Oray";
+            request.UserAgent = hostname;
             request.Headers["Authorization"] = "Basic " + Convert.ToBase64String(Encoding.UTF8.GetBytes(secret));
 
             var response = (HttpWebResponse)request.GetResponse();
