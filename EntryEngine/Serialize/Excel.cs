@@ -426,7 +426,9 @@ namespace EntryEngine.Serialize
                     {
                         PropertyInfo property;
                         if (!properties.TryGetValue(keys[i], out property))
-                            throw new KeyNotFoundException(string.Format("缺少CSV列{0}[长度:{1}]", keys[i], keys[i].Length));
+                            //throw new KeyNotFoundException(string.Format("缺少CSV列{0}[长度:{1}]", keys[i], keys[i].Length));
+                            // 可以跳过不用的列
+                            continue;
                         column.Property = property;
                         column.Special = property.PropertyType.IsCustomType();
                     }
@@ -448,6 +450,12 @@ namespace EntryEngine.Serialize
 
             for (int i = 0; i < columns.Length; i++)
             {
+                // 无用字段跳过
+                if (columns[i] == null)
+                {
+                    ReadNextString();
+                    continue;
+                }
                 string name = columns[i].Name;
                 //string text = Decode(ReadGrid);
                 if (columns[i].Special)
