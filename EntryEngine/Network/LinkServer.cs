@@ -231,7 +231,7 @@ namespace EntryEngine.Network
 		private TIMER secondTimer = new TIMER();
 		private Dictionary<IPAddress, int> loginCountPerSecondByIP = new Dictionary<IPAddress, int>();
 		private Dictionary<string, Agent> clients = new Dictionary<string, Agent>();
-		private Dictionary<IPAddress, AcceptBlock> blockIP = new Dictionary<IPAddress, AcceptBlock>();
+        private List<AcceptBlock> blockIP = new List<AcceptBlock>();
 		private Pool<NewLink> newLink = new Pool<NewLink>();
 		private Queue<string> disconnected = new Queue<string>();
 
@@ -286,7 +286,7 @@ namespace EntryEngine.Network
 			get { return clients.Count; }
 		}
 		protected abstract bool HasAcceptRequest { get; }
-        public Dictionary<IPAddress, AcceptBlock> BlockIP { get { return blockIP; } }
+        public List<AcceptBlock> BlockIP { get { return blockIP; } }
 		public Agent this[IPEndPoint endpoint]
 		{
 			get { return this[endpoint.ToString()]; }
@@ -364,19 +364,14 @@ namespace EntryEngine.Network
 		{
 			if (blockIP.Count > 0)
 			{
-				Queue<IPAddress> release = new Queue<IPAddress>();
-				foreach (var item in blockIP)
-				{
-					AcceptBlock block = item.Value;
-					if (block.IsRelease)
-					{
-						release.Enqueue(item.Key);
-					}
-				}
-				while (release.Count > 0)
-				{
-					blockIP.Remove(release.Dequeue());
-				}
+                for (int i = blockIP.Count - 1; i >= 0; i--)
+                {
+                    if (blockIP[i].IsRelease)
+                    {
+                        blockIP.RemoveAt(i);
+                        _LOG.Info("IP:{0}自动解封");
+                    }
+                }
 			}
 		}
 		private void CheckDisconnected()
@@ -500,7 +495,7 @@ namespace EntryEngine.Network
                                 break;
 
                             case EAcceptPermit.Block:
-                                Block("锁定登录", TimeSpan.FromDays(1), link.Link.EndPoint.Address);
+                                Block("锁定登录", TimeSpan.FromDays(1), link.Link.EndPoint.Address.ToString());
                                 goto case EAcceptPermit.Refuse;
 
                             case EAcceptPermit.Refuse:
@@ -593,11 +588,14 @@ namespace EntryEngine.Network
 
                     // 封禁IP不能登录
                     AcceptBlock block;
-                    if (blockIP.TryGetValue(address, out block) && block.Block.Permit(endPoint))
+                    foreach (var item in blockIP)
                     {
-                        _LOG.Warning("封禁的IP {0} 尝试访问!", address);
-                        client.Close();
-                        continue;
+                        if (item.Block.Permit(endPoint))
+                        {
+                            _LOG.Warning("封禁的IP {0} 尝试访问!", address);
+                            client.Close();
+                            continue;
+                        }
                     }
 
                     // 记录每秒登录次数，若过于频繁则不允许登录甚至封禁
@@ -610,7 +608,7 @@ namespace EntryEngine.Network
                             if (loginCount > PermitSameIPLinkPerSecord)
                             {
                                 client.Close();
-                                Block("相同IP每秒访问次数过多", TimeSpan.MinValue, address);
+                                Block("相同IP每秒访问次数过多", TimeSpan.MinValue, address.ToString());
                                 continue;
                             }
                         }
@@ -670,32 +668,57 @@ namespace EntryEngine.Network
         protected virtual void OnResetSecond() { }
         private void SaveBlock()
         {
-            _IO.WriteText(BLOCK_FILE, JsonWriter.Serialize(blockIP.Values.ToList()));
+            _IO.WriteText(BLOCK_FILE, JsonWriter.Serialize(blockIP));
         }
         private void LoadBlock()
         {
             if (File.Exists(_IO.BuildPath(BLOCK_FILE)))
             {
-                blockIP = JsonReader.Deserialize<List<AcceptBlock>>(_IO.ReadText(BLOCK_FILE)).ToDictionary(b => IPAddress.Parse(b.Block.LimitIP));
-                _LOG.Info("加载了被锁定的IP");
+                try
+                {
+                    blockIP = JsonReader.Deserialize<List<AcceptBlock>>(_IO.ReadText(BLOCK_FILE));
+                    _LOG.Info("加载了被锁定的IP");
+                }
+                catch
+                {
+                    _LOG.Warning("加载锁定IP异常");
+                }
             }
         }
         /// <summary>封禁IP的请求</summary>
         /// <param name="reason">封禁原因</param>
         /// <param name="duration">封禁时长，0代表永久</param>
-        /// <param name="address"></param>
-		public void Block(string reason, TimeSpan duration, params IPAddress[] address)
+        /// <param name="address">可以是192.168</param>
+		public void Block(string reason, TimeSpan duration, params string[] address)
 		{
-			foreach (IPAddress item in address)
+			foreach (var item in address)
 			{
-                AcceptBlock block;
-                if (!blockIP.TryGetValue(item, out block))
+                AcceptBlock block = null;
+                bool flag = true;
+                foreach (var b in blockIP)
+                {
+                    if (b.Block.LimitIP.StartsWith(item))
+                    {
+                        _LOG.Warning("已经封禁的IP:{0}，跳过封禁IP:{1}", b.Block.LimitIP, item);
+                        flag = false;
+                        break;
+                    }
+                    else if (item.StartsWith(b.Block.LimitIP))
+                    {
+                        if (item != b.Block.LimitIP)
+                            _LOG.Warning("已经封禁的IP:{0}替换成{1}", b.Block.LimitIP, item);
+                        block = b;
+                        break;
+                    }
+                }
+                if (!flag) continue;
+                if (block == null)
                 {
                     block = new AcceptBlock();
                     block.Block = new AcceptLimit();
-                    block.Block.LimitIP = item.ToString();
-                    blockIP.Add(item, block);
+                    blockIP.Add(block);
                 }
+                block.Block.LimitIP = item;
                 block.BlockTime = DateTime.Now;
                 block.Reason = reason;
                 block.BlockDuration = duration;
@@ -703,14 +726,18 @@ namespace EntryEngine.Network
 			}
             SaveBlock();
 		}
-		public void ReleaseBlock(params IPAddress[] address)
+		public void ReleaseBlock(params string[] address)
 		{
-			foreach (IPAddress item in address)
+			foreach (var item in address)
 			{
-				if (blockIP.Remove(item))
-				{
-                    _LOG.Info("Release IP: {0}", item);
-				}
+                for (int i = blockIP.Count - 1; i >= 0; i--)
+                {
+                    if (blockIP[i].Block.LimitIP.StartsWith(item))
+                    {
+                        _LOG.Info("解禁IP: {0}", item);
+                        blockIP.RemoveAt(i);
+                    }
+                }
 			}
             SaveBlock();
 		}
@@ -966,7 +993,7 @@ namespace EntryEngine.Network
                         temp[url] = ++count;
                         if (count > PermitSameIPHandlePerSecord)
                         {
-                            Block("相同IP每秒访问相同接口次数过多", TimeSpan.MinValue, ep.Address);
+                            Block("相同IP每秒访问相同接口次数过多", TimeSpan.MinValue, ep.Address.ToString());
                             __link.Close();
                             return;
                         }
