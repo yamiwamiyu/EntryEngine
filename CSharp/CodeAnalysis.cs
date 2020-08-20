@@ -2684,13 +2684,6 @@ namespace EntryBuilder.CodeAnalysis.Syntax
         /// <summary>left >> right</summary>
         ShiftRight,
 
-        // left & right
-        BitwiseAnd,
-        /// <summary>left ^ right</summary>
-        ExclusiveOr,
-        /// <summary>left | right</summary>
-        BitwiseOr,
-
         /// <summary>left > right</summary>
         GreaterThan,
         /// <summary>left >= right</summary>
@@ -2703,6 +2696,13 @@ namespace EntryBuilder.CodeAnalysis.Syntax
         Equality,
         /// <summary>left != right</summary>
         Inequality,
+
+        // left & right
+        BitwiseAnd,
+        /// <summary>left ^ right</summary>
+        ExclusiveOr,
+        /// <summary>left | right</summary>
+        BitwiseOr,
 
         // left && right
         ConditionalAnd,
