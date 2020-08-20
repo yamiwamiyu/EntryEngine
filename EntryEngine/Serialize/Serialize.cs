@@ -1521,7 +1521,7 @@ namespace EntryEngine.Serialize
 		}
         public string NextWord()
         {
-            return Next(WORD_BREAK);
+            return Next(WORD_BREAK, true);
         }
         public string PeekNext(string filter)
 		{
@@ -1668,6 +1668,14 @@ namespace EntryEngine.Serialize
             bool result = IsNextSign(sign);
             if (result)
                 pos += sign.Length;
+            return result;
+        }
+        public bool EatAfterWordIfIs(string word)
+        {
+            int temp = pos;
+            bool result = NextWord() == word;
+            if (!result)
+                pos = temp;
             return result;
         }
     }
