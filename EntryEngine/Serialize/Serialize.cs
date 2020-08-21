@@ -1405,32 +1405,32 @@ namespace EntryEngine.Serialize
     public class StringStreamReader
     {
         public string WHITE_SPACE = " \t\n\r";
-		public string WORD_BREAK;
+        public string WORD_BREAK;
 
         public string str;
-		protected int pos;
-		protected int len;
+        protected int pos;
+        protected int len;
 
-		public bool IsEnd
-		{
-			get { return pos >= len; }
-		}
-		public char PeekChar
-		{
-			get { return Peek(); }
-		}
-		public string PeekNextWord
-		{
-			get { return PeekNext(WORD_BREAK); }
-		}
-		public string PeekNextLine
-		{
-			get { return PeekNext("\n"); }
-		}
-		public string PeekNextEnd
-		{
-			get { return PeekNext(";"); }
-		}
+        public bool IsEnd
+        {
+            get { return pos >= len; }
+        }
+        public char PeekChar
+        {
+            get { return Peek(); }
+        }
+        public string PeekNextWord
+        {
+            get { return PeekNext(WORD_BREAK); }
+        }
+        public string PeekNextLine
+        {
+            get { return PeekNext("\n"); }
+        }
+        public string PeekNextEnd
+        {
+            get { return PeekNext(";"); }
+        }
         public string Tail
         {
             get { return str.Substring(pos); }
@@ -1440,7 +1440,7 @@ namespace EntryEngine.Serialize
             get { return pos; }
             set
             {
-                if (value < 0 || value >= len)
+                if (value < 0 || value > len)
                     throw new ArgumentOutOfRangeException("pos");
                 this.pos = value;
             }
@@ -1450,9 +1450,10 @@ namespace EntryEngine.Serialize
         {
             SetContent(string.Empty, 0);
         }
-		public StringStreamReader(string content) : this(content, 0)
-		{
-		}
+        public StringStreamReader(string content)
+            : this(content, 0)
+        {
+        }
         public StringStreamReader(string content, int startIndex)
         {
             SetContent(content, startIndex);
@@ -1471,62 +1472,62 @@ namespace EntryEngine.Serialize
             this.pos = startIndex;
         }
         public char Peek()
-		{
-			return str[pos];
-		}
+        {
+            return str[pos];
+        }
         public char Read()
-		{
-			return str[pos++];
-		}
-		public string ReadLine()
-		{
+        {
+            return str[pos++];
+        }
+        public string ReadLine()
+        {
             return Next("\n");
-		}
+        }
         public string EatLine()
         {
             return Eat("\n");
         }
         public string Eat(string filter)
-		{
+        {
             //EatWhitespace();
-			int start = pos;
-			string next = Next(filter);
-			if (pos < len)
-				pos++;
-			return next;
-		}
+            int start = pos;
+            string next = Next(filter);
+            if (pos < len)
+                pos++;
+            return next;
+        }
         public string Next(string filter)
         {
             return Next(filter, true);
         }
         public string Next(string filter, bool eatWhitespace)
-		{
-			if (eatWhitespace)
-			{
-				if (WHITE_SPACE.Contains(filter))
-					EatWhitespace(filter);
-				else
-					EatWhitespace();
-			}
+        {
+            if (eatWhitespace)
+            {
+                if (WHITE_SPACE.Contains(filter))
+                    EatWhitespace(filter);
+                else
+                    EatWhitespace();
+            }
 
-			if (pos == len)
-				return null;
+            if (pos == len)
+                return null;
 
-			int start = pos;
-			while (filter.IndexOf(PeekChar) == -1)
-				if (++pos == len)
-					break;
+            int start = pos;
+            while (pos < len && filter.IndexOf(PeekChar) == -1)
+                if (++pos == len)
+                    break;
 
-			return str.Substring(start, pos - start);
-		}
+            return str.Substring(start, pos - start);
+        }
         public string NextWord()
         {
             return Next(WORD_BREAK, true);
         }
         public string PeekNext(string filter)
-		{
+        {
             return PeekNext(filter, true);
-		}
+        }
         public string PeekNext(string filter, bool eatWhitespace)
         {
             int start = pos;
@@ -1539,15 +1540,15 @@ namespace EntryEngine.Serialize
             EatWhitespace(null);
         }
         public void EatWhitespace(string filter)
-		{
+        {
             if (IsEnd)
                 return;
-			if (filter == null)
-				filter = string.Empty;
-			while (!filter.Contains(PeekChar) && WHITE_SPACE.IndexOf(PeekChar) != -1)
-				if (++pos == len)
-					break;
-		}
+            if (filter == null)
+                filter = string.Empty;
+            while (pos < len && !filter.Contains(PeekChar) && WHITE_SPACE.IndexOf(PeekChar) != -1)
+                if (++pos == len)
+                    break;
+        }
 
 
         public char GetChar(int pos)
