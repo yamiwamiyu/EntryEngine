@@ -5130,6 +5130,15 @@ namespace EntryEngine
                 elapsedTime = Frame.Interval;
             }
         }
+        public int CurrentFrame
+        {
+            get { return currentFrame; }
+            set
+            {
+                currentFrame = value;
+                Base = Texture;
+            }
+        }
         public Frame Frame
         {
             get { return Sequence.Frames[currentFrame]; }
@@ -5295,15 +5304,19 @@ namespace EntryEngine
             elapsedTime = 0;
             Base = Texture;
         }
+        public void PreviousSequence()
+        {
+            if (--current < 0)
+                current = sequences.Count - 1;
+            ResetSequence();
+        }
         public void NextSequence()
         {
             if (++current >= sequences.Count)
                 current = 0;
             ResetSequence();
         }
-        /// <summary>
-        /// 下一帧
-        /// </summary>
+        /// <summary>下一帧</summary>
         /// <returns>序列动画是否播放完毕</returns>
         public bool NextFrame()
         {
@@ -5359,6 +5372,8 @@ namespace EntryEngine
         /// <returns>动画播放完毕</returns>
         public bool Update(float elapsed)
         {
+            updated = GameTime.Time.FrameID;
+
             bool over = false;
             var frame = Frame;
             while (elapsedTime >= frame.Interval)
@@ -5379,7 +5394,6 @@ namespace EntryEngine
         }
         public override void Update(GameTime time)
         {
-            updated = GameTime.Time.FrameID;
             Update(time.ElapsedSecond);
         }
         protected internal override bool Draw(GRAPHICS graphics, ref SpriteVertex vertex)

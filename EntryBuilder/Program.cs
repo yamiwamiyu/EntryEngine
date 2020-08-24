@@ -568,10 +568,7 @@ namespace EntryBuilder
             }
             catch (Exception ex)
             {
-                if (ex.InnerException != null)
-                    ex = ex.InnerException;
-                Console.WriteLine(ex.Message);
-                Console.WriteLine(ex.StackTrace);
+                _LOG.Error(ex, "命令执行错误");
                 Console.ReadKey();
             }
 		}
@@ -6012,6 +6009,9 @@ namespace EntryBuilder
 					Console.WriteLine("Compile {0} to MemoryDatabase {1} succuss!", dll, outputDll);
 			}
 		}
+        public static void BuildDatabaseMysqlMemory(string dll, string nsOrEmptyDotDBnameOrEmpty, string outputCS, string sharpIfBuild, string mysqlClassOrEmpty, bool isStatic)
+        {
+        }
         /// <param name="isStatic">非静态的使用场景：需要连接多个数据结构完全一样的数据库时，例如GM工具为每一个需要操作的数据库构建一个操作实例</param>
         public static void BuildDatabaseMysql(string dll, string nsOrEmptyDotDBnameOrEmpty, string outputCS, string sharpIfBuild, string mysqlClassOrEmpty, bool isStatic)
         {

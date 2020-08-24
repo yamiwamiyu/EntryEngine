@@ -35,18 +35,23 @@ namespace EntryBuilder.CodeAnalysis.Syntax
             get;
             private set;
         }
-        internal ParseSourceException(int index, string source, int pos, Exception innerEx)
-            : base(null, innerEx)
+        private ParseSourceException(int index, string source, string message, Exception innerEx)
+            : base(message, innerEx)
+        {
+            this.SourceIndex = index;
+            this.SourceText = source;
+            this.ErrorFocus = message;
+        }
+        public static ParseSourceException Throw(int index, string source, int pos, Exception innerEx)
         {
             if (string.IsNullOrEmpty(source))
                 throw new ArgumentNullException("source");
             if (pos > source.Length || pos < 0)
                 throw new IndexOutOfRangeException();
-            this.SourceIndex = index;
-            this.SourceText = source;
             int focus = source.Length - pos;
             focus = focus > MAX_FOCUS ? MAX_FOCUS : focus;
-            this.ErrorFocus = source.Substring(pos, focus);
+            string message = source.Substring(pos, focus);
+            throw new ParseSourceException(index, source, message, innerEx);
         }
     }
     public class ParseFileException : Exception
@@ -57,7 +62,7 @@ namespace EntryBuilder.CodeAnalysis.Syntax
             private set;
         }
         public ParseFileException(string file, ParseSourceException ex)
-            : base(null, ex)
+            : base(file, ex)
         {
             this.File = file;
         }
@@ -199,7 +204,7 @@ namespace EntryBuilder.CodeAnalysis.Syntax
                 }
                 catch (Exception ex)
                 {
-                    throw new ParseSourceException(i, sources[i], r.Pos, ex);
+                    ParseSourceException.Throw(i, sources[i], r.Pos, ex);
                 }
             }
             r = null;
@@ -718,6 +723,7 @@ namespace EntryBuilder.CodeAnalysis.Syntax
         void ParseDefineNamespace(DefineFile code, DefineNamespace obj)
         {
             obj.File = code;
+            code.DefineNamespaces.Add(obj);
             // 不定义namespace时为默认namespace
             //if (r.IsNextSign('{'))
             //    r.Read();
@@ -764,7 +770,6 @@ namespace EntryBuilder.CodeAnalysis.Syntax
                     continue;
                 }
             }
-            code.DefineNamespaces.Add(obj);
         }
         DefineMember ParseDefineType()
         {
@@ -2080,7 +2085,11 @@ namespace EntryBuilder.CodeAnalysis.Syntax
                 r.EatAfterSign("(");
                 while (!r.EatAfterSignIfIs(")"))
                 {
-                    withField.Fields.Add(ParseStatement());
+                    // 可以是 Expression: using(value) | Statement: using(Type obj = value)
+                    if (r.PeekNextLine.IndexOf('=') == -1)
+                        withField.Fields.Add(ParseReference());
+                    else
+                        withField.Fields.Add(ParseStatement());
                     r.EatAfterSignIfIs(",");
                 }
                 withField.Body = ParseStatementBody();
