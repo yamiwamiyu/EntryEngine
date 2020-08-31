@@ -60,25 +60,25 @@ namespace EntryEngine
 			result1 = (int)value1;
 			result2 = (int)value2;
 		}
-		/// <summary>
-		/// 大于浮点数的最小整数
-		/// </summary>
-		public static int Ceiling(float value)
-		{
-			//float f = value % 1;
-			//return (int)(f > 0 ? value + 1 : value);
-			int v = (int)value;
-			if (v != value)
-				v++;
-			return v;
-		}
-		/// <summary>
-		/// 四舍五入的整数
-		/// </summary>
+        /// <summary>小于浮点数的最大整数</summary>
+        public static int Floor(float value)
+        {
+            int v = (int)value;
+            if (v != value && value < 0)
+                v--;
+            return v;
+        }
+        /// <summary>大于浮点数的最小整数</summary>
+        public static int Ceiling(float value)
+        {
+            int v = (int)value;
+            if (v != value && value > 0)
+                v++;
+            return v;
+        }
+        /// <summary>四舍五入的整数</summary>
 		public static int Round(float value)
 		{
-			//float f = value % 1;
-			//return (int)(f < 0.5f ? value : value + 1);
 			if (value >= 0)
 				value += 0.5f;
 			else
