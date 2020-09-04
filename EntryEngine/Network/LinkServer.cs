@@ -2585,11 +2585,13 @@ namespace EntryEngine.Network
             {
                 Agent.Context = data;
                 data.Response.AppendHeader("Access-Control-Allow-Origin", "*");
-                data.Response.AppendHeader("Access-Control-Allow-Headers", "AccessToken");
                 data.Response.ContentType = "text/plain; charset=utf-8";
                 data.Response.ContentEncoding = Encoding.UTF8;
                 if (data.Request.HttpMethod.ToLower() == "options")
                 {
+                    var headers = data.Request.Headers["Access-Control-Request-Headers"];
+                    if (!string.IsNullOrEmpty(headers))
+                        data.Response.AddHeader("Access-Control-Allow-Headers", headers);
                     data.Response.Close();
                 }
                 else
