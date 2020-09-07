@@ -524,3 +524,13 @@ private static String getZipCommentFromBuffer (byte[] buffer, int len) {
 	}
 	return null;
 }
+
+
+JAVA代码获取安卓Android ID：
+Settings.System.getString(Context.getContentResolver(), Settings.Secure.ANDROID_ID)
+
+修改夜神模拟器Android ID
+1. 命令行到夜神模拟器所在目录，可以右键夜神模拟器快捷方式，打开文件所在为止，这里有nox_adb.exe
+2. 直接输入adb命令即可
+  2.1. 查看Android ID: adb shell content query --uri content://settings/secure --where "name=\'android_id\'"
+  2.2. 修改Android ID: adb shell content update --uri content://settings/secure --bind value:s:新AndroidID --where "name=\'android_id\'"
