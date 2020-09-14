@@ -11,6 +11,28 @@ namespace EntryEngine.Serialize
 	{
         public bool Encode = false;
 
+        public override void WriteObject(object value, Type type)
+        {
+            if (value is IDictionary)
+            {
+                bool first = true;
+                builder.Append('{');
+                var e = ((IDictionary)value).GetEnumerator();
+                while (e.MoveNext())
+                {
+                    if (!first)
+                        builder.Append(',');
+                    //WriteString(e.Key);
+                    WriteObject(e.Key);
+                    builder.Append(':');
+                    this.WriteObject(e.Value);
+                    first = false;
+                }
+                builder.Append('}');
+            }
+            else
+                base.WriteObject(value, type);
+        }
 		public void WriteDictionary(Dictionary<string, object> obj)
 		{
 			bool first = true;
@@ -22,6 +44,7 @@ namespace EntryEngine.Serialize
 				WriteString(e.Key);
 				builder.Append(':');
 				this.WriteObject(e.Value);
+                first = false;
 			}
 			builder.Append('}');
 		}
@@ -804,6 +827,40 @@ namespace EntryEngine.Serialize
             WORD_BREAK = " \t\n\r{}[],:\"";
         }
 
+        public override object ReadObject(Type type)
+        {
+            if (type.Is(typeof(IDictionary)))
+            {
+                var types = type.GetGenericArguments();
+                var dictionary = (IDictionary)Activator.CreateInstance(type);
+                // ditch opening brace
+                Read();
+
+                while (true)
+                {
+                    switch (PeekJson)
+                    {
+                        case EJson.NONE:
+                            return null;
+                        case EJson.COMMA:
+                            Read();
+                            continue;
+                        case EJson.CURLY_CLOSE:
+                            Read();
+                            return dictionary;
+                        default:
+                            object key = ReadObject(types[0]);
+                            // :
+                            Read();
+                            // value
+                            dictionary[key] = ReadObject(types[1]);
+                            break;
+                    }
+                }
+            }
+            else
+                return base.ReadObject(type);
+        }
         protected override string ReadString()
         {
             if (PeekChar != '"')

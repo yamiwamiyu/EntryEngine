@@ -681,25 +681,25 @@ namespace EntryEngine.Serialize
 			{
 				WriteDateTime((DateTime)value);
 			}
-			else if (type.IsArray || value is IEnumerable)
-			{
-				Type childType;
-				if (type.IsArray)
-				{
+            else if (type.IsArray || value is IEnumerable)
+            {
+                Type childType;
+                if (type.IsArray)
+                {
                     childType = type.GetElementType();
                     if (childType == null)
                         throw new NotSupportedException("不支持非泛型非数组的IEnumerable类型");
-				}
-				else
-				{
+                }
+                else
+                {
                     childType = type.GetInterface("IEnumerable`1").GetGenericArguments()[0];
-				}
-				WriteArray((IEnumerable)value, childType);
-			}
-			else
-			{
-				WriteClassObject(value, type);
-			}
+                }
+                WriteArray((IEnumerable)value, childType);
+            }
+            else
+            {
+                WriteClassObject(value, type);
+            }
 		}
 		protected virtual bool WriteNull(Type type)
 		{
@@ -814,285 +814,6 @@ namespace EntryEngine.Serialize
         protected virtual string UnEscapeString(string str)
         {
             return str;
-        }
-        //protected object ReadValue(Type type, string value)
-        //{
-        //    if (value == null)
-        //    {
-        //        return null;
-        //    }
-
-        //    Type nullable;
-        //    if (type.IsValueType && type.IsNullable(out nullable))
-        //    {
-        //        // Nullable<struct>
-        //        if (string.IsNullOrEmpty(value))
-        //        {
-        //            return null;
-        //        }
-        //        else
-        //        {
-        //            type = nullable;
-        //        }
-        //    }
-
-        //    if (type.IsEnum)
-        //    {
-        //        if (string.IsNullOrEmpty(value))
-        //            return Enum.GetValues(type).GetValue(0);
-        //        return Enum.Parse(type, value);
-        //        //Type underlying = Enum.GetUnderlyingType(type);
-        //        //try
-        //        //{
-        //        //    return Convert.ChangeType(Convert.ChangeType(value, underlying), type);
-        //        //}
-        //        //catch
-        //        //{
-        //        //    return Enum.Parse(type, value);
-        //        //}
-        //    }
-        //    else if (type == typeof(char))
-        //    {
-        //        if (string.IsNullOrEmpty(value))
-        //            return default(char);
-        //        return UnEscapeString(value)[0];
-        //    }
-        //    else if (type == typeof(string))
-        //    {
-        //        return UnEscapeString(value);
-        //    }
-        //    else if (type == typeof(bool))
-        //    {
-        //        if (string.IsNullOrEmpty(value))
-        //            return default(bool);
-        //        if (value == "1")
-        //            return true;
-        //        else if (value == "0")
-        //            return false;
-        //        else
-        //            return bool.Parse(value);
-        //    }
-        //    else if (type == typeof(sbyte))
-        //    {
-        //        if (string.IsNullOrEmpty(value))
-        //            return default(sbyte);
-        //        return sbyte.Parse(value);
-        //    }
-        //    else if (type == typeof(byte))
-        //    {
-        //        if (string.IsNullOrEmpty(value))
-        //            return default(byte);
-        //        return byte.Parse(value);
-        //    }
-        //    else if (type == typeof(short))
-        //    {
-        //        if (string.IsNullOrEmpty(value))
-        //            return default(short);
-        //        return short.Parse(value);
-        //    }
-        //    else if (type == typeof(ushort))
-        //    {
-        //        if (string.IsNullOrEmpty(value))
-        //            return default(ushort);
-        //        return ushort.Parse(value);
-        //    }
-        //    else if (type == typeof(int))
-        //    {
-        //        if (string.IsNullOrEmpty(value))
-        //            return default(int);
-        //        return int.Parse(value);
-        //    }
-        //    else if (type == typeof(uint))
-        //    {
-        //        if (string.IsNullOrEmpty(value))
-        //            return default(uint);
-        //        return uint.Parse(value);
-        //    }
-        //    else if (type == typeof(float))
-        //    {
-        //        if (string.IsNullOrEmpty(value))
-        //            return default(float);
-        //        return float.Parse(value);
-        //    }
-        //    else if (type == typeof(long))
-        //    {
-        //        if (string.IsNullOrEmpty(value))
-        //            return default(long);
-        //        return long.Parse(value);
-        //    }
-        //    else if (type == typeof(ulong))
-        //    {
-        //        if (string.IsNullOrEmpty(value))
-        //            return default(ulong);
-        //        return ulong.Parse(value);
-        //    }
-        //    else if (type == typeof(double))
-        //    {
-        //        if (string.IsNullOrEmpty(value))
-        //            return default(double);
-        //        return double.Parse(value);
-        //    }
-        //    else if (type == typeof(DateTime))
-        //    {
-        //        if (string.IsNullOrEmpty(value))
-        //            return default(DateTime);
-        //        //return Utility.ToUnixTime(int.Parse(value));
-        //        return DateTime.Parse(value);
-        //    }
-        //    else if (type == typeof(TimeSpan))
-        //    {
-        //        if (string.IsNullOrEmpty(value))
-        //            return default(TimeSpan);
-        //        //return new TimeSpan(long.Parse(value));
-        //        return TimeSpan.Parse(value);
-        //    }
-        //    throw new NotSupportedException("不支持的数据类型");
-        //}
-        protected object ReadValue(Type type, string value, out bool read)
-        {
-            read = true;
-
-            if (value == null)
-            {
-                return null;
-            }
-
-            Type nullable;
-            if (type.IsValueType && type.IsNullable(out nullable))
-            {
-                // Nullable<struct>
-                if (string.IsNullOrEmpty(value))
-                {
-                    return null;
-                }
-                else
-                {
-                    type = nullable;
-                }
-            }
-
-            if (type.IsArray)
-            {
-            }
-
-            if (type.IsEnum)
-            {
-                if (string.IsNullOrEmpty(value))
-                    return Enum.GetValues(type).GetValue(0);
-                return Enum.Parse(type, value);
-                //Type underlying = Enum.GetUnderlyingType(type);
-                //try
-                //{
-                //    return Convert.ChangeType(Convert.ChangeType(value, underlying), type);
-                //}
-                //catch
-                //{
-                //    return Enum.Parse(type, value);
-                //}
-            }
-            else if (type == typeof(char))
-            {
-                if (string.IsNullOrEmpty(value))
-                    return default(char);
-                return UnEscapeString(value)[0];
-            }
-            else if (type == typeof(string))
-            {
-                return UnEscapeString(value);
-            }
-            else if (type == typeof(bool))
-            {
-                if (string.IsNullOrEmpty(value))
-                    return default(bool);
-                if (value == "1")
-                    return true;
-                else if (value == "0")
-                    return false;
-                else
-                    return bool.Parse(value);
-            }
-            else if (type == typeof(sbyte))
-            {
-                if (string.IsNullOrEmpty(value))
-                    return default(sbyte);
-                return sbyte.Parse(value);
-            }
-            else if (type == typeof(byte))
-            {
-                if (string.IsNullOrEmpty(value))
-                    return default(byte);
-                return byte.Parse(value);
-            }
-            else if (type == typeof(short))
-            {
-                if (string.IsNullOrEmpty(value))
-                    return default(short);
-                return short.Parse(value);
-            }
-            else if (type == typeof(ushort))
-            {
-                if (string.IsNullOrEmpty(value))
-                    return default(ushort);
-                return ushort.Parse(value);
-            }
-            else if (type == typeof(int))
-            {
-                if (string.IsNullOrEmpty(value))
-                    return default(int);
-                return int.Parse(value);
-            }
-            else if (type == typeof(uint))
-            {
-                if (string.IsNullOrEmpty(value))
-                    return default(uint);
-                return uint.Parse(value);
-            }
-            else if (type == typeof(float))
-            {
-                if (string.IsNullOrEmpty(value))
-                    return default(float);
-                return float.Parse(value);
-            }
-            else if (type == typeof(long))
-            {
-                if (string.IsNullOrEmpty(value))
-                    return default(long);
-                return long.Parse(value);
-            }
-            else if (type == typeof(ulong))
-            {
-                if (string.IsNullOrEmpty(value))
-                    return default(ulong);
-                return ulong.Parse(value);
-            }
-            else if (type == typeof(double))
-            {
-                if (string.IsNullOrEmpty(value))
-                    return default(double);
-                return double.Parse(value);
-            }
-            else if (type == typeof(DateTime))
-            {
-                if (string.IsNullOrEmpty(value))
-                    return default(DateTime);
-                long timestamp;
-                if (long.TryParse(value, out timestamp))
-                    return Utility.ToTime(timestamp);
-                return DateTime.Parse(value);
-            }
-            else if (type == typeof(TimeSpan))
-            {
-                if (string.IsNullOrEmpty(value))
-                    return default(TimeSpan);
-                long timestamp;
-                if (long.TryParse(value, out timestamp))
-                    return TimeSpan.FromMilliseconds(timestamp);
-                return TimeSpan.Parse(value);
-            }
-
-            read = false;
-            return null;
-            //throw new NotSupportedException("不支持的数据类型");
         }
         protected virtual string ReadNextString()
         {
@@ -1405,32 +1126,32 @@ namespace EntryEngine.Serialize
     public class StringStreamReader
     {
         public string WHITE_SPACE = " \t\n\r";
-        public string WORD_BREAK;
+		public string WORD_BREAK;
 
         public string str;
-        protected int pos;
-        protected int len;
+		protected int pos;
+		protected int len;
 
-        public bool IsEnd
-        {
-            get { return pos >= len; }
-        }
-        public char PeekChar
-        {
-            get { return Peek(); }
-        }
-        public string PeekNextWord
-        {
-            get { return PeekNext(WORD_BREAK); }
-        }
-        public string PeekNextLine
-        {
-            get { return PeekNext("\n"); }
-        }
-        public string PeekNextEnd
-        {
-            get { return PeekNext(";"); }
-        }
+		public bool IsEnd
+		{
+			get { return pos >= len; }
+		}
+		public char PeekChar
+		{
+			get { return Peek(); }
+		}
+		public string PeekNextWord
+		{
+			get { return PeekNext(WORD_BREAK); }
+		}
+		public string PeekNextLine
+		{
+			get { return PeekNext("\n"); }
+		}
+		public string PeekNextEnd
+		{
+			get { return PeekNext(";"); }
+		}
         public string Tail
         {
             get { return str.Substring(pos); }
@@ -1450,10 +1171,9 @@ namespace EntryEngine.Serialize
         {
             SetContent(string.Empty, 0);
         }
-        public StringStreamReader(string content)
-            : this(content, 0)
-        {
-        }
+		public StringStreamReader(string content) : this(content, 0)
+		{
+		}
         public StringStreamReader(string content, int startIndex)
         {
             SetContent(content, startIndex);
@@ -1472,62 +1192,62 @@ namespace EntryEngine.Serialize
             this.pos = startIndex;
         }
         public char Peek()
-        {
-            return str[pos];
-        }
+		{
+			return str[pos];
+		}
         public char Read()
-        {
-            return str[pos++];
-        }
-        public string ReadLine()
-        {
+		{
+			return str[pos++];
+		}
+		public string ReadLine()
+		{
             return Next("\n");
-        }
+		}
         public string EatLine()
         {
             return Eat("\n");
         }
         public string Eat(string filter)
-        {
+		{
             //EatWhitespace();
-            int start = pos;
-            string next = Next(filter);
-            if (pos < len)
-                pos++;
-            return next;
-        }
+			int start = pos;
+			string next = Next(filter);
+			if (pos < len)
+				pos++;
+			return next;
+		}
         public string Next(string filter)
         {
             return Next(filter, true);
         }
         public string Next(string filter, bool eatWhitespace)
-        {
-            if (eatWhitespace)
-            {
-                if (WHITE_SPACE.Contains(filter))
-                    EatWhitespace(filter);
-                else
-                    EatWhitespace();
-            }
+		{
+			if (eatWhitespace)
+			{
+				if (WHITE_SPACE.Contains(filter))
+					EatWhitespace(filter);
+				else
+					EatWhitespace();
+			}
 
-            if (pos == len)
-                return null;
+			if (pos == len)
+				return null;
 
-            int start = pos;
-            while (pos < len && filter.IndexOf(PeekChar) == -1)
-                if (++pos == len)
-                    break;
+			int start = pos;
+			while (pos < len && filter.IndexOf(PeekChar) == -1)
+				if (++pos == len)
+					break;
 
-            return str.Substring(start, pos - start);
-        }
+			return str.Substring(start, pos - start);
+		}
         public string NextWord()
         {
             return Next(WORD_BREAK, true);
         }
         public string PeekNext(string filter)
-        {
+		{
             return PeekNext(filter, true);
-        }
+		}
         public string PeekNext(string filter, bool eatWhitespace)
         {
             int start = pos;
@@ -1540,15 +1260,15 @@ namespace EntryEngine.Serialize
             EatWhitespace(null);
         }
         public void EatWhitespace(string filter)
-        {
+		{
             if (IsEnd)
                 return;
-            if (filter == null)
-                filter = string.Empty;
+			if (filter == null)
+				filter = string.Empty;
             while (pos < len && !filter.Contains(PeekChar) && WHITE_SPACE.IndexOf(PeekChar) != -1)
-                if (++pos == len)
-                    break;
-        }
+				if (++pos == len)
+					break;
+		}
 
 
         public char GetChar(int pos)
