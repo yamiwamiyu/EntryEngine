@@ -2282,8 +2282,6 @@ namespace EntryEngine.Network
                 if (string.IsNullOrEmpty(download))
                     download = localPath + path;
                 _LOG.Debug("文件下载：{0}", download);
-                if (OnDownload != null)
-                    OnDownload(context);
                 if (!File.Exists(download))
                 {
                     response.StatusCode = 404;
