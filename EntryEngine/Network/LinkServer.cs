@@ -2182,7 +2182,7 @@ namespace EntryEngine.Network
         string localPath;
         int bigFileSize;
 
-        /// <summary>收到请求后，返回下载的完整路径，返回null则使用LocalPath进行下载</summary>
+        /// <summary>收到请求后，返回下载的完整路径，返回null则使用LocalPath进行下载，返回""则不下载</summary>
         public Func<HttpListenerContext, string> OnDownload;
 
         public bool UseCache
@@ -2254,10 +2254,10 @@ namespace EntryEngine.Network
         {
             return size >= bigFileSize;
         }
-        public void Start(ushort port)
+        public void Start(ushort port, string path)
         {
             listener = new HttpListener();
-            listener.Prefixes.Add(string.Format("http://*:{0}/", port));
+            listener.Prefixes.Add(string.Format("http://*:{0}/{1}", port, path));
             listener.Start();
             listener.BeginGetContext(Accept, listener);
             this.Port = port;
@@ -2279,7 +2279,9 @@ namespace EntryEngine.Network
                 string path = context.Request.Url.LocalPath.Substring(1);
                 if (OnDownload != null)
                     download = OnDownload(context);
-                if (string.IsNullOrEmpty(download))
+                if (download == string.Empty)
+                    return;
+                if (download == null)
                     download = localPath + path;
                 _LOG.Debug("文件下载：{0}", download);
                 if (!File.Exists(download))
@@ -2333,6 +2335,8 @@ namespace EntryEngine.Network
             catch (Exception ex)
             {
                 _LOG.Error(ex, "文件服务器错误");
+                if (response != null && response.StatusCode == 200)
+                    response.StatusCode = 500;
             }
             finally
             {
