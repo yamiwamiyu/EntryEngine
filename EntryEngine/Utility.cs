@@ -9,6 +9,39 @@ namespace EntryEngine
 {
     public static partial class Utility
     {
+        public static string ALPHABET = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
+        public static string NumberToCode(long value, int digit)
+        {
+            return NumberToCode(value, digit, (long)Math.Pow(ALPHABET.Length, digit + 1) >> 1);
+        }
+        public static string NumberToCode(long value, int digit, long start)
+        {
+            long v = value + start;
+            char[] chars = new char[digit];
+            int len = ALPHABET.Length;
+            for (int i = digit - 1; i >= 0; i--)
+            {
+                chars[i] = ALPHABET[(int)(v % len)];
+                v /= len;
+            }
+            return new string(chars);
+        }
+        public static long CodeToNumber(string code)
+        {
+            return CodeToNumber(code, (long)Math.Pow(ALPHABET.Length, code.Length + 1) >> 1);
+        }
+        public static long CodeToNumber(string code, long start)
+        {
+            long value = 0;
+            long len = 1;
+            for (int i = code.Length - 1; i >= 0; i--)
+            {
+                value += ALPHABET.IndexOf(code[i]) * len;
+                len *= ALPHABET.Length;
+            }
+            return value - start;
+        }
+
 		public static string BinaryToHex(byte[] binary)
 		{
 			if (binary == null)
