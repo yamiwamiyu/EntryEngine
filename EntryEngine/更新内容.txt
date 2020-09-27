@@ -1,4 +1,9 @@
-﻿2020/09/14
+﻿2020/09/27
+1. 修改ParticleEmitter不再作为TEXTURE
+2. 修改GameTime，提供任意时间更新，修改粒子编辑器暂停时的设置
+3. 修改ByteRefReader读取序列化时，优先检查读取引用对象
+
+2020/09/14
 1. JSON支持IDictionary序列化/反序列化
 
 2020/08/24

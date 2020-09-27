@@ -763,9 +763,8 @@ namespace EntryEngine
         }
         public void Update(float elapsed)
         {
-            if (elapsed != 0)
-                for (int i = 0; i < emitters.Count; i++)
-                    emitters[i].Update(elapsed);
+            for (int i = 0; i < emitters.Count; i++)
+                emitters[i].Update(elapsed);
             _updated = true;
             _elapsed += elapsed;
         }
@@ -802,9 +801,8 @@ namespace EntryEngine
         {
             var cache = new ParticleSystem();
             cache.Duration = this.Duration;
-            //cache.emitters = this.emitters;
             for (int i = 0; i < emitters.Count; i++)
-                cache.emitters.Add((ParticleEmitter)emitters[i].Cache());
+                cache.emitters.Add(emitters[i].Clone());
             cache._Key = this._Key;
             return cache;
         }
@@ -823,7 +821,7 @@ namespace EntryEngine
             this.Emitters = ps.Emitters;
         }
     }
-    [AReflexible]public class ParticleEmitter : TEXTURE, IUpdatable
+    public class ParticleEmitter : IUpdatable
     {
         private static Particle nullParticle = new Particle();
 
@@ -836,18 +834,6 @@ namespace EntryEngine
         public int Count
         {
             get { return particles.Count; }
-        }
-        public override int Width
-        {
-            get { return 1; }
-        }
-        public override int Height
-        {
-            get { return 1; }
-        }
-        public override bool IsDisposed
-        {
-            get { return particles == null; }
         }
 
         public Particle CreateParticle()
@@ -975,26 +961,26 @@ namespace EntryEngine
                 }
             });
         }
-        protected internal override bool Draw(GRAPHICS graphics, ref SpriteVertex vertex)
-        {
-            if (_updated != GameTime.Time.FrameID)
-            {
-                _updated = GameTime.Time.FrameID;
-                Update(GameTime.Time.ElapsedSecond);
-            }
+        //private bool Draw(GRAPHICS graphics, ref SpriteVertex vertex)
+        //{
+        //    if (_updated != GameTime.Time.FrameID)
+        //    {
+        //        _updated = GameTime.Time.FrameID;
+        //        Update(GameTime.Time.ElapsedSecond);
+        //    }
 
-            if (particles.Count > 0)
-            {
-                MATRIX2x3 matrix;
-                __GRAPHICS.DrawMatrix(ref vertex.Destination, ref vertex.Source, vertex.Rotation, ref vertex.Origin, vertex.Flip, out matrix);
-                graphics.BeginFromPrevious(matrix);
-                VECTOR2 apos = matrix.Translation;
-                Draw(graphics, apos);
-                graphics.End();
-            }
+        //    if (particles.Count > 0)
+        //    {
+        //        MATRIX2x3 matrix;
+        //        __GRAPHICS.DrawMatrix(ref vertex.Destination, ref vertex.Source, vertex.Rotation, ref vertex.Origin, vertex.Flip, out matrix);
+        //        graphics.BeginFromPrevious(matrix);
+        //        VECTOR2 apos = matrix.Translation;
+        //        Draw(graphics, apos);
+        //        graphics.End();
+        //    }
 
-            return true;
-        }
+        //    return true;
+        //}
         public void Reset()
         {
             _updated = 0;
@@ -1005,10 +991,9 @@ namespace EntryEngine
                         Flow[i].Reset();
         }
 
-        protected internal override Content Cache()
+        public ParticleEmitter Clone()
         {
             var cache = new ParticleEmitter();
-            cache._Key = this._Key;
             if (this.Flow != null)
             {
                 cache.Flow = new List<ParticleStream>();
@@ -1019,10 +1004,6 @@ namespace EntryEngine
                 }
             }
             return cache;
-        }
-        protected internal override void InternalDispose()
-        {
-            particles = null;
         }
     }
     public class PipelineParticle : ContentPipeline

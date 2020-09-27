@@ -2437,6 +2437,10 @@ namespace EntryEngine.Serialize
             {
                 if (PARENT.onDeserialize.Count > 0)
                 {
+                    object value;
+                    if (TryReadReference(out value))
+                        return value;
+
                     Func<ByteRefReader, object> _read = null;
                     for (int i = 0; i < PARENT.onDeserialize.Count; i++)
                     {
@@ -2517,6 +2521,21 @@ namespace EntryEngine.Serialize
                     }
                 }
                 //return InternalReadObject(type, null);
+            }
+            private bool TryReadReference(out object value)
+            {
+                value = null;
+                int peek = this.index;
+                if (peek + 4 > buffer.Length) return false;
+                int index;
+                Read(out index);
+                if (index >= 0)
+                {
+                    if (objs.TryGetValue(index, out value))
+                        return true;
+                }
+                this.index = peek;
+                return false;
             }
             private string ReadKey(out Type type)
             {

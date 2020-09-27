@@ -344,39 +344,50 @@ namespace EntryEngine
                 Time = this;
         }
 
-        public void Elapse()
-		{
+        /// <summary>保持上一帧的时间</summary>
+        public void Still()
+        {
+            Elapse(CurrentFrame);
+        }
+        /// <summary>指定时间经过一帧</summary>
+        /// <param name="now">当前帧的时间</param>
+        public void Elapse(DateTime now)
+        {
             FrameID++;
 
             PreviousFrame = CurrentFrame;
-			DateTime now = DateTime.Now;
-			TimeSpan elapsed = now - CurrentFrame;
+            TimeSpan elapsed = now - CurrentFrame;
 
-			this.ElapsedTime = elapsed;
-			this.Elapsed = (float)elapsed.TotalMilliseconds;
+            this.ElapsedTime = elapsed;
+            this.Elapsed = (float)elapsed.TotalMilliseconds;
             this.ElapsedSecond = (float)elapsed.TotalSeconds;
-			this.ElapsedRealTime = elapsed;
-			this.OpenedTotalTime += elapsed;
+            this.ElapsedRealTime = elapsed;
+            this.OpenedTotalTime += elapsed;
 
-			TimeSpan previous = CurrentFrame.TimeOfDay;
-			TimeSpan current = now.TimeOfDay;
-			TickSecond = (int)current.TotalSeconds != (int)previous.TotalSeconds;
-			Second = TickSecond ? current.Seconds : -1;
-			TickMinute = (int)current.TotalMinutes != (int)previous.TotalMinutes;
-			Minute = TickMinute ? current.Minutes : -1;
-			TickHour = (int)current.TotalHours != (int)previous.TotalHours;
-			Hour = TickHour ? current.Hours : -1;
+            TimeSpan previous = CurrentFrame.TimeOfDay;
+            TimeSpan current = now.TimeOfDay;
+            TickSecond = (int)current.TotalSeconds != (int)previous.TotalSeconds;
+            Second = TickSecond ? current.Seconds : -1;
+            TickMinute = (int)current.TotalMinutes != (int)previous.TotalMinutes;
+            Minute = TickMinute ? current.Minutes : -1;
+            TickHour = (int)current.TotalHours != (int)previous.TotalHours;
+            Hour = TickHour ? current.Hours : -1;
 
-			DateTime date = now.Date;
-			DateTime yesterday = CurrentFrame.Date;
-			TickDay = date != yesterday;
-			Day = TickDay ? date.Day : -1;
-			TickYear = TickDay && date.Year != yesterday.Year;
-			Year = TickYear ? date.Year : -1;
-			TickMonth = TickDay && (TickYear || date.Month != yesterday.Month);
-			Month = TickMonth ? date.Month : -1;
+            DateTime date = now.Date;
+            DateTime yesterday = CurrentFrame.Date;
+            TickDay = date != yesterday;
+            Day = TickDay ? date.Day : -1;
+            TickYear = TickDay && date.Year != yesterday.Year;
+            Year = TickYear ? date.Year : -1;
+            TickMonth = TickDay && (TickYear || date.Month != yesterday.Month);
+            Month = TickMonth ? date.Month : -1;
 
-			CurrentFrame = now;
+            CurrentFrame = now;
+        }
+        /// <summary>实时时间经过一帧</summary>
+        public void Elapse()
+		{
+            Elapse(DateTime.Now);
 		}
 	}
 

@@ -4191,8 +4191,8 @@ namespace EntryEngine
                 texture = value as TEXTURE;
                 if (texture == null)
                     return false;
-                if (value is ParticleEmitter || value is ParticleSystem)
-                    return false;
+                //if (value is ParticleEmitter || value is ParticleSystem)
+                //    return false;
             }
             else if (!type.Is(typeof(TEXTURE)))
                 return false;

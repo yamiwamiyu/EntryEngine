@@ -1245,7 +1245,9 @@ public partial class EditorParticle : SceneEditorEntry
                 ps.Reset();
         }
         else
-            ps.Update(0);
+        {
+            GameTime.Time.Still();
+        }
         TBTime.Text = GetTimeDisplay(ps.Elapsed);
 
         if (ps.Duration <= 0)
