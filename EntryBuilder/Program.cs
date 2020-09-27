@@ -2237,7 +2237,7 @@ namespace EntryBuilder
                             builder.AppendLine("if (req.status == 200)");
                             builder.AppendBlock(() =>
                             {
-                                builder.AppendLine("var obj = JSON.parse(req.responseText);");
+                                builder.AppendLine("var obj = req.responseText ? JSON.parse(req.responseText) : null;");
                                 builder.AppendLine("if (obj && obj.errCode)");
                                 builder.AppendBlock(() =>
                                 {
