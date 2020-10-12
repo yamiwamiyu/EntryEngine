@@ -2215,8 +2215,8 @@ namespace EntryBuilder
             protected override void WCCallProxy(StringBuilder builder, MethodInfo[] call, MethodInfo[] callback, Dictionary<int, Type> asyncCB)
             {
                 string name = type.Name + "Proxy";
-                //builder.AppendLine("const {0} = {{}};", name);
-                builder.AppendLine("var {0} = {{}};", name);
+                builder.AppendLine("const {0} = {{}};", name);
+                //builder.AppendLine("var {0} = {{}};", name);
                 builder.AppendLine("{0}.onSend = null;", name);
                 builder.AppendLine("{0}.onSendOnce = null;", name);
                 builder.AppendLine("{0}.onCallback = null;", name);
