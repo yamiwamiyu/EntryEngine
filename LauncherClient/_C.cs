@@ -11,6 +11,8 @@ using EntryEngine.Serialize;
     public static ushort Port;
     /// <summary>启动器客户端连接服务端的公钥</summary>
     public static string LauncherPublicKey;
+    /// <summary>服务名</summary>
+    public static string Name;
     
     public static Action OnSave;
     public static Action OnLoad;

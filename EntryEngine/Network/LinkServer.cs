@@ -943,7 +943,19 @@ namespace EntryEngine.Network
             if (handle == null)
                 handle = new HttpListener();
             if (handle.Prefixes.Count == 0)
-                handle.Prefixes.Add(string.Format("http://{0}:{1}/", address, port));
+            {
+                string uri;
+                if (address.AddressFamily == AddressFamily.InterNetwork &&
+                    (address == IPAddress.Any || address == IPAddress.Loopback))
+                    uri = "*";
+                else
+                    uri = address.ToString();
+
+                if (port == 80)
+                    handle.Prefixes.Add(string.Format("http://{0}/", uri));
+                else
+                    handle.Prefixes.Add(string.Format("http://{0}:{1}/", uri, port));
+            }
             handle.Start();
             handle.BeginGetContext(Accept, handle);
         }
@@ -1670,11 +1682,6 @@ namespace EntryEngine.Network
                 AddAgent(stub);
         }
 
-        public static void ResponseCrossDomainAndCharset(HttpListenerContext context)
-        {
-            context.Response.AppendHeader("Access-Control-Allow-Origin", "*");
-            context.Response.ContentType = "text/plain; charset=utf-8";
-        }
         public void AddAgent(StubHttp stub)
         {
             if (stub == null)
@@ -1748,12 +1755,25 @@ namespace EntryEngine.Network
                     throw new ArgumentException(string.Format("No agent! URL: {0}", protocol));
                 }
 
-                string stub = localPath.Substring(index2 + 1);
-                int paramIndex = stub.IndexOf('?');
-                if (paramIndex != -1)
-                    stub = stub.Substring(0, paramIndex);
+                Context.Response.AppendHeader("Access-Control-Allow-Origin", "*");
+                Context.Response.ContentType = "text/plain; charset=utf-8";
+                Context.Response.ContentEncoding = Encoding.UTF8;
+                if (Context.Request.HttpMethod.ToLower() == "options")
+                {
+                    var headers = Context.Request.Headers["Access-Control-Request-Headers"];
+                    if (!string.IsNullOrEmpty(headers))
+                        Context.Response.AddHeader("Access-Control-Allow-Headers", headers);
+                    Context.Response.Close();
+                }
+                else
+                {
+                    string stub = localPath.Substring(index2 + 1);
+                    int paramIndex = stub.IndexOf('?');
+                    if (paramIndex != -1)
+                        stub = stub.Substring(0, paramIndex);
 
-                agent[stub](Context);
+                    agent[stub](Context);
+                }
             }
             catch (HttpException ex)
             {
@@ -2586,20 +2606,7 @@ namespace EntryEngine.Network
             else
             {
                 Agent.Context = data;
-                data.Response.AppendHeader("Access-Control-Allow-Origin", "*");
-                data.Response.ContentType = "text/plain; charset=utf-8";
-                data.Response.ContentEncoding = Encoding.UTF8;
-                if (data.Request.HttpMethod.ToLower() == "options")
-                {
-                    var headers = data.Request.Headers["Access-Control-Request-Headers"];
-                    if (!string.IsNullOrEmpty(headers))
-                        data.Response.AddHeader("Access-Control-Allow-Headers", headers);
-                    data.Response.Close();
-                }
-                else
-                {
-                    Agent.OnProtocol(null);
-                }
+                Agent.OnProtocol(null);
             }
         }
         protected override void OnIdle()

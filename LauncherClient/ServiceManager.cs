@@ -179,6 +179,17 @@ namespace LauncherClient
             }
 
             var service = _SAVE.Services.FirstOrDefault(s => s.Name == name);
+            if (service == null)
+            {
+                _LOG.Warning("服务[{0}]不存在", name);
+                return;
+            }
+
+            if (string.IsNullOrEmpty(service.Exe))
+            {
+                _LOG.Warning("服务[{0}]不存在启动项", name);
+                return;
+            }
             
             LauncherCmdline launcher = new LauncherCmdline();
 

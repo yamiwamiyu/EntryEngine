@@ -9,6 +9,7 @@ using EntryEngine.Serialize;
 {
     public static string Name;
     public static ushort PortManager;
+    public static ushort PortManagerBS;
     public static ushort PortLauncher;
     /// <summary>连接服务端的公钥</summary>
     public static string PublicKey;

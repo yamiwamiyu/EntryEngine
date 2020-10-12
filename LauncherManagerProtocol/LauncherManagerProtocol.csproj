@@ -56,6 +56,7 @@
 copy $(TargetDir)\LauncherProtocolStructure.dll $(ProjectDir)..\EntryBuilder\bin\Debug\
 
 $(ProjectDir)..\EntryBuilder\bin\Debug\EntryBuilder.exe BuildProtocolAgentBinary $(ProjectDir)..\LauncherManager\ $(ProjectDir)..\LauncherServer\ $(TargetPath)\LauncherManagerProtocol.IManager
+$(ProjectDir)..\EntryBuilder\bin\Debug\EntryBuilder.exe BuildProtocolAgentHttp $(ProjectDir)..\LauncherManager\ $(ProjectDir)..\LauncherServer\ $(TargetPath)\LauncherManagerProtocol.IMBS 1
 
 del $(ProjectDir)..\EntryBuilder\bin\Debug\LauncherProtocolStructure.dll
 

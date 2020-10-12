@@ -109,4 +109,45 @@ namespace LauncherManagerProtocol
         public DateTime Time;
         public string[] Param;
     }
+
+
+    [ProtocolStub(192, null)]
+    public interface IMBS
+    {
+        /// <summary>连接服务器</summary>
+        /// <param name="username">账号</param>
+        /// <param name="password">密码</param>
+        /// <param name="callback">Token</param>
+        void Connect(string username, string password, Action<string> callback);
+
+        /// <summary>开设新服务类型，例如游戏服务器，跨服服务器等</summary>
+        void ModifyServiceType(ServiceType type, Action<bool> callback);
+        void DeleteServiceType(string name, Action<bool> callback);
+        void GetServiceType(Action<List<ServiceType>> callback);
+
+        void GetServers(Action<List<Server>> callback);
+        void UpdateServer(Action<bool> callback);
+
+        /// <summary>启用一个服务，例如启用游戏1服，游戏2服</summary>
+        /// <param name="serverID">要启用服务的服务器ID</param>
+        /// <param name="serviceType">服务类型</param>
+        /// <param name="name">启用服务的名称，例如S1，S2</param>
+        void NewService(ushort serverID, string serviceType, string name, string command, Action<bool> callback);
+        /// <summary>设置服务的启动命令</summary>
+        /// <param name="serviceName">一个平台服务唯一名称</param>
+        /// <param name="command">命令和参数间用空格隔开，不同命令间用换行隔开</param>
+        void SetServiceLaunchCommand(string[] serviceNames, string command, Action<bool> callback);
+        void CallCommand(string[] serviceNames, string command, Action<bool> callback);
+        void DeleteService(string[] serviceNames, Action<bool> callback);
+        void LaunchService(string[] serviceNames, Action<bool> callback);
+        void UpdateService(string[] serviceNames, Action<bool> callback);
+        void StopService(string[] serviceNames, Action<bool> callback);
+
+        void NewManager(Manager manager, Action<bool> callback);
+        void DeleteManager(string name, Action<bool> callback);
+        void GetManagers(Action<List<Manager>> callback);
+
+        void GetLog(string name, DateTime? start, DateTime? end, byte pageCount, int page, string content, string param, byte[] levels, Action<PagedModel<LogRecord>> callback);
+        void GroupLog(string name, DateTime? start, DateTime? end, string content, string param, byte[] levels, Action<List<LogRecord>> callback);
+    }
 }

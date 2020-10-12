@@ -47,13 +47,14 @@
     <Compile Include="ILauncherServiceStub.cs" />
     <Compile Include="IManagerCallProxy.cs" />
     <Compile Include="IManagerStub.cs" />
+    <Compile Include="IMBSStub.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Server.cs" />
     <Compile Include="ServiceManager.cs" />
     <Compile Include="ServiceLauncher.cs" />
+    <Compile Include="ServiceManagerBS.cs" />
     <Compile Include="_C.cs" />
-    <Compile Include="_DATA.cs" />
     <Compile Include="_SAVE.cs" />
   </ItemGroup>
   <ItemGroup>
@@ -85,7 +86,7 @@
   <PropertyGroup>
     <PreBuildEvent>IF $(ConfigurationName) == Debug GOTO end
 
-$(ProjectDir)..\..\EntryBuilder.exe BuildConstantTable $(ProjectDir)_C.xlsx $(TargetDir)_C.xml $(ProjectDir)_C.cs false 12.0
+$(ProjectDir)..\EntryBuilder\bin\Debug\EntryBuilder.exe BuildConstantTable $(ProjectDir)_C.xlsx $(TargetDir)_C.xml $(ProjectDir)_C.cs false 12.0
 
 :end</PreBuildEvent>
   </PropertyGroup>

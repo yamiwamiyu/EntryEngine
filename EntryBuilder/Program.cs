@@ -1720,7 +1720,7 @@ namespace EntryBuilder
                         if (output)
                         {
                             // 有返回类型则在Stub里自动回调
-                            builder.Append("{0} {1}(", item.ReturnType.CodeName(false), item.Name);
+                            builder.Append("{0} {1}(", item.ReturnType.CodeName(), item.Name);
                             builder.AppendMethodParametersOnly(item);
                             builder.AppendLine(");");
                         }
@@ -1753,7 +1753,7 @@ namespace EntryBuilder
                                     }
                                     else
                                     {
-                                        builder.Append("{0} {1}", parameter.ParameterType.CodeName(false), parameter.Name);
+                                        builder.Append("{0} {1}", parameter.ParameterType.CodeName(), parameter.Name);
                                     }
 
                                     if (i != n)
@@ -2215,8 +2215,8 @@ namespace EntryBuilder
             protected override void WCCallProxy(StringBuilder builder, MethodInfo[] call, MethodInfo[] callback, Dictionary<int, Type> asyncCB)
             {
                 string name = type.Name + "Proxy";
-                builder.AppendLine("const {0} = {{}};", name);
-                builder.AppendLine("export {{{0}}}", name);
+                //builder.AppendLine("const {0} = {{}};", name);
+                builder.AppendLine("var {0} = {{}};", name);
                 builder.AppendLine("{0}.onSend = null;", name);
                 builder.AppendLine("{0}.onSendOnce = null;", name);
                 builder.AppendLine("{0}.onCallback = null;", name);

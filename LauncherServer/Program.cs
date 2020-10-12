@@ -40,12 +40,16 @@ namespace LauncherServer
             var managerProxy = new ServiceManager();
             managerProxy.Initialize(_C.PortManager);
 
+            var managerBS = new ServiceManagerBS();
+            managerBS.Initialize(_C.PortManagerBS);
+
             var launcherProxy = new ServiceLauncher();
             launcherProxy.Initialize(_C.PortLauncher);
 
             EntryLinkServer server = new EntryLinkServer();
             server.AddProxy(managerProxy);
             server.AddProxy(launcherProxy);
+            server.AddProxy(managerBS);
 
             using (CmdlineGate main = new CmdlineGate())
             {
