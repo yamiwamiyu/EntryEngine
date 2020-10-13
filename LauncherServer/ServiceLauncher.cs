@@ -40,9 +40,10 @@ namespace LauncherServer
                 }
 
                 ByteReader reader = new ByteReader(data);
-                string ip, sign;
+                string ip, sign, name;
                 reader.Read(out ip);
                 reader.Read(out sign);
+                reader.Read(out name);
 
                 string remote = link.EndPoint.Address.ToString();
                 //if (ip != remote
@@ -62,6 +63,7 @@ namespace LauncherServer
                 }
 
                 SERVER server = SERVER.CreateServer(link, link.EndPoint.ToString(), ServiceManager.Instance);
+                server.ServerData.NickName = name;
 
                 ByteWriter writer = new ByteWriter();
                 // 写入分配给服务器的唯一ID

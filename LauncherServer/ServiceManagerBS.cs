@@ -18,7 +18,7 @@ namespace LauncherServer
         public DateTime TokenExpireTime;
         public Manager Manager;
 
-        public bool TokenIsExpired { get { return TokenExpireTime >= DateTime.Now; } }
+        public bool TokenIsExpired { get { return TokenExpireTime < DateTime.Now; } }
 
         public void ResetToken()
         {
@@ -46,9 +46,9 @@ namespace LauncherServer
                 {
                     if (c.Request.Url.LocalPath != "/192/Connect")
                     {
-                        string token = c.Request.Headers["AccessToken"];
-                        Check(string.IsNullOrEmpty(token), "请先登录");
-                        Check(_manager.Manager == null || _manager.Token != token || _manager.TokenIsExpired, "请先登录");
+                        //string token = c.Request.Headers["AccessToken"];
+                        //Check(string.IsNullOrEmpty(token), "请先登录");
+                        //Check(_manager.Manager == null || _manager.Token != token || _manager.TokenIsExpired, "请先登录");
                         _manager.ResetTokenExpireTime();
                     }
                     return null;

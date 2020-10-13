@@ -147,6 +147,7 @@ namespace LauncherClient
                             ip = "127.0.0.1";
                         writer.Write(ip);
                         writer.Write(_NETWORK.ValidMD5toBase64(ip + _C.LauncherPublicKey));
+                        writer.Write(_C.Name);
                         Link.Write(writer.Buffer, 0, writer.Position);
                         Link.Flush();
 
