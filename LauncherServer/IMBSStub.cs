@@ -31,11 +31,13 @@ interface _IMBS
 }
 public class CBIMBS_Connect : IDisposable
 {
+    internal HttpListenerContext __context { get; private set; }
     internal StubHttp __link { get; private set; }
     internal bool IsCallback { get; private set; }
     public CBIMBS_Connect(StubHttp link)
     {
         this.__link = link;
+        this.__context = link.Context;
     }
     public void Callback(string obj) // INDEX = 0
     {
@@ -44,7 +46,7 @@ public class CBIMBS_Connect : IDisposable
         #if DEBUG
         _LOG.Debug("CBIMBS_Connect {0}", __ret);
         #endif
-        __link.Response(__ret);
+        __link.Response(__context, __ret);
         IsCallback = true;
     }
     public void Error(int ret, string msg)
@@ -54,7 +56,7 @@ public class CBIMBS_Connect : IDisposable
         #if DEBUG
         _LOG.Debug("CBIMBS_Connect Error ret={0} msg={1}", ret, msg);
         #endif
-        __link.Response(__ret);
+        __link.Response(__context, __ret);
         IsCallback = true;
     }
     public void Dispose()
@@ -64,11 +66,13 @@ public class CBIMBS_Connect : IDisposable
 }
 public class CBIMBS_ModifyServiceType : IDisposable
 {
+    internal HttpListenerContext __context { get; private set; }
     internal StubHttp __link { get; private set; }
     internal bool IsCallback { get; private set; }
     public CBIMBS_ModifyServiceType(StubHttp link)
     {
         this.__link = link;
+        this.__context = link.Context;
     }
     public void Callback(bool obj) // INDEX = 1
     {
@@ -77,7 +81,7 @@ public class CBIMBS_ModifyServiceType : IDisposable
         #if DEBUG
         _LOG.Debug("CBIMBS_ModifyServiceType {0}", __ret);
         #endif
-        __link.Response(__ret);
+        __link.Response(__context, __ret);
         IsCallback = true;
     }
     public void Error(int ret, string msg)
@@ -87,7 +91,7 @@ public class CBIMBS_ModifyServiceType : IDisposable
         #if DEBUG
         _LOG.Debug("CBIMBS_ModifyServiceType Error ret={0} msg={1}", ret, msg);
         #endif
-        __link.Response(__ret);
+        __link.Response(__context, __ret);
         IsCallback = true;
     }
     public void Dispose()
@@ -97,11 +101,13 @@ public class CBIMBS_ModifyServiceType : IDisposable
 }
 public class CBIMBS_DeleteServiceType : IDisposable
 {
+    internal HttpListenerContext __context { get; private set; }
     internal StubHttp __link { get; private set; }
     internal bool IsCallback { get; private set; }
     public CBIMBS_DeleteServiceType(StubHttp link)
     {
         this.__link = link;
+        this.__context = link.Context;
     }
     public void Callback(bool obj) // INDEX = 2
     {
@@ -110,7 +116,7 @@ public class CBIMBS_DeleteServiceType : IDisposable
         #if DEBUG
         _LOG.Debug("CBIMBS_DeleteServiceType {0}", __ret);
         #endif
-        __link.Response(__ret);
+        __link.Response(__context, __ret);
         IsCallback = true;
     }
     public void Error(int ret, string msg)
@@ -120,7 +126,7 @@ public class CBIMBS_DeleteServiceType : IDisposable
         #if DEBUG
         _LOG.Debug("CBIMBS_DeleteServiceType Error ret={0} msg={1}", ret, msg);
         #endif
-        __link.Response(__ret);
+        __link.Response(__context, __ret);
         IsCallback = true;
     }
     public void Dispose()
@@ -130,11 +136,13 @@ public class CBIMBS_DeleteServiceType : IDisposable
 }
 public class CBIMBS_GetServiceType : IDisposable
 {
+    internal HttpListenerContext __context { get; private set; }
     internal StubHttp __link { get; private set; }
     internal bool IsCallback { get; private set; }
     public CBIMBS_GetServiceType(StubHttp link)
     {
         this.__link = link;
+        this.__context = link.Context;
     }
     public void Callback(System.Collections.Generic.List<LauncherProtocolStructure.ServiceType> obj) // INDEX = 3
     {
@@ -143,7 +151,7 @@ public class CBIMBS_GetServiceType : IDisposable
         #if DEBUG
         _LOG.Debug("CBIMBS_GetServiceType {0}", __ret);
         #endif
-        __link.Response(__ret);
+        __link.Response(__context, __ret);
         IsCallback = true;
     }
     public void Error(int ret, string msg)
@@ -153,7 +161,7 @@ public class CBIMBS_GetServiceType : IDisposable
         #if DEBUG
         _LOG.Debug("CBIMBS_GetServiceType Error ret={0} msg={1}", ret, msg);
         #endif
-        __link.Response(__ret);
+        __link.Response(__context, __ret);
         IsCallback = true;
     }
     public void Dispose()
@@ -163,11 +171,13 @@ public class CBIMBS_GetServiceType : IDisposable
 }
 public class CBIMBS_GetServers : IDisposable
 {
+    internal HttpListenerContext __context { get; private set; }
     internal StubHttp __link { get; private set; }
     internal bool IsCallback { get; private set; }
     public CBIMBS_GetServers(StubHttp link)
     {
         this.__link = link;
+        this.__context = link.Context;
     }
     public void Callback(System.Collections.Generic.List<LauncherProtocolStructure.Server> obj) // INDEX = 4
     {
@@ -176,7 +186,7 @@ public class CBIMBS_GetServers : IDisposable
         #if DEBUG
         _LOG.Debug("CBIMBS_GetServers {0}", __ret);
         #endif
-        __link.Response(__ret);
+        __link.Response(__context, __ret);
         IsCallback = true;
     }
     public void Error(int ret, string msg)
@@ -186,7 +196,7 @@ public class CBIMBS_GetServers : IDisposable
         #if DEBUG
         _LOG.Debug("CBIMBS_GetServers Error ret={0} msg={1}", ret, msg);
         #endif
-        __link.Response(__ret);
+        __link.Response(__context, __ret);
         IsCallback = true;
     }
     public void Dispose()
@@ -196,11 +206,13 @@ public class CBIMBS_GetServers : IDisposable
 }
 public class CBIMBS_UpdateServer : IDisposable
 {
+    internal HttpListenerContext __context { get; private set; }
     internal StubHttp __link { get; private set; }
     internal bool IsCallback { get; private set; }
     public CBIMBS_UpdateServer(StubHttp link)
     {
         this.__link = link;
+        this.__context = link.Context;
     }
     public void Callback(bool obj) // INDEX = 5
     {
@@ -209,7 +221,7 @@ public class CBIMBS_UpdateServer : IDisposable
         #if DEBUG
         _LOG.Debug("CBIMBS_UpdateServer {0}", __ret);
         #endif
-        __link.Response(__ret);
+        __link.Response(__context, __ret);
         IsCallback = true;
     }
     public void Error(int ret, string msg)
@@ -219,7 +231,7 @@ public class CBIMBS_UpdateServer : IDisposable
         #if DEBUG
         _LOG.Debug("CBIMBS_UpdateServer Error ret={0} msg={1}", ret, msg);
         #endif
-        __link.Response(__ret);
+        __link.Response(__context, __ret);
         IsCallback = true;
     }
     public void Dispose()
@@ -229,11 +241,13 @@ public class CBIMBS_UpdateServer : IDisposable
 }
 public class CBIMBS_NewService : IDisposable
 {
+    internal HttpListenerContext __context { get; private set; }
     internal StubHttp __link { get; private set; }
     internal bool IsCallback { get; private set; }
     public CBIMBS_NewService(StubHttp link)
     {
         this.__link = link;
+        this.__context = link.Context;
     }
     public void Callback(bool obj) // INDEX = 6
     {
@@ -242,7 +256,7 @@ public class CBIMBS_NewService : IDisposable
         #if DEBUG
         _LOG.Debug("CBIMBS_NewService {0}", __ret);
         #endif
-        __link.Response(__ret);
+        __link.Response(__context, __ret);
         IsCallback = true;
     }
     public void Error(int ret, string msg)
@@ -252,7 +266,7 @@ public class CBIMBS_NewService : IDisposable
         #if DEBUG
         _LOG.Debug("CBIMBS_NewService Error ret={0} msg={1}", ret, msg);
         #endif
-        __link.Response(__ret);
+        __link.Response(__context, __ret);
         IsCallback = true;
     }
     public void Dispose()
@@ -262,11 +276,13 @@ public class CBIMBS_NewService : IDisposable
 }
 public class CBIMBS_SetServiceLaunchCommand : IDisposable
 {
+    internal HttpListenerContext __context { get; private set; }
     internal StubHttp __link { get; private set; }
     internal bool IsCallback { get; private set; }
     public CBIMBS_SetServiceLaunchCommand(StubHttp link)
     {
         this.__link = link;
+        this.__context = link.Context;
     }
     public void Callback(bool obj) // INDEX = 7
     {
@@ -275,7 +291,7 @@ public class CBIMBS_SetServiceLaunchCommand : IDisposable
         #if DEBUG
         _LOG.Debug("CBIMBS_SetServiceLaunchCommand {0}", __ret);
         #endif
-        __link.Response(__ret);
+        __link.Response(__context, __ret);
         IsCallback = true;
     }
     public void Error(int ret, string msg)
@@ -285,7 +301,7 @@ public class CBIMBS_SetServiceLaunchCommand : IDisposable
         #if DEBUG
         _LOG.Debug("CBIMBS_SetServiceLaunchCommand Error ret={0} msg={1}", ret, msg);
         #endif
-        __link.Response(__ret);
+        __link.Response(__context, __ret);
         IsCallback = true;
     }
     public void Dispose()
@@ -295,11 +311,13 @@ public class CBIMBS_SetServiceLaunchCommand : IDisposable
 }
 public class CBIMBS_CallCommand : IDisposable
 {
+    internal HttpListenerContext __context { get; private set; }
     internal StubHttp __link { get; private set; }
     internal bool IsCallback { get; private set; }
     public CBIMBS_CallCommand(StubHttp link)
     {
         this.__link = link;
+        this.__context = link.Context;
     }
     public void Callback(bool obj) // INDEX = 8
     {
@@ -308,7 +326,7 @@ public class CBIMBS_CallCommand : IDisposable
         #if DEBUG
         _LOG.Debug("CBIMBS_CallCommand {0}", __ret);
         #endif
-        __link.Response(__ret);
+        __link.Response(__context, __ret);
         IsCallback = true;
     }
     public void Error(int ret, string msg)
@@ -318,7 +336,7 @@ public class CBIMBS_CallCommand : IDisposable
         #if DEBUG
         _LOG.Debug("CBIMBS_CallCommand Error ret={0} msg={1}", ret, msg);
         #endif
-        __link.Response(__ret);
+        __link.Response(__context, __ret);
         IsCallback = true;
     }
     public void Dispose()
@@ -328,11 +346,13 @@ public class CBIMBS_CallCommand : IDisposable
 }
 public class CBIMBS_DeleteService : IDisposable
 {
+    internal HttpListenerContext __context { get; private set; }
     internal StubHttp __link { get; private set; }
     internal bool IsCallback { get; private set; }
     public CBIMBS_DeleteService(StubHttp link)
     {
         this.__link = link;
+        this.__context = link.Context;
     }
     public void Callback(bool obj) // INDEX = 9
     {
@@ -341,7 +361,7 @@ public class CBIMBS_DeleteService : IDisposable
         #if DEBUG
         _LOG.Debug("CBIMBS_DeleteService {0}", __ret);
         #endif
-        __link.Response(__ret);
+        __link.Response(__context, __ret);
         IsCallback = true;
     }
     public void Error(int ret, string msg)
@@ -351,7 +371,7 @@ public class CBIMBS_DeleteService : IDisposable
         #if DEBUG
         _LOG.Debug("CBIMBS_DeleteService Error ret={0} msg={1}", ret, msg);
         #endif
-        __link.Response(__ret);
+        __link.Response(__context, __ret);
         IsCallback = true;
     }
     public void Dispose()
@@ -361,11 +381,13 @@ public class CBIMBS_DeleteService : IDisposable
 }
 public class CBIMBS_LaunchService : IDisposable
 {
+    internal HttpListenerContext __context { get; private set; }
     internal StubHttp __link { get; private set; }
     internal bool IsCallback { get; private set; }
     public CBIMBS_LaunchService(StubHttp link)
     {
         this.__link = link;
+        this.__context = link.Context;
     }
     public void Callback(bool obj) // INDEX = 10
     {
@@ -374,7 +396,7 @@ public class CBIMBS_LaunchService : IDisposable
         #if DEBUG
         _LOG.Debug("CBIMBS_LaunchService {0}", __ret);
         #endif
-        __link.Response(__ret);
+        __link.Response(__context, __ret);
         IsCallback = true;
     }
     public void Error(int ret, string msg)
@@ -384,7 +406,7 @@ public class CBIMBS_LaunchService : IDisposable
         #if DEBUG
         _LOG.Debug("CBIMBS_LaunchService Error ret={0} msg={1}", ret, msg);
         #endif
-        __link.Response(__ret);
+        __link.Response(__context, __ret);
         IsCallback = true;
     }
     public void Dispose()
@@ -394,11 +416,13 @@ public class CBIMBS_LaunchService : IDisposable
 }
 public class CBIMBS_UpdateService : IDisposable
 {
+    internal HttpListenerContext __context { get; private set; }
     internal StubHttp __link { get; private set; }
     internal bool IsCallback { get; private set; }
     public CBIMBS_UpdateService(StubHttp link)
     {
         this.__link = link;
+        this.__context = link.Context;
     }
     public void Callback(bool obj) // INDEX = 11
     {
@@ -407,7 +431,7 @@ public class CBIMBS_UpdateService : IDisposable
         #if DEBUG
         _LOG.Debug("CBIMBS_UpdateService {0}", __ret);
         #endif
-        __link.Response(__ret);
+        __link.Response(__context, __ret);
         IsCallback = true;
     }
     public void Error(int ret, string msg)
@@ -417,7 +441,7 @@ public class CBIMBS_UpdateService : IDisposable
         #if DEBUG
         _LOG.Debug("CBIMBS_UpdateService Error ret={0} msg={1}", ret, msg);
         #endif
-        __link.Response(__ret);
+        __link.Response(__context, __ret);
         IsCallback = true;
     }
     public void Dispose()
@@ -427,11 +451,13 @@ public class CBIMBS_UpdateService : IDisposable
 }
 public class CBIMBS_StopService : IDisposable
 {
+    internal HttpListenerContext __context { get; private set; }
     internal StubHttp __link { get; private set; }
     internal bool IsCallback { get; private set; }
     public CBIMBS_StopService(StubHttp link)
     {
         this.__link = link;
+        this.__context = link.Context;
     }
     public void Callback(bool obj) // INDEX = 12
     {
@@ -440,7 +466,7 @@ public class CBIMBS_StopService : IDisposable
         #if DEBUG
         _LOG.Debug("CBIMBS_StopService {0}", __ret);
         #endif
-        __link.Response(__ret);
+        __link.Response(__context, __ret);
         IsCallback = true;
     }
     public void Error(int ret, string msg)
@@ -450,7 +476,7 @@ public class CBIMBS_StopService : IDisposable
         #if DEBUG
         _LOG.Debug("CBIMBS_StopService Error ret={0} msg={1}", ret, msg);
         #endif
-        __link.Response(__ret);
+        __link.Response(__context, __ret);
         IsCallback = true;
     }
     public void Dispose()
@@ -460,11 +486,13 @@ public class CBIMBS_StopService : IDisposable
 }
 public class CBIMBS_NewManager : IDisposable
 {
+    internal HttpListenerContext __context { get; private set; }
     internal StubHttp __link { get; private set; }
     internal bool IsCallback { get; private set; }
     public CBIMBS_NewManager(StubHttp link)
     {
         this.__link = link;
+        this.__context = link.Context;
     }
     public void Callback(bool obj) // INDEX = 13
     {
@@ -473,7 +501,7 @@ public class CBIMBS_NewManager : IDisposable
         #if DEBUG
         _LOG.Debug("CBIMBS_NewManager {0}", __ret);
         #endif
-        __link.Response(__ret);
+        __link.Response(__context, __ret);
         IsCallback = true;
     }
     public void Error(int ret, string msg)
@@ -483,7 +511,7 @@ public class CBIMBS_NewManager : IDisposable
         #if DEBUG
         _LOG.Debug("CBIMBS_NewManager Error ret={0} msg={1}", ret, msg);
         #endif
-        __link.Response(__ret);
+        __link.Response(__context, __ret);
         IsCallback = true;
     }
     public void Dispose()
@@ -493,11 +521,13 @@ public class CBIMBS_NewManager : IDisposable
 }
 public class CBIMBS_DeleteManager : IDisposable
 {
+    internal HttpListenerContext __context { get; private set; }
     internal StubHttp __link { get; private set; }
     internal bool IsCallback { get; private set; }
     public CBIMBS_DeleteManager(StubHttp link)
     {
         this.__link = link;
+        this.__context = link.Context;
     }
     public void Callback(bool obj) // INDEX = 14
     {
@@ -506,7 +536,7 @@ public class CBIMBS_DeleteManager : IDisposable
         #if DEBUG
         _LOG.Debug("CBIMBS_DeleteManager {0}", __ret);
         #endif
-        __link.Response(__ret);
+        __link.Response(__context, __ret);
         IsCallback = true;
     }
     public void Error(int ret, string msg)
@@ -516,7 +546,7 @@ public class CBIMBS_DeleteManager : IDisposable
         #if DEBUG
         _LOG.Debug("CBIMBS_DeleteManager Error ret={0} msg={1}", ret, msg);
         #endif
-        __link.Response(__ret);
+        __link.Response(__context, __ret);
         IsCallback = true;
     }
     public void Dispose()
@@ -526,11 +556,13 @@ public class CBIMBS_DeleteManager : IDisposable
 }
 public class CBIMBS_GetManagers : IDisposable
 {
+    internal HttpListenerContext __context { get; private set; }
     internal StubHttp __link { get; private set; }
     internal bool IsCallback { get; private set; }
     public CBIMBS_GetManagers(StubHttp link)
     {
         this.__link = link;
+        this.__context = link.Context;
     }
     public void Callback(System.Collections.Generic.List<LauncherManagerProtocol.Manager> obj) // INDEX = 15
     {
@@ -539,7 +571,7 @@ public class CBIMBS_GetManagers : IDisposable
         #if DEBUG
         _LOG.Debug("CBIMBS_GetManagers {0}", __ret);
         #endif
-        __link.Response(__ret);
+        __link.Response(__context, __ret);
         IsCallback = true;
     }
     public void Error(int ret, string msg)
@@ -549,7 +581,7 @@ public class CBIMBS_GetManagers : IDisposable
         #if DEBUG
         _LOG.Debug("CBIMBS_GetManagers Error ret={0} msg={1}", ret, msg);
         #endif
-        __link.Response(__ret);
+        __link.Response(__context, __ret);
         IsCallback = true;
     }
     public void Dispose()
@@ -559,11 +591,13 @@ public class CBIMBS_GetManagers : IDisposable
 }
 public class CBIMBS_GetLog : IDisposable
 {
+    internal HttpListenerContext __context { get; private set; }
     internal StubHttp __link { get; private set; }
     internal bool IsCallback { get; private set; }
     public CBIMBS_GetLog(StubHttp link)
     {
         this.__link = link;
+        this.__context = link.Context;
     }
     public void Callback(EntryEngine.Network.PagedModel<LauncherManagerProtocol.LogRecord> obj) // INDEX = 16
     {
@@ -572,7 +606,7 @@ public class CBIMBS_GetLog : IDisposable
         #if DEBUG
         _LOG.Debug("CBIMBS_GetLog {0}", __ret);
         #endif
-        __link.Response(__ret);
+        __link.Response(__context, __ret);
         IsCallback = true;
     }
     public void Error(int ret, string msg)
@@ -582,7 +616,7 @@ public class CBIMBS_GetLog : IDisposable
         #if DEBUG
         _LOG.Debug("CBIMBS_GetLog Error ret={0} msg={1}", ret, msg);
         #endif
-        __link.Response(__ret);
+        __link.Response(__context, __ret);
         IsCallback = true;
     }
     public void Dispose()
@@ -592,11 +626,13 @@ public class CBIMBS_GetLog : IDisposable
 }
 public class CBIMBS_GroupLog : IDisposable
 {
+    internal HttpListenerContext __context { get; private set; }
     internal StubHttp __link { get; private set; }
     internal bool IsCallback { get; private set; }
     public CBIMBS_GroupLog(StubHttp link)
     {
         this.__link = link;
+        this.__context = link.Context;
     }
     public void Callback(System.Collections.Generic.List<LauncherManagerProtocol.LogRecord> obj) // INDEX = 17
     {
@@ -605,7 +641,7 @@ public class CBIMBS_GroupLog : IDisposable
         #if DEBUG
         _LOG.Debug("CBIMBS_GroupLog {0}", __ret);
         #endif
-        __link.Response(__ret);
+        __link.Response(__context, __ret);
         IsCallback = true;
     }
     public void Error(int ret, string msg)
@@ -615,7 +651,7 @@ public class CBIMBS_GroupLog : IDisposable
         #if DEBUG
         _LOG.Debug("CBIMBS_GroupLog Error ret={0} msg={1}", ret, msg);
         #endif
-        __link.Response(__ret);
+        __link.Response(__context, __ret);
         IsCallback = true;
     }
     public void Dispose()

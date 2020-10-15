@@ -46,9 +46,10 @@ namespace LauncherServer
                 {
                     if (c.Request.Url.LocalPath != "/192/Connect")
                     {
-                        //string token = c.Request.Headers["AccessToken"];
-                        //Check(string.IsNullOrEmpty(token), "请先登录");
-                        //Check(_manager.Manager == null || _manager.Token != token || _manager.TokenIsExpired, "请先登录");
+                        string token = c.Request.Headers["AccessToken"];
+                        if (string.IsNullOrEmpty(token)
+                            || _manager.Manager == null || _manager.Token != token || _manager.TokenIsExpired)
+                            throw new HttpException(403, "请先登录");
                         _manager.ResetTokenExpireTime();
                     }
                     return null;
@@ -279,8 +280,8 @@ namespace LauncherServer
             {
                 Service service;
                 SERVER server = SERVER.GetServer(serviceName, out service);
-                if (server == null || service == null) continue;
-                if (service.Status != EServiceStatus.Stop) continue;
+                //if (server == null || service == null) continue;
+                Check(server == null || service == null, "未找到服务器和指定服务");
 
                 server.Proxy.Update(serviceName, (revision) =>
                 {

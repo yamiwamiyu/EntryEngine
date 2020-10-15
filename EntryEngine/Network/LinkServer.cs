@@ -587,16 +587,19 @@ namespace EntryEngine.Network
                     IPAddress address = endPoint.Address;
 
                     // 封禁IP不能登录
-                    AcceptBlock block;
+                    AcceptBlock block = null;
                     foreach (var item in blockIP)
                     {
                         if (item.Block.Permit(endPoint))
                         {
                             _LOG.Warning("封禁的IP {0} 尝试访问!", address);
+                            block = item;
                             client.Close();
-                            continue;
+                            break;
                         }
                     }
+                    if (block != null)
+                        continue;
 
                     // 记录每秒登录次数，若过于频繁则不允许登录甚至封禁
                     {
@@ -2181,6 +2184,31 @@ namespace EntryEngine.Network
                     _LOG.Warning("请求已关闭");
                 }
             }
+        }
+        public void Response(HttpListenerContext context, object obj)
+        {
+            Response(context, JsonWriter.Serialize(obj));
+        }
+        public void Response(HttpListenerContext context, string text)
+        {
+            if (context.Response.ContentEncoding == null)
+            {
+                context.Response.ContentEncoding = context.Request.ContentEncoding;
+                if (context.Response.ContentEncoding == null)
+                    context.Response.ContentEncoding = Encoding.UTF8;
+            }
+            Response(context, context.Response.ContentEncoding.GetBytes(text));
+        }
+        public void Response(HttpListenerContext context, byte[] buffer)
+        {
+            Response(context, buffer, 0, buffer.Length);
+        }
+        public void Response(HttpListenerContext context, byte[] buffer, int offset, int count)
+        {
+            if (context == Context)
+                Response(buffer, offset, count);
+            else
+                context.Response.OutputStream.BeginWrite(buffer, offset, count, EndResponse, context);
         }
     }
     public class HttpError

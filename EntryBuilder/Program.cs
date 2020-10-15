@@ -1784,6 +1784,7 @@ namespace EntryBuilder
                     builder.AppendLine("public class {0} : IDisposable", name);
                     builder.AppendBlock(() =>
                     {
+                        builder.AppendLine("internal HttpListenerContext __context { get; private set; }");
                         builder.AppendLine("internal StubHttp __link { get; private set; }");
                         //builder.AppendLine("\tinternal int? Delay;");
                         builder.AppendLine("internal bool IsCallback { get; private set; }");
@@ -1791,6 +1792,7 @@ namespace EntryBuilder
                         builder.AppendBlock(() =>
                         {
                             builder.AppendLine("this.__link = link;");
+                            builder.AppendLine("this.__context = link.Context;");
                         });
 
                         // 回调方法头
@@ -1820,7 +1822,7 @@ namespace EntryBuilder
                             builder.AppendLine("_LOG.Debug(\"{0} {{0}}\", __ret);", name);
                             builder.AppendLine("#endif");
                             // 回调
-                            builder.AppendLine("__link.Response(__ret);");
+                            builder.AppendLine("__link.Response(__context, __ret);");
                             builder.AppendLine("IsCallback = true;");
                         });
 
@@ -1836,7 +1838,7 @@ namespace EntryBuilder
                             builder.AppendLine("_LOG.Debug(\"{0} Error ret={{0}} msg={{1}}\", ret, msg);", name);
                             builder.AppendLine("#endif");
                             // 回调
-                            builder.AppendLine("__link.Response(__ret);");
+                            builder.AppendLine("__link.Response(__context, __ret);");
                             builder.AppendLine("IsCallback = true;");
                         });
 
