@@ -40,10 +40,11 @@ namespace LauncherServer
                 }
 
                 ByteReader reader = new ByteReader(data);
-                string ip, sign, name;
+                string ip, sign, name = null;
                 reader.Read(out ip);
                 reader.Read(out sign);
-                reader.Read(out name);
+                if (!reader.IsEnd)
+                    reader.Read(out name);
 
                 string remote = link.EndPoint.Address.ToString();
                 //if (ip != remote

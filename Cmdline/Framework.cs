@@ -81,11 +81,11 @@ namespace EntryEngine.Cmdline
 
         public void Launch(string exe)
         {
-            Launch(exe, null);
+            Launch(exe, null, null, (string[])null);
         }
         public void Launch(string exe, string args)
         {
-            Launch(exe, args, null);
+            Launch(exe, args, null, (string[])null);
         }
         public void Launch(string exe, string args, string directory)
         {
@@ -93,7 +93,8 @@ namespace EntryEngine.Cmdline
         }
         public void Launch(string exe, string args, string directory, string cmdline)
         {
-            Launch(exe, args, directory, cmdline.Split(SEPERATOR, StringSplitOptions.RemoveEmptyEntries));
+            Launch(exe, args, directory, 
+                cmdline == null ? null : cmdline.Split(SEPERATOR, StringSplitOptions.RemoveEmptyEntries));
         }
         public void Launch(string exe, string args, string directory, string[] cmdlines)
         {
@@ -245,8 +246,17 @@ namespace EntryEngine.Cmdline
         {
             ConsoleLog += this.OnLog;
             Launched += this.OnLaunch;
+            Exit += OnExit;
         }
 
+        private void OnExit(object sender, EventArgs e)
+        {
+            Process process = sender as Process;
+            if (process != null)
+                _LOG.Info("进程[{0}]关闭！ExitCode:{1}", Name, process.ExitCode);
+            else
+                _LOG.Info("进程[{0}]关闭！{1}", sender);
+        }
         private void OnLaunch(Process process)
         {
             Stream stream = new FileStream(Path.Combine(Process.StartInfo.WorkingDirectory, Name + ".txt"), FileMode.Create, FileAccess.Write);
