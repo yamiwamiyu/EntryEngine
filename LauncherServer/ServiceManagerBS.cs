@@ -343,7 +343,14 @@ namespace LauncherServer
             Check(log == null, "未找到服务器的日志");
 
             int count;
-            var storages = log.ReadLog(start, end, pageCount, page, content, param, out count, levels);
+            var storages = log.ReadLog(start, end, pageCount, page == -1 ? 0 : page, content, param, out count, levels);
+            if (page == -1)
+            {
+                page = (count - 1) / pageCount - 1;
+                if (page < 0)
+                    page = 0;
+                storages = log.ReadLog(start, end, pageCount, page, content, param, out count, levels);
+            }
 
             PagedModel<LogRecord> result = new PagedModel<LogRecord>();
             result.Count = count;
@@ -363,11 +370,16 @@ namespace LauncherServer
             Check(log == null, "未找到服务器的日志");
 
             var storages = log.ReadLogGroup(start, end, content, param, levels);
-            callback.Callback(storages.Select(s => new LogRecord()
+            PagedModel<LogRecord> result = new PagedModel<LogRecord>();
+            result.Page = 0;
+            result.Count = storages.Length;
+            result.PageSize = result.Count;
+            result.Models = storages.Select(s => new LogRecord()
                 {
                     Count = s.SameContent.Count,
                     Record = s.Record,
-                }).ToList());
+                }).ToList();
+            callback.Callback(result);
         }
     }
 }

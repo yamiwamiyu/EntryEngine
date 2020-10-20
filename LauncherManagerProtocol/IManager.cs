@@ -148,6 +148,6 @@ namespace LauncherManagerProtocol
         void GetManagers(Action<List<Manager>> callback);
 
         void GetLog(string name, DateTime? start, DateTime? end, byte pageCount, int page, string content, string param, byte[] levels, Action<PagedModel<LogRecord>> callback);
-        void GroupLog(string name, DateTime? start, DateTime? end, string content, string param, byte[] levels, Action<List<LogRecord>> callback);
+        void GroupLog(string name, DateTime? start, DateTime? end, string content, string param, byte[] levels, Action<PagedModel<LogRecord>> callback);
     }
 }

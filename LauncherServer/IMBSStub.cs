@@ -634,7 +634,7 @@ public class CBIMBS_GroupLog : IDisposable
         this.__link = link;
         this.__context = link.Context;
     }
-    public void Callback(System.Collections.Generic.List<LauncherManagerProtocol.LogRecord> obj) // INDEX = 17
+    public void Callback(EntryEngine.Network.PagedModel<LauncherManagerProtocol.LogRecord> obj) // INDEX = 17
     {
         if (IsCallback) return;
         string __ret = JsonWriter.Serialize(obj);
