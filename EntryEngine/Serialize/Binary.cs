@@ -1295,7 +1295,7 @@ namespace EntryEngine.Serialize
                 throw new ArgumentNullException();
             ByteWriter writer = new ByteWriter();
             writer.Setting = setting;
-            writer.WriteObject(value);
+            writer.WriteObject(value, type);
             return writer.GetBuffer();
         }
     }
