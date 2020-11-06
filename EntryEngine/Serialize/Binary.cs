@@ -480,6 +480,9 @@ namespace EntryEngine.Serialize
                             Write((byte)2);
                             //Write(value.GetType().AssemblyQualifiedName);
                             Write(type.SimpleAQName());
+                            // object类型的基本数据
+                            if (WriteSupportiveType(type, value))
+                                return;
                         }
                         else
                         {
@@ -1489,7 +1492,14 @@ namespace EntryEngine.Serialize
                                 Read(out typeName);
                                 Type _type = _SERIALIZE.LoadSimpleAQName(typeName);
                                 if (_type != null)
+                                {
                                     type = _type;
+                                    supportive = Array.IndexOf(SupportiveTypes, type);
+                                    if (supportive != -1)
+                                    {
+                                        return ReadSupportiveType(supportive);
+                                    }
+                                }
                             }
                         }
                         object value;
