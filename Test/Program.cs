@@ -6,35 +6,53 @@ using EntryEngine.Xna;
 using EntryEngine.UI;
 using EntryEngine;
 using Spine;
+using EntryEngine.Network;
+using System.IO;
+using EntryEngine.Serialize;
+using System.Threading;
+using System.Drawing;
+using System.Drawing.Imaging;
+using System.Diagnostics;
+using System.Runtime.InteropServices;
 
 namespace Test
 {
     class TestScene : UIScene
     {
-        SPINE spine;
-
         protected override IEnumerable<ICoroutine> Loading()
         {
-            spine = Content.Load<SPINE>(@"C:\Yamiwamiyu\Project\2DActionGame\trunk\Graphics\pgy（二进制）无非必要数据\pugongying.spine");
-            spine.Animation.SetAnimation(0, "2.run", true);
-
             return base.Loading();
-        }
-
-        protected override void InternalDraw(GRAPHICS spriteBatch, Entry e)
-        {
-            base.InternalDraw(spriteBatch, e);
-
-            spine.Update(e.GameTime);
-            //spriteBatch.Draw(PATCH._PATCH, new RECT(0, 0, 500, 500));
-            spriteBatch.Draw(spine, new VECTOR2(800, 450));
         }
     }
 
     class Program
     {
+        public int A { get; set; }
+        public int B
+        {
+            get { return 0; }
+            set
+            {
+            }
+        }
         static void Main(string[] args)
         {
+            var pp = typeof(Program).GetProperties();
+
+            SerializeSetting.DefaultSetting = new SerializeSetting()
+                {
+                    Filter = new SerializeValidatorReadonly(),
+                    Property = true,
+                };
+            string text = JsonWriter.Serialize(new
+                {
+                    key1 = "value1",
+                    key2 = 5,
+                    key3 = new VECTOR2(),
+                });
+            Console.WriteLine(text);
+            Console.ReadKey();
+
             using (XnaGate gate = new XnaGate())
             {
                 gate.OnInitialized += (e) =>

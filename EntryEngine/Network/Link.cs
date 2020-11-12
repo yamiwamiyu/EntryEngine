@@ -14,7 +14,7 @@ namespace EntryEngine.Network
     // socket
     public class LinkSocket : LinkBinary, IConnector
     {
-        protected internal Socket Socket
+        public Socket Socket
         {
             get;
             private set;

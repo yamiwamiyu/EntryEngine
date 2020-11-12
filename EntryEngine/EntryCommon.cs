@@ -2264,6 +2264,686 @@ namespace EntryEngine
                     yield return item;
         }
     }
+    /// <summary>平衡二叉树</summary>
+    public abstract class AVLTreeBase<T> : ICollection<T>
+    {
+        protected class AVLTreeVisitor
+        {
+            /// <summary>Find时经过的路径，可以节约AVLTreeNode.Parent的内存</summary>
+            public AVLTreeNode[] Path = new AVLTreeNode[32];
+            /// <summary>路径长度</summary>
+            public int Length;
+            /// <summary>0. 找到了目标 / -1. 最后往左没找到目标 / 1. 最后往右没找到目标</summary>
+            public sbyte Flag;
+            public bool Found { get { return Flag == 0 && Length > 0; } }
+            public AVLTreeNode this[int index]
+            {
+                get
+                {
+                    if (index < 0 || index >= Length)
+                        return null;
+                    return Path[index];
+                }
+            }
+            /// <summary>寻找到的目标</summary>
+            public AVLTreeNode Target
+            {
+                get
+                {
+                    if (Length == 0)
+                        return null;
+                    return Path[Length - 1];
+                }
+            }
+            public bool IsLeft(int index)
+            {
+                return Path[index - 1].Left == Path[index];
+            }
+            public AVLTreeVisitor SetResult(sbyte flag)
+            {
+                this.Flag = flag;
+                return this;
+            }
+        }
+        public class AVLTreeNode
+        {
+            public byte Height;
+            public AVLTreeNode Left;
+            public AVLTreeNode Right;
+            public T Value;
+            public int BalanceFactor
+            {
+                get
+                {
+                    int l = Left == null ? -1 : Left.Height;
+                    int r = Right == null ? -1 : Right.Height;
+                    return l - r;
+                }
+            }
+            public void ResetHeight()
+            {
+                int l = Left == null ? -1 : Left.Height;
+                int r = Right == null ? -1 : Right.Height;
+                Height = (byte)((l > r ? l : r) + 1);
+            }
+            public void CopyTo(AVLTreeNode node)
+            {
+                node.Height = this.Height;
+                node.Left = this.Left;
+                node.Right = this.Right;
+                node.Value = this.Value;
+            }
+            public override string ToString()
+            {
+                return Value == null ? "null" : Value.ToString();
+            }
+        }
+        // 可扩展多个相同的值，此时可以是HashSet，List，或其它
+        public class AVLTreeNodeList : AVLTreeNode
+        {
+            /// <summary>相同键的元素</summary>
+            public ICollection<T> Same;
+        }
+
+        private int count;
+        protected AVLTreeNode root;
+        private AVLTreeVisitor visitor = new AVLTreeVisitor();
+
+        public AVLTreeNode Root { get { return root; } }
+        public int Count { get { return count; } }
+        public int Height { get { return root == null ? -1 : root.Height; } }
+        public bool IsReadOnly { get { return false; } }
+
+        public abstract int Compare(T x, T y);
+        /// <summary>查找元素</summary>
+        /// <param name="item">要查找的目标</param>
+        /// <returns>查找结果</returns>
+        private AVLTreeVisitor Find(T item)
+        {
+            visitor.Flag = 0;
+            visitor.Length = 0;
+
+            if (root == null)
+                return visitor;
+
+            AVLTreeNode node = root;
+            int c;
+            while (true)
+            {
+                visitor.Path[visitor.Length++] = node;
+                c = Compare(item, node.Value);
+                if (c == 0)
+                    return visitor.SetResult(0);
+                else if (c > 0)
+                    // 向右没找到
+                    if (node.Right == null) return visitor.SetResult(1);
+                    else node = node.Right;
+                else
+                    // 向左没找到
+                    if (node.Left == null) return visitor.SetResult(-1);
+                    else node = node.Left;
+            }
+        }
+        protected virtual AVLTreeNode CreateNode()
+        {
+            return new AVLTreeNode();
+        }
+        public bool Contains(T item)
+        {
+            return Find(item).Found;
+        }
+        /// <summary>将已经升序排好序的对象快速插入以构建树</summary>
+        public void SetSortedValuesASC(IList<T> list)
+        {
+            throw new NotImplementedException();
+        }
+        /// <summary>将已经降序排好序的对象快速插入以构建树</summary>
+        public void SetSortedValuesDESC(IList<T> list)
+        {
+            throw new NotImplementedException();
+        }
+        public void Add(T item)
+        {
+            Insert(item);
+        }
+        /// <summary>可以添加重复键的节点</summary>
+        /// <param name="item">item算出来的键一样，值不一样则插入，否则将调用Update</param>
+        public bool Insert(T item)
+        {
+            if (root == null)
+            {
+                root = CreateNode();
+                root.Value = item;
+            }
+            else
+            {
+                var find = Find(item);
+                var node = find.Target;
+                if (find.Found)
+                {
+                    // 找到了，替换 | 插入
+                    var ret = FindInsert(item, node);
+                    if (ret != node)
+                    {
+                        // 更换节点
+                        var parent = find[find.Length - 2];
+                        if (parent == null)
+                            root = ret;
+                        else
+                            if (parent.Left == node)
+                                parent.Left = ret;
+                            else
+                                parent.Right = ret;
+                    }
+                }
+                else
+                {
+                    bool noUncleFlag;
+                    AVLTreeNode newNode = CreateNode();
+                    newNode.Value = item;
+                    visitor.Path[visitor.Length++] = newNode;
+                    // 插入时一定是往叶子节点插入，所以高度一定是1
+                    node.Height = 1;
+                    if (find.Flag > 0)
+                    {
+                        node.Right = newNode;
+                        noUncleFlag = node.Left == null;
+                    }
+                    else
+                    {
+                        node.Left = newNode;
+                        noUncleFlag = node.Right == null;
+                    }
+
+                    // 有叔叔节点时一定平衡
+                    if (noUncleFlag && find.Length > 2)
+                    {
+                        AVLTreeNode child, parent, gparent;
+                        int index = find.Length - 1;
+                        child = find[index--];
+                        parent = find[index--];
+                        gparent = find[index];
+                        // 重算高度 & 找到失衡节点 & 单次旋转平衡
+                        byte height = parent.Height;
+                        int b;
+                        do
+                        {
+                            gparent.Height = ++height;
+                            b = gparent.BalanceFactor;
+                            // 找到失衡节点
+                            if (b == -2 || b == 2)
+                            {
+                                // 旋转平衡
+                                ToBalance(child, parent, gparent, find[index - 1]);
+                                break;
+                            }
+                            child = parent;
+                            parent = gparent;
+                            gparent = find[--index];
+                        } while (gparent != null);
+                    }
+                }
+            }
+            count++;
+            return true;
+        }
+        /// <summary>通过旋转让树保持平衡</summary>
+        /// <param name="gparent">失衡节点</param>
+        private void ToBalance(AVLTreeNode child, AVLTreeNode parent, AVLTreeNode gparent, AVLTreeNode ggparent)
+        {
+            // 左右
+            if (parent.Right == child && gparent.Left == parent)
+            {
+                gparent.Left = child;
+                parent.Right = child.Left;
+                child.Left = parent;
+
+                byte temp = parent.Height;
+                parent.Height = child.Height;
+                child.Height = temp;
+
+                RotateRight(gparent, ggparent);
+            }
+            // 右左
+            else if (parent.Left == child && gparent.Right == parent)
+            {
+                gparent.Right = child;
+                parent.Left = child.Right;
+                child.Right = parent;
+
+                byte temp = parent.Height;
+                parent.Height = child.Height;
+                child.Height = temp;
+
+                RotateLeft(gparent, ggparent);
+            }
+            // 左左
+            else if (parent.Left == child && gparent.Left == parent)
+                RotateRight(gparent, ggparent);
+            // 右右
+            else
+                RotateLeft(gparent, ggparent);
+        }
+        private void RotateLeft(AVLTreeNode rotation, AVLTreeNode parent)
+        {
+            //rotation.Height -= 2;
+            var right = rotation.Right;
+            if (parent != null)
+                if (parent.Left == rotation)
+                    parent.Left = right;
+                else
+                    parent.Right = right;
+            rotation.Right = right.Left;
+            right.Left = rotation;
+            rotation.ResetHeight();
+            right.ResetHeight();
+            if (parent != null)
+                parent.ResetHeight();
+            if (rotation == root)
+                root = right;
+        }
+        private void RotateRight(AVLTreeNode rotation, AVLTreeNode parent)
+        {
+            //rotation.Height -= 2;
+            var left = rotation.Left;
+            if (parent != null)
+                if (parent.Left == rotation)
+                    parent.Left = left;
+                else
+                    parent.Right = left;
+            rotation.Left = left.Right;
+            left.Right = rotation;
+            rotation.ResetHeight();
+            left.ResetHeight();
+            if (parent != null)
+                parent.ResetHeight();
+            if (rotation == root)
+                root = left;
+        }
+        /// <summary>插入时找到了相应的节点，默认替换节点</summary>
+        /// <param name="item">要插入的键</param>
+        /// <param name="node">找到的节点</param>
+        protected virtual AVLTreeNode FindInsert(T item, AVLTreeNode node)
+        {
+            node.Value = item;
+            return node;
+        }
+        /// <summary>更新节点的键，请求重新排序</summary>
+        public void Update(T item)
+        {
+            if (Remove(item))
+                Add(item);
+        }
+        public bool Remove(T item)
+        {
+            if (root == null) return false;
+            var find = Find(item);
+            if (find.Found)
+            {
+                if (DeleteNode(find))
+                {
+                    int index = find.Length;
+                    AVLTreeNode node;
+                    // 删除使原本就是短边的树枝变得更加短导致不平衡，相当于另一边树枝插入导致不平衡
+                    // 对另一边树枝使用插入相同的算法来维持树平衡
+                    // 旋转保持平衡后，可能引起树枝高度变短，从而再次引起不平衡，所以需要一致回溯到根节点，进行多次旋转
+                    int b;
+                    // 变短需要一直回溯向上更新节点高度
+                    while (index > 0)
+                    {
+                        // 向上回溯 & 更新高度
+                        index--;
+                        node = find.Path[index];
+                        node.ResetHeight();
+                        b = node.BalanceFactor;
+                        if (b == -2)
+                        {
+                            // 左边矮，相当于右边插入，向右寻找旋转方案
+                            var parent = node.Right;
+                            var child = parent.BalanceFactor > 0 ? parent.Left : parent.Right;
+                            // 旋转
+                            ToBalance(child, parent, node, find[index - 1]);
+                        }
+                        else if (b == 2)
+                        {
+                            // 右边矮，相当于左边插入，向左寻找旋转方案
+                            var parent = node.Left;
+                            var child = parent.BalanceFactor < 0 ? parent.Right : parent.Left;
+                            // 旋转
+                            ToBalance(child, parent, node, find[index - 1]);
+                        }
+                    }
+                }
+                return true;
+            }
+            return false;
+        }
+        /// <summary>
+        /// 删除节点，有些情况不需要通过旋转来保持树平衡
+        /// <para>不需要平衡</para>
+        /// <para>1. 对于同值单一节点</para>
+        /// <para>2. 删除节点的左右树枝平衡（非叶子节点），即删除完后，无论左还是右代替其原位置，整棵树高度不变</para>
+        /// <para>需要平衡</para>
+        /// <para>1. 短边删除，导致父级直接失衡</para>
+        /// <para>2. 长边删除，父级虽然平衡，但整条边可能变短，引起上层的不平衡</para>
+        /// </summary>
+        /// <returns>是否需要通过旋转保持平衡</returns>
+        protected virtual bool DeleteNode(AVLTreeVisitor visitor)
+        {
+            count--;
+            if (count == 0)
+            {
+                root = null;
+                return false;
+            }
+            else
+            {
+                // 获得要删除的节点，并从路径中移除
+                int index = visitor.Length - 1;
+                var node = visitor.Path[index];
+                var parent = visitor[index - 1];
+
+                // 删除非叶子节点且左右平衡的树，替换节点后高度不变，整棵树任然平衡
+                bool balance = node.Left != null && node.Right != null && node.Left.Height == node.Right.Height;
+
+                // 删除节点有左节点时，把左节点中最大的节点替换原节点
+                // 删除节点只有右节点时，直接把右节点替换原节点
+                if (node.Left != null)
+                {
+                    // 找到左节点中最大的节点
+                    var max = node.Left;
+                    while (true)
+                    {
+                        if (max.Right == null)
+                        {
+                            // 替换到被删除节点额为止
+                            visitor.Path[index] = max;
+                            break;
+                        }
+                        else
+                            visitor.Path[visitor.Length++] = max;
+                        max = max.Right;
+                    }
+                    // 替换到原节点
+                    if (parent == null)
+                        root = max;
+                    else if (parent.Left == node)
+                        parent.Left = max;
+                    else
+                        parent.Right = max;
+                    // 最大节点被移走，将其父节点的右节点指向其左节点
+                    var maxParent = visitor[visitor.Length - 1];
+                    if (maxParent != null)
+                        maxParent.Right = max.Left;
+                    max.Left = node.Left;
+                    max.Right = node.Right;
+                    // 更新父节点高度
+                    //int l = visitor.Length - 1;
+                    //while (l >= 0 && visitor.Path[l] != parent)
+                    //    visitor.Path[l--].ResetHeight();
+                }
+                else
+                {
+                    // 替换到原节点
+                    if (parent == null)
+                        root = node.Right;
+                    else if (parent.Left == node)
+                        parent.Left = node.Right;
+                    else
+                        parent.Right = node.Right;
+                }
+
+                if (count < 3) return false;
+                return !balance;
+            }
+        }
+        public void Clear()
+        {
+            root = null;
+            count = 0;
+        }
+        public void CopyTo(T[] array, int arrayIndex)
+        {
+            if (arrayIndex + count >= array.Length)
+                throw new IndexOutOfRangeException();
+
+            foreach (var item in LeftToRight())
+                array[arrayIndex++] = item;
+        }
+        public IEnumerator<T> GetEnumerator()
+        {
+            return LeftToRight().GetEnumerator();
+        }
+        public IEnumerable<T> GetOrderBy(bool asc)
+        {
+            if (asc)
+                return LeftToRight();
+            else
+                return RightToLeft();
+        }
+        public IEnumerable<T> LeftToRight()
+        {
+            return LeftToRight(root);
+        }
+        public IEnumerable<T> RightToLeft()
+        {
+            return RightToLeft(root);
+        }
+        private IEnumerable<T> Empty()
+        {
+            yield break;
+        }
+        public IEnumerable<T> SmallerThan(T item, bool equals, bool asc)
+        {
+            var find = Find(item);
+            var node = find.Target;
+            if (node == null) return Empty();
+            if (equals)
+                return Left(node, asc);
+            else
+                return Left(node.Left, asc);
+        }
+        public IEnumerable<T> BiggerThan(T item, bool equals, bool asc)
+        {
+            var find = Find(item);
+            var node = find.Target;
+            if (node == null) return Empty();
+            if (equals)
+                if (asc)
+                    return LeftToRight(node);
+                else
+                    return RightToLeft(node);
+            else
+                if (asc)
+                    return LeftToRight(node.Left);
+                else
+                    return RightToLeft(node.Left);
+        }
+        private IEnumerable<T> LeftToRight(AVLTreeNode node)
+        {
+            if (node == null) yield break;
+            if (node.Left != null)
+                foreach (var item in LeftToRight(node.Left))
+                    yield return item;
+            yield return node.Value;
+            if (node.Right != null)
+                foreach (var item in LeftToRight(node.Right))
+                    yield return item;
+        }
+        private IEnumerable<T> RightToLeft(AVLTreeNode node)
+        {
+            if (node.Left != null)
+                foreach (var item in LeftToRight(node.Left))
+                    yield return item;
+            yield return node.Value;
+            if (node.Right != null)
+                foreach (var item in LeftToRight(node.Right))
+                    yield return item;
+        }
+        private IEnumerable<T> Left(AVLTreeNode node, bool asc)
+        {
+            if (node == null) yield break;
+            if (asc)
+            {
+                int height = node.Height;
+                AVLTreeNode[] path = new AVLTreeNode[height + 1];
+                path[0] = node;
+                for (int i = 1; i <= height; i++)
+                {
+                    node = node.Left;
+                    if (node != null)
+                        path[i] = node;
+                    else
+                        break;
+                }
+                if (path[height] == null)
+                    height--;
+                for (int i = height; i >= 0; i--)
+                    yield return path[i].Value;
+            }
+            else
+            {
+                while (node != null)
+                {
+                    yield return node.Value;
+                    node = node.Left;
+                }
+            }
+        }
+        private IEnumerable<T> Right(AVLTreeNode node, bool asc)
+        {
+            if (node == null) yield break;
+            if (asc)
+            {
+                while (node != null)
+                {
+                    yield return node.Value;
+                    node = node.Right;
+                }
+            }
+            else
+            {
+                int height = node.Height;
+                AVLTreeNode[] path = new AVLTreeNode[height + 1];
+                path[0] = node;
+                for (int i = 1; i <= height; i++)
+                {
+                    node = node.Right;
+                    if (node != null)
+                        path[i] = node;
+                    else
+                        break;
+                }
+                if (path[height] == null)
+                    height--;
+                for (int i = height; i >= 0; i--)
+                    yield return path[i].Value;
+            }
+        }
+        IEnumerator IEnumerable.GetEnumerator()
+        {
+            return this.GetEnumerator();
+        }
+
+        //public void Draw(string output)
+        //{
+        //    int depth = Height + 1;
+        //    int w = (int)Math.Pow(2, depth);
+        //    int height = 50;
+        //    int y = 10;
+        //    using (Bitmap bitmap = new Bitmap(w * height, depth * height + y * 2))
+        //    {
+        //        using (Graphics g = Graphics.FromImage(bitmap))
+        //        {
+        //            Font font = new Font("黑体", 12);
+
+        //            Action<int, int, int, AVLTreeNode> draw = null;
+        //            draw = (_x, _y, _w, node) =>
+        //            {
+        //                if (node == null) return;
+        //                if (node.Left != null)
+        //                    g.DrawLine(Pens.Red, _x, _y, _x - (_w >> 1), _y + height);
+        //                if (node.Right != null)
+        //                    g.DrawLine(Pens.Red, _x, _y, _x + (_w >> 1), _y + height);
+        //                int __x = _x - (height >> 1);
+        //                int __y = _y - (height >> 1);
+        //                g.FillEllipse(Brushes.Black, __x, __y, height, height);
+        //                string text = node == null ? "Null" : node.ToString();
+        //                var size = g.MeasureString(text, font);
+        //                g.DrawString(text, font, Brushes.White,
+        //                    _x - ((int)size.Width >> 1),
+        //                    _y - ((int)size.Height >> 1));
+        //                g.DrawString(node.Height.ToString(), font, Brushes.Red, _x, _y);
+
+        //                draw(_x - (_w >> 1), _y + height, _w >> 1, node.Left);
+        //                draw(_x + (_w >> 1), _y + height, _w >> 1, node.Right);
+        //            };
+
+        //            draw((bitmap.Width >> 1), y + (height >> 1), (bitmap.Width >> 1), root);
+        //        }
+        //        bitmap.Save(output);
+        //    }
+        //}
+    }
+    public class AVLTreeSimple<T> : AVLTreeBase<T> where T : IComparable<T>
+    {
+        public override int Compare(T x, T y)
+        {
+            return x.CompareTo(y);
+        }
+    }
+    public class AVLTree<T> : AVLTreeBase<T> where T : class
+    {
+        private Comparison<T> comparer;
+        private Func<ICollection<T>> sameElementList;
+
+        public AVLTree() : this(Comparer<T>.Default.Compare) { }
+        public AVLTree(Func<T, int> comparer) : this((x, y) => comparer(x) - comparer(y)) { }
+        public AVLTree(IComparer<T> comparer) : this(comparer.Compare) { }
+        public AVLTree(Comparison<T> comparer)
+        {
+            if (comparer == null)
+                throw new ArgumentNullException("比较器不能为空");
+            this.comparer = comparer;
+        }
+
+        public override int Compare(T x, T y)
+        {
+            if (x == y) return 0;
+            return comparer(x, y);
+        }
+        /// <summary>相同键的元素将用集合来存储，这里指定使用哪种集合类（只能指定一次）</summary>
+        /// <param name="func">返回集合的新实例</param>
+        public void SetSameElementList(Func<ICollection<T>> func)
+        {
+            if (sameElementList != null)
+                throw new InvalidOperationException("不能重复指定集合类型");
+            this.sameElementList = func;
+        }
+        protected override AVLTreeNode FindInsert(T item, AVLTreeNode node)
+        {
+            if (sameElementList == null || node.Value == null)
+            {
+                node.Value = item;
+                return node;
+            }
+            else
+            {
+                AVLTreeNodeList list = node as AVLTreeNodeList;
+                if (node == null)
+                {
+                    node.CopyTo(list);
+                    list.Same = sameElementList();
+                }
+                list.Same.Add(item);
+                return list;
+            }
+        }
+        protected override bool DeleteNode(AVLTreeBase<T>.AVLTreeVisitor visitor)
+        {
+            return base.DeleteNode(visitor);
+        }
+    }
 
 
     // 协程

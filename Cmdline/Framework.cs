@@ -643,7 +643,7 @@ namespace EntryEngine.Cmdline
                     _si = search.EndTime;
                 }
                 else
-                    storages = new List<Storage>(count);
+                    storages = new List<Storage>(256);
                 //_si = Math.Min(_si + pageCount * page * 16, _ei - pageCount * 16);
                 _time.Seek(_si, SeekOrigin.Begin);
                 while (_time.Position <= _ei)

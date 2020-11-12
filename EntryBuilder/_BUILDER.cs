@@ -5,6 +5,7 @@ using System.Text;
 using EntryEngine.Serialize;
 using System.Reflection;
 using EntryEngine;
+using System.Drawing;
 
 namespace EntryBuilder
 {
@@ -203,6 +204,46 @@ namespace EntryBuilder
             if (method.HasReturnType())
                 builder.Append("return ");
             AppendMethodInvoke(builder, (MethodBase)method, instance, methodName, startParam, endParam);
+        }
+
+        public static void Draw<T>(this AVLTreeBase<T> tree, string output)
+        {
+            int depth = tree.Height + 1;
+            int w = (int)Math.Pow(2, depth);
+            int height = 50;
+            int y = 10;
+            using (Bitmap bitmap = new Bitmap(w * height, depth * height + y * 2))
+            {
+                using (Graphics g = Graphics.FromImage(bitmap))
+                {
+                    Font font = new Font("黑体", 12);
+
+                    Action<int, int, int, AVLTreeBase<T>.AVLTreeNode> draw = null;
+                    draw = (_x, _y, _w, node) =>
+                    {
+                        if (node == null) return;
+                        if (node.Left != null)
+                            g.DrawLine(Pens.Red, _x, _y, _x - (_w >> 1), _y + height);
+                        if (node.Right != null)
+                            g.DrawLine(Pens.Red, _x, _y, _x + (_w >> 1), _y + height);
+                        int __x = _x - (height >> 1);
+                        int __y = _y - (height >> 1);
+                        g.FillEllipse(Brushes.Black, __x, __y, height, height);
+                        string text = node == null ? "Null" : node.ToString();
+                        var size = g.MeasureString(text, font);
+                        g.DrawString(text, font, Brushes.White,
+                            _x - ((int)size.Width >> 1),
+                            _y - ((int)size.Height >> 1));
+                        g.DrawString(node.Height.ToString(), font, Brushes.Red, _x, _y);
+
+                        draw(_x - (_w >> 1), _y + height, _w >> 1, node.Left);
+                        draw(_x + (_w >> 1), _y + height, _w >> 1, node.Right);
+                    };
+
+                    draw((bitmap.Width >> 1), y + (height >> 1), (bitmap.Width >> 1), tree.Root);
+                }
+                bitmap.Save(output);
+            }
         }
     }
 
