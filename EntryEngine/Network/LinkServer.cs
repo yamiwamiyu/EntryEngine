@@ -2390,8 +2390,14 @@ namespace EntryEngine.Network
             {
                 if (response != null)
                 {
-                    response.OutputStream.Close();
-                    response.Close();
+                    try
+                    {
+                        response.OutputStream.Close();
+                        response.Close();
+                    }
+                    catch
+                    {
+                    }
                 }
                 response = null;
             }
