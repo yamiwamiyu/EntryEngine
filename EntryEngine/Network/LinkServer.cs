@@ -2173,16 +2173,16 @@ namespace EntryEngine.Network
         private void EndResponse(IAsyncResult ar)
         {
             var context = (HttpListenerContext)ar.AsyncState;
-            using (context.Response)
+            try
             {
-                try
+                using (context.Response)
                 {
                     context.Response.OutputStream.EndWrite(ar);
                 }
-                catch
-                {
-                    _LOG.Warning("请求已关闭");
-                }
+            }
+            catch
+            {
+                _LOG.Warning("请求已关闭");
             }
         }
         public void Response(HttpListenerContext context, object obj)
