@@ -1314,6 +1314,7 @@ namespace EntryEngine.Database.MDBClient
                 isLocal = (server == "127.0.0.1" || server == "localhost") && port == 0;
             }
         }
+        internal bool IsLocal { get { return isLocal; } }
 
         public MDBConnection()
         {
@@ -1425,31 +1426,7 @@ namespace EntryEngine.Database.MDBClient
             }
             public int Size
             {
-                get
-                {
-                    switch (parameter.Type)
-                    {
-                        case EPrimitiveType.BOOL:
-                        case EPrimitiveType.SBYTE:
-                        case EPrimitiveType.BYTE:
-                            return 1;
-                        case EPrimitiveType.SHORT:
-                        case EPrimitiveType.USHORT:
-                            return 2;
-                        case EPrimitiveType.NULL:
-                        case EPrimitiveType.STRING:
-                        case EPrimitiveType.FLOAT:
-                        case EPrimitiveType.INT:
-                        case EPrimitiveType.UINT:
-                            return 4;
-                        case EPrimitiveType.DATETIME:
-                        case EPrimitiveType.LONG:
-                        case EPrimitiveType.ULONG:
-                        case EPrimitiveType.DOUBLE:
-                            return 8;
-                        default: return -1;
-                    }
-                }
+                get { return _MDB.GetPritimiveTypeSize(parameter.Type); }
                 set
                 {
                     throw new NotImplementedException();
@@ -1531,14 +1508,11 @@ namespace EntryEngine.Database.MDBClient
             }
             public object Value
             {
-                get { return parameter.Value; }
+                get { return parameter.Object; }
                 set
                 {
-                    if (value == null)
-                        parameter.Type = EPrimitiveType.NULL;
-                    else
-                        parameter.Type = _MDB.GetType(value.GetType());
-                    parameter.Value = value;
+                    parameter.Type = _MDB.GetType(value);
+                    parameter.Object = value;
                 }
             }
         }
@@ -1716,8 +1690,15 @@ namespace EntryEngine.Database.MDBClient
             command.ExecuteType = execute;
             command.SQL = CommandText;
             command.Timeout = CommandTimeout;
+            command.IsLocal = Connection.IsLocal;
             foreach (var p in parameters.parameters)
+            {
+                if (!Connection.IsLocal)
+                {
+                    p.parameter.ObjectToByte();
+                }
                 command.Parameters.Add(p.parameter);
+            }
 
             var result = Tunnle.Execute(command);
 
@@ -1962,6 +1943,7 @@ namespace EntryEngine.Database.MDBClient
     }
     internal abstract class DataTunnle
     {
+        public abstract bool IsLocal { get; }
         public abstract List<SQLResult> Execute(SQLCommand command);
     }
     internal class DataTunnleLocal : DataTunnle
@@ -1969,6 +1951,10 @@ namespace EntryEngine.Database.MDBClient
         static object executor;
         static MethodInfo execute;
 
+        public override bool IsLocal
+        {
+            get { return true; }
+        }
         public override List<SQLResult> Execute(SQLCommand command)
         {
             if (executor == null)
@@ -1986,6 +1972,10 @@ namespace EntryEngine.Database.MDBClient
     }
     internal class DataTunnleRemote : DataTunnle
     {
+        public override bool IsLocal
+        {
+            get { return false; }
+        }
         public override List<SQLResult> Execute(SQLCommand command)
         {
             throw new NotImplementedException();
@@ -2023,6 +2013,7 @@ namespace EntryEngine.Database
         public int Timeout;
         public EExecute ExecuteType;
         public List<SQLParameter> Parameters = new List<SQLParameter>();
+        public bool IsLocal;
 
         private Dictionary<string, SQLParameter> dic;
         public SQLParameter this[string name]
@@ -2041,180 +2032,46 @@ namespace EntryEngine.Database
             }
         }
     }
-    public class SQLParameter
+    public class SQLParameter : ByteObjectNamed
+    {
+    }
+    public class ByteObject
     {
         public EPrimitiveType Type;
-        public string Name;
-        public byte[] ValueBuffer;
+        /// <summary>字节用于传输</summary>
+        public byte[] Byte;
 
-        public object Value
+        /// <summary>对象数据用于正常操作</summary>
+        public object Object { get; set; }
+        public bool IsObject { get { return Object != null; } }
+        public bool IsByte { get { return Byte != null; } }
+        public bool IsDouble { get { return IsObject && IsDouble; } }
+        public bool IsArray { get; set; }
+
+        public void ByteToObject()
         {
-            get
+            if (IsArray)
             {
-                if (Type == EPrimitiveType.NULL)
-                    return null;
-                DataReaderParameter reader = new DataReaderParameter(ValueBuffer);
-                return reader.Read(Type);
             }
-            set
-            {
-                DataWriterParameter writer = new DataWriterParameter();
-                writer.Write(Type, value);
-                this.ValueBuffer = writer.GetResult();
-            }
-        }
-    }
-    internal class DataReaderParameter : DataReader
-    {
-        ByteReader reader;
-        public DataReaderParameter(byte[] data)
-        {
-            reader = new ByteReader(data);
-        }
-        public override string ReadString()
-        {
-            string value;
-            reader.Read(out value);
-            return value;
-        }
-        public override DateTime ReadDateTime()
-        {
-            DateTime value;
-            reader.Read(out value);
-            return value;
-        }
-        public override bool ReadBoolean()
-        {
-            bool value;
-            reader.Read(out value);
-            return value;
-        }
-        public override sbyte ReadSByte()
-        {
-            sbyte value;
-            reader.Read(out value);
-            return value;
-        }
-        public override byte ReadByte()
-        {
-            byte value;
-            reader.Read(out value);
-            return value;
-        }
-        public override short ReadShort()
-        {
-            short value;
-            reader.Read(out value);
-            return value;
-        }
-        public override ushort ReadUShort()
-        {
-            ushort value;
-            reader.Read(out value);
-            return value;
-        }
-        public override float ReadFloat()
-        {
-            float value;
-            reader.Read(out value);
-            return value;
-        }
-        public override int ReadInt()
-        {
-            int value;
-            reader.Read(out value);
-            return value;
-        }
-        public override uint ReadUInt()
-        {
-            uint value;
-            reader.Read(out value);
-            return value;
-        }
-        public override long ReadLong()
-        {
-            long value;
-            reader.Read(out value);
-            return value;
-        }
-        public override ulong ReadULong()
-        {
-            ulong value;
-            reader.Read(out value);
-            return value;
-        }
-        public override double ReadDouble()
-        {
-            double value;
-            reader.Read(out value);
-            return value;
-        }
-    }
-    internal class DataWriterParameter : DataWriter
-    {
-        ByteWriter writer = new ByteWriter(8);
-        public byte[] GetResult()
-        {
-            if (writer.Position == writer.Buffer.Length)
-                return writer.Buffer;
             else
-                return writer.GetBuffer();
+            {
+                Object = _MDB.ToObject(Type, Byte);
+            }
         }
-        public override void Write()
+        public void ObjectToByte()
         {
+            if (IsArray)
+            {
+            }
+            else
+            {
+                Byte = _MDB.ToBytes(Type, Object);
+            }
         }
-        public override void Write(string value)
-        {
-            writer.Write(value);
-        }
-        public override void Write(DateTime value)
-        {
-            writer.Write(value);
-        }
-        public override void Write(bool value)
-        {
-            writer.Write(value);
-        }
-        public override void Write(sbyte value)
-        {
-            writer.Write(value);
-        }
-        public override void Write(byte value)
-        {
-            writer.Write(value);
-        }
-        public override void Write(short value)
-        {
-            writer.Write(value);
-        }
-        public override void Write(ushort value)
-        {
-            writer.Write(value);
-        }
-        public override void Write(float value)
-        {
-            writer.Write(value);
-        }
-        public override void Write(int value)
-        {
-            writer.Write(value);
-        }
-        public override void Write(uint value)
-        {
-            writer.Write(value);
-        }
-        public override void Write(long value)
-        {
-            writer.Write(value);
-        }
-        public override void Write(ulong value)
-        {
-            writer.Write(value);
-        }
-        public override void Write(double value)
-        {
-            writer.Write(value);
-        }
+    }
+    public class ByteObjectNamed : ByteObject
+    {
+        public string Name;
     }
     public class SQLResult
     {
@@ -2228,13 +2085,12 @@ namespace EntryEngine.Database
         public List<SQLResultColumn> Columns;
         /// <summary>结果数据</summary>
         //public byte[] Data;
+
+        /// <summary>是否已经是缓存的，若已经缓存则不再重复加入缓存</summary>
+        public bool Cached { get; set; }
     }
-    public class SQLResultColumn
+    public class SQLResultColumn : ByteObjectNamed
     {
-        public EPrimitiveType Type;
-        public string Name;
-        /// <summary>结果数据</summary>
-        public byte[] Data;
     }
     public class MDBException : Exception
     {
@@ -2263,6 +2119,13 @@ namespace EntryEngine.Database
         {
             return Types[(int)type];
         }
+        public static EPrimitiveType GetType(object value)
+        {
+            if (value == null)
+                return EPrimitiveType.NULL;
+            else
+                return _MDB.GetType(value.GetType());
+        }
         public static EPrimitiveType GetType(Type type)
         {
             for (int i = 1; i < Types.Length; i++)
@@ -2270,121 +2133,414 @@ namespace EntryEngine.Database
                     return (EPrimitiveType)i;
             throw new NotSupportedException("不支持的数据类型" + type);
         }
-        public static int GetPritimiveTypeSize(EPrimitiveType type)
+        public static int GetPritimiveTypeSizeShift(EPrimitiveType type)
         {
             switch (type)
             {
-                case EPrimitiveType.STRING:
-                    return 8;
                 case EPrimitiveType.BOOL:
                 case EPrimitiveType.SBYTE:
                 case EPrimitiveType.BYTE:
-                    return 1;
+                    return 0;
                 case EPrimitiveType.SHORT:
                 case EPrimitiveType.USHORT:
-                    return 2;
+                    return 1;
                 case EPrimitiveType.FLOAT:
                 case EPrimitiveType.INT:
                 case EPrimitiveType.UINT:
-                    return 4;
+                    return 2;
                 case EPrimitiveType.DATETIME:
                 case EPrimitiveType.LONG:
                 case EPrimitiveType.ULONG:
                 case EPrimitiveType.DOUBLE:
-                    return 8;
+                    return 3;
                 default:
                     throw new MDBException("未知长度的类型: {0}", type);
             }
         }
-    }
-    public abstract class DataReader
-    {
-        public object Read(EPrimitiveType type)
+        public static int GetPritimiveTypeSize(EPrimitiveType type)
         {
+            return GetPritimiveTypeSize(type, -1);
+        }
+        /// <summary>获取数据长度</summary>
+        /// <param name="type">不包含String类型的基础类型</param>
+        /// <param name="arraySize">-1. 非数组 / >=0. 数组长度</param>
+        /// <returns></returns>
+        public static int GetPritimiveTypeSize(EPrimitiveType type, int arraySize)
+        {
+            int size;
             switch (type)
             {
-                case EPrimitiveType.NULL:       return null;
-                case EPrimitiveType.STRING:     return ReadString();
-                case EPrimitiveType.DATETIME:   return ReadDateTime();
-                case EPrimitiveType.BOOL:       return ReadBoolean();
-                case EPrimitiveType.SBYTE:      return ReadSByte();
-                case EPrimitiveType.BYTE:       return ReadByte();
-                case EPrimitiveType.SHORT:      return ReadShort();
-                case EPrimitiveType.USHORT:     return ReadUShort();
-                case EPrimitiveType.FLOAT:      return ReadFloat();
-                case EPrimitiveType.INT:        return ReadInt();
-                case EPrimitiveType.UINT:       return ReadUInt();
-                case EPrimitiveType.LONG:       return ReadLong();
-                case EPrimitiveType.ULONG:      return ReadULong();
-                case EPrimitiveType.DOUBLE:     return ReadDouble();
-                default: throw new NotImplementedException();
+                case EPrimitiveType.BOOL:
+                case EPrimitiveType.SBYTE:
+                case EPrimitiveType.BYTE:
+                    size = 1;
+                    break;
+                case EPrimitiveType.SHORT:
+                case EPrimitiveType.USHORT:
+                    size = 2;
+                    break;
+                case EPrimitiveType.FLOAT:
+                case EPrimitiveType.INT:
+                case EPrimitiveType.UINT:
+                    size = 4;
+                    break;
+                case EPrimitiveType.DATETIME:
+                case EPrimitiveType.LONG:
+                case EPrimitiveType.ULONG:
+                case EPrimitiveType.DOUBLE:
+                    size = 8;
+                    break;
+                default:
+                    throw new MDBException("未知长度的类型: {0}", type);
             }
+            if (arraySize < 0)
+                return size;
+            else
+                return 4 + arraySize * size;
         }
-        //public abstract void Read(out string value);
-        //public abstract void Read(out DateTime value);
-        //public abstract void Read(out bool value);
-        //public abstract void Read(out sbyte value);
-        //public abstract void Read(out byte value);
-        //public abstract void Read(out short value);
-        //public abstract void Read(out ushort value);
-        //public abstract void Read(out float value);
-        //public abstract void Read(out int value);
-        //public abstract void Read(out uint value);
-        //public abstract void Read(out long value);
-        //public abstract void Read(out ulong value);
-        //public abstract void Read(out double value);
-        public abstract string ReadString();
-        public abstract DateTime ReadDateTime();
-        public abstract bool ReadBoolean();
-        public abstract sbyte ReadSByte();
-        public abstract byte ReadByte();
-        public abstract short ReadShort();
-        public abstract ushort ReadUShort();
-        public abstract float ReadFloat();
-        public abstract int ReadInt();
-        public abstract uint ReadUInt();
-        public abstract long ReadLong();
-        public abstract ulong ReadULong();
-        public abstract double ReadDouble();
-    }
-    public abstract class DataWriter
-    {
-        public void Write(EPrimitiveType type, object value)
+        public static int GetStringSize(object value)
         {
-            switch (type)
+            if (value == null)
+                return 1;
+            else
+                return 1 + (value.ToString().Length << 1);
+        }
+        /// <summary>第一位1代表不为空，后面的数据用unicode编码</summary>
+        public static int GetStringSize(string value)
+        {
+            if (value == null)
+                return 1;
+            else
+                return 1 + (value.Length << 1);
+        }
+        public static int GetStringArraySize(object[] value)
+        {
+            if (value == null)
+                return 4;
+            else
             {
-                case EPrimitiveType.NULL:       Write(); break;
-                case EPrimitiveType.STRING:     Write((string)value); break;
-                case EPrimitiveType.DATETIME:   Write((DateTime)value); break;
-                case EPrimitiveType.BOOL:       Write((bool)value); break;
-                case EPrimitiveType.SBYTE:      Write((sbyte)value); break;
-                case EPrimitiveType.BYTE:       Write((byte)value); break;
-                case EPrimitiveType.SHORT:      Write((short)value); break;
-                case EPrimitiveType.USHORT:     Write((ushort)value); break;
-                case EPrimitiveType.FLOAT:      Write((float)value); break;
-                case EPrimitiveType.INT:        Write((int)value); break;
-                case EPrimitiveType.UINT:       Write((uint)value); break;
-                case EPrimitiveType.LONG:       Write((long)value); break;
-                case EPrimitiveType.ULONG:      Write((ulong)value); break;
-                case EPrimitiveType.DOUBLE:     Write((double)value); break;
-                default: throw new NotImplementedException();
+                int size = 4;
+                for (int i = 0; i < value.Length; i++)
+                {
+                    if (value[i] == null)
+                        size += 4;
+                    else
+                        size += 4 + (value[i].ToString().Length << 1);
+                }
+                return size;
             }
         }
-        /// <summary>null</summary>
-        public abstract void Write();
-        public abstract void Write(string value);
-        public abstract void Write(DateTime value);
-        public abstract void Write(bool value);
-        public abstract void Write(sbyte value);
-        public abstract void Write(byte value);
-        public abstract void Write(short value);
-        public abstract void Write(ushort value);
-        public abstract void Write(float value);
-        public abstract void Write(int value);
-        public abstract void Write(uint value);
-        public abstract void Write(long value);
-        public abstract void Write(ulong value);
-        public abstract void Write(double value);
+        public static int GetStringArraySize(string[] value)
+        {
+            if (value == null)
+                return 4;
+            else
+            {
+                int size = 4;
+                for (int i = 0; i < value.Length; i++)
+                {
+                    if (value[i] == null)
+                        size += 4;
+                    else
+                        size += 4 + (value[i].Length << 1);
+                }
+                return size;
+            }
+        }
+        /* 数据转换
+         * 1. 前端 -> 后端，参数传输，基础类型，基于内存(byte[])
+         * 2. 后端，查询，基础类型数组，基于文件流(byte[] -> 实际类型[])
+         * 3. 后端，批量插入，基础类型数组，基于文件流(相同类型直接复制byte[]，short插入int需要byte[]->short[]->int[]->byte[])
+         * 4. 后端，数据类型修改，基础类型数组，基于文件流(short插入int需要byte[]->short[]->int[]->byte[])
+         * 5. 后端，表达式，常量，基础类型，基于内存(直接object)
+         * 6. 后端 -> 前端，结果集传输，基础类型数组，基于内存(实际类型[] -> byte[])
+         */
+        public static unsafe byte[] ToBytes(EPrimitiveType type, object value)
+        {
+            if (type == EPrimitiveType.NULL)
+                return null;
+
+            int size;
+            if (type == EPrimitiveType.STRING)
+                size = GetStringSize(value);
+            else
+                size = GetPritimiveTypeSize(type);
+
+            byte[] buffer = new byte[size];
+            fixed (byte* p = buffer)
+            {
+                switch (type)
+                {
+                    case EPrimitiveType.STRING:
+                        if (value != null)
+                        {
+                            *p = 1;
+                            string str = (string)value;
+                            char* c = (char*)(p + 1);
+                            for (int i = 0; i < str.Length; i++, c++)
+                                *c = str[i];
+                        }
+                        // else *p = 0 代表字符串为null
+                        break;
+                    
+                    case EPrimitiveType.BOOL:
+                        {
+                            var v = (bool)value;
+                            if (v) *p = 1;
+                            else *p = 0;
+                        }
+                        break;
+                    case EPrimitiveType.SBYTE: *(sbyte*)p = (sbyte)value; break;
+                    case EPrimitiveType.BYTE: *p = (byte)value; break;
+                    case EPrimitiveType.SHORT: *(short*)p = (short)value; break;
+                    case EPrimitiveType.USHORT: *(ushort*)p = (ushort)value; break;
+                    case EPrimitiveType.FLOAT: *(float*)p = (float)value; break;
+                    case EPrimitiveType.INT: *(int*)p = (int)value; break;
+                    case EPrimitiveType.UINT: *(uint*)p = (uint)value; break;
+                    case EPrimitiveType.DATETIME: *(long*)p = ((DateTime)value).Ticks; break;
+                    case EPrimitiveType.LONG: *(long*)p = (long)value; break;
+                    case EPrimitiveType.ULONG: *(ulong*)p = (ulong)value; break;
+                    case EPrimitiveType.DOUBLE: *(double*)p = (double)value; break;
+                    default: throw new MDBException("不支持的数据类型：{0}", type);
+                }
+            }
+            return buffer;
+        }
+        public static unsafe byte[] ToBytes(EPrimitiveType type, Array array)
+        {
+            if (type == EPrimitiveType.NULL)
+                return null;
+
+            throw new NotImplementedException();
+        }
+        public static unsafe object ToObject(EPrimitiveType type, byte[] bytes)
+        {
+            if (type == EPrimitiveType.NULL)
+                return null;
+
+            object value;
+            fixed (byte* p = bytes)
+            {
+                switch (type)
+                {
+                    case EPrimitiveType.STRING:
+                        if (*p == 0)
+                            value = null;
+                        else
+                        {
+                            int size = (bytes.Length - 1) >> 1;
+                            char[] str = new char[size];
+                            char* c = (char*)(p + 1);
+                            for (int i = 0; i < size; i++, c++)
+                                str[i] = *c;
+                            value = new string(str);
+                        }
+                        break;
+
+                    case EPrimitiveType.BOOL: value = *p != 0; break;
+                    case EPrimitiveType.SBYTE: value = *(sbyte*)p; break;
+                    case EPrimitiveType.BYTE: value = *p; break;
+                    case EPrimitiveType.SHORT: value = *(short*)p; break;
+                    case EPrimitiveType.USHORT: value = *(ushort*)p; break;
+                    case EPrimitiveType.FLOAT: value = *(float*)p; break;
+                    case EPrimitiveType.INT: value = *(int*)p; break;
+                    case EPrimitiveType.UINT: value = *(uint*)p; break;
+                    case EPrimitiveType.DATETIME: value = new DateTime(*(long*)p); break;
+                    case EPrimitiveType.LONG: value = *(long*)p; break;
+                    case EPrimitiveType.ULONG: value = *(ulong*)p; break;
+                    case EPrimitiveType.DOUBLE: value = *(double*)p; break;
+                    default: throw new MDBException("不支持的数据类型：{0}", type);
+                }
+            }
+            return value;
+        }
+        public static unsafe void ToBytes(bool[] array, int length, byte[] buffer)
+        {
+            fixed (bool* ptr = array)
+            {
+                fixed (byte* ptr2 = buffer)
+                {
+                    var ptrS = ptr;
+                    var ptrT = (bool*)ptr2;
+                    for (int i = 0; i < length; i++)
+                    {
+                        *ptrT = *ptrS;
+                        ptrS++;
+                        ptrT++;
+                    }
+                }
+            }
+        }
+        public static unsafe void ToBytes(sbyte[] array, int length, byte[] buffer)
+        {
+            fixed (sbyte* ptr = array)
+            {
+                fixed (byte* ptr2 = buffer)
+                {
+                    var ptrS = ptr;
+                    var ptrT = (sbyte*)ptr2;
+                    for (int i = 0; i < length; i++)
+                    {
+                        *ptrT = *ptrS;
+                        ptrS++;
+                        ptrT++;
+                    }
+                }
+            }
+        }
+        public static unsafe void ToBytes(short[] array, int length, byte[] buffer)
+        {
+            fixed (short* ptr = array)
+            {
+                fixed (byte* ptr2 = buffer)
+                {
+                    var ptrS = ptr;
+                    var ptrT = (short*)ptr2;
+                    for (int i = 0; i < length; i++)
+                    {
+                        *ptrT = *ptrS;
+                        ptrS++;
+                        ptrT++;
+                    }
+                }
+            }
+        }
+        public static unsafe void ToBytes(ushort[] array, int length, byte[] buffer)
+        {
+            fixed (ushort* ptr = array)
+            {
+                fixed (byte* ptr2 = buffer)
+                {
+                    var ptrS = ptr;
+                    var ptrT = (ushort*)ptr2;
+                    for (int i = 0; i < length; i++)
+                    {
+                        *ptrT = *ptrS;
+                        ptrS++;
+                        ptrT++;
+                    }
+                }
+            }
+        }
+        public static unsafe void ToBytes(float[] array, int length, byte[] buffer)
+        {
+            fixed (float* ptr = array)
+            {
+                fixed (byte* ptr2 = buffer)
+                {
+                    var ptrS = ptr;
+                    var ptrT = (float*)ptr2;
+                    for (int i = 0; i < length; i++)
+                    {
+                        *ptrT = *ptrS;
+                        ptrS++;
+                        ptrT++;
+                    }
+                }
+            }
+        }
+        public static unsafe void ToBytes(int[] array, int length, byte[] buffer)
+        {
+            fixed (int* ptr = array)
+            {
+                fixed (byte* ptr2 = buffer)
+                {
+                    var ptrS = ptr;
+                    var ptrT = (int*)ptr2;
+                    for (int i = 0; i < length; i++)
+                    {
+                        *ptrT = *ptrS;
+                        ptrS++;
+                        ptrT++;
+                    }
+                }
+            }
+        }
+        public static unsafe void ToBytes(uint[] array, int length, byte[] buffer)
+        {
+            fixed (uint* ptr = array)
+            {
+                fixed (byte* ptr2 = buffer)
+                {
+                    var ptrS = ptr;
+                    var ptrT = (uint*)ptr2;
+                    for (int i = 0; i < length; i++)
+                    {
+                        *ptrT = *ptrS;
+                        ptrS++;
+                        ptrT++;
+                    }
+                }
+            }
+        }
+        public static unsafe void ToBytes(long[] array, int length, byte[] buffer)
+        {
+            fixed (long* ptr = array)
+            {
+                fixed (byte* ptr2 = buffer)
+                {
+                    var ptrS = ptr;
+                    var ptrT = (long*)ptr2;
+                    for (int i = 0; i < length; i++)
+                    {
+                        *ptrT = *ptrS;
+                        ptrS++;
+                        ptrT++;
+                    }
+                }
+            }
+        }
+        public static unsafe void ToBytes(ulong[] array, int length, byte[] buffer)
+        {
+            fixed (ulong* ptr = array)
+            {
+                fixed (byte* ptr2 = buffer)
+                {
+                    var ptrS = ptr;
+                    var ptrT = (ulong*)ptr2;
+                    for (int i = 0; i < length; i++)
+                    {
+                        *ptrT = *ptrS;
+                        ptrS++;
+                        ptrT++;
+                    }
+                }
+            }
+        }
+        public static unsafe void ToBytes(double[] array, int length, byte[] buffer)
+        {
+            fixed (double* ptr = array)
+            {
+                fixed (byte* ptr2 = buffer)
+                {
+                    var ptrS = ptr;
+                    var ptrT = (double*)ptr2;
+                    for (int i = 0; i < length; i++)
+                    {
+                        *ptrT = *ptrS;
+                        ptrS++;
+                        ptrT++;
+                    }
+                }
+            }
+        }
+        public static unsafe void ToBytes(DateTime[] array, int length, byte[] buffer)
+        {
+            fixed (DateTime* ptr = array)
+            {
+                fixed (byte* ptr2 = buffer)
+                {
+                    var ptrS = ptr;
+                    var ptrT = (long*)ptr2;
+                    for (int i = 0; i < length; i++)
+                    {
+                        *ptrT = ptrS->Ticks;
+                        ptrS++;
+                        ptrT++;
+                    }
+                }
+            }
+        }
     }
 }
 namespace EntryEngine.Database.MDB
@@ -2791,8 +2947,8 @@ namespace EntryEngine.Database.MDB
         }
         internal void OpenFile()
         {
-            Writer = new DataWriterFile(this);
-            Reader = new DataReaderFile(this);
+            //Writer = new DataWriterFile(this);
+            //Reader = new DataReaderFile(this);
         }
         public void Dispose()
         {
@@ -2807,234 +2963,6 @@ namespace EntryEngine.Database.MDB
                 Reader = null;
             }
         }
-
-        static MDBColumn()
-        {
-        }
-        public static byte[] BoolToByte = { 1, 2, 4, 8, 16, 32, 64, 128 };
-        public static unsafe void ToBytes(bool[] array, int length, byte[] buffer)
-        {
-            fixed (bool* ptr = array)
-            {
-                fixed (byte* ptr2 = buffer)
-                {
-                    fixed (byte* ptr3 = BoolToByte)
-                    {
-                        bool* ptrS = ptr;
-                        byte* ptrT = ptr2;
-                        byte* ptrB;
-                        byte value;
-                        for (int i = 0; i < length; )
-                        {
-                            ptrB = ptr3;
-                            value = 0;
-                            for (int j = 0; j < 8 && i < length; j++, i++, ptrB++)
-                                if (*ptrS++)
-                                    value |= *ptrB;
-                            *ptrT = value;
-                            ptrT++;
-                        }
-                    }
-                }
-            }
-        }
-        public static unsafe void ToBytes(sbyte[] array, int length, byte[] buffer)
-        {
-            fixed (sbyte* ptr = array)
-            {
-                fixed (byte* ptr2 = buffer)
-                {
-                    var ptrS = ptr;
-                    var ptrT = (sbyte*)ptr2;
-                    for (int i = 0; i < length; i++)
-                    {
-                        *ptrT = *ptrS;
-                        ptrS++;
-                        ptrT++;
-                    }
-                }
-            }
-        }
-        public static unsafe void ToBytes(short[] array, int length, byte[] buffer)
-        {
-            fixed (short* ptr = array)
-            {
-                fixed (byte* ptr2 = buffer)
-                {
-                    var ptrS = ptr;
-                    var ptrT = (short*)ptr2;
-                    for (int i = 0; i < length; i++)
-                    {
-                        *ptrT = *ptrS;
-                        ptrS++;
-                        ptrT++;
-                    }
-                }
-            }
-        }
-        public static unsafe void ToBytes(ushort[] array, int length, byte[] buffer)
-        {
-            fixed (ushort* ptr = array)
-            {
-                fixed (byte* ptr2 = buffer)
-                {
-                    var ptrS = ptr;
-                    var ptrT = (ushort*)ptr2;
-                    for (int i = 0; i < length; i++)
-                    {
-                        *ptrT = *ptrS;
-                        ptrS++;
-                        ptrT++;
-                    }
-                }
-            }
-        }
-        public static unsafe void ToBytes(float[] array, int length, byte[] buffer)
-        {
-            fixed (float* ptr = array)
-            {
-                fixed (byte* ptr2 = buffer)
-                {
-                    var ptrS = ptr;
-                    var ptrT = (float*)ptr2;
-                    for (int i = 0; i < length; i++)
-                    {
-                        *ptrT = *ptrS;
-                        ptrS++;
-                        ptrT++;
-                    }
-                }
-            }
-        }
-        public static unsafe void ToBytes(int[] array, int length, byte[] buffer)
-        {
-            fixed (int* ptr = array)
-            {
-                fixed (byte* ptr2 = buffer)
-                {
-                    var ptrS = ptr;
-                    var ptrT = (int*)ptr2;
-                    for (int i = 0; i < length; i++)
-                    {
-                        *ptrT = *ptrS;
-                        ptrS++;
-                        ptrT++;
-                    }
-                }
-            }
-        }
-        public static unsafe void ToBytes(uint[] array, int length, byte[] buffer)
-        {
-            fixed (uint* ptr = array)
-            {
-                fixed (byte* ptr2 = buffer)
-                {
-                    var ptrS = ptr;
-                    var ptrT = (uint*)ptr2;
-                    for (int i = 0; i < length; i++)
-                    {
-                        *ptrT = *ptrS;
-                        ptrS++;
-                        ptrT++;
-                    }
-                }
-            }
-        }
-        public static unsafe void ToBytes(long[] array, int length, byte[] buffer)
-        {
-            fixed (long* ptr = array)
-            {
-                fixed (byte* ptr2 = buffer)
-                {
-                    var ptrS = ptr;
-                    var ptrT = (long*)ptr2;
-                    for (int i = 0; i < length; i++)
-                    {
-                        *ptrT = *ptrS;
-                        ptrS++;
-                        ptrT++;
-                    }
-                }
-            }
-        }
-        public static unsafe void ToBytes(ulong[] array, int length, byte[] buffer)
-        {
-            fixed (ulong* ptr = array)
-            {
-                fixed (byte* ptr2 = buffer)
-                {
-                    var ptrS = ptr;
-                    var ptrT = (ulong*)ptr2;
-                    for (int i = 0; i < length; i++)
-                    {
-                        *ptrT = *ptrS;
-                        ptrS++;
-                        ptrT++;
-                    }
-                }
-            }
-        }
-        public static unsafe void ToBytes(double[] array, int length, byte[] buffer)
-        {
-            fixed (double* ptr = array)
-            {
-                fixed (byte* ptr2 = buffer)
-                {
-                    var ptrS = ptr;
-                    var ptrT = (double*)ptr2;
-                    for (int i = 0; i < length; i++)
-                    {
-                        *ptrT = *ptrS;
-                        ptrS++;
-                        ptrT++;
-                    }
-                }
-            }
-        }
-        public static unsafe void ToBytes(DateTime[] array, int length, byte[] buffer)
-        {
-            fixed (DateTime* ptr = array)
-            {
-                fixed (byte* ptr2 = buffer)
-                {
-                    var ptrS = ptr;
-                    var ptrT = (long*)ptr2;
-                    for (int i = 0; i < length; i++)
-                    {
-                        *ptrT = ptrS->Ticks;
-                        ptrS++;
-                        ptrT++;
-                    }
-                }
-            }
-        }
-        //static unsafe void ToBytes(string[] array, int length, byte[] buffer)
-        //{
-        //    fixed (string* ptr = array)
-        //    {
-        //        fixed (byte* ptr2 = buffer)
-        //        {
-        //            var ptrS = ptr;
-        //            var ptrT = (string*)ptr2;
-        //            for (int i = 0; i < length; i++)
-        //            {
-        //                *ptrT = *ptrS;
-        //                ptrS++;
-        //                ptrT++;
-        //            }
-        //        }
-        //    }
-        //}
-        //public static bool[] Convert(string[] array) { }
-        //public static bool[] Convert(DateTime[] array) { }
-        //public static bool[] Convert(string[] array) { }
-        //public static bool[] Convert(string[] array) { }
-        //public static bool[] Convert(string[] array) { }
-        //public static bool[] Convert(string[] array) { }
-        //public static bool[] Convert(string[] array) { }
-        //public static bool[] Convert(string[] array) { }
-        //public static bool[] Convert(string[] array) { }
-        //public static bool[] Convert(string[] array) { }
     }
     /// <summary>数据表的索引</summary>
     public class MDBIndex
@@ -3054,99 +2982,43 @@ namespace EntryEngine.Database.MDB
             throw new NotImplementedException();
         }
     }
-    internal class DataWriterFile : DataWriter, IDisposable
+
+    internal abstract class DataFile : IDisposable
     {
         public MDBColumn Column;
         public FileStream File;
-        private byte[] buffer;
-        public DataWriterFile(MDBColumn column)
+        internal byte[] buffer = new byte[4096];
+        internal int index;
+        protected int shift;
+
+        /// <summary>文件流当前行号</summary>
+        public int RowIndex
         {
-            this.File = new FileStream(column.StorageFile, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.Read);
-            File.Seek(File.Length, SeekOrigin.Begin);
+            get { return (int)(File.Position >> shift); }
+            set
+            {
+                int p = value << shift;
+                if (p != File.Position)
+                    File.Seek(p, SeekOrigin.Begin);
+            }
+        }
+        /// <summary>数据总行数</summary>
+        public int Count
+        {
+            get { return (int)(File.Length >> shift); }
+        }
+
+        public void SetBufferCapcity(int capcity)
+        {
+            if (index > 0)
+                throw new MDBException("数据流中仍有数据，不能设置缓冲长度");
+            buffer = new byte[capcity];
+        }
+        public void SetColumn(MDBColumn column)
+        {
+            this.File = new FileStream(column.StorageFile, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.ReadWrite);
             this.Column = column;
-            buffer = new byte[_MDB.GetPritimiveTypeSize(column.Type)];
-        }
-        public override void Write()
-        {
-            File.Write(buffer, 0, buffer.Length);
-        }
-        public override void Write(string value)
-        {
-            throw new NotImplementedException();
-        }
-        public override void Write(DateTime value)
-        {
-            Write(value.Ticks);
-        }
-        public override void Write(bool value)
-        {
-            int index = (int)(Column.Table.Count & 7);
-            bool newByte = index == 0;
-            if (newByte)
-            {
-                if (value)
-                    buffer[0] = 1;
-                else
-                    buffer[0] = 0;
-                Write();
-            }
-            else
-            {
-                if (value)
-                {
-                    long last = Column.Table.Count >> 3;
-                    // 定位并读取最后一个字节
-                    File.Seek(last, SeekOrigin.Begin);
-                    byte b = (byte)File.ReadByte();
-                    // 合并字节
-                    b |= (byte)(1 << index);
-                    // 重新定位到最后一个字节
-                    File.Seek(last, SeekOrigin.Begin);
-                    // 写入覆盖最后一个字节
-                    File.Write(buffer, 0, 1);
-                    // 重新定位到最后的字节
-                    File.Seek(File.Length, SeekOrigin.Begin);
-                }
-            }
-        }
-        public override void Write(sbyte value)
-        {
-            throw new NotImplementedException();
-        }
-        public override void Write(byte value)
-        {
-        }
-        public override void Write(short value)
-        {
-            throw new NotImplementedException();
-        }
-        public override void Write(ushort value)
-        {
-            throw new NotImplementedException();
-        }
-        public override void Write(float value)
-        {
-            throw new NotImplementedException();
-        }
-        public override void Write(int value)
-        {
-            throw new NotImplementedException();
-        }
-        public override void Write(uint value)
-        {
-            throw new NotImplementedException();
-        }
-        public override void Write(long value)
-        {
-            throw new NotImplementedException();
-        }
-        public override void Write(ulong value)
-        {
-            throw new NotImplementedException();
-        }
-        public override void Write(double value)
-        {
-            throw new NotImplementedException();
+            shift = _MDB.GetPritimiveTypeSizeShift(column.Type);
         }
         public void Dispose()
         {
@@ -3157,77 +3029,35 @@ namespace EntryEngine.Database.MDB
             }
         }
     }
-    internal class DataReaderFile : DataReader, IDisposable
+    /// <summary>
+    /// 文件流效率测试(FileStream.Seek)，测试类型int
+    /// 1. Seek指定位置，仅读取需要的数据
+    ///    (1). 占用内存小
+    ///    (2). 文件流顺序读取时速度较快，约为随机位置读取的1.25~6倍(根据)，10000次随机位置读取时间约200ms
+    ///         顺序情况下，SeekOrigin.Begin和SeekOrigin.Current效果一样，对需要Seek的位置进行顺序排序，10000次随机位置读取时间约160ms
+    /// 2. Seek起始位置，读取直到结束位置中的所有数据（有不需要数据）
+    ///    (1). 临时占用内存大
+    ///    (2). 相同时间，可以读取的数据量为前者的2000倍，即200ms可以读取2000万条数据
+    /// 所以需要根据查询数据的耗时来选择性采用读取方式
+    /// </summary>
+    internal abstract class DataWriterFile : DataFile
     {
-        public FileStream File;
-        public MDBColumn Column;
-        private byte[] buffer;
-        public DataReaderFile(MDBColumn column)
+        public void SeekLast()
         {
-            this.File = new FileStream(column.StorageFile, FileMode.Open, FileAccess.Read);
-            this.Column = column;
-            buffer = new byte[_MDB.GetPritimiveTypeSize(column.Type)];
-        }
-        public override string ReadString()
-        {
-            throw new NotImplementedException();
-        }
-        public override DateTime ReadDateTime()
-        {
-            throw new NotImplementedException();
-        }
-        public override bool ReadBoolean()
-        {
-            throw new NotImplementedException();
-        }
-        public override sbyte ReadSByte()
-        {
-            throw new NotImplementedException();
-        }
-        public override byte ReadByte()
-        {
-            throw new NotImplementedException();
-        }
-        public override short ReadShort()
-        {
-            throw new NotImplementedException();
-        }
-        public override ushort ReadUShort()
-        {
-            throw new NotImplementedException();
-        }
-        public override float ReadFloat()
-        {
-            throw new NotImplementedException();
-        }
-        public override int ReadInt()
-        {
-            throw new NotImplementedException();
-        }
-        public override uint ReadUInt()
-        {
-            throw new NotImplementedException();
-        }
-        public override long ReadLong()
-        {
-            throw new NotImplementedException();
-        }
-        public override ulong ReadULong()
-        {
-            throw new NotImplementedException();
-        }
-        public override double ReadDouble()
-        {
-            throw new NotImplementedException();
-        }
-        public void Dispose()
-        {
-            if (File != null)
+            if (File.Length != File.Position)
             {
-                File.Close();
-                File = null;
+                File.Position = File.Length;
             }
         }
+        public void Flush()
+        {
+            File.Write(buffer, 0, index);
+            File.Flush();
+            index = 0;
+        }
+    }
+    internal abstract class DataReaderFile : DataFile
+    {
     }
 
     /// <summary>索引的特性</summary>
@@ -3253,7 +3083,6 @@ namespace EntryEngine.Database.MDB
         /// <para>本例中如果是AND条件，可以通过!Hit跳过LIKE判断</para>
         /// </summary>
         public bool Hit;
-
     }
     public abstract class Index<T> where T : class
     {
@@ -3339,6 +3168,7 @@ namespace EntryEngine.Database.MDB.Syntax
         public TABLE Table;
         /// <summary>要插入的列名，空集合则全部插入，考虑将字段移入Table中</summary>
         public List<FIELD> Fields = new List<FIELD>();
+        // todo: values(1,2,3),(2,3,4),(3,4,5)可以插入多行
         /// <summary>要插入的值</summary>
         public List<SyntaxNode> Values = new List<SyntaxNode>();
         /// <summary>通过查询已有表插入多条数据</summary>
@@ -4172,11 +4002,13 @@ namespace EntryEngine.Database.MDB.Semantics
                     result.TotalRows = 1;
                     result.RecordsAffected = -1;
                     result.RecordsChanged = -1;
+                    // 常量不加入缓存
+                    result.Cached = true;
                     result.Columns = new List<SQLResultColumn>(1);
 
                     SQLResultColumn column = new SQLResultColumn();
                     column.Type = value.Type;
-                    //column.Data = 
+                    column.Object = value.Value;
                     if (alias != null)
                         column.Name = alias.Alias;
                     else
@@ -4184,6 +4016,7 @@ namespace EntryEngine.Database.MDB.Semantics
                             column.Name = "null";
                         else
                             column.Name = value.Value.ToString();
+                    result.Columns.Add(column);
                 }
                 public object Value
                 {
@@ -4210,6 +4043,22 @@ namespace EntryEngine.Database.MDB.Semantics
                 executor.Visit(model);
                 return executor.executor;
             }
+
+            AS alias;
+            AS GetAlias()
+            {
+                AS temp = alias;
+                alias = null;
+                return temp;
+            }
+            public override void Visit(PrimitiveValue model)
+            {
+                executor = new Constant(model, GetAlias());
+            }
+            public override void Visit(AS model)
+            {
+                alias = model;
+            }
         }
         class ExecutorInsert : ExecutorBase
         {
@@ -4217,10 +4066,21 @@ namespace EntryEngine.Database.MDB.Semantics
             {
                 public MDBTable Table;
                 public List<MDBColumn> Fields;
+                /// <summary>插入数据为多行多列，第一个List代表行，第二个List代表列</summary>
                 public List<List<IValue>> Values = new List<List<IValue>>();
                 protected override SQLResult InternalExecute(EExecute execute)
                 {
-                    throw new NotImplementedException();
+                    SQLResult result = new SQLResult();
+                    int row = Values.Count;
+                    result.RecordsAffected = row;
+                    result.RecordsChanged = row;
+                    result.TotalRows = row;
+                    // 若插入的表有Identity键列，且该列的值没有被指定是自动增长的，则结果列中返回插入的所有行的Identity键值
+                    //result.Columns
+                    for (int i = 0; i < row; i++)
+                    {
+                    }
+                    return result;
                 }
             }
             Insert ret = new Insert();
@@ -4252,6 +4112,7 @@ namespace EntryEngine.Database.MDB.Semantics
                         CheckSyntax(!ret.Table.TryGetColumn(item.Name, out column), "未知的列'{0}'在插入字段列表中", item.Name);
                         ret.Fields.Add(column);
                     }
+                    // todo: 若表有自增列，且插入没有指定自增列，则自动补上插入自增列，且在结果集中返回插入的自增列的值
                 }
 
                 // 插入字段对应的值
@@ -4259,14 +4120,33 @@ namespace EntryEngine.Database.MDB.Semantics
                 if (model.TryGetSelect(out select))
                 {
                     // select
-                    Visit(select);
+                    Executor e = ExecutorValue.Execute(DB, select);
+                    SQLResult result = e.Execute(EExecute.Reader);
+                    CheckSyntax(result.Columns.Count != ret.Fields.Count, "插入的列数和值数不匹配");
+                    ret.Values = new List<List<IValue>>(result.TotalRows);
+                    for (int i = 0; i < result.TotalRows; i++)
+                    {
+                        var row = new List<IValue>();
+                        ret.Values.Add(row);
+                        foreach (var item in result.Columns)
+                        {
+                            //ret.Values.Add(
+                        }
+                    }
                 }
                 else
                 {
+                    CheckSyntax(model.Values.Count != ret.Fields.Count, "插入的列数和值数不匹配");
+                    // todo: 若Values改为了可以插入多行，这里的Capcity=1要改为要插入的行数
+                    ret.Values = new List<List<IValue>>(1);
+                    ret.Values.Add(new List<IValue>(model.Values.Count));
                     // values
                     foreach (var item in model.Values)
                     {
-                        Visit(item);
+                        Executor e = ExecutorValue.Execute(DB, item);
+                        SQLResult result = e.Execute(EExecute.Reader);
+                        CheckSyntax(result.TotalRows > 1, "子查询结果超过了1行1列");
+                        ret.Values[0].Add(new Constant(result.Columns[0].Object));
                     }
                 }
             }
@@ -4291,6 +4171,14 @@ namespace EntryEngine.Database.MDB.Semantics
         }
         class ExecutorSelect : ExecutorBase
         {
+            /// <summary>视图，查询语句生成的临时表</summary>
+            class View
+            {
+            }
+            class ViewColumn : SQLResultColumn
+            {
+            }
+
             class Select : Executor
             {
                 protected override SQLResult InternalExecute(EExecute execute)
@@ -4309,6 +4197,36 @@ namespace EntryEngine.Database.MDB.Semantics
                 executor.DB = db;
                 executor.Visit(model);
                 return executor.ret;
+            }
+            public override void Visit(SELECT model)
+            {
+                // from
+                // where 1: join前就可以确定的表的筛选
+                // on
+                // join
+                // where 2: 必须join后才能筛选的表内容
+                // select
+                // group by
+                // having
+                // order by
+                // limit
+                // union
+
+                // 按照mysql的执行流程，执行过程中，有且仅有1张表
+                // where和on的条件仅针对合并的那一张表
+                // 我这里要先对原表执行where和on的条件，减少原表数量
+                // 再做笛卡尔乘积合成一张大表
+
+                if (model.From != null)
+                    Visit(model.From);
+            }
+            public override void Visit(JOIN model)
+            {
+                base.Visit(model);
+            }
+            public override void Visit(TABLE model)
+            {
+                base.Visit(model);
             }
         }
 
@@ -4366,7 +4284,11 @@ namespace EntryEngine.Database.MDB.Semantics
         public SQLResult Execute(EExecute execute)
         {
             SQLResult result = InternalExecute(execute);
-            SyntaxExecutor.ResultCache.Add(this, result);
+            if (result.Cached)
+            {
+                SyntaxExecutor.ResultCache.Add(this, result);
+                result.Cached = true;
+            }
             return result;
         }
         protected abstract SQLResult InternalExecute(EExecute execute);
@@ -4386,7 +4308,7 @@ namespace EntryEngine.Database.MDB.Semantics
                     SQLParameter param = command[item.Name];
                     if (param == null)
                         throw new MDBException("未找到参数{0}", item.Name);
-                    clone.Parameters.Add(new Parameter(item, param.Value));
+                    clone.Parameters.Add(new Parameter(item, param.Object));
                 }
             }
             return clone;
@@ -4401,6 +4323,20 @@ namespace EntryEngine.Database.MDB.Semantics
     {
         object Value { get; }
     }
+    class Raw : IValue
+    {
+        public byte[] RawData;
+        public object Value
+        {
+            get { throw new NotImplementedException(); }
+        }
+        public Raw(byte[] raw) { RawData = raw; }
+    }
+    class Constant : IValue
+    {
+        public object Value { get; set; }
+        public Constant(object value) { this.Value = value; }
+    }
     class Parameter : IValue
     {
         public EPrimitiveType Type;
@@ -4412,6 +4348,12 @@ namespace EntryEngine.Database.MDB.Semantics
             this.Type = clone.Type;
             this.Name = clone.Name;
             this.Value = value;
+        }
+        public Parameter(SQLParameter parameter)
+        {
+            this.Type = parameter.Type;
+            this.Name = parameter.Name;
+            this.Value = parameter.Object;
         }
     }
 }
