@@ -290,6 +290,101 @@ namespace EntryEngine.Network
                     }, sql, parameters);
                 return list;
             }
+            public PagedModel<T> SelectPaged<T>(string sql, int pageIndex, int pageSize, Action<IDataReader, List<T>> read, params object[] _params) where T : new()
+            {
+                if (_params == null) _params = new object[0];
+
+                PagedModel<T> entry = new PagedModel<T>();
+                if (pageIndex < 0)
+                {
+                    // 查询全部
+                    var ret = SelectObjects<T>(sql, _params);
+                    entry.Page = -1;
+                    entry.PageSize = ret.Count;
+                    entry.Count = ret.Count;
+                    entry.Models = ret;
+                    return entry;
+                }
+
+                entry.PageSize = pageSize;
+                entry.Page = pageIndex;
+
+                StringBuilder sb = new StringBuilder();
+                sb.AppendLine("SELECT COUNT(1) AS COUNT FROM ({0}) t;", sql);
+                sb.AppendLine(string.Format("{0} limit {1}, {2};", sql, pageIndex * pageSize, pageSize));
+
+                ExecuteReader((reader) =>
+                {
+                    // 总数
+                    reader.Read();
+                    entry.Count = (int)(long)reader[0];
+
+                    reader.NextResult();
+                    entry.Models = new List<T>(pageSize);
+                    read(reader, entry.Models);
+                }, sb.ToString(), _params);
+
+                return entry;
+            }
+            /// <summary>分页查询</summary>
+            /// <param name="pageIndex">从0开始的分页，小于0则查询全部</param>
+            /// <param name="pageSize">一页的条数</param>
+            public PagedModel<T> SelectPaged<T>(string sql, int pageIndex, int pageSize, params object[] _params) where T : new()
+            {
+                return SelectPaged<T>(sql, pageIndex, pageSize,
+                    (reader, list) => list.AddRange(_DATABASE.ReadMultiple<T>(reader)), _params);
+            }
+            public List<_Tuple<T1, T2>> SelectJoin<T1, T2>(string sql, int count1, params object[] _params)
+                where T1 : new()
+                where T2 : new()
+            {
+                List<_Tuple<T1, T2>> list = new List<_Tuple<T1, T2>>();
+                ExecuteReader(reader => JoinRead<T1, T2>(reader, list, count1), sql, _params);
+                return list;
+            }
+            public List<_Tuple<T1, T2, T3>> SelectJoin<T1, T2, T3>(string sql, int count1, int count2, params object[] _params)
+                where T1 : new()
+                where T2 : new()
+                where T3 : new()
+            {
+                List<_Tuple<T1, T2, T3>> list = new List<_Tuple<T1, T2, T3>>();
+                ExecuteReader(reader => JoinRead<T1, T2, T3>(reader, list, count1, count2), sql, _params);
+                return list;
+            }
+            public List<_Tuple<T1, T2, T3, T4>> SelectJoin<T1, T2, T3, T4>(string sql, int count1, int count2, int count3, params object[] _params)
+                where T1 : new()
+                where T2 : new()
+                where T3 : new()
+                where T4 : new()
+            {
+                List<_Tuple<T1, T2, T3, T4>> list = new List<_Tuple<T1, T2, T3, T4>>();
+                ExecuteReader(reader => JoinRead<T1, T2, T3, T4>(reader, list, count1, count2, count3), sql, _params);
+                return list;
+            }
+            public PagedModel<_Tuple<T1, T2>> SelectJoinPaged<T1, T2>(int page, int pageSize, string sql, int count1, params object[] _params)
+                where T1 : new()
+                where T2 : new()
+            {
+                return SelectPaged<_Tuple<T1, T2>>(sql, page, pageSize,
+                    (reader, list) => JoinRead<T1, T2>(reader, list, count1), _params);
+            }
+            public PagedModel<_Tuple<T1, T2, T3>> SelectJoinPaged<T1, T2, T3>(int page, int pageSize, string sql, int count1, int count2, params object[] _params)
+                where T1 : new()
+                where T2 : new()
+                where T3 : new()
+            {
+                return SelectPaged<_Tuple<T1, T2, T3>>(sql, page, pageSize,
+                    (reader, list) => JoinRead<T1, T2, T3>(reader, list, count1, count2), _params);
+            }
+            public PagedModel<_Tuple<T1, T2, T3, T4>> SelectJoinPaged<T1, T2, T3, T4>(int page, int pageSize, string sql, int count1, int count2, int count3, params object[] _params)
+                where T1 : new()
+                where T2 : new()
+                where T3 : new()
+                where T4 : new()
+            {
+                return SelectPaged<_Tuple<T1, T2, T3, T4>>(sql, page, pageSize,
+                    (reader, list) => JoinRead<T1, T2, T3, T4>(reader, list, count1, count2, count3), _params);
+            }
             protected virtual void Executed(IDbConnection connection)
             {
                 connection.Close();
@@ -309,6 +404,78 @@ namespace EntryEngine.Network
             }
         }
 
+        public static void JoinRead<T1, T2>(IDataReader reader, List<_Tuple<T1, T2>> list, int count1)
+            where T1 : new()
+            where T2 : new()
+        {
+            int count = reader.FieldCount;
+            List<PropertyInfo> properties;
+            List<FieldInfo> fields;
+            int[] indices = null;
+            int offset;
+            while (reader.Read())
+            {
+                offset = 0;
+                _DATABASE.MultiReadPrepare(reader, typeof(T1), offset, count1, out properties, out fields, ref indices);
+                T1 t1 = _DATABASE.MultiRead<T1>(reader, offset, count1, properties, fields, indices);
+                offset += count1;
+                _DATABASE.MultiReadPrepare(reader, typeof(T2), offset, count - offset, out properties, out fields, ref indices);
+                T2 t2 = _DATABASE.MultiRead<T2>(reader, offset, count - offset, properties, fields, indices);
+                list.Add(new _Tuple<T1, T2>(t1, t2));
+            }
+        }
+        public static void JoinRead<T1, T2, T3>(IDataReader reader, List<_Tuple<T1, T2, T3>> list, int count1, int count2)
+            where T1 : new()
+            where T2 : new()
+            where T3 : new()
+        {
+            int count = reader.FieldCount;
+            List<PropertyInfo> properties;
+            List<FieldInfo> fields;
+            int[] indices = null;
+            int offset;
+            while (reader.Read())
+            {
+                offset = 0;
+                _DATABASE.MultiReadPrepare(reader, typeof(T1), offset, count1, out properties, out fields, ref indices);
+                T1 t1 = _DATABASE.MultiRead<T1>(reader, offset, count1, properties, fields, indices);
+                offset += count1;
+                _DATABASE.MultiReadPrepare(reader, typeof(T2), offset, count2, out properties, out fields, ref indices);
+                T2 t2 = _DATABASE.MultiRead<T2>(reader, offset, count2, properties, fields, indices);
+                offset += count2;
+                _DATABASE.MultiReadPrepare(reader, typeof(T3), offset, count - offset, out properties, out fields, ref indices);
+                T3 t3 = _DATABASE.MultiRead<T3>(reader, offset, count - offset, properties, fields, indices);
+                list.Add(new _Tuple<T1, T2, T3>(t1, t2, t3));
+            }
+        }
+        public static void JoinRead<T1, T2, T3, T4>(IDataReader reader, List<_Tuple<T1, T2, T3, T4>> list, int count1, int count2, int count3)
+            where T1 : new()
+            where T2 : new()
+            where T3 : new()
+            where T4 : new()
+        {
+            int count = reader.FieldCount;
+            List<PropertyInfo> properties;
+            List<FieldInfo> fields;
+            int[] indices = null;
+            int offset;
+            while (reader.Read())
+            {
+                offset = 0;
+                _DATABASE.MultiReadPrepare(reader, typeof(T1), offset, count1, out properties, out fields, ref indices);
+                T1 t1 = _DATABASE.MultiRead<T1>(reader, offset, count1, properties, fields, indices);
+                offset += count1;
+                _DATABASE.MultiReadPrepare(reader, typeof(T2), offset, count2, out properties, out fields, ref indices);
+                T2 t2 = _DATABASE.MultiRead<T2>(reader, offset, count2, properties, fields, indices);
+                offset += count2;
+                _DATABASE.MultiReadPrepare(reader, typeof(T3), offset, count3, out properties, out fields, ref indices);
+                T3 t3 = _DATABASE.MultiRead<T3>(reader, offset, count3, properties, fields, indices);
+                offset += count3;
+                _DATABASE.MultiReadPrepare(reader, typeof(T4), offset, count - offset, out properties, out fields, ref indices);
+                T4 t4 = _DATABASE.MultiRead<T4>(reader, offset, count - offset, properties, fields, indices);
+                list.Add(new _Tuple<T1, T2, T3, T4>(t1, t2, t3, t4));
+            }
+        }
         public static IEnumerable<T> ReadMultiple<T>(IDataReader reader) where T : new()
         {
             Type type = typeof(T);
@@ -2822,22 +2989,17 @@ namespace EntryEngine.Database.MDB
         {
             int index = Columns.IndexOf(column);
             if (index == -1)
-                throw new ArgumentException("未能找到要删除的列");
-            foreach (var item in Indexes)
+                throw new MDBException("表[{0}]未能找到要删除的列：{1}", Name, column.Name);
+            if (column.Index != null)
             {
-                for (int i = item.ColumnIndexes.Count - 1; i >= 0; i--)
+                if (column.Index.Type == EIndex.Primary)
                 {
-                    if (item.ColumnIndexes[i] == index)
-                    {
-                        item.ColumnIndexes.RemoveAt(i);
-                        if (item.IsSingleColumnKey)
-                            _LOG.Info("删除索引：{0}", column.Name);
-                        else
-                            _LOG.Info("复合索引移除被删除的列：{0}", column.Name);
-                    }
+                    // todo: 若另有Primary键，删除一列主键列可能会导致另一列主键列出现重复数据，此时需先删除主键索引
                 }
+                column.Index.Drop();
             }
-            Directory.Delete(StorageDirectory + column.Name, true);
+            //Directory.Delete(StorageDirectory + column.Name, true);
+            File.Delete(StorageDirectory + column.Name);
             _LOG.Info("删除列：{0}", column.Name);
             Save();
         }
@@ -2893,6 +3055,8 @@ namespace EntryEngine.Database.MDB
         public EPrimitiveType Type;
         /// <summary>默认值的表达式</summary>
         public string Default;
+        /// <summary>索引，复合索引按照多个单索引处理</summary>
+        public MDBIndex Index;
 
         internal MDBTable Table;
         internal DataWriterFile Writer;
@@ -2969,14 +3133,23 @@ namespace EntryEngine.Database.MDB
     {
         /// <summary>索引类型</summary>
         public EIndex Type;
-        /// <summary>索引列在数据表中的列的索引</summary>
-        public List<int> ColumnIndexes = new List<int>();
+        /// <summary>自增键当前的值</summary>
+        public int Identity = 1;
 
-        internal MDBTable Table;
+        internal MDBColumn Column;
+        public bool IsIdentity { get { return Type == EIndex.Identity; } }
         public bool IsPrimary { get { return Type == EIndex.Identity || Type == EIndex.Primary; } }
-        public bool IsSingleColumnKey { get { return ColumnIndexes.Count == 1; } }
-        public MDBColumn ColumnIndex { get { return Table.Columns[ColumnIndexes[0]]; } }
 
+        internal void OpenFile()
+        {
+            /*
+             * 1. Identity
+             * 平衡树，元素不重复，顺序存储，携带行号
+             * 
+             * 2. Primary
+             */
+            throw new NotImplementedException();
+        }
         public void Drop()
         {
             throw new NotImplementedException();

@@ -2264,7 +2264,12 @@ namespace EntryEngine
                     yield return item;
         }
     }
-    /// <summary>平衡二叉树</summary>
+    /// <summary>
+    /// 平衡二叉树
+    /// 扩展应用: B+Tree
+    ///   节点类型又为一个平衡二叉树（一个节点也叫页），树里的数据一次性通过文件读取到内存，内存数据主要是数据的主键
+    ///   硬盘读取数据最小单位也是一页，一页大小为16kb，所以B+Tree的页也可以设置为16kb
+    /// </summary>
     public abstract class AVLTreeBase<T> : ICollection<T>
     {
         protected class AVLTreeVisitor
@@ -4010,6 +4015,41 @@ namespace EntryEngine
                     value = new T();
                 return value;
             }
+        }
+    }
+
+    public class _Tuple<T1, T2>
+    {
+        public T1 Item1;
+        public T2 Item2;
+        public _Tuple() { }
+        public _Tuple(T1 item1, T2 item2)
+        {
+            this.Item1 = item1;
+            this.Item2 = item2;
+        }
+    }
+    public class _Tuple<T1, T2, T3> : _Tuple<T1, T2>
+    {
+        public T3 Item3;
+        public _Tuple() { }
+        public _Tuple(T1 item1, T2 item2, T3 item3)
+        {
+            this.Item1 = item1;
+            this.Item2 = item2;
+            this.Item3 = item3;
+        }
+    }
+    public class _Tuple<T1, T2, T3, T4> : _Tuple<T1, T2, T3>
+    {
+        public T4 Item4;
+        public _Tuple() { }
+        public _Tuple(T1 item1, T2 item2, T3 item3, T4 item4)
+        {
+            this.Item1 = item1;
+            this.Item2 = item2;
+            this.Item3 = item3;
+            this.Item4 = item4;
         }
     }
 }
