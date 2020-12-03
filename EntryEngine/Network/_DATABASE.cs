@@ -375,11 +375,7 @@ namespace EntryEngine.Network
             {
                 StringBuilder builder = new StringBuilder();
                 builder.AppendLine("{0} {1};", selectCountSQL, __where);
-                builder.AppendLine("{0} {1} {2} LIMIT @p{3},@p{4};", selectSQL, __where, conditionAfterWhere, param.Length, param.Length + 1);
-                object[] __param = new object[param.Length + 2];
-                Array.Copy(param, __param, param.Length);
-                __param[param.Length] = page * pageSize;
-                __param[param.Length + 1] = pageSize;
+                builder.AppendLine("{0} {1} {2} LIMIT {3}, {4};", selectSQL, __where, conditionAfterWhere, page, pageSize);
                 PagedModel<T> result = new PagedModel<T>();
                 result.Page = page;
                 result.PageSize = pageSize;
@@ -391,7 +387,7 @@ namespace EntryEngine.Network
                     reader.NextResult();
                     read(reader, result.Models);
                 }
-                , builder.ToString(), __param);
+                , builder.ToString(), param);
                 return result;
             }
             public List<_Tuple<T1, T2>> SelectJoin<T1, T2>(string sql, int count1, params object[] _params)
