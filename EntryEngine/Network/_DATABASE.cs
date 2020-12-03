@@ -271,6 +271,13 @@ namespace EntryEngine.Network
             public List<T> SelectObjects<T>(string sql, params object[] parameters)
             {
                 List<T> list = new List<T>();
+                SelectObjects<T>(i => list.Add(i), sql, parameters);
+                return list;
+            }
+            public void SelectObjects<T>(Action<T> newInstance, string sql, params object[] parameters)
+            {
+                if (newInstance == null)
+                    throw new ArgumentNullException("newInstance");
                 ExecuteReader(
                     (reader) =>
                     {
@@ -285,10 +292,36 @@ namespace EntryEngine.Network
                         {
                             T instance = Activator.CreateInstance<T>();
                             MultiRead(reader, 0, count, instance, properties, fields, indices);
-                            list.Add(instance);
+                            newInstance(instance);
                         }
                     }, sql, parameters);
-                return list;
+            }
+            public Dictionary<K, V> SelectObjectsGroup<K, V>(Func<V, K> getKey, string sql, params object[] parameters)
+            {
+                if (getKey == null)
+                    throw new ArgumentNullException("getKey");
+                Dictionary<K, V> result = new Dictionary<K, V>();
+                SelectObjects<V>(i => result.Add(getKey(i), i), sql, parameters);
+                return result;
+            }
+            public Dictionary<K, List<V>> SelectObjectsGroup2<K, V>(Func<V, K> getKey, string sql, params object[] parameters)
+            {
+                if (getKey == null)
+                    throw new ArgumentNullException("getKey");
+                Dictionary<K, List<V>> result = new Dictionary<K, List<V>>();
+                List<V> temp;
+                K key;
+                SelectObjects<V>(i =>
+                {
+                    key = getKey(i);
+                    if (!result.TryGetValue(key, out temp))
+                    {
+                        temp = new List<V>();
+                        result.Add(key, temp);
+                    }
+                    temp.Add(i);
+                }, sql, parameters);
+                return result;
             }
             public PagedModel<T> SelectPaged<T>(string sql, int pageIndex, int pageSize, Action<IDataReader, List<T>> read, params object[] _params) where T : new()
             {
@@ -333,6 +366,33 @@ namespace EntryEngine.Network
             {
                 return SelectPaged<T>(sql, pageIndex, pageSize,
                     (reader, list) => list.AddRange(_DATABASE.ReadMultiple<T>(reader)), _params);
+            }
+            public PagedModel<T> SelectPaged<T>(string selectCountSQL, string __where, string selectSQL, string conditionAfterWhere, int page, int pageSize, params object[] param) where T : new()
+            {
+                return SelectPaged<T>(selectCountSQL, __where, selectSQL, conditionAfterWhere, page, pageSize, (reader, list) => list.AddRange(ReadMultiple<T>(reader)), param);
+            }
+            public PagedModel<T> SelectPaged<T>(string selectCountSQL, string __where, string selectSQL, string conditionAfterWhere, int page, int pageSize, Action<IDataReader, List<T>> read, params object[] param)
+            {
+                StringBuilder builder = new StringBuilder();
+                builder.AppendLine("{0} {1};", selectCountSQL, __where);
+                builder.AppendLine("{0} {1} {2} LIMIT @p{3},@p{4};", selectSQL, __where, conditionAfterWhere, param.Length, param.Length + 1);
+                object[] __param = new object[param.Length + 2];
+                Array.Copy(param, __param, param.Length);
+                __param[param.Length] = page * pageSize;
+                __param[param.Length + 1] = pageSize;
+                PagedModel<T> result = new PagedModel<T>();
+                result.Page = page;
+                result.PageSize = pageSize;
+                ExecuteReader((reader) =>
+                {
+                    reader.Read();
+                    result.Count = (int)(long)reader[0];
+                    result.Models = new List<T>();
+                    reader.NextResult();
+                    read(reader, result.Models);
+                }
+                , builder.ToString(), __param);
+                return result;
             }
             public List<_Tuple<T1, T2>> SelectJoin<T1, T2>(string sql, int count1, params object[] _params)
                 where T1 : new()
@@ -383,6 +443,33 @@ namespace EntryEngine.Network
                 where T4 : new()
             {
                 return SelectPaged<_Tuple<T1, T2, T3, T4>>(sql, page, pageSize,
+                    (reader, list) => JoinRead<T1, T2, T3, T4>(reader, list, count1, count2, count3), _params);
+            }
+            public PagedModel<_Tuple<T1, T2>> SelectJoinPaged<T1, T2>(int page, int pageSize, string selectCountSQL, string __where, string sql, string afterWhere, int count1, params object[] _params)
+                where T1 : new()
+                where T2 : new()
+            {
+                return SelectPaged<_Tuple<T1, T2>>(selectCountSQL, __where, sql, afterWhere,
+                    page, pageSize,
+                    (reader, list) => JoinRead<T1, T2>(reader, list, count1), _params);
+            }
+            public PagedModel<_Tuple<T1, T2, T3>> SelectJoinPaged<T1, T2, T3>(int page, int pageSize, string selectCountSQL, string __where, string sql, string afterWhere, int count1, int count2, params object[] _params)
+                where T1 : new()
+                where T2 : new()
+                where T3 : new()
+            {
+                return SelectPaged<_Tuple<T1, T2, T3>>(selectCountSQL, __where, sql, afterWhere,
+                    page, pageSize,
+                    (reader, list) => JoinRead<T1, T2, T3>(reader, list, count1, count2), _params);
+            }
+            public PagedModel<_Tuple<T1, T2, T3, T4>> SelectJoinPaged<T1, T2, T3, T4>(int page, int pageSize, string selectCountSQL, string __where, string sql, string afterWhere, int count1, int count2, int count3, params object[] _params)
+                where T1 : new()
+                where T2 : new()
+                where T3 : new()
+                where T4 : new()
+            {
+                return SelectPaged<_Tuple<T1, T2, T3, T4>>(selectCountSQL, __where, sql, afterWhere,
+                    page, pageSize,
                     (reader, list) => JoinRead<T1, T2, T3, T4>(reader, list, count1, count2, count3), _params);
             }
             protected virtual void Executed(IDbConnection connection)
