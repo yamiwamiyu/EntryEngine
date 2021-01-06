@@ -1323,6 +1323,29 @@ namespace EntryEngine.Serialize
             this.Value = value;
         }
 
+        public bool IsObject { get { return Value is Dictionary<string, object>; } }
+        public bool IsArray { get { return Value is List<object>; } }
+        public bool IsLong { get { return Value is long; } }
+        public bool IsDouble { get { return Value is double; } }
+        public bool IsString { get { return Value is string; } }
+        public bool IsNull { get { return Value == null; } }
+        public bool IsBoolean { get { return Value is bool; } }
+        public bool IsDateTime
+        {
+            get
+            {
+                string v = Value as string;
+                if (v != null)
+                {
+                    if (v.IndexOf('-') == -1 && v.IndexOf(':') == -1)
+                        return false;
+                    DateTime datetime;
+                    return DateTime.TryParse(v, out datetime);
+                }
+                return false;
+            }
+        }
+
         //public T GetValue<T>()
         //{
         //    return (T)Value;
@@ -1432,6 +1455,244 @@ namespace EntryEngine.Serialize
             return Utility.ToUnixTime(GetInt32());
         }
 
+        class JsonClass : IEquatable<JsonClass>
+        {
+            public string ClassName;
+            public List<JsonClassField> Fields = new List<JsonClassField>();
+
+            public bool Equals(JsonClass other)
+            {
+                int equals = 0;
+                foreach (var mine in Fields)
+                {
+                    foreach (var their in other.Fields)
+                    {
+                        if (mine.Type == their.Type &&
+                            mine.ArrayDimension == their.ArrayDimension &&
+                            mine.Key == their.Key &&
+                            (mine.Type != JsonFieldType.Class || mine.InnerObject.Equals(their.InnerObject)))
+                        {
+                            equals++;
+                        }
+                    }
+                }
+                float eq = equals;
+                return (eq / Fields.Count) * (eq / other.Fields.Count) >= 0.666f;
+            }
+            public override bool Equals(object obj)
+            {
+                var other = obj as JsonClass;
+                if (other == null) return false;
+                return Equals(other);
+            }
+        }
+        enum JsonFieldType
+        {
+            Null,
+            Class,
+            String,
+            Double,
+            Long,
+            Boolean,
+            DateTime,
+        }
+        class JsonClassField : IEquatable<JsonClassField>
+        {
+            public string Key;
+            public JsonFieldType Type;
+            public JsonClass InnerObject;
+            public int ArrayDimension;
+
+            public override string ToString()
+            {
+                StringBuilder builder = new StringBuilder();
+                builder.Append("\"{0}\":", Key);
+                for (int i = 0; i < ArrayDimension; i++)
+                    builder.Append('[');
+                switch (Type)
+                {
+                    case JsonFieldType.Class:
+                        builder.Append("{ }");
+                        break;
+                    case JsonFieldType.Double:
+                    case JsonFieldType.Long:
+                    case JsonFieldType.Boolean:
+                        builder.Append("Value");
+                        break;
+
+                    case JsonFieldType.String:
+                    case JsonFieldType.DateTime:
+                        builder.Append("\"Value\"");
+                        break;
+                }
+                for (int i = 0; i < ArrayDimension; i++)
+                    builder.Append(']');
+                return builder.ToString();
+            }
+            public bool Equals(JsonClassField other)
+            {
+                return Key == other.Key;
+            }
+            public override bool Equals(object obj)
+            {
+                var other = obj as JsonClassField;
+                if (other == null) return false;
+                return Equals(other);
+            }
+            public override int GetHashCode()
+            {
+                return Key.GetHashCode();
+            }
+        }
+
+        /// <summary>转换成类型代码，免得自己写实体类</summary>
+        public string ToClassCode(string rootClassName, bool isProperty)
+        {
+            JsonObject obj = this;
+            while (obj.IsArray)
+                obj = obj[0];
+
+            JsonClass _class = new JsonClass();
+            _class.ClassName = rootClassName;
+            JsonObjectVisit(_class, obj);
+
+            StringBuilder builder = new StringBuilder();
+            ToClassCode(isProperty, _class, builder);
+            return builder.ToString();
+        }
+        static void ToClassCode(bool isProperty, JsonClass _class, StringBuilder builder)
+        {
+            builder.AppendLine("public class {0}", _class.ClassName);
+            builder.AppendBlock(() =>
+            {
+                foreach (var item in _class.Fields)
+                {
+                    if (item.Type == JsonFieldType.Class)
+                        ToClassCode(isProperty, item.InnerObject, builder);
+                    builder.Append("public ");
+                    switch (item.Type)
+                    {
+                        case JsonFieldType.Class: builder.Append(item.InnerObject.ClassName); break;
+                        case JsonFieldType.String: builder.Append("string"); break;
+                        case JsonFieldType.Double: builder.Append("double"); break;
+                        case JsonFieldType.Long: builder.Append("long"); break;
+                        case JsonFieldType.Boolean: builder.Append("bool"); break;
+                        case JsonFieldType.DateTime: builder.Append("DateTime"); break;
+                    }
+                    for (int i = 0; i < item.ArrayDimension; i++)
+                        builder.Append("[]");
+                    builder.Append(' ');
+                    builder.Append(item.Key);
+                    if (isProperty)
+                        builder.AppendLine(" { get; set; }");
+                    else
+                        builder.AppendLine(";");
+                }
+            });
+        }
+        static void JsonObjectVisit(JsonClass _class, JsonObject jo)
+        {
+            if (!jo.IsObject) return;
+
+            int exists;
+            JsonObject next = new JsonObject();
+            List<object> array;
+            Dictionary<string, object> obj = (Dictionary<string, object>)jo.Value;
+            foreach (var item in obj)
+            {
+                if (!_SERIALIZE.IsVariableName(item.Key))
+                {
+                    _LOG.Warning("忽略字段[{0}]：字段名不合法", item.Key);
+                    continue;
+                }
+
+                JsonClassField field = new JsonClassField();
+                field.Key = item.Key;
+
+                next.Value = item.Value;
+
+                // 已有字段
+                exists = _class.Fields.IndexOf(field);
+                if (exists != -1)
+                {
+                    // 两个相同类型，前一个解析为long，后面其实还有double，总体采用double类型
+                    if (_class.Fields[exists].Type == JsonFieldType.Long && next.IsDouble)
+                        _class.Fields[exists].Type = JsonFieldType.Double;
+                    else if (_class.Fields[exists].Type == JsonFieldType.Class)
+                        JsonObjectVisit(_class.Fields[exists].InnerObject, next);
+                    continue;
+                }
+                _class.Fields.Add(field);
+
+                while (true)
+                {
+                    if (next.IsObject)
+                    {
+                        field.Type = JsonFieldType.Class;
+                        field.InnerObject = new JsonClass();
+                        field.InnerObject.ClassName = "__" + field.Key;
+                        if (_class.ClassName == field.InnerObject.ClassName) field.InnerObject.ClassName += "2";
+                        JsonObjectVisit(field.InnerObject, new JsonObject(item.Value));
+                        if (field.InnerObject.Fields.Count == 0)
+                        {
+                            _LOG.Warning("忽略字段[{0}]：类型没有字段", item.Key);
+                            _class.Fields.Remove(field);
+                            break;
+                        }
+                    }
+                    else if (next.IsArray)
+                    {
+                        while (true)
+                        {
+                            field.ArrayDimension++;
+                            array = (List<object>)next.Value;
+                            if (array.Count == 0)
+                            {
+                                // 未知数组类型，则忽略掉该字段
+                                _LOG.Warning("忽略字段[{0}]：数组长度为0，未知数组类型", item.Key);
+                                field.Type = JsonFieldType.Class;
+                                _class.Fields.Remove(field);
+                                break;
+                            }
+                            next.Value = array[0];
+                            if (next.IsArray)
+                                continue;
+                            else if (next.IsObject)
+                            {
+                                field.Type = JsonFieldType.Class;
+                                field.InnerObject = new JsonClass();
+                                // 字段名与外包类型同名
+                                field.InnerObject.ClassName = "__" + field.Key;
+                                if (_class.ClassName == field.InnerObject.ClassName) field.InnerObject.ClassName += "2";
+                                // 数组里的类型字段保持一致
+                                for (int i = 0; i < array.Count; i++)
+                                    JsonObjectVisit(field.InnerObject, new JsonObject(array[i]));
+                            }
+                            break;
+                        }
+                        // object类型数组
+                        if (field.Type == JsonFieldType.Class)
+                            break;
+                        else
+                            // 标准类型数组
+                            continue;
+                    }
+                    else if (next.IsBoolean)
+                        field.Type = JsonFieldType.Boolean;
+                    else if (next.IsLong)
+                        field.Type = JsonFieldType.Long;
+                    else if (next.IsDouble)
+                        field.Type = JsonFieldType.Double;
+                    else if (next.IsDateTime)
+                        field.Type = JsonFieldType.DateTime;
+                    else
+                        // string | null
+                        field.Type = JsonFieldType.String;
+
+                    break;
+                }
+            }
+        }
         public override string ToString()
         {
             if (Value == null) return string.Empty;

@@ -1483,6 +1483,10 @@ namespace EntryEngine.Serialize
     {
         public static readonly object[] EmptyObjects = new object[0];
         private static Dictionary<char, char> ESC = new Dictionary<char, char>();
+        /// <summary>变量名不能使用的字符</summary>
+        public const string VARIABLE_NAME = "/?.>,<;:'\"\\|}]{[=+-)(*&^%$#@!`~\r\n\t ";
+        /// <summary>变量名不能使用的C#关键字</summary>
+        public static HashSet<string> Keywords;
 
         static _SERIALIZE()
         {
@@ -1490,6 +1494,24 @@ namespace EntryEngine.Serialize
             ESC.Add('r', '\r');
             ESC.Add('n', '\n');
             ESC.Add('0', '\0');
+
+            Keywords = new HashSet<string>(new string[]
+            {
+                // 访问修饰符
+                "volatile", "partial", "private", "internal", "protected", "public", "abstract", "virtual", "override", "sealed", "static", "readonly", "const", "new", "partial", "extern", "unsafe", "explicit", "implicit", "event", "operator",
+                // 类型
+                "class", "struct", "interface", "enum", "delegate",
+                // 泛型，参数
+                "in", "out", "ref", "params", "this", "base",
+                // 运算符
+                "typeof", "sizeof", "default", "checked", "unchecked", "as", "is",
+                // 声明
+                "if", "else", "switch", "case", "goto", "for", "foreach", "while", "do", "continue", "break", "return", "yield", "throw", "try", "catch", "finally", "using", "fixed", "lock",
+                // 类型
+                "bool", "true", "false", "sbyte", "byte", "char", "short", "ushort", "int", "uint", "float", "long", "ulong", "double", "decimal", "object", "null", "void",
+                // 其它
+                "namespace", "stackalloc",
+            });
         }
 
         public static T ReadObject<T>(this IReader reader)
@@ -1609,6 +1631,18 @@ namespace EntryEngine.Serialize
                 case '\\': return "\\\\";
                 default: return c.ToString();
             }
+        }
+        /// <summary>是否是合法的变量名</summary>
+        public static bool IsVariableName(string name)
+        {
+            if (string.IsNullOrEmpty(name)) return false;
+            // 不能数字开头
+            char c = name[0];
+            if (c >= '0' && c <= '9') return false;
+            foreach (var item in name)
+                if (VARIABLE_NAME.IndexOf(item) != -1)
+                    return false;
+            return !Keywords.Contains(name);
         }
         public static void Append(this StringBuilder builder, string format, params object[] param)
         {
