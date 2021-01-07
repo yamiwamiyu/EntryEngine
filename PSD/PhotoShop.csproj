@@ -6,7 +6,7 @@
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <OutputType>Library</OutputType>
     <AssemblyName>PhotoShop</AssemblyName>
-    <TargetFrameworkVersion>v3.5</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
     <WarningLevel>4</WarningLevel>
     <TargetFrameworkProfile />
   </PropertyGroup>
@@ -95,47 +95,45 @@
   <ItemGroup>
     <Reference Include="System.Drawing" />
     <Reference Include="System" />
-    <Reference Include="System.Windows.Forms" />
     <Reference Include="System.Core" />
-    <Reference Include="Microsoft.VisualBasic" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="AlphaChannelNames.cs" />
-    <Compile Include="BlendingRanges.cs" />
-    <Compile Include="Channel.cs" />
-    <Compile Include="ChannelList.cs" />
-    <Compile Include="ImageCompression.cs" />
-    <Compile Include="ImageResource.cs" />
-    <Compile Include="ImageResourceFactory.cs" />
+    <Compile Include="Compression\EndianReverser.cs" />
+    <Compile Include="Compression\ImageData.cs" />
+    <Compile Include="Compression\ImageDataFactory.cs" />
+    <Compile Include="Compression\RawImage.cs" />
+    <Compile Include="Compression\RleImage.cs" />
+    <Compile Include="Compression\ZipImage.cs" />
+    <Compile Include="Compression\ZipPredict16Image.cs" />
+    <Compile Include="Compression\ZipPredict32Image.cs" />
+    <Compile Include="Exceptions.cs" />
     <Compile Include="ImageResources.cs" />
-    <Compile Include="Layer.cs" />
-    <Compile Include="LayerInfo.cs" />
-    <Compile Include="LayerInfoFactory.cs" />
-    <Compile Include="LayerSectionInfo.cs" />
-    <Compile Include="LayerSectionSubtype.cs" />
-    <Compile Include="LayerSectionType.cs" />
-    <Compile Include="LayerUnicodeName.cs" />
-    <Compile Include="Mask.cs" />
-    <Compile Include="MaskInfo.cs" />
+    <Compile Include="ImageResources\AlphaChannelNames.cs" />
+    <Compile Include="ImageResources\RawImageResource.cs" />
+    <Compile Include="ImageResources\ResolutionInfo.cs" />
+    <Compile Include="ImageResources\Thumbnail.cs" />
+    <Compile Include="ImageResources\UnicodeAlphaNames.cs" />
+    <Compile Include="ImageResources\VersionInfo.cs" />
+    <Compile Include="ImageResources\XmpResource.cs" />
+    <Compile Include="Layers\BlendingRanges.cs" />
+    <Compile Include="Layers\Channel.cs" />
+    <Compile Include="Layers\Layer.cs" />
+    <Compile Include="Layers\LayerInfo.cs" />
+    <Compile Include="Layers\LayerInfo\InfoLayers.cs" />
+    <Compile Include="Layers\LayerInfo\LayerSectionInfo.cs" />
+    <Compile Include="Layers\LayerInfo\LayerUnicodeName.cs" />
+    <Compile Include="Layers\LayerInfo\RawLayerInfo.cs" />
+    <Compile Include="Layers\Mask.cs" />
+    <Compile Include="LoadContext.cs" />
     <Compile Include="PsdBinaryReader.cs" />
     <Compile Include="PsdBinaryWriter.cs" />
     <Compile Include="PsdBlendMode.cs" />
     <Compile Include="PsdBlockLengthWriter.cs" />
-    <Compile Include="PsdColorMode.cs" />
     <Compile Include="PsdFile.cs" />
-    <Compile Include="PsdInvalidException.cs" />
-    <Compile Include="RawImageResource.cs" />
-    <Compile Include="RawLayerInfo.cs" />
-    <Compile Include="ResolutionInfo.cs" />
-    <Compile Include="ResourceID.cs" />
-    <Compile Include="RleException.cs" />
     <Compile Include="RleReader.cs" />
+    <Compile Include="RleRowLengths.cs" />
     <Compile Include="RleWriter.cs" />
-    <Compile Include="Thumbnail.cs" />
-    <Compile Include="UFixed16_16.cs" />
-    <Compile Include="UnicodeAlphaNames.cs" />
     <Compile Include="Util.cs" />
-    <Compile Include="VersionInfo.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

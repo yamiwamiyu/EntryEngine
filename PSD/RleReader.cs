@@ -1,63 +1,79 @@
-using System;
+﻿using System;
+using System.Diagnostics;
 using System.IO;
-namespace PhotoshopFile
+using System.Linq;
+using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
+
+namespace PSDFile
 {
-	public class RleReader
-	{
-		private Stream stream;
-		public RleReader(Stream stream)
-		{
-			this.stream = stream;
-		}
-		public unsafe int Read(byte[] buffer, int offset, int count)
-		{
-			if (!Util.CheckBufferBounds(buffer, offset, count))
-			{
-				throw new ArgumentOutOfRangeException();
-			}
-			int var_0_cp_1 = 0;
-			int i = count;
-			int num = offset;
-            fixed (byte* buf = buffer)
+    public class RleReader
+    {
+        private Stream stream;
+
+        public RleReader(Stream stream)
+        {
+            this.stream = stream;
+        }
+
+        unsafe public int Read(byte[] buffer, int offset, int count)
+        {
+            if (!Util.CheckBufferBounds(buffer, offset, count))
+                throw new ArgumentOutOfRangeException();
+
+            // Pin the entire buffer now, so that we don't keep pinning and unpinning
+            // for each RLE packet.
+            fixed (byte* pBuffer = &buffer[0])
             {
-                while (i > 0)
+                int bytesLeft = count;
+                int bufferIndex = offset;
+                while (bytesLeft > 0)
                 {
-                    sbyte b = (sbyte)this.stream.ReadByte();
-                    if (b > 0)
+                    // ReadByte returns an unsigned byte, but we want a signed  byte.
+                    var flagCounter = unchecked((sbyte)stream.ReadByte());
+
+                    // Raw packet
+                    if (flagCounter > 0)
                     {
-                        int num2 = (int)(b + 1);
-                        if (i < num2)
-                        {
+                        var readLength = flagCounter + 1;
+                        if (bytesLeft < readLength)
                             throw new RleException("Raw packet overruns the decode window.");
+
+                        stream.Read(buffer, bufferIndex, readLength);
+
+                        bufferIndex += readLength;
+                        bytesLeft -= readLength;
+                    }
+                    // RLE packet
+                    else if (flagCounter > -128)
+                    {
+                        var runLength = 1 - flagCounter;
+                        var byteValue = (byte) stream.ReadByte();
+                        if (runLength > bytesLeft)
+                            throw new RleException("RLE packet overruns the decode window.");
+
+                        byte* ptr = pBuffer + bufferIndex;
+                        byte* pEnd = ptr + runLength;
+                        while (ptr < pEnd)
+                        {
+                            *ptr = byteValue;
+                            ptr++;
                         }
-                        this.stream.Read(buffer, num, num2);
-                        num += num2;
-                        i -= num2;
+
+                        bufferIndex += runLength;
+                        bytesLeft -= runLength;
                     }
                     else
                     {
-                        if (b > -128)
-                        {
-                            int num3 = (int)(1 - b);
-                            byte b2 = (byte)this.stream.ReadByte();
-                            if (num3 > i)
-                            {
-                                throw new RleException("RLE packet overruns the decode window.");
-                            }
-                            byte* ptr = &buf[var_0_cp_1] + num / 1;
-                            byte* ptr2 = ptr + num3 / 1;
-                            while (ptr < ptr2)
-                            {
-                                *ptr = b2;
-                                ptr += 1;
-                            }
-                            num += num3;
-                            i -= num3;
-                        }
+                        // The canoical PackBits algorithm will never emit 0x80 (-128), but
+                        // some programs do. Simply skip over the byte.
                     }
                 }
+
+                Debug.Assert(bytesLeft == 0);
+                return count - bytesLeft;
             }
-			return count - i;
-		}
-	}
+        }
+    }
 }
