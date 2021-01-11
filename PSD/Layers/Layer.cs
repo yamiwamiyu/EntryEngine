@@ -7,6 +7,7 @@ using System.Drawing.Imaging;
 using System.Linq;
 using System.Threading.Tasks;
 using PSDFile.Compression;
+using EntryEngine;
 
 namespace PSDFile
 {
@@ -396,51 +397,129 @@ namespace PSDFile
             if (HasImage == false)
                 return null;
 
-            byte[] data = Channels.MergeChannels(Width, Height);
-            var channelCount = Channels.Count;
-            var pitch = Width * Channels.Count;
-            var w = Width;
-            var h = Height;
+            //byte[] data = Channels.MergeChannels(Width, Height);
+            //var channelCount = Channels.Count;
+            //var pitch = Width * Channels.Count;
+            //var w = Width;
+            //var h = Height;
 
-            //var format = channelCount == 3 ? TextureFormat.RGB24 : TextureFormat.ARGB32;
-            //var tex = new Texture2D(w, h, format, false);
-            /*
-            var colors = new Color[data.Length / channelCount];
-            
-            var k = 0;
-            for (var y = h - 1; y >= 0; --y)
+            //Bitmap bmp;
+            //fixed (byte* p = data)
+            //{
+            //    IntPtr ptr = (IntPtr)p;
+            //    bmp = new Bitmap(Width, Height, pitch, channelCount == 3 ? PixelFormat.Format24bppRgb : PixelFormat.Format32bppArgb, ptr);
+            //}
+            //return bmp;
+
+            return DecodeImage(this);
+        }
+
+
+        private struct PixelData
+        {
+            public byte Blue;
+            public byte Green;
+            public byte Red;
+            public byte Alpha;
+        }
+        public static Bitmap DecodeImage(Layer layer)
+        {
+            if (layer.Rect.Width == 0 || layer.Rect.Height == 0)
             {
-                for (var x = 0; x < pitch; x += channelCount)
-                {
-                    var n = x + y * pitch;
+                return null;
+            }
 
-                    var c = Color.FromArgb(1, 1, 1, 1);
-                    if (channelCount == 4)
+            Bitmap bitmap = new Bitmap(layer.Rect.Width, layer.Rect.Height, PixelFormat.Format32bppArgb);
+
+            BitmapData bd = bitmap.LockBits(new Rectangle(0, 0, bitmap.Width, bitmap.Height), ImageLockMode.ReadWrite, bitmap.PixelFormat);
+
+            unsafe
+            {
+                byte* pCurrRowPixel = (byte*)bd.Scan0.ToPointer();
+
+                Mask mask = null;
+                Channel r, g, b, a;
+                r = g = b = a = null;
+                foreach (var item in layer.Channels)
+                {
+                    switch (item.ChannelType)
                     {
-                        c = new Color();
-                        c.B = data[n++];
-                        c.G = data[n++];
-                        c.R = data[n++];
-                        c.A = (byte)System.Math.Round(data[n++] / 255f * Opacity * 255f);
+                        case EChannelType.UserMask:
+                            mask = layer.Masks.UserMask;
+                            break;
+                        case EChannelType.LayerMask:
+                            if (mask == null)
+                                mask = layer.Masks.LayerMask;
+                            break;
+                        case EChannelType.Alpha: a = item; break;
+                        case EChannelType.R: r = item; break;
+                        case EChannelType.G: g = item; break;
+                        case EChannelType.B: b = item; break;
+                        default: throw new NotImplementedException("未知通道类型：" + item.ChannelType);
                     }
-                    else
+                }
+
+                PixelData pixelColor;
+                for (int y = 0; y < layer.Rect.Height; y++)
+                {
+                    int rowIndex = y * layer.Rect.Width;
+                    PixelData* pCurrPixel = (PixelData*)pCurrRowPixel;
+                    for (int x = 0; x < layer.Rect.Width; x++)
                     {
-                        c.B = data[n++];
-                        c.G = data[n++];
-                        c.R = data[n++];
-                        c.A = (byte)System.Math.Round(Opacity * 255f);
+                        int pos = rowIndex + x;
+
+                        if (r == null) pixelColor.Red = 0; else pixelColor.Red = r.ImageData[pos];
+                        if (g == null) pixelColor.Green = 0; else pixelColor.Green = g.ImageData[pos];
+                        if (b == null) pixelColor.Blue = 0; else pixelColor.Blue = b.ImageData[pos];
+                        if (a == null) pixelColor.Alpha = 0; else pixelColor.Alpha = a.ImageData[pos];
+
+                        if (mask != null)
+                        {
+                            int maskAlpha = GetColor(mask, x, y);
+                            pixelColor.Alpha = (byte)((pixelColor.Alpha * maskAlpha) / 255);
+                        }
+
+                        *pCurrPixel = pixelColor;
+
+                        pCurrPixel += 1;
                     }
-                    colors[k++] = c;
+                    pCurrRowPixel += bd.Stride;
                 }
             }
-            */
-            Bitmap bmp;
-            fixed (byte* p = data)
+
+            bitmap.UnlockBits(bd);
+
+            return bitmap;
+        }
+
+        /////////////////////////////////////////////////////////////////////////// 
+
+        private static int GetColor(Mask mask, int x, int y)
+        {
+            int c = 255;
+
+            if (mask.PositionVsLayer)
             {
-                IntPtr ptr = (IntPtr)p;
-                bmp = new Bitmap(Width, Height, pitch, channelCount == 4 ? PixelFormat.Format32bppArgb : PixelFormat.Format24bppRgb, ptr);
+                x -= mask.Rect.X;
+                y -= mask.Rect.Y;
             }
-            return bmp;
+            else
+            {
+                x = (x + mask.Layer.Rect.X) - mask.Rect.X;
+                y = (y + mask.Layer.Rect.Y) - mask.Rect.Y;
+            }
+
+            if (y >= 0 && y < mask.Rect.Height &&
+                 x >= 0 && x < mask.Rect.Width)
+            {
+                int pos = y * mask.Rect.Width + x;
+                if (pos < mask.ImageData.Length)
+                    c = mask.ImageData[pos];
+                else
+                    c = 255;
+            }
+
+            return c;
         }
 
     }

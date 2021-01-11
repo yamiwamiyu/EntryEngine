@@ -6,6 +6,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Runtime.InteropServices;
 
 namespace PSDFile
 {
@@ -45,13 +46,27 @@ namespace PSDFile
                         byte[] imgData = reader.ReadBytes(numBytes - HEADER_LENGTH);
                         using (MemoryStream stream = new MemoryStream(imgData))
                         {
-                            var bitmap = new Bitmap(stream);
-                            Image = (Bitmap)bitmap.Clone();
+                            //var bitmap = new Bitmap(stream);
+                            //Image = (Bitmap)bitmap.Clone();
+                            Image = new Bitmap(stream);
                         }
 
                         // Reverse BGR pixels from old thumbnail format
                         if (id == ResourceID.ThumbnailBgr)
                         {
+                            var data = Image.LockBits(new Rectangle(0, 0, Image.Width, Image.Height), ImageLockMode.ReadWrite, PixelFormat.Format32bppArgb);
+                            int length = Image.Width * Image.Height * 4;
+                            byte[] buffer = new byte[length];
+                            Marshal.Copy(data.Scan0, buffer, 0, buffer.Length);
+                            byte temp;
+                            for (int i = 0; i < length; i += 4)
+                            {
+                                temp = buffer[i];
+                                buffer[i] = buffer[i + 2];
+                                buffer[i + 2] = temp;
+                            }
+                            Marshal.Copy(buffer, 0, data.Scan0, buffer.Length);
+                            Image.UnlockBits(data);
                             //for(int y=0;y<m_thumbnailImage.Height;y++)
                             //  for (int x = 0; x < m_thumbnailImage.Width; x++)
                             //  {

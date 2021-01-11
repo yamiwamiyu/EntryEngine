@@ -135,5 +135,11 @@
     <Compile Include="RleWriter.cs" />
     <Compile Include="Util.cs" />
   </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\EntryEngine\EntryEngine.csproj">
+      <Project>{424D14E4-1661-42E9-A192-B1C60D4669FF}</Project>
+      <Name>EntryEngine</Name>
+    </ProjectReference>
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

@@ -67,6 +67,16 @@ namespace PSDFile
 
     ///////////////////////////////////////////////////////////////////////////
 
+    public enum EChannelType : short
+    {
+        UserMask = -3,
+        LayerMask = -2,
+        Alpha = -1,
+        R = 0,
+        G = 1,
+        B = 2,
+    }
+
     [DebuggerDisplay("ID = {ID}")]
     public class Channel
     {
@@ -88,6 +98,8 @@ namespace PSDFile
         /// </list>
         /// </summary>
         public short ID { get; set; }
+
+        public EChannelType ChannelType { get { return (EChannelType)ID; } }
 
         public Rectangle Rect
         {
@@ -276,6 +288,5 @@ namespace PSDFile
             }
             writer.Write(ImageDataRaw);
         }
-
     }
 }
