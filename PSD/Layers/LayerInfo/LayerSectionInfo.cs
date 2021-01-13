@@ -4,9 +4,13 @@ namespace PSDFile
 {
     public enum LayerSectionType
     {
+        /// <summary>普通图层</summary>
         Layer = 0,
+        /// <summary>第一个图层组开始标记</summary>
         OpenFolder = 1,
+        /// <summary>非第一个图层组开始标记</summary>
         ClosedFolder = 2,
+        /// <summary>图层组结束的标记</summary>
         SectionDivider = 3
     }
 

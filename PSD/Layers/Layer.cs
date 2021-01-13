@@ -93,6 +93,14 @@ namespace PSDFile
 
         public LayerText LayerText { get; private set; }
 
+        public LayerSectionInfo LayerSection { get; private set; }
+        /// <summary>图层分隔符，PS中不可见</summary>
+        public bool IsGroupDivider { get { return LayerSection != null && LayerSection.SectionType == LayerSectionType.SectionDivider; } }
+        /// <summary>图层组</summary>
+        public bool IsGroup { get { return LayerSection != null && (LayerSection.SectionType == LayerSectionType.OpenFolder || LayerSection.SectionType == LayerSectionType.ClosedFolder); } }
+        /// <summary>图层</summary>
+        public bool IsLayer { get { return LayerSection == null || LayerSection.SectionType == LayerSectionType.Layer; } }
+
         ///////////////////////////////////////////////////////////////////////////
 
         public Layer(PsdFile psdFile)
@@ -159,15 +167,12 @@ namespace PSDFile
 
             foreach (var adjustmentInfo in AdditionalInfo)
             {
-                switch (adjustmentInfo.Key)
-                {
-                    case "luni":
-                        Name = ((LayerUnicodeName)adjustmentInfo).Name;
-                        break;
-                    case "TySh":
-                        LayerText = (LayerText)adjustmentInfo;
-                        break;
-                }
+                if (adjustmentInfo is LayerUnicodeName)
+                    Name = ((LayerUnicodeName)adjustmentInfo).Name;
+                else if (adjustmentInfo is LayerText)
+                    LayerText = (LayerText)adjustmentInfo;
+                else if (adjustmentInfo is LayerSectionInfo)
+                    LayerSection = (LayerSectionInfo)adjustmentInfo;
             }
 
             PsdFile.LoadContext.OnLoadLayerHeader(this);

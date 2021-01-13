@@ -346,6 +346,56 @@ namespace PSDFile
 
         public bool AbsoluteAlpha { get; set; }
 
+        /// <summary>获取可见的，图层或图层组</summary>
+        /// <param name="psOrder">true: ps里的顺序 / false: 从后往前的顺序</param>
+        public IEnumerable<Layer> GetLayersEnable(bool psOrder)
+        {
+            IEnumerable<Layer> result;
+            if (psOrder)
+                result = Layers.Reverse<Layer>();
+            else
+                result = Layers;
+            foreach (var item in result)
+                if (item.Visible && item.Name != "</Layer group>")
+                    yield return item;
+        }
+        /// <summary>获得和PS中相同结构的图层树（仅包含可见图层）</summary>
+        /// <returns>返回虚构的树的根节点，相当于PSD文档</returns>
+        public LayerTree GetLayerTree()
+        {
+            // 跟节点
+            LayerTree parent = new LayerTree();
+            // 图层组
+            Stack<LayerTree> stack = new Stack<LayerTree>();
+            stack.Push(parent);
+            for (int i = Layers.Count - 1; i >= 0; i--)
+            {
+                var layer = Layers[i];
+
+                if (layer.IsGroupDivider)
+                {
+                    parent = stack.Pop();
+                    continue;
+                }
+
+                LayerTree node = new LayerTree();
+                node.Parent = parent;
+                node.Layer = layer;
+
+                // 可见图层，父图层组可见图层
+                if (layer.Visible && !layer.IsGroupDivider
+                    && (parent.Layer == null || parent.Layer.Visible))
+                    parent.Childs.Add(node);
+
+                if (layer.IsGroup)
+                {
+                    stack.Push(parent);
+                    parent = node;
+                }
+            }
+            return parent;
+        }
+
         ///////////////////////////////////////////////////////////////////////////
 
         private void LoadLayerAndMaskInfo(PsdBinaryReader reader)
@@ -808,4 +858,20 @@ namespace PSDFile
         ZipPrediction = 3
     }
 
+    /// <summary>图层的组织结构，跟PS里打开的一样</summary>
+    public class LayerTree
+    {
+        public Layer Layer;
+        public LayerTree Parent;
+        public List<LayerTree> Childs = new List<LayerTree>();
+
+        /// <summary>true: 图层 / false: 图层组</summary>
+        public bool IsLayer { get { return Layer != null && Layer.IsLayer; } }
+
+        public override string ToString()
+        {
+            if (Layer == null) return "root";
+            return Layer.Name;
+        }
+    }
 }

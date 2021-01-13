@@ -50,8 +50,7 @@ namespace PSDFile.Text
         }
         public Dictionary<string, object> GetParagraphDataFromLongestRun()
         {
-            int index = GetIndexOfLargestValue(getParagraphRunLengths());
-            return TdTaParser.getDict(getParagraphRun(index), "ParagraphSheet.Properties");
+            return TdTaParser.getDict(getParagraphRun(0), "ParagraphSheet.Properties");
         }
         public int GetIndexOfLargestValue(List<int> l)
         {
