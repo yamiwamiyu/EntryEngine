@@ -48,6 +48,12 @@ namespace PSDFile
                 case "luni":
                     result = new LayerUnicodeName(reader);
                     break;
+                case "TySh":
+                    result = new LayerText(reader, (int)length);
+                    break;
+                case "tySH":
+                    result = new LayerTextType(reader);
+                    break;
                 default:
                     result = new RawLayerInfo(reader, signature, key, length);
                     break;
@@ -111,7 +117,7 @@ namespace PSDFile
 
     public abstract class LayerInfo
     {
-        public abstract string Signature { get; }
+        public virtual string Signature { get { return "8BIM"; } }
 
         public abstract string Key { get; }
 

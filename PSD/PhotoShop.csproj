@@ -119,10 +119,18 @@
     <Compile Include="Layers\Channel.cs" />
     <Compile Include="Layers\Layer.cs" />
     <Compile Include="Layers\LayerInfo.cs" />
+    <Compile Include="Layers\LayerInfo\DynVal.cs" />
+    <Compile Include="Layers\LayerInfo\FourCC.cs" />
     <Compile Include="Layers\LayerInfo\InfoLayers.cs" />
     <Compile Include="Layers\LayerInfo\LayerSectionInfo.cs" />
+    <Compile Include="Layers\LayerInfo\LayerText.cs" />
+    <Compile Include="Layers\LayerInfo\LayerTextType.cs" />
     <Compile Include="Layers\LayerInfo\LayerUnicodeName.cs" />
     <Compile Include="Layers\LayerInfo\RawLayerInfo.cs" />
+    <Compile Include="Layers\LayerInfo\ReadableBinary.cs" />
+    <Compile Include="Layers\LayerInfo\TdTaParser.cs" />
+    <Compile Include="Layers\LayerInfo\TdTaStylesheetReader.cs" />
+    <Compile Include="Layers\LayerInfo\Token.cs" />
     <Compile Include="Layers\Mask.cs" />
     <Compile Include="LoadContext.cs" />
     <Compile Include="PsdBinaryReader.cs" />
@@ -134,12 +142,6 @@
     <Compile Include="RleRowLengths.cs" />
     <Compile Include="RleWriter.cs" />
     <Compile Include="Util.cs" />
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\EntryEngine\EntryEngine.csproj">
-      <Project>{424D14E4-1661-42E9-A192-B1C60D4669FF}</Project>
-      <Name>EntryEngine</Name>
-    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

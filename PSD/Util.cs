@@ -38,21 +38,6 @@ namespace PSDFile
             rect.Offset(r2c.X - r1c.X, r2c.Y - r1c.Y);
         }
 
-        public static Layer MakeImageLayer(this PsdFile psd, Bitmap bmp, string name, int x = 0, int y = 0)
-        {
-            Layer psdLayer = new Layer(psd);
-            // Set layer metadata
-            psdLayer.Name = name;
-            psdLayer.Rect = new Rectangle(new Point(x, y), bmp.Size);
-            psdLayer.BlendModeKey = PsdBlendMode.Normal;
-            psdLayer.Opacity = 255;
-            psdLayer.Visible = true;
-            psdLayer.Masks = new MaskInfo();
-            psdLayer.BlendingRangesData = new BlendingRanges(psdLayer);
-            psdLayer.SetBitmap(bmp, ImageReplaceOption.KeepCenter, psd.ImageCompression);
-            return psdLayer;
-        }
-
         public static Layer MakeSectionLayers(this PsdFile psd, string name, out Layer dividerLayer, bool isOpen = false)
         {
             Layer headLayer = new Layer(psd)

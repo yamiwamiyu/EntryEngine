@@ -4,8 +4,6 @@ namespace PSDFile
 {
     public class LayerUnicodeName : LayerInfo
     {
-        public override string Signature { get { return "8BIM"; } }
-
         public override string Key { get { return "luni"; } }
 
         public string Name { get; set; }

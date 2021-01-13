@@ -105,6 +105,16 @@ namespace PSDFile
             return val;
         }
 
+        public double ReadDouble()
+        {
+            double val = reader.ReadDouble();
+            unsafe
+            {
+                Util.SwapBytes((byte*)&val, 8);
+            }
+            return val;
+        }
+
         /// <summary>
         /// Read padding to get to the byte multiple for the block.
         /// </summary>
@@ -165,6 +175,21 @@ namespace PSDFile
             var str = Encoding.BigEndianUnicode.GetString(data, 0, length);
 
             return str;
+        }
+
+        public bool CanReadByte()
+        {
+            return reader.BaseStream.Position < reader.BaseStream.Length;
+        }
+
+        public int PeekChar()
+        {
+            return reader.PeekChar();
+        }
+
+        public char ReadChar()
+        {
+            return reader.ReadChar();
         }
 
         #region IDisposable
