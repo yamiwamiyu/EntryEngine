@@ -6924,6 +6924,7 @@ namespace EntryEngine
                 reader.Read(out buffer.y);
                 reader.Read(out buffer.W);
                 reader.Read(out buffer.H);
+                buffer.Space = buffer.W;
                 maps.Add(c, buffer);
                 if (buffer.Index != index)
                     index++;

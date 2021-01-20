@@ -163,6 +163,26 @@ namespace EntryEngine
             return true;
         }
     }
+    [AReflexible]public class PSFont : PSSkip
+    {
+        public FONT Font = FONT.Default;
+        public float FontSize;
+        public string Text;
+        public UI.EPivot Pivot;
+        public override bool Update(Particle p, ParticleEmitter ps, float elapsed)
+        {
+            if (FontSize > 0)
+                Font.FontSize = FontSize;
+            p.Font = Font;
+            p.Text = Text;
+            if (!string.IsNullOrEmpty(Text))
+            {
+                VECTOR2 size = Font.MeasureString(Text);
+                p.TextOffset = UI.UIElement.CalcPivotPoint(size, Pivot);
+            }
+            return true;
+        }
+    }
     [AReflexible]public class PSTex : PSSkip
     {
         public TEXTURE Texture = TEXTURE.Pixel;
@@ -629,9 +649,12 @@ namespace EntryEngine
     // PARTICLE SYSTEM
     public class Particle : PoolItem
     {
+        public FONT Font;
+        public string Text;
+        public VECTOR2 TextOffset;
         public TEXTURE Texture;
         public VECTOR2 Position;
-        public COLOR Color;
+        public COLOR Color = COLOR.White;
         public VECTOR2 Scale = new VECTOR2(1);
         public float Rotation;
         public VECTOR2 Origin;
@@ -660,9 +683,9 @@ namespace EntryEngine
             }
         }
         internal VECTOR2 Vector;
-        // 绝对坐标，不会跟随粒子系统位移，但会跟随粒子系统的其它矩阵变化
+        /// <summary>绝对坐标，不会跟随粒子系统位移，但会跟随粒子系统的其它矩阵变化</summary>
         public VECTOR2 AbsolutePosition;
-        // 0: 相对坐标 1: 绝对坐标尚未确定坐标 2: 绝对坐标已确定坐标
+        /// <summary>0: 相对坐标 1: 绝对坐标尚未确定坐标 2: 绝对坐标已确定坐标</summary>
         public byte PosMode;
         public float Rotate;
 
@@ -942,22 +965,31 @@ namespace EntryEngine
         {
             particles.For(sprite =>
             {
+                VECTOR2 pos;
+                if (sprite.PosMode == 1)
+                {
+                    sprite.AbsolutePosition = apos;
+                    sprite.PosMode = 2;
+                }
+                if (sprite.PosMode == 2)
+                {
+                    pos.X = sprite.Position.X + sprite.AbsolutePosition.X - apos.X;
+                    pos.Y = sprite.Position.Y + sprite.AbsolutePosition.Y - apos.Y;
+                }
+                else
+                {
+                    pos.X = sprite.Position.X;
+                    pos.Y = sprite.Position.Y;
+                }
                 if (sprite.Texture != null)
                 {
-                    if (sprite.PosMode == 1)
-                    {
-                        sprite.AbsolutePosition = apos;
-                        sprite.PosMode = 2;
-                    }
-                    if (sprite.PosMode == 0)
-                        graphics.Draw(sprite.Texture, sprite.Position, GRAPHICS.NullSource, sprite.Color, sprite.Rotation, sprite.Origin, sprite.Scale, sprite.Flip);
-                    else
-                    {
-                        VECTOR2 pos;
-                        pos.X = sprite.Position.X + sprite.AbsolutePosition.X - apos.X;
-                        pos.Y = sprite.Position.Y + sprite.AbsolutePosition.Y - apos.Y;
-                        graphics.Draw(sprite.Texture, pos, GRAPHICS.NullSource, sprite.Color, sprite.Rotation, sprite.Origin, sprite.Scale, sprite.Flip);
-                    }
+                    graphics.Draw(sprite.Texture, pos, GRAPHICS.NullSource, sprite.Color, sprite.Rotation, sprite.Origin, sprite.Scale, sprite.Flip);
+                }
+                if (sprite.Font != null && !string.IsNullOrEmpty(sprite.Text))
+                {
+                    pos.X -= sprite.TextOffset.X;
+                    pos.Y -= sprite.TextOffset.Y;
+                    graphics.Draw(sprite.Font, sprite.Text, pos, sprite.Color, 1);
                 }
             });
         }
@@ -1024,6 +1056,7 @@ namespace EntryEngine
             byte[] buffer = IO.ReadByte(file);
             ByteRefReader reader = new ByteRefReader(buffer);
             reader.AddOnDeserialize(TEXTURE.Deserializer(Manager, null));
+            reader.AddOnDeserialize(FONT.Deserializer(Manager, null));
             return new ParticleSystem(reader.ReadObject<StructureParticleSystem>());
         }
         protected internal override void LoadAsync(AsyncLoadContent async)
@@ -1035,6 +1068,7 @@ namespace EntryEngine
 
                     ByteRefReader reader = new ByteRefReader(wait.Data);
                     reader.AddOnDeserialize(TEXTURE.Deserializer(Manager, asyncs));
+                    reader.AddOnDeserialize(FONT.Deserializer(Manager, null));
                     TEXTURE result = new ParticleSystem(reader.ReadObject<StructureParticleSystem>());
 
                     // 等待异步加载的延迟图片加载完成

@@ -2114,6 +2114,18 @@ namespace EntryEngine.Network
         }
     }
 
+    public class HttpError
+    {
+        public int errCode;
+        public string errMsg;
+        public HttpError() { }
+        public HttpError(int code, string msg)
+        {
+            this.errCode = code;
+            this.errMsg = msg;
+        }
+    }
+
     [AttributeUsage(AttributeTargets.Interface)]
     public class ProtocolStubAttribute : Attribute
     {

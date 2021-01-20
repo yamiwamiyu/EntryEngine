@@ -665,6 +665,7 @@ public partial class EditorParticle : SceneEditorEntry
         //ByteRefWriter writer = new ByteRefWriter(SerializeSetting.DefaultSerializeProperty);
         ByteRefWriter writer = new ByteRefWriter();
         writer.AddOnSerialize(TEXTURE.Serializer);
+        writer.AddOnSerialize(EntryEngine.Content.Serializer);
         return writer;
     }
     ByteRefReader GetReader(byte[] buffer)
@@ -672,6 +673,7 @@ public partial class EditorParticle : SceneEditorEntry
         //ByteRefReader reader = new ByteRefReader(buffer, SerializeSetting.DefaultSerializeProperty);
         ByteRefReader reader = new ByteRefReader(buffer);
         reader.AddOnDeserialize(TEXTURE.Deserializer(Content, null));
+        reader.AddOnDeserialize(FONT.Deserializer(Content, null));
         return reader;
     }
     ParticleStream[] Load(string file)

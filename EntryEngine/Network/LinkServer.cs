@@ -2211,17 +2211,6 @@ namespace EntryEngine.Network
                 context.Response.OutputStream.BeginWrite(buffer, offset, count, EndResponse, context);
         }
     }
-    public class HttpError
-    {
-        public int errCode;
-        public string errMsg;
-        public HttpError() { }
-        public HttpError(int code, string msg)
-        {
-            this.errCode = code;
-            this.errMsg = msg;
-        }
-    }
 
     public class FileService
     {
