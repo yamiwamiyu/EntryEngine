@@ -13,7 +13,8 @@ using System.Windows.Forms;
 using EntryEngine;
 using EntryEngine.Network;
 using EntryEngine.Serialize;
-using PhotoshopFile;
+//using PhotoshopFile;
+using PSDFile;
 using System.Drawing.Imaging;
 using EntryBuilder.CodeAnalysis.Syntax;
 using EntryBuilder.CodeAnalysis.Semantics;
@@ -506,6 +507,27 @@ namespace EntryBuilder
         [STAThread]
 		static void Main(string[] args)
         {
+            //byte[] buffer = File.ReadAllBytes("首页.psd");
+            //byte[] find = Encoding.ASCII.GetBytes("/Text (");
+            //for (int i = 0; i < buffer.Length; i++)
+            //{
+            //    bool flag = true;
+            //    for (int j = 0; j < find.Length; j++)
+            //        if (buffer[i + j] != find[j])
+            //        {
+            //            flag = false;
+            //            break;
+            //        }
+            //    if (flag)
+            //    {
+            //        byte[] copy = new byte[100];
+            //        Array.Copy(buffer, i, copy, 0, copy.Length);
+            //        Console.WriteLine(copy);
+            //    }
+            //}
+            //char c = (char)'|';
+            //int v = (int)c;
+            //PSD2JS("首页.psd", "");
             //_LOG._Logger = new LoggerConsole();
 
             //GaussianBlur gauss = new GaussianBlur(15);
@@ -3890,6 +3912,19 @@ namespace EntryBuilder
             }
         }
 
+        /// <summary>内容使用rem为单位，根据根节点的这个字体大小来计算</summary>
+        const int REM = 14;
+        /// <summary>像素转Rem</summary>
+        public static string Px2Rem(double px)
+        {
+            return Math.Round(px / REM, 2).ToString("0.00") + "rem";
+        }
+        public static string JSColor(Color color)
+        {
+            return string.Format("#{0:x2}{1:x2}{2:x2}{3}", color.R, color.G, color.B, color.A == 255 ? string.Empty : color.A.ToString("x2"));
+        }
+
+
 		public static void BuildEntryEngine(string outputDir)
 		{
 			var entryType = typeof(Entry);
@@ -4195,269 +4230,273 @@ namespace EntryBuilder
                 File.WriteAllBytes(Path.Combine(outputDir, Path.GetFileName(file)), data);
             }
         }
+        [Code(ECode.ToBeContinue)]
+        [Obsolete("使用了新的AsposePSD暂未实现该方法")]
 		public static void BuildPSDTranslate(string dirOrPsdFile, string languageTableCSV)
 		{
-			HashSet<string> newWord = new HashSet<string>();
-			StringTable table;
-			string[] files = GetFiles(dirOrPsdFile, "*.psd");
-			foreach (string file in files)
-			{
-                string languageTable = Path.Combine(Path.GetDirectoryName(file), Path.GetFileNameWithoutExtension(file) + ".csv");
-                //if (File.Exists(languageTable))
-                //{
-                //    Console.WriteLine("跳过翻译已存在的LanguageTable: {0}", languageTable);
-                //    continue;
-                //}
-                // 目标文件为翻译时保存出来的文件
-                if (file.EndsWith("t.psd"))
-                    continue;
+            //HashSet<string> newWord = new HashSet<string>();
+            //StringTable table;
+            //string[] files = GetFiles(dirOrPsdFile, "*.psd");
+            //foreach (string file in files)
+            //{
+            //    string languageTable = Path.Combine(Path.GetDirectoryName(file), Path.GetFileNameWithoutExtension(file) + ".csv");
+            //    //if (File.Exists(languageTable))
+            //    //{
+            //    //    Console.WriteLine("跳过翻译已存在的LanguageTable: {0}", languageTable);
+            //    //    continue;
+            //    //}
+            //    // 目标文件为翻译时保存出来的文件
+            //    if (file.EndsWith("t.psd"))
+            //        continue;
 
-				// open psd
-				PsdFile psd = new PsdFile(file);
+            //    // open psd
+            //    PsdFile psd = new PsdFile(file);
 
-				// build psd text into csv
-				table = new StringTable();
-				table.AddColumn("图层");
-				table.AddColumn("中文");
-				table.AddColumn("对齐");
+            //    // build psd text into csv
+            //    table = new StringTable();
+            //    table.AddColumn("图层");
+            //    table.AddColumn("中文");
+            //    table.AddColumn("对齐");
 
-				foreach (Layer layer in psd.Layers)
-				{
-					foreach (LayerInfo info in layer.AdditionalInfo)
-					{
-						LayerText textInfo = info as LayerText;
-						if (textInfo == null)
-							continue;
+            //    foreach (Layer layer in psd.Layers)
+            //    {
+            //        foreach (LayerInfo info in layer.AdditionalInfo)
+            //        {
+            //            LayerText textInfo = info as LayerText;
+            //            if (textInfo == null)
+            //                continue;
 
-						string value = textInfo.Text;
-						if (value.EndsWith("\0"))
-							value = value.Remove(value.Length - 1);
+            //            string value = textInfo.Text;
+            //            if (value.EndsWith("\0"))
+            //                value = value.Remove(value.Length - 1);
 
-                        if (string.IsNullOrEmpty(value.Trim()))
-                            continue;
+            //            if (string.IsNullOrEmpty(value.Trim()))
+            //                continue;
 
-                        double number;
-                        if (double.TryParse(value, out number))
-                            continue;
+            //            double number;
+            //            if (double.TryParse(value, out number))
+            //                continue;
 
-                        value = CSVWriter.Encode(value);
-						newWord.Add(value);
+            //            value = CSVWriter.Encode(value);
+            //            newWord.Add(value);
 
-						table.AddRow(layer.Name, value, string.Empty);
-					}
-				}
+            //            table.AddRow(layer.Name, value, string.Empty);
+            //        }
+            //    }
 
-				WriteCSVTable(languageTable, table);
-			}
-			// build new text into languag table
-			if (File.Exists(languageTableCSV))
-			{
-				table = ReadCSVTable(languageTableCSV);
-			}
-			else
-			{
-				File.Create(languageTableCSV).Close();
-				table = new StringTable();
-				table.AddColumn("标识列");
-				table.AddColumn("中文");
-			}
+            //    WriteCSVTable(languageTable, table);
+            //}
+            //// build new text into languag table
+            //if (File.Exists(languageTableCSV))
+            //{
+            //    table = ReadCSVTable(languageTableCSV);
+            //}
+            //else
+            //{
+            //    File.Create(languageTableCSV).Close();
+            //    table = new StringTable();
+            //    table.AddColumn("标识列");
+            //    table.AddColumn("中文");
+            //}
 
-			foreach (string word in newWord)
-			{
-				if (table.GetRowIndex(1, word) == -1)
-				{
-					Console.WriteLine("新添文字到语言表：{0}", word);
-					table.AddRow(table.RowCount.ToString(), word);
-				}
-			}
+            //foreach (string word in newWord)
+            //{
+            //    if (table.GetRowIndex(1, word) == -1)
+            //    {
+            //        Console.WriteLine("新添文字到语言表：{0}", word);
+            //        table.AddRow(table.RowCount.ToString(), word);
+            //    }
+            //}
 
-			WriteCSVTable(languageTableCSV, table);
+            //WriteCSVTable(languageTableCSV, table);
 		}
+        [Code(ECode.ToBeContinue)]
+        [Obsolete("使用了新的AsposePSD暂未实现该方法")]
 		public static void BuildTranslatePSD(string dirOrPsdFile, string languageTableCSV, string language)
 		{
-			TableList<string, string> table1 = ReadCSVTable(languageTableCSV);
-			int index1 = table1.GetColumnIndex(language);
-			if (index1 == -1)
-			{
-				Console.WriteLine("语言总表没有翻译{0}", language);
-				return;
-			}
-			string primary = table1.GetColumn(1);
+            //TableList<string, string> table1 = ReadCSVTable(languageTableCSV);
+            //int index1 = table1.GetColumnIndex(language);
+            //if (index1 == -1)
+            //{
+            //    Console.WriteLine("语言总表没有翻译{0}", language);
+            //    return;
+            //}
+            //string primary = table1.GetColumn(1);
 
-            /*
-             * PSD修改文字步骤
-             * . 打开一个PSD文件
-             * --. 按键Ctrl + Alt + 0，实际像素显示图像。图像过大可能已66.67%之类的过小尺寸显示。
-             * . 按键Ctrl + 0，按屏幕大小缩放
-             * . 按键T，选用文字工具
-             * . 循环每个文字图层
-             *    1. 鼠标点击图层左下角选中图层并进入编辑（超出屏幕的可能要拖动画布）
-             *    P.S. 文字内可能有尺寸不一样的情况，翻译时可能需要逐个替换文字
-             *    2. 按键Ctrl + A全选文字，Ctrl + V粘贴文字，Ctrl + Enter确认修改
-             * . 按键Ctrl + Shift + S另存PSD源文件
-             * . 按键Ctrl + W关闭文件
-             * 
-             * . 对齐暂未实现：PS中文字图层有对齐选项，选好再进行翻译变长变短也都是对齐的
-             */
+            ///*
+            // * PSD修改文字步骤
+            // * . 打开一个PSD文件
+            // * --. 按键Ctrl + Alt + 0，实际像素显示图像。图像过大可能已66.67%之类的过小尺寸显示。
+            // * . 按键Ctrl + 0，按屏幕大小缩放
+            // * . 按键T，选用文字工具
+            // * . 循环每个文字图层
+            // *    1. 鼠标点击图层左下角选中图层并进入编辑（超出屏幕的可能要拖动画布）
+            // *    P.S. 文字内可能有尺寸不一样的情况，翻译时可能需要逐个替换文字
+            // *    2. 按键Ctrl + A全选文字，Ctrl + V粘贴文字，Ctrl + Enter确认修改
+            // * . 按键Ctrl + Shift + S另存PSD源文件
+            // * . 按键Ctrl + W关闭文件
+            // * 
+            // * . 对齐暂未实现：PS中文字图层有对齐选项，选好再进行翻译变长变短也都是对齐的
+            // */
 
-			string[] files = GetFiles(dirOrPsdFile, "*.psd");
-			foreach (string file in files)
-			{
-                if (file.EndsWith("t.psd"))
-                    continue;
+            //string[] files = GetFiles(dirOrPsdFile, "*.psd");
+            //foreach (string file in files)
+            //{
+            //    if (file.EndsWith("t.psd"))
+            //        continue;
 
-				// translated psd file not work
-				string fileName = Path.GetFileNameWithoutExtension(file);
-				int trans = fileName.IndexOf('_');
-				if (trans != -1 && table1.GetColumnIndex(fileName.Substring(trans + 1)) != -1)
-					continue;
+            //    // translated psd file not work
+            //    string fileName = Path.GetFileNameWithoutExtension(file);
+            //    int trans = fileName.IndexOf('_');
+            //    if (trans != -1 && table1.GetColumnIndex(fileName.Substring(trans + 1)) != -1)
+            //        continue;
 
-				Process process = Process.Start(file);
-				Sleep(1000);
+            //    Process process = Process.Start(file);
+            //    Sleep(1000);
 
-				languageTableCSV = Path.Combine(Path.ChangeExtension(file, ".csv"));
-                // 没有语言表的psd不翻译
-                if (!File.Exists(languageTableCSV))
-                    continue;
-				TableList<string, string> table2 = ReadCSVTable(languageTableCSV);
-				int index2 = table2.GetColumnIndex(language);
+            //    languageTableCSV = Path.Combine(Path.ChangeExtension(file, ".csv"));
+            //    // 没有语言表的psd不翻译
+            //    if (!File.Exists(languageTableCSV))
+            //        continue;
+            //    TableList<string, string> table2 = ReadCSVTable(languageTableCSV);
+            //    int index2 = table2.GetColumnIndex(language);
 
-				//SendKeys.SendWait("^%{0}");
-                SendKeys.SendWait("^{0}");
+            //    //SendKeys.SendWait("^%{0}");
+            //    SendKeys.SendWait("^{0}");
 
-				Rectangle area = Screen.PrimaryScreen.WorkingArea;
-				Point center = new Point(area.X + area.Width / 2, area.Y + area.Height / 2);
-				// get phothshop window handle and work area
-				IntPtr windowIntptr = WindowFromPoint(center);
-				int result = GetWindowRect(windowIntptr, ref area);
-				// Width & Height is real the Right & Bottom
-				area = new Rectangle(area.X, area.Y, area.Width - area.X, area.Height - area.Y);
-				PsdFile psd = new PsdFile(file);
-                // 0.04大概是滚动条所占视口的比例
-                const float SCROLL_BAR = 1.04f;
-                float scale = Math.Min(area.Width / SCROLL_BAR / psd.ColumnCount, area.Height / SCROLL_BAR / psd.RowCount);
+            //    Rectangle area = Screen.PrimaryScreen.WorkingArea;
+            //    Point center = new Point(area.X + area.Width / 2, area.Y + area.Height / 2);
+            //    // get phothshop window handle and work area
+            //    IntPtr windowIntptr = WindowFromPoint(center);
+            //    int result = GetWindowRect(windowIntptr, ref area);
+            //    // Width & Height is real the Right & Bottom
+            //    area = new Rectangle(area.X, area.Y, area.Width - area.X, area.Height - area.Y);
+            //    PsdFile psd = new PsdFile(file);
+            //    // 0.04大概是滚动条所占视口的比例
+            //    const float SCROLL_BAR = 1.04f;
+            //    float scale = Math.Min(area.Width / SCROLL_BAR / psd.ColumnCount, area.Height / SCROLL_BAR / psd.RowCount);
 
-                SendKeys.SendWait("T");
+            //    SendKeys.SendWait("T");
 
-                Stack<bool> groups = new Stack<bool>();
-                for (int i = psd.Layers.Count - 1; i >= 0; i--)
-				{
-                    var layer = psd.Layers[i];
-                    // 文件夹组
-                    if (layer.Rect == Rectangle.Empty)
-                    {
-                        if (layer.Name == "</Layer group>")
-                        {
-                            // 组结束
-                            groups.Pop();
-                        }
-                        else
-                        {
-                            // 新组
-                            bool visible = layer.Visible && layer.Opacity > 0;
-                            if (groups.Count > 0)
-                                visible &= groups.Peek();
-                            groups.Push(visible);
-                        }
-                        continue;
-                    }
-                    // 组不可见或者图层不可见都不翻译
-                    if ((groups.Count > 0 && !groups.Peek()) || !layer.Visible || layer.Opacity == 0)
-                        continue;
+            //    Stack<bool> groups = new Stack<bool>();
+            //    for (int i = psd.Layers.Count - 1; i >= 0; i--)
+            //    {
+            //        var layer = psd.Layers[i];
+            //        // 文件夹组
+            //        if (layer.Rect == Rectangle.Empty)
+            //        {
+            //            if (layer.Name == "</Layer group>")
+            //            {
+            //                // 组结束
+            //                groups.Pop();
+            //            }
+            //            else
+            //            {
+            //                // 新组
+            //                bool visible = layer.Visible && layer.Opacity > 0;
+            //                if (groups.Count > 0)
+            //                    visible &= groups.Peek();
+            //                groups.Push(visible);
+            //            }
+            //            continue;
+            //        }
+            //        // 组不可见或者图层不可见都不翻译
+            //        if ((groups.Count > 0 && !groups.Peek()) || !layer.Visible || layer.Opacity == 0)
+            //            continue;
 
-					string text = null;
-					foreach (var addition in layer.AdditionalInfo)
-					{
-						if (addition.Key == "TySh")
-						{
-							text = (addition as LayerText).Text;
-							break;
-						}
-					}
-					if (text != null)
-					{
-						if (text.EndsWith("\0"))
-							text = text.Remove(text.Length - 1);
-                        text = CSVWriter.Encode(text);
+            //        string text = null;
+            //        foreach (var addition in layer.AdditionalInfo)
+            //        {
+            //            if (addition.Key == "TySh")
+            //            {
+            //                text = (addition as LayerText).Text;
+            //                break;
+            //            }
+            //        }
+            //        if (text != null)
+            //        {
+            //            if (text.EndsWith("\0"))
+            //                text = text.Remove(text.Length - 1);
+            //            text = CSVWriter.Encode(text);
 
-						string translate = string.Empty;
-						if (index2 != -1)
-						{
-							int row = table2.GetRowIndex(primary, text);
-							if (row == -1)
-							{
-								Console.WriteLine("{0}缺少主键{1}", languageTableCSV, text);
-							}
-							else
-							{
-								if (!string.IsNullOrEmpty(table2[index2, row]))
-								{
-									translate = table2[index2, row];
-								}
-							}
-						}
-						if (string.IsNullOrEmpty(translate))
-						{
-							int row = table1.GetRowIndex(primary, text);
-							if (row == -1)
-							{
-								Console.WriteLine("语言总表缺少主键{0}", text);
-							}
-							else
-							{
-								translate = table1[index1, row];
-							}
-						}
+            //            string translate = string.Empty;
+            //            if (index2 != -1)
+            //            {
+            //                int row = table2.GetRowIndex(primary, text);
+            //                if (row == -1)
+            //                {
+            //                    Console.WriteLine("{0}缺少主键{1}", languageTableCSV, text);
+            //                }
+            //                else
+            //                {
+            //                    if (!string.IsNullOrEmpty(table2[index2, row]))
+            //                    {
+            //                        translate = table2[index2, row];
+            //                    }
+            //                }
+            //            }
+            //            if (string.IsNullOrEmpty(translate))
+            //            {
+            //                int row = table1.GetRowIndex(primary, text);
+            //                if (row == -1)
+            //                {
+            //                    Console.WriteLine("语言总表缺少主键{0}", text);
+            //                }
+            //                else
+            //                {
+            //                    translate = table1[index1, row];
+            //                }
+            //            }
 
-						if (text == translate || string.IsNullOrEmpty(translate))
-							continue;
+            //            if (text == translate || string.IsNullOrEmpty(translate))
+            //                continue;
 
-                        // 粘贴翻译到文本图层
-                        Point leftTop = new Point((int)((area.Width - psd.ColumnCount * scale) / 2 + area.X), (int)((area.Height - psd.RowCount * scale) / 2 + area.Y));
-                        //LeftClick(leftTop.X + layer.Rect.Left, leftTop.Y + layer.Rect.Top + layer.Rect.Height / 2);
-                        leftTop.X += _MATH.Ceiling(layer.Rect.Left * scale);
-                        leftTop.Y += _MATH.Ceiling((layer.Rect.Top + layer.Rect.Height / 2) * scale);
-                        LeftClick(leftTop.X, leftTop.Y);
-						Clipboard.SetText(translate);
-						Sleep(50);
-						SendKeys.SendWait("^a");
-						Sleep(50);
-						SendKeys.SendWait("^v");
-						Sleep(50);
-						SendKeys.SendWait("^{ENTER}");
-					}
+            //            // 粘贴翻译到文本图层
+            //            Point leftTop = new Point((int)((area.Width - psd.ColumnCount * scale) / 2 + area.X), (int)((area.Height - psd.RowCount * scale) / 2 + area.Y));
+            //            //LeftClick(leftTop.X + layer.Rect.Left, leftTop.Y + layer.Rect.Top + layer.Rect.Height / 2);
+            //            leftTop.X += _MATH.Ceiling(layer.Rect.Left * scale);
+            //            leftTop.Y += _MATH.Ceiling((layer.Rect.Top + layer.Rect.Height / 2) * scale);
+            //            LeftClick(leftTop.X, leftTop.Y);
+            //            Clipboard.SetText(translate);
+            //            Sleep(50);
+            //            SendKeys.SendWait("^a");
+            //            Sleep(50);
+            //            SendKeys.SendWait("^v");
+            //            Sleep(50);
+            //            SendKeys.SendWait("^{ENTER}");
+            //        }
 
-                    if (GetKeyState(Keys.Escape) < 0)
-                    {
-                        // 激活此窗体提示暂停或退出
-                        SetForegroundWindow(Process.GetCurrentProcess().Handle);
-                        Console.WriteLine("ESC，ENTER，SPACE键退出，其它任意键继续");
-                        var info = Console.ReadKey();
-                        if (info.Key == ConsoleKey.Escape
-                            || info.Key == ConsoleKey.Spacebar
-                            || info.Key == ConsoleKey.Enter)
-                            Console.WriteLine("退出");
-                    }
-				}
+            //        if (GetKeyState(Keys.Escape) < 0)
+            //        {
+            //            // 激活此窗体提示暂停或退出
+            //            SetForegroundWindow(Process.GetCurrentProcess().Handle);
+            //            Console.WriteLine("ESC，ENTER，SPACE键退出，其它任意键继续");
+            //            var info = Console.ReadKey();
+            //            if (info.Key == ConsoleKey.Escape
+            //                || info.Key == ConsoleKey.Spacebar
+            //                || info.Key == ConsoleKey.Enter)
+            //                Console.WriteLine("退出");
+            //        }
+            //    }
 
-                // 保存新PSD文件
-				SendKeys.SendWait("^+{s}");
-				string newFile = string.Format("{0}_{1}.t.psd", fileName, language);
-				Clipboard.SetText(newFile);
-				Sleep(50);
-				SendKeys.SendWait("^v");
-				Sleep(50);
-				SendKeys.SendWait("{ENTER}");
-				if (File.Exists(Path.Combine(Path.GetDirectoryName(languageTableCSV), newFile)))
-				{
-					Sleep(500);
-					SendKeys.SendWait("{ENTER}");
-				}
-				Sleep(250);
-                SendKeys.SendWait("{ENTER}");
-                Sleep(100);
-				SendKeys.SendWait("^w");
-			}
+            //    // 保存新PSD文件
+            //    SendKeys.SendWait("^+{s}");
+            //    string newFile = string.Format("{0}_{1}.t.psd", fileName, language);
+            //    Clipboard.SetText(newFile);
+            //    Sleep(50);
+            //    SendKeys.SendWait("^v");
+            //    Sleep(50);
+            //    SendKeys.SendWait("{ENTER}");
+            //    if (File.Exists(Path.Combine(Path.GetDirectoryName(languageTableCSV), newFile)))
+            //    {
+            //        Sleep(500);
+            //        SendKeys.SendWait("{ENTER}");
+            //    }
+            //    Sleep(250);
+            //    SendKeys.SendWait("{ENTER}");
+            //    Sleep(100);
+            //    SendKeys.SendWait("^w");
+            //}
 		}
         /// <summary>UI编辑器翻译</summary>
 		public static void BuildTableTranslate(string languageTableCSV, string inputDirOrFile)
@@ -10169,6 +10208,141 @@ namespace EntryBuilder
             string text = File.ReadAllText(file);
             File.WriteAllText(file, text.Replace(old, replace));
             Console.WriteLine("替换文件{0}字符串 {1} => {2} 完成", file, old, replace);
+        }
+        public static void PSD2JS(string psdOrDirSplitByComma, string outputDir)
+        {
+            string[] split = psdOrDirSplitByComma.Split(',');
+            // 所有参与生成代码的psd文件，Key为文件名，Value为文件全路径
+            Dictionary<string, string> psds = new Dictionary<string, string>();
+            for (int i = 0; i < split.Length; i++)
+                // psd文件
+                if (Path.GetExtension(split[i]).ToLower() == ".psd")
+                    try { psds.Add(Path.GetFileNameWithoutExtension(split[i]), Path.GetFullPath(split[i])); }
+                    catch { throw new Exception(string.Format("存在相同的文件名：\r\n{0}\r\n{1}", psds[Path.GetFileName(split[i])], Path.GetFullPath(split[i]))); }
+                else
+                    // 文件夹里的所有psd文件
+                    foreach (var file in GetFiles(split[i], SearchOption.AllDirectories, "*.psd"))
+                        try { psds.Add(Path.GetFileNameWithoutExtension(file), Path.GetFullPath(file)); }
+                        catch { throw new Exception(string.Format("存在相同的文件名：\r\n{0}\r\n{1}", psds[Path.GetFileName(file)], Path.GetFullPath(file))); }
+
+            // html模板
+            StringBuilder builder = new StringBuilder();
+            // 树深度
+            int depth = 0;
+            Action WriteIndent = () =>
+            {
+                for (int i = 0; i < depth; i++)
+                    builder.Append("  ");
+            };
+
+            // vue数据
+            StringBuilder vue = new StringBuilder();
+
+            Action<LayerTree> VisitLayerNode = null;
+            VisitLayerNode = (node) =>
+            {
+                var layer = node.Layer;
+                // 跳过显示当前图层，例如是美术效果参考用的背景图层
+                if (layer.Name.StartsWith("!"))
+                    return;
+
+                string label = "div";
+                //if (layer.IsLayer)
+                //{
+                //    if (layer.LayerText != null)
+                //        label = "span";
+                //    else
+                //        label = "img";
+                //}
+                //else
+                //{
+                //    if (layer.Name.StartsWith("#"))
+                //        // 合并的图层
+                //        label = "img";
+                //    else
+                //        label = "div";
+                //}
+
+                WriteIndent();
+                builder.AppendFormat("<{0} name='{1}' style='", label, layer.Name);
+
+                Rectangle rect = node.RectRelativeParent;
+                builder.AppendFormat("position:absolute;border:{4} solid red;left:{0};top:{1};width:{2};height:{3};"
+                    , Px2Rem(rect.X)
+                    , Px2Rem(rect.Y)
+                    , Px2Rem(rect.Width)
+                    , Px2Rem(rect.Height)
+                    // 测试边框
+                    , Px2Rem(1));
+
+                // 文字图层
+                if (layer.IsLayer && layer.LayerText != null)
+                {
+                    builder.AppendFormat("font-size:{0};", Px2Rem(layer.LayerText.FontSizePx));
+                    builder.AppendFormat("color:{0};", JSColor(layer.LayerText.FillColor));
+                    if (layer.LayerText.FauxBold)
+                        builder.Append("font-weight:bold;");
+                    if (layer.LayerText.FauxItalic)
+                        builder.Append("font-style:italic;");
+                    if (layer.LayerText.Underline)
+                        builder.Append("text-decoration:underline;");
+                    if (layer.LayerText.Alignment != 0)
+                    {
+                        builder.Append("text-align:");
+                        if (layer.LayerText.Alignment == 1)
+                        {
+                            builder.Append("right;");
+                            // 改变图层坐标
+                        }
+                        else
+                        {
+                            builder.Append("center;");
+                            // 改变图层坐标
+                        }
+                    }
+                }
+
+                // style='
+                builder.Append("'>");
+                if (layer.IsLayer && layer.LayerText != null)
+                    builder.Append(layer.LayerText.Text);
+
+                // 图层合并为一个图层显示，例如多张图片组成的一个图标
+                if (layer.Name.StartsWith("#"))
+                {
+                    // todo: 得出子图层的有效区域作为当前区域
+                }
+                else if (node.Childs.Count > 0)
+                {
+                    builder.AppendLine();
+                    depth++;
+                    // 递归访问子层
+                    foreach (var item in node.Childs)
+                        VisitLayerNode(item);
+                    depth--;
+                    WriteIndent();
+                }
+
+                builder.AppendLine("</{0}>", label);
+            };
+
+            foreach (var file in psds)
+            {
+                PsdFile psdfile = new PsdFile(file.Value, new LoadContext());
+
+                // 图层树，和PSD中一样
+                var tree = psdfile.GetLayerTree();
+                depth = 0;
+                VisitLayerNode(tree);
+
+                string output = Path.Combine(outputDir + file.Key + ".js");
+                //if (File.Exists(output))
+                //{
+                //    // todo: 差分合并文件
+                //}
+                //else
+                    File.WriteAllText(output, builder.ToString(), Encoding.UTF8);
+            }
         }
 	}
 }
