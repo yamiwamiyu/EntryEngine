@@ -13,13 +13,17 @@ using System.Windows.Forms;
 using EntryEngine;
 using EntryEngine.Network;
 using EntryEngine.Serialize;
-//using PhotoshopFile;
-using PSDFile;
 using System.Drawing.Imaging;
 using EntryBuilder.CodeAnalysis.Syntax;
 using EntryBuilder.CodeAnalysis.Semantics;
 using EntryBuilder.CodeAnalysis.Refactoring;
 using System.Threading;
+using Aspose.PSD.FileFormats.Psd;
+using Aspose.PSD.FileFormats.Psd.Layers;
+using Aspose.PSD.FileFormats.Psd.Layers.AdjustmentLayers;
+using Aspose.PSD.FileFormats.Psd.Layers.LayerResources;
+using Aspose.PSD.FileFormats.Psd.Layers.Text;
+using Aspose.PSD.ImageOptions;
 
 namespace EntryBuilder
 {
@@ -507,26 +511,6 @@ namespace EntryBuilder
         [STAThread]
 		static void Main(string[] args)
         {
-            //byte[] buffer = File.ReadAllBytes("首页.psd");
-            //byte[] find = Encoding.ASCII.GetBytes("/Text (");
-            //for (int i = 0; i < buffer.Length; i++)
-            //{
-            //    bool flag = true;
-            //    for (int j = 0; j < find.Length; j++)
-            //        if (buffer[i + j] != find[j])
-            //        {
-            //            flag = false;
-            //            break;
-            //        }
-            //    if (flag)
-            //    {
-            //        byte[] copy = new byte[100];
-            //        Array.Copy(buffer, i, copy, 0, copy.Length);
-            //        Console.WriteLine(copy);
-            //    }
-            //}
-            //char c = (char)'|';
-            //int v = (int)c;
             //PSD2JS("首页.psd", "");
             //_LOG._Logger = new LoggerConsole();
 
@@ -2250,41 +2234,49 @@ namespace EntryBuilder
                 builder.AppendLine("{0}.send = function(url, str, callback)", name);
                 builder.AppendBlock(() =>
                 {
-                    builder.AppendLine("var req = new XMLHttpRequest();");
-                    builder.AppendLine("req.onreadystatechange = function()");
+                    builder.AppendLine("var promise = new Promise(function(resolve, reject)");
                     builder.AppendBlock(() =>
                     {
-                        builder.AppendLine("if (req.readyState == 4)");
+                        builder.AppendLine("var req = new XMLHttpRequest();");
+                        builder.AppendLine("req.onreadystatechange = function()");
                         builder.AppendBlock(() =>
                         {
-                            builder.AppendLine("if ({0}.onCallback) {0}.onCallback(req);", name);
-                            builder.AppendLine("if (req.status == 200)");
+                            builder.AppendLine("if (req.readyState == 4)");
                             builder.AppendBlock(() =>
                             {
-                                builder.AppendLine("var obj = req.responseText ? JSON.parse(req.responseText) : null;");
-                                builder.AppendLine("if (obj && obj.errCode)");
+                                builder.AppendLine("if ({0}.onCallback) {0}.onCallback(req);", name);
+                                builder.AppendLine("if (req.status == 200)");
                                 builder.AppendBlock(() =>
                                 {
-                                    builder.AppendLine("if ({0}.onErrorMsg) {{ {0}.onErrorMsg(obj); }}", name);
-                                    builder.AppendLine("else { console.log(obj); }");
+                                    builder.AppendLine("var obj = req.responseText ? JSON.parse(req.responseText) : null;");
+                                    builder.AppendLine("if (obj && obj.errCode)");
+                                    builder.AppendBlock(() =>
+                                    {
+                                        builder.AppendLine("if ({0}.onErrorMsg) {{ {0}.onErrorMsg(obj); }}", name);
+                                        builder.AppendLine("else { console.log(obj); }");
+                                        builder.AppendLine("if (reject) { reject(obj); }");
+                                    });
+                                    builder.AppendLine("else");
+                                    builder.AppendBlock(() =>
+                                    {
+                                        builder.AppendLine("if (callback) { callback(obj); }");
+                                        builder.AppendLine("else { console.log(obj); }");
+                                        builder.AppendLine("if (resolve) { resolve(obj); }");
+                                    });
                                 });
-                                builder.AppendLine("else");
-                                builder.AppendBlock(() =>
-                                {
-                                    builder.AppendLine("if (callback) { callback(obj); }");
-                                    builder.AppendLine("else { console.log(obj); }");
-                                });
+                                builder.AppendLine("else if ({0}.onError) {{ {0}.onError(req); }}", name);
+                                builder.AppendLine("else { console.error(req); }");
                             });
-                            builder.AppendLine("else if ({0}.onError) {{ {0}.onError(req); }}", name);
-                            builder.AppendLine("else { console.error(req); }");
                         });
+                        builder.AppendLine("req.open(\"POST\", {0}.url + url, true);", name);
+                        builder.AppendLine("req.responseType = \"text\";");
+                        builder.AppendLine("if (!{0}.onSendOnce) {{ req.setRequestHeader(\"Content-Type\", \"application/x-www-form-urlencoded;charset=utf-8\"); }}", name);
+                        builder.AppendLine("if ({0}.onSend) {{ {0}.onSend(req); }}", name);
+                        builder.AppendLine("if ({0}.onSendOnce) {{ var __send = {0}.onSendOnce(req); {0}.onSendOnce = null; if (__send) {{ return; }} }}", name);
+                        builder.AppendLine("req.send(str);");
                     });
-                    builder.AppendLine("req.open(\"POST\", {0}.url + url, true);", name);
-                    builder.AppendLine("req.responseType = \"text\";");
-                    builder.AppendLine("if (!{0}.onSendOnce) {{ req.setRequestHeader(\"Content-Type\", \"application/x-www-form-urlencoded;charset=utf-8\"); }}", name);
-                    builder.AppendLine("if ({0}.onSend) {{ {0}.onSend(req); }}", name);
-                    builder.AppendLine("if ({0}.onSendOnce) {{ var __send = {0}.onSendOnce(req); {0}.onSendOnce = null; if (__send) {{ return; }} }}", name);
-                    builder.AppendLine("req.send(str);");
+                    builder.AppendLine(");");
+                    builder.AppendLine("return promise;");
                 });
                 // 通过代理调用接口方法
                 //WCCallProxy(builder, call, asyncCB);
@@ -2340,7 +2332,7 @@ namespace EntryBuilder
                                 builder.Append("{0}", param.Name);
                             builder.AppendLine(");");
                         }
-                        builder.AppendLine("{0}.send(\"{1}/{2}\", str.join(\"&\"), {3});", name, agent.Protocol, method.Name, callbackName);
+                        builder.AppendLine("return {0}.send(\"{1}/{2}\", str.join(\"&\"), {3});", name, agent.Protocol, method.Name, callbackName);
                     });
                 }
                 builder.AppendLine("export default {0};", name);
@@ -3919,11 +3911,211 @@ namespace EntryBuilder
         {
             return Math.Round(px / REM, 2).ToString("0.00") + "rem";
         }
-        public static string JSColor(Color color)
+        public static string JSColor(Aspose.PSD.Color color)
         {
             return string.Format("#{0:x2}{1:x2}{2:x2}{3}", color.R, color.G, color.B, color.A == 255 ? string.Empty : color.A.ToString("x2"));
         }
+        /// <summary>图层的组织结构，跟PS里打开的一样</summary>
+        public class LayerTree : IEnumerable<Layer>
+        {
+            public Layer Layer;
+            public LayerTree Parent;
+            public List<LayerTree> Childs = new List<LayerTree>();
 
+            /// <summary>true: 图层 / false: 图层组</summary>
+            public bool IsLayer { get { return !(Layer is LayerGroup); } }
+            /// <summary>图层组时，Rect全为0，这个可以标示图层组内元素的包围盒</summary>
+            public Rectangle Rect
+            {
+                get
+                {
+                    if (IsLayer || Childs.Count == 0)
+                    {
+                        //if (Layer.LayerMaskData != null)
+                        //    return new Rectangle(Layer.LayerMaskData.Left, Layer.LayerMaskData.Top, Layer.LayerMaskData.Right - Layer.LayerMaskData.Left, Layer.LayerMaskData.Bottom - Layer.LayerMaskData.Top);
+                        //else
+                            return new Rectangle(Layer.Left, Layer.Top, Layer.Width, Layer.Height);
+                    }
+
+                    Rectangle result = new Rectangle(int.MaxValue, int.MaxValue, -int.MaxValue, -int.MaxValue);
+                    foreach (var item in Childs)
+                    {
+                        Rectangle rect = item.Rect;
+                        if (rect.X < result.X) result.X = rect.X;
+                        if (rect.Y < result.Y) result.Y = rect.Y;
+                        if (rect.Right > result.Width) result.Width = rect.Right;
+                        if (rect.Bottom > result.Height) result.Height = rect.Bottom;
+                    }
+                    result.Width -= result.X;
+                    result.Height -= result.Y;
+                    return result;
+                }
+            }
+            /// <summary>相对父图层的坐标</summary>
+            public Rectangle RectRelativeParent
+            {
+                get
+                {
+                    if (Parent == null)
+                        return Rect;
+
+                    Rectangle parent = Parent.Rect;
+                    Rectangle me = Rect;
+                    me.X -= parent.X;
+                    me.Y -= parent.Y;
+                    return me;
+                }
+            }
+
+            public override string ToString()
+            {
+                if (Layer.Resources == null)
+                    return Layer.DisplayName;
+                var luni = Layer.Resources.FirstOrDefault(r => r.Key == LuniResource.TypeToolKey);
+                if (luni == null)
+                    return Layer.DisplayName;
+                else
+                    return ((LuniResource)luni).Name;
+            }
+            public IEnumerator<Layer> GetEnumerator()
+            {
+                //foreach (var item in Childs)
+                //    yield return item.Layer;
+                for (int i = Childs.Count - 1; i >= 0; i--)
+                    yield return Childs[i].Layer;
+            }
+            System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator()
+            {
+                return GetEnumerator();
+            }
+
+            public static LayerTree FromPSD(PsdImage psd)
+            {
+                // 根节点
+                LayerTree parent = new LayerTree();
+                parent.Layer = new Layer() { Name = "ROOT" };
+                // 图层组
+                Stack<LayerTree> stack = new Stack<LayerTree>();
+                stack.Push(parent);
+                for (int i = psd.Layers.Length - 1; i >= 0; i--)
+                {
+                    var layer = psd.Layers[i];
+
+                    // 颜色只在其它图层上显示，一般为补充颜色的图层，类似于调整层或特效
+                    if (layer.Clipping == 1) continue;
+                    // 调整层：调整颜色等，直接已经作用在了其它图层上，相当于效果，目前暂时不实现这些效果
+                    if (layer is AdjustmentLayer) continue;
+
+                    LayerGroup group = layer as LayerGroup;
+                    if (group != null && group.Name == "</Layer group>")
+                    {
+                        parent = stack.Pop();
+                        continue;
+                    }
+
+                    LayerTree node = new LayerTree();
+                    node.Parent = parent;
+                    node.Layer = layer;
+
+                    // 可见图层，父图层组可见图层
+                    if (layer.IsVisible
+                        && (parent.Layer == null || parent.Layer.IsVisible))
+                        parent.Childs.Add(node);
+
+                    if (group != null)
+                    {
+                        stack.Push(parent);
+                        parent = node;
+                    }
+                }
+                return parent;
+            }
+        }
+        public class DOM : Tree<DOM>
+        {
+            /// <summary>DOM标签名：div, span, img等</summary>
+            public string Label;
+            /// <summary>属性：id, name, src等</summary>
+            public Dictionary<string, string> Attributes = new Dictionary<string, string>();
+            /// <summary>样式：font-size, color, position等</summary>
+            public Dictionary<string, string> CSS = new Dictionary<string, string>();
+            public string InnerText;
+
+            public DOM() { }
+            public DOM(string label) { this.Label = label; }
+
+            public override string ToString()
+            {
+                return VCodeWriter.Write<VCW_JS_VUE>(this);
+            }
+
+            public abstract class DOMVisitor
+            {
+                private int depth = -1;
+                public int Depth { get { return depth; } }
+                public void Visit(DOM dom)
+                {
+                    depth++;
+                    VisitBeforeChild(dom);
+                    foreach (var item in dom.Childs)
+                        Visit(item);
+                    VisitAfterChild(dom);
+                    depth--;
+                }
+                protected abstract void VisitBeforeChild(DOM dom);
+                protected abstract void VisitAfterChild(DOM dom);
+            }
+            public abstract class VCodeWriter : DOMVisitor
+            {
+                protected StringBuilder builder = new StringBuilder();
+                public string Result { get { return builder.ToString(); } }
+                public static string Write<T>(DOM dom) where T : VCodeWriter, new()
+                {
+                    T writer = new T();
+                    writer.Visit(dom);
+                    return writer.Result;
+                }
+            }
+            public class VCW_JS_VUE : VCodeWriter
+            {
+                private void WriteIndent()
+                {
+                    for (int i = 0; i < Depth; i++)
+                        builder.Append("  ");
+                }
+                protected override void VisitBeforeChild(DOM dom)
+                {
+                    builder.AppendLine();
+                    WriteIndent();
+                    builder.AppendFormat("<{0}", dom.Label);
+                    if (dom.Attributes.Count > 0)
+                    {
+                        foreach (var item in dom.Attributes)
+                            builder.AppendFormat(" {0}='{1}'", item.Key, item.Value);
+                    }
+                    if (dom.CSS.Count > 0)
+                    {
+                        builder.Append(" style='");
+                        foreach (var item in dom.CSS)
+                            builder.AppendFormat("{0}:{1};", item.Key, item.Value);
+                        builder.Append('\'');
+                    }
+                    builder.Append(">");
+
+                    if (!string.IsNullOrEmpty(dom.InnerText))
+                        builder.Append(dom.InnerText);
+                }
+                protected override void VisitAfterChild(DOM dom)
+                {
+                    if (dom.ChildCount > 0)
+                    {
+                        builder.AppendLine();
+                        WriteIndent();
+                    }
+                    builder.AppendFormat("</{0}>", dom.Label);
+                }
+            }
+        }
 
 		public static void BuildEntryEngine(string outputDir)
 		{
@@ -10225,87 +10417,110 @@ namespace EntryBuilder
                         try { psds.Add(Path.GetFileNameWithoutExtension(file), Path.GetFullPath(file)); }
                         catch { throw new Exception(string.Format("存在相同的文件名：\r\n{0}\r\n{1}", psds[Path.GetFileName(file)], Path.GetFullPath(file))); }
 
-            // html模板
-            StringBuilder builder = new StringBuilder();
-            // 树深度
-            int depth = 0;
-            Action WriteIndent = () =>
-            {
-                for (int i = 0; i < depth; i++)
-                    builder.Append("  ");
-            };
-
-            // vue数据
-            StringBuilder vue = new StringBuilder();
-
-            Action<LayerTree> VisitLayerNode = null;
-            VisitLayerNode = (node) =>
+            // 导出的切图名字，名字一样时，自动在后面加1,2,3...
+            Dictionary<string, int> exportNames = new Dictionary<string, int>();
+            Action<LayerTree, DOM> VisitLayerNode = null;
+            VisitLayerNode = (node, parent) =>
             {
                 var layer = node.Layer;
                 // 跳过显示当前图层，例如是美术效果参考用的背景图层
                 if (layer.Name.StartsWith("!"))
                     return;
 
-                string label = "div";
-                //if (layer.IsLayer)
-                //{
-                //    if (layer.LayerText != null)
-                //        label = "span";
-                //    else
-                //        label = "img";
-                //}
-                //else
-                //{
-                //    if (layer.Name.StartsWith("#"))
-                //        // 合并的图层
-                //        label = "img";
-                //    else
-                //        label = "div";
-                //}
+                TextLayer text = layer as TextLayer;
 
-                WriteIndent();
-                builder.AppendFormat("<{0} name='{1}' style='", label, layer.Name);
+                DOM dom = new DOM("div");
+                parent.Add(dom);
+                if (text != null)
+                    dom.Label = "span";
+                else if (node.IsLayer)
+                    dom.Label = "img";
+                else
+                {
+                    if (node.ToString().StartsWith("#"))
+                        // 合并的图层
+                        dom.Label = "img";
+                    else
+                        dom.Label = "div";
+                }
+
+                dom.Attributes["name"] = node.ToString();
 
                 Rectangle rect = node.RectRelativeParent;
-                builder.AppendFormat("position:absolute;border:{4} solid red;left:{0};top:{1};width:{2};height:{3};"
-                    , Px2Rem(rect.X)
-                    , Px2Rem(rect.Y)
-                    , Px2Rem(rect.Width)
-                    , Px2Rem(rect.Height)
-                    // 测试边框
-                    , Px2Rem(1));
+
+                dom.CSS["position"] = "absolute";
+                dom.CSS["border"] = string.Format("{0} solid red", Px2Rem(1));
+                dom.CSS["left"] = Px2Rem(rect.X);
+                dom.CSS["top"] = Px2Rem(rect.Y);
+                dom.CSS["width"] = Px2Rem(rect.Width);
+                dom.CSS["height"] = Px2Rem(rect.Height);
 
                 // 文字图层
-                if (layer.IsLayer && layer.LayerText != null)
+                if (text != null)
                 {
-                    builder.AppendFormat("font-size:{0};", Px2Rem(layer.LayerText.FontSizePx));
-                    builder.AppendFormat("color:{0};", JSColor(layer.LayerText.FillColor));
-                    if (layer.LayerText.FauxBold)
-                        builder.Append("font-weight:bold;");
-                    if (layer.LayerText.FauxItalic)
-                        builder.Append("font-style:italic;");
-                    if (layer.LayerText.Underline)
-                        builder.Append("text-decoration:underline;");
-                    if (layer.LayerText.Alignment != 0)
+                    // 文字图层可以有多段文字，颜色，字体，段落布局等都可以各不一样
+                    var portion = text.TextData.Items;
+                    // 段落信息目前只使用对齐，且同一段文字不能使用两种对齐方式
+                    var paragraphData = portion[0].Paragraph;
+                    if (paragraphData.Justification != 0)
                     {
-                        builder.Append("text-align:");
-                        if (layer.LayerText.Alignment == 1)
+                        if (paragraphData.Justification == 1)
                         {
-                            builder.Append("right;");
+                            dom.CSS["text-align"] = "right";
                             // 改变图层坐标
                         }
                         else
                         {
-                            builder.Append("center;");
+                            dom.CSS["text-align"] = "center";
                             // 改变图层坐标
                         }
                     }
-                }
+                    // 前后两个段落，生成代码字体样式完全一样的，却分成了两个部分，此时应合并成一个部分keep是前面的部分
+                    int keep = 0;
+                    for (int i = 0; i < portion.Length; i++)
+                    {
+                        var data = portion[i];
+                        if (i + 1 < portion.Length)
+                        {
+                            var next = portion[i + 1];
+                            if (data.Style.FontSize == next.Style.FontSize
+                                && data.Style.FillColor == next.Style.FillColor
+                                && data.Style.FauxBold == next.Style.FauxBold
+                                && data.Style.FauxItalic == next.Style.FauxItalic
+                                && data.Style.Underline == next.Style.Underline
+                                )
+                                continue;
+                        }
 
-                // style='
-                builder.Append("'>");
-                if (layer.IsLayer && layer.LayerText != null)
-                    builder.Append(layer.LayerText.Text);
+                        DOM span;
+                        if (portion.Length > 1 && i != keep)
+                        {
+                            span = new DOM("span");
+                            dom.Add(span);
+
+                            dom.Label = "div";
+                        }
+                        else
+                            // 只有单个部分的文字图层
+                            span = dom;
+
+                        span.CSS["font-size"] = Px2Rem(Math.Round(data.Style.FontSize * text.TransformMatrix[0]));
+                        span.CSS["color"] = JSColor(data.Style.FillColor);
+                        if (data.Style.FauxBold)
+                            span.CSS["font-weight"] = "bold";
+                        if (data.Style.FauxItalic)
+                            span.CSS["font-style"] = "italic";
+                        if (data.Style.Underline)
+                            span.CSS["text-decoration"] = "underline";
+
+                        // 字体样式一样时，合并样式和文字显示
+                        string result = string.Empty;
+                        for (int j = keep; j <= i; j++)
+                            result += portion[j].Text.TrimEnd((char)3, (char)13);
+                        keep = i + 1;
+                        span.InnerText = result;
+                    }
+                }
 
                 // 图层合并为一个图层显示，例如多张图片组成的一个图标
                 if (layer.Name.StartsWith("#"))
@@ -10314,26 +10529,34 @@ namespace EntryBuilder
                 }
                 else if (node.Childs.Count > 0)
                 {
-                    builder.AppendLine();
-                    depth++;
                     // 递归访问子层
                     foreach (var item in node.Childs)
-                        VisitLayerNode(item);
-                    depth--;
-                    WriteIndent();
+                        VisitLayerNode(item, dom);
                 }
-
-                builder.AppendLine("</{0}>", label);
             };
 
             foreach (var file in psds)
             {
-                PsdFile psdfile = new PsdFile(file.Value, new LoadContext());
+                PsdImage psdfile = (PsdImage)PsdImage.Load(file.Value);
 
-                // 图层树，和PSD中一样
-                var tree = psdfile.GetLayerTree();
-                depth = 0;
-                VisitLayerNode(tree);
+                // 图层树，和PSD中一样（不包含调整层）
+                var tree = LayerTree.FromPSD(psdfile);
+                DOM root = new DOM("div");
+                root.CSS["position"] = "absolute";
+                root.CSS["border"] = string.Format("{0} solid red", Px2Rem(1));
+                root.CSS["width"] = Px2Rem(psdfile.Width);
+                root.CSS["height"] = Px2Rem(psdfile.Height);
+                root.CSS["overflow"] = "hidden";
+                VisitLayerNode(tree, root);
+
+                psdfile.Layers[1].AddLayerMask(new LayerMaskDataShort()
+                {
+                    Flags = LayerMaskFlags.Disabled,
+                    MaskRectangle = new Aspose.PSD.Rectangle(-500, -500, 500, 500),
+                    ImageData = new byte[500 * 500]
+                });
+                psdfile.Layers[1].Save("compose.png", new PngOptions() { ColorType = Aspose.PSD.FileFormats.Png.PngColorType.TruecolorWithAlpha });
+                //psdfile.Save("copy.psd", new PsdOptions());
 
                 string output = Path.Combine(outputDir + file.Key + ".js");
                 //if (File.Exists(output))
@@ -10341,7 +10564,7 @@ namespace EntryBuilder
                 //    // todo: 差分合并文件
                 //}
                 //else
-                    File.WriteAllText(output, builder.ToString(), Encoding.UTF8);
+                File.WriteAllText(output, root.ToString(), Encoding.UTF8);
             }
         }
 	}
