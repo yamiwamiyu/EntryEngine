@@ -10467,8 +10467,10 @@ namespace EntryBuilder
               
                 TextLayer text = layer as TextLayer;
 
-                DOM dom = new DOM("div");
+                DOM dom = new DOM();
                 parent.Add(dom);
+
+                #region 标签
                 if (text != null)
                     dom.Label = "span";
                 else if (layer.Name != "ROOT" && node.IsLayer)
@@ -10481,11 +10483,10 @@ namespace EntryBuilder
                     else
                         dom.Label = "div";
                 }
-
-                dom.Attributes["name"] = name;
+                //dom.Attributes["name"] = name;
+                #endregion
 
                 Rectangle rect = node.RectRelativeParent;
-
                 dom.CSS["position"] = "absolute";
                 //dom.CSS["border"] = string.Format("{0} solid red", Px2Rem(1));
                 dom.CSS["left"] = Px2Rem(rect.X);
@@ -10494,7 +10495,7 @@ namespace EntryBuilder
                 //dom.CSS["width"] = Px2Rem(rect.Width);
                 //dom.CSS["height"] = Px2Rem(rect.Height);
 
-                // 文字图层
+                #region 文字图层
                 if (text != null)
                 {
                     // 文字图层可以有多段文字，颜色，字体，段落布局等都可以各不一样
@@ -10564,11 +10565,12 @@ namespace EntryBuilder
                         span.InnerText = result;
                     }
                 }
+                #endregion
 
-                // 外观：圆角
+                #region 外观：圆角
                 if (layer.Resources != null)
                 {
-                    VsmsResource vsms = (VsmsResource)layer.Resources.FirstOrDefault(r => r.Key == VsmsResource.TypeToolKey);
+                    VectorPathDataResource vsms = (VectorPathDataResource)layer.Resources.FirstOrDefault(r => r is VectorPathDataResource);
                     if (vsms != null)
                     {
                         var path = (BezierKnotRecord)vsms.Paths[3];
@@ -10583,24 +10585,40 @@ namespace EntryBuilder
                         if (flag)
                         {
                             int corner = vsms.Paths.Length - 3;
-                            if (corner != 8)
+                            if (corner != 8 && corner != 4)
                             {
-                                _LOG.Warning("仅支持8个点组成的圆角");
+                                _LOG.Warning("仅支持4个或8个点组成的圆角");
                             }
                             else
                             {
                                 // 左上角左棱上面为第一个顶点，逆时针的8个点坐标
                                 VECTOR2[] cornerLocation = new VECTOR2[8];
-                                for (int i = 3, j = 0; i < vsms.Paths.Length; i++, j++)
+                                if (corner == 8)
                                 {
-                                    var knot = (BezierKnotRecord)vsms.Paths[i];
-                                    if ((j & 1) == 0)
+                                    for (int i = 3, j = 0; i < vsms.Paths.Length; i++, j++)
                                     {
+                                        var knot = (BezierKnotRecord)vsms.Paths[i];
+                                        if ((j & 1) == 0)
+                                        {
+                                            cornerLocation[j].X = knot.PathPoints[0].X;
+                                            cornerLocation[j].Y = knot.PathPoints[0].Y;
+                                        }
+                                        else
+                                        {
+                                            int last = knot.PathPoints.Length - 1;
+                                            cornerLocation[j].X = knot.PathPoints[last].X;
+                                            cornerLocation[j].Y = knot.PathPoints[last].Y;
+                                        }
+                                    }
+                                }
+                                else
+                                {
+                                    for (int i = 3, j = 0; i < vsms.Paths.Length; i++, j++)
+                                    {
+                                        var knot = (BezierKnotRecord)vsms.Paths[i];
                                         cornerLocation[j].X = knot.PathPoints[0].X;
                                         cornerLocation[j].Y = knot.PathPoints[0].Y;
-                                    }
-                                    else
-                                    {
+                                        j++;
                                         int last = knot.PathPoints.Length - 1;
                                         cornerLocation[j].X = knot.PathPoints[last].X;
                                         cornerLocation[j].Y = knot.PathPoints[last].Y;
@@ -10626,12 +10644,14 @@ namespace EntryBuilder
                         }
                     }
                 }
+                #endregion
 
-                // 不透明度
+                #region 不透明度
                 if (layer.Opacity != 255)
                 {
                     dom.CSS["opacity"] = Math.Round(layer.TransparentColor.A / 255.0, 2).ToString();
                 }
+                #endregion
 
                 // 测试页面样式
                 if (exportTestResource && dom.Label == "img")
@@ -10666,20 +10686,11 @@ namespace EntryBuilder
                 var tree = LayerTree.FromPSD(psdfile);
                 DOM root = new DOM("div");
                 root.CSS["position"] = "absolute";
-                //root.CSS["border"] = string.Format("{0} solid red", Px2Rem(1));
                 root.CSS["width"] = Px2Rem(psdfile.Width);
                 root.CSS["height"] = Px2Rem(psdfile.Height);
+                // 超出文档的部分隐藏
                 root.CSS["overflow"] = "hidden";
                 VisitLayerNode(tree, root);
-
-                psdfile.Layers[1].AddLayerMask(new LayerMaskDataShort()
-                {
-                    Flags = LayerMaskFlags.Disabled,
-                    MaskRectangle = new Aspose.PSD.Rectangle(-500, -500, 500, 500),
-                    ImageData = new byte[500 * 500]
-                });
-                //psdfile.Layers[1].Save("compose.png", new PngOptions() { ColorType = Aspose.PSD.FileFormats.Png.PngColorType.TruecolorWithAlpha });
-                //psdfile.Save("copy.psd", new PsdOptions());
 
                 string output = Path.Combine(outputDir, file.Key + ".html");
                 //if (File.Exists(output))
