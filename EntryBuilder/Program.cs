@@ -2347,7 +2347,6 @@ namespace EntryBuilder
                         builder.AppendLine("return {0}.send(\"{1}/{2}\", str.join(\"&\"), {3});", name, agent.Protocol, method.Name, callbackName);
                     });
                 }
-                builder.AppendLine("export default {0};", name);
             }
             protected override void WCCallProxy(StringBuilder builder, MethodInfo[] call, Dictionary<int, Type> asyncCB)
             {
