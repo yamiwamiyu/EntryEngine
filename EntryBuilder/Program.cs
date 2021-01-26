@@ -2208,8 +2208,12 @@ namespace EntryBuilder
             {
             }
         }
+        /// <summary>XMLHttpRequest</summary>
         class ProtocolHttpJS : ProtocolHttp
         {
+            /// <summary>是否需要模块化JS：模块化使用export / 非模块化使用var</summary>
+            public bool IsModule;
+
             protected override void Write(MethodInfo[] call, MethodInfo[] callback, Dictionary<int, Type> asyncCB)
             {
                 WNamespace(server);
@@ -2224,8 +2228,15 @@ namespace EntryBuilder
             protected override void WCCallProxy(StringBuilder builder, MethodInfo[] call, MethodInfo[] callback, Dictionary<int, Type> asyncCB)
             {
                 string name = type.Name + "Proxy";
-                builder.AppendLine("const {0} = {{}};", name);
-                //builder.AppendLine("var {0} = {{}};", name);
+                if (IsModule)
+                {
+                    builder.AppendLine("const {0} = {{}};", name);
+                    builder.AppendLine("export default {0};", name);
+                }
+                else
+                {
+                    builder.AppendLine("var {0} = {{}};", name);
+                }
                 builder.AppendLine("{0}.onSend = null;", name);
                 builder.AppendLine("{0}.onSendOnce = null;", name);
                 builder.AppendLine("{0}.onCallback = null;", name);
@@ -2342,8 +2353,12 @@ namespace EntryBuilder
             {
             }
         }
+        /// <summary>WebSocket用</summary>
         class ProtocolJsonJs : ProtocolDefault
         {
+            /// <summary>是否需要模块化JS：模块化使用export / 非模块化使用var</summary>
+            public bool IsModule;
+
             protected override void Write(MethodInfo[] call, MethodInfo[] callback, Dictionary<int, Type> asyncCB)
             {
                 WNamespace(server);
@@ -2560,8 +2575,15 @@ namespace EntryBuilder
             protected override void WCCallProxy(StringBuilder builder, MethodInfo[] call, MethodInfo[] callback, Dictionary<int, Type> asyncCB)
             {
                 string name = type.Name + "Proxy";
-                builder.AppendLine("const {0} = {{}};", name);
-                builder.AppendLine("export {{{0}}}", name);
+                if (IsModule)
+                {
+                    builder.AppendLine("const {0} = {{}};", name);
+                    builder.AppendLine("export default {0};", name);
+                }
+                else
+                {
+                    builder.AppendLine("var {0} = {{}};", name);
+                }
                 builder.AppendLine("{0}.ws = null;", name);
                 builder.AppendLine("{0}.onError = null;", name);
                 foreach (var method in callback)
@@ -2647,7 +2669,6 @@ namespace EntryBuilder
                         builder.AppendLine("{0}.ws.send(JSON.stringify(obj));", name, agent.Protocol, method.Name);
                     });
                 }
-                builder.AppendLine("export default {0};", name);
             }
 
             private void WriteCallbackObject(StringBuilder builder, MethodInfo[] callback)
@@ -4350,12 +4371,13 @@ namespace EntryBuilder
                 build(type);
             }
         }
-        public static void BuildProtocolAgentHttp(string outputClientPath, string outputServerPath, string dllOrWithType, int csharp0js1ws2)
+        public static void BuildProtocolAgentHttp(string outputClientPath, string outputServerPath, string dllOrWithType, int csharp0jsM1wsM2js3ws4)
         {
             Action<Type> build;
-            switch (csharp0js1ws2)
+            switch (csharp0jsM1wsM2js3ws4)
             {
                 case 1:
+                case 3:
                     #region JS
                     build = (type) =>
                     {
@@ -4363,6 +4385,8 @@ namespace EntryBuilder
                         //writer.Write(type);
 
                         ProtocolHttpJS jsWriter = new ProtocolHttpJS();
+                        if (csharp0jsM1wsM2js3ws4 == 1)
+                            jsWriter.IsModule = true;
                         jsWriter.Write(type);
 
                         string clientFile = Path.Combine(outputClientPath, type.Name + "Proxy.js");
@@ -4375,10 +4399,13 @@ namespace EntryBuilder
                     break;
 
                 case 2:
+                case 4:
                     #region WebSocket JS
                     build = (type) =>
                     {
                         ProtocolJsonJs writer = new ProtocolJsonJs();
+                        if (csharp0jsM1wsM2js3ws4 == 2)
+                            writer.IsModule = true;
                         writer.Write(type);
 
                         string clientFile = Path.Combine(outputClientPath, type.Name + "Proxy.js");
