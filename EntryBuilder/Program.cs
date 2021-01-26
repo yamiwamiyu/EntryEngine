@@ -24,6 +24,7 @@ using Aspose.PSD.FileFormats.Psd.Layers.AdjustmentLayers;
 using Aspose.PSD.FileFormats.Psd.Layers.LayerResources;
 using Aspose.PSD.FileFormats.Psd.Layers.Text;
 using Aspose.PSD.ImageOptions;
+using Aspose.PSD.FileFormats.Core.VectorPaths;
 
 namespace EntryBuilder
 {
@@ -511,7 +512,7 @@ namespace EntryBuilder
         [STAThread]
 		static void Main(string[] args)
         {
-            //PSD2JS("首页.psd", "");
+            //PSD2JS("首页.psd", @"C:\Yamiwamiyu\Project\YMHY2\gaming-center\dist\", true);
             //_LOG._Logger = new LoggerConsole();
 
             //GaussianBlur gauss = new GaussianBlur(15);
@@ -3993,7 +3994,11 @@ namespace EntryBuilder
             {
                 // 根节点
                 LayerTree parent = new LayerTree();
-                parent.Layer = new Layer() { Name = "ROOT" };
+                parent.Layer = new Layer()
+                {
+                    Name = "ROOT",
+                    Opacity = 255,
+                };
                 // 图层组
                 Stack<LayerTree> stack = new Stack<LayerTree>();
                 stack.Push(parent);
@@ -4009,6 +4014,9 @@ namespace EntryBuilder
                     LayerGroup group = layer as LayerGroup;
                     if (group != null && group.Name == "</Layer group>")
                     {
+                        // 结束的图层可以进行导出图片
+                        ((LuniResource)group.Resources.First(r => r.Key == LuniResource.TypeToolKey)).Name = parent.ToString();
+                        parent.Layer = group;
                         parent = stack.Pop();
                         continue;
                     }
@@ -10401,7 +10409,7 @@ namespace EntryBuilder
             File.WriteAllText(file, text.Replace(old, replace));
             Console.WriteLine("替换文件{0}字符串 {1} => {2} 完成", file, old, replace);
         }
-        public static void PSD2JS(string psdOrDirSplitByComma, string outputDir)
+        public static void PSD2JS(string psdOrDirSplitByComma, string outputDir, bool exportTestResource)
         {
             string[] split = psdOrDirSplitByComma.Split(',');
             // 所有参与生成代码的psd文件，Key为文件名，Value为文件全路径
@@ -10418,6 +10426,8 @@ namespace EntryBuilder
                         catch { throw new Exception(string.Format("存在相同的文件名：\r\n{0}\r\n{1}", psds[Path.GetFileName(file)], Path.GetFullPath(file))); }
 
             // 导出的切图名字，名字一样时，自动在后面加1,2,3...
+            string exportResourceDir = null;
+            string exportResourceFullDir = null;
             Dictionary<string, int> exportNames = new Dictionary<string, int>();
             Action<LayerTree, DOM> VisitLayerNode = null;
             VisitLayerNode = (node, parent) =>
@@ -10427,33 +10437,36 @@ namespace EntryBuilder
                 if (layer.Name.StartsWith("!"))
                     return;
 
+                string name = node.ToString();
+              
                 TextLayer text = layer as TextLayer;
 
                 DOM dom = new DOM("div");
                 parent.Add(dom);
                 if (text != null)
                     dom.Label = "span";
-                else if (node.IsLayer)
+                else if (layer.Name != "ROOT" && node.IsLayer)
                     dom.Label = "img";
                 else
                 {
-                    if (node.ToString().StartsWith("#"))
+                    if (name.StartsWith("#"))
                         // 合并的图层
                         dom.Label = "img";
                     else
                         dom.Label = "div";
                 }
 
-                dom.Attributes["name"] = node.ToString();
+                dom.Attributes["name"] = name;
 
                 Rectangle rect = node.RectRelativeParent;
 
                 dom.CSS["position"] = "absolute";
-                dom.CSS["border"] = string.Format("{0} solid red", Px2Rem(1));
+                //dom.CSS["border"] = string.Format("{0} solid red", Px2Rem(1));
                 dom.CSS["left"] = Px2Rem(rect.X);
                 dom.CSS["top"] = Px2Rem(rect.Y);
-                dom.CSS["width"] = Px2Rem(rect.Width);
-                dom.CSS["height"] = Px2Rem(rect.Height);
+                dom.CSS["width"] = "max-content";
+                //dom.CSS["width"] = Px2Rem(rect.Width);
+                //dom.CSS["height"] = Px2Rem(rect.Height);
 
                 // 文字图层
                 if (text != null)
@@ -10483,7 +10496,7 @@ namespace EntryBuilder
                         if (i + 1 < portion.Length)
                         {
                             var next = portion[i + 1];
-                            if (data.Style.FontSize == next.Style.FontSize
+                            if (Math.Round(data.Style.FontSize * text.TransformMatrix[0], 1) == Math.Round(next.Style.FontSize * text.TransformMatrix[0], 1)
                                 && data.Style.FillColor == next.Style.FillColor
                                 && data.Style.FauxBold == next.Style.FauxBold
                                 && data.Style.FauxItalic == next.Style.FauxItalic
@@ -10493,7 +10506,7 @@ namespace EntryBuilder
                         }
 
                         DOM span;
-                        if (portion.Length > 1 && i != keep)
+                        if (portion.Length > 1 || i == keep)
                         {
                             span = new DOM("span");
                             dom.Add(span);
@@ -10504,7 +10517,7 @@ namespace EntryBuilder
                             // 只有单个部分的文字图层
                             span = dom;
 
-                        span.CSS["font-size"] = Px2Rem(Math.Round(data.Style.FontSize * text.TransformMatrix[0]));
+                        span.CSS["font-size"] = Px2Rem(Math.Round(data.Style.FontSize * text.TransformMatrix[0], 1));
                         span.CSS["color"] = JSColor(data.Style.FillColor);
                         if (data.Style.FauxBold)
                             span.CSS["font-weight"] = "bold";
@@ -10516,22 +10529,97 @@ namespace EntryBuilder
                         // 字体样式一样时，合并样式和文字显示
                         string result = string.Empty;
                         for (int j = keep; j <= i; j++)
+                        {
                             result += portion[j].Text.TrimEnd((char)3, (char)13);
+                            if (portion[j].Text.EndsWith(((char)3).ToString()))
+                                result += "<br>";
+                        }
                         keep = i + 1;
                         span.InnerText = result;
                     }
                 }
 
-                // 图层合并为一个图层显示，例如多张图片组成的一个图标
-                if (layer.Name.StartsWith("#"))
+                // 外观：圆角
+                if (layer.Resources != null)
                 {
-                    // todo: 得出子图层的有效区域作为当前区域
+                    VsmsResource vsms = (VsmsResource)layer.Resources.FirstOrDefault(r => r.Key == VsmsResource.TypeToolKey);
+                    if (vsms != null)
+                    {
+                        var path = (BezierKnotRecord)vsms.Paths[3];
+                        bool flag = true;
+                        for (int i = 3; i < vsms.Paths.Length; i++)
+                            if (path.Type != VectorPathType.ClosedSubpathBezierKnotLinked)
+                            {
+                                _LOG.Warning("不支持的外观类型：{0}，外观仅支持圆角", path.Type);
+                                flag = false;
+                                break;
+                            }
+                        if (flag)
+                        {
+                            int corner = vsms.Paths.Length - 3;
+                            if (corner != 8)
+                            {
+                                _LOG.Warning("仅支持8个点组成的圆角");
+                            }
+                            else
+                            {
+                                // 左上角左棱上面为第一个顶点，逆时针的8个点坐标
+                                VECTOR2[] cornerLocation = new VECTOR2[8];
+                                for (int i = 3, j = 0; i < vsms.Paths.Length; i++, j++)
+                                {
+                                    var knot = (BezierKnotRecord)vsms.Paths[i];
+                                    if ((j & 1) == 0)
+                                    {
+                                        cornerLocation[j].X = knot.PathPoints[0].X;
+                                        cornerLocation[j].Y = knot.PathPoints[0].Y;
+                                    }
+                                    else
+                                    {
+                                        int last = knot.PathPoints.Length - 1;
+                                        cornerLocation[j].X = knot.PathPoints[last].X;
+                                        cornerLocation[j].Y = knot.PathPoints[last].Y;
+                                    }
+                                }
+                                int shortLength = layer.Container.Width < layer.Container.Height ? layer.Container.Width : layer.Container.Height;
+                                shortLength <<= 1;
+                                // 四个角的圆角像素值
+                                float cornerLT, cornerRT, cornerRB, cornerLB;
+                                VECTOR2.Distance(ref cornerLocation[0], ref cornerLocation[7], out cornerLT);
+                                VECTOR2.Distance(ref cornerLocation[1], ref cornerLocation[2], out cornerRT);
+                                VECTOR2.Distance(ref cornerLocation[3], ref cornerLocation[4], out cornerRB);
+                                VECTOR2.Distance(ref cornerLocation[5], ref cornerLocation[6], out cornerLB);
+                                string lt = Px2Rem(cornerLT * shortLength);
+                                string rt = Px2Rem(cornerRT * shortLength);
+                                string rb = Px2Rem(cornerRB * shortLength);
+                                string lb = Px2Rem(cornerLB * shortLength);
+                                if (lt == rt && lt == rb && lt == lb)
+                                    dom.CSS["border-radius"] = lt;
+                                else
+                                    dom.CSS["border-radius"] = string.Format("{0} {1} {2} {3}", lt, rt, rb, lb);
+                            }
+                        }
+                    }
                 }
-                else if (node.Childs.Count > 0)
+
+                // 不透明度
+                if (layer.Opacity != 255)
+                {
+                    dom.CSS["opacity"] = Math.Round(layer.TransparentColor.A / 255.0, 2).ToString();
+                }
+
+                // 测试页面样式
+                if (exportTestResource && dom.Label == "img")
+                {
+                    string src = name + ".png";
+                    layer.Save(Path.Combine(exportResourceFullDir, src), new PngOptions());
+                    dom.Attributes["src"] = Path.Combine(exportResourceDir, src).Replace('\\', '/');
+                }
+
+                if (!name.StartsWith("#") && node.Childs.Count > 0)
                 {
                     // 递归访问子层
-                    foreach (var item in node.Childs)
-                        VisitLayerNode(item, dom);
+                    for (int i = node.Childs.Count - 1; i >= 0; i--)
+                        VisitLayerNode(node.Childs[i], dom);
                 }
             };
 
@@ -10539,11 +10627,20 @@ namespace EntryBuilder
             {
                 PsdImage psdfile = (PsdImage)PsdImage.Load(file.Value);
 
+                if (exportTestResource)
+                {
+                    // 创建导出资源的文件夹
+                    exportResourceDir = Path.Combine("img", file.Key);
+                    exportResourceFullDir = Path.Combine(outputDir, exportResourceDir);
+                    if (!Directory.Exists(exportResourceFullDir))
+                        Directory.CreateDirectory(exportResourceFullDir);
+                }
+
                 // 图层树，和PSD中一样（不包含调整层）
                 var tree = LayerTree.FromPSD(psdfile);
                 DOM root = new DOM("div");
                 root.CSS["position"] = "absolute";
-                root.CSS["border"] = string.Format("{0} solid red", Px2Rem(1));
+                //root.CSS["border"] = string.Format("{0} solid red", Px2Rem(1));
                 root.CSS["width"] = Px2Rem(psdfile.Width);
                 root.CSS["height"] = Px2Rem(psdfile.Height);
                 root.CSS["overflow"] = "hidden";
@@ -10555,10 +10652,10 @@ namespace EntryBuilder
                     MaskRectangle = new Aspose.PSD.Rectangle(-500, -500, 500, 500),
                     ImageData = new byte[500 * 500]
                 });
-                psdfile.Layers[1].Save("compose.png", new PngOptions() { ColorType = Aspose.PSD.FileFormats.Png.PngColorType.TruecolorWithAlpha });
+                //psdfile.Layers[1].Save("compose.png", new PngOptions() { ColorType = Aspose.PSD.FileFormats.Png.PngColorType.TruecolorWithAlpha });
                 //psdfile.Save("copy.psd", new PsdOptions());
 
-                string output = Path.Combine(outputDir + file.Key + ".js");
+                string output = Path.Combine(outputDir, file.Key + ".html");
                 //if (File.Exists(output))
                 //{
                 //    // todo: 差分合并文件
