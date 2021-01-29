@@ -512,7 +512,7 @@ namespace EntryBuilder
         [STAThread]
 		static void Main(string[] args)
         {
-            //PSD2JS("首页.psd", @"C:\Yamiwamiyu\Project\YMHY2\gaming-center\dist\", true);
+            PSD2JS("首页.psd", @"C:\Yamiwamiyu\Project\YMHY2\gaming-center\dist\", true);
             //_LOG._Logger = new LoggerConsole();
 
             //GaussianBlur gauss = new GaussianBlur(15);
@@ -3942,6 +3942,8 @@ namespace EntryBuilder
             public Layer Layer;
             public LayerTree Parent;
             public List<LayerTree> Childs = new List<LayerTree>();
+            /// <summary>仅作用在层上的附加层，蒙版或调整层等</summary>
+            public List<Layer> AdjustmentLayers;
 
             /// <summary>true: 图层 / false: 图层组</summary>
             public bool IsLayer { get { return !(Layer is LayerGroup); } }
@@ -4022,21 +4024,26 @@ namespace EntryBuilder
                 // 图层组
                 Stack<LayerTree> stack = new Stack<LayerTree>();
                 stack.Push(parent);
+                List<Layer> aLayers = new List<Layer>();
                 for (int i = psd.Layers.Length - 1; i >= 0; i--)
                 {
                     var layer = psd.Layers[i];
 
                     // 颜色只在其它图层上显示，一般为补充颜色的图层，类似于调整层或特效
-                    if (layer.Clipping == 1) continue;
+                    if (layer.Clipping == 1
                     // 调整层：调整颜色等，直接已经作用在了其它图层上，相当于效果，目前暂时不实现这些效果
-                    if (layer is AdjustmentLayer) continue;
+                        || layer is AdjustmentLayer)
+                    {
+                        aLayers.Add(layer);
+                        continue;
+                    }
 
-                    LayerGroup group = layer as LayerGroup;
-                    if (group != null && group.Name == "</Layer group>")
+                    if (layer.Name == "</Layer group>")
                     {
                         // 结束的图层可以进行导出图片
-                        ((LuniResource)group.Resources.First(r => r.Key == LuniResource.TypeToolKey)).Name = parent.ToString();
-                        parent.Layer = group;
+                        ((LuniResource)layer.Resources.First(r => r.Key == LuniResource.TypeToolKey)).Name = parent.ToString();
+                        if (layer is LayerGroup)
+                            parent.Layer = layer;
                         parent = stack.Pop();
                         continue;
                     }
@@ -4045,12 +4052,18 @@ namespace EntryBuilder
                     node.Parent = parent;
                     node.Layer = layer;
 
+                    if (aLayers.Count > 0)
+                    {
+                        node.AdjustmentLayers = new List<Layer>(aLayers);
+                        aLayers.Clear();
+                    }
+
                     // 可见图层，父图层组可见图层
                     if (layer.IsVisible
                         && (parent.Layer == null || parent.Layer.IsVisible))
                         parent.Childs.Add(node);
 
-                    if (group != null)
+                    if (layer is LayerGroup)
                     {
                         stack.Push(parent);
                         parent = node;
@@ -10464,7 +10477,7 @@ namespace EntryBuilder
                     return;
 
                 string name = node.ToString();
-              
+
                 TextLayer text = layer as TextLayer;
 
                 DOM dom = new DOM();
@@ -10567,9 +10580,10 @@ namespace EntryBuilder
                 }
                 #endregion
 
-                #region 外观：圆角
+                #region 外观
                 if (layer.Resources != null)
                 {
+                    // 圆角
                     VectorPathDataResource vsms = (VectorPathDataResource)layer.Resources.FirstOrDefault(r => r is VectorPathDataResource);
                     if (vsms != null)
                     {
@@ -10585,9 +10599,9 @@ namespace EntryBuilder
                         if (flag)
                         {
                             int corner = vsms.Paths.Length - 3;
-                            if (corner != 8 && corner != 4)
+                            if (corner != 8 && corner != 6 && corner != 4)
                             {
-                                _LOG.Warning("仅支持4个或8个点组成的圆角");
+                                _LOG.Warning("仅支持4,6,8个点组成的圆角");
                             }
                             else
                             {
@@ -10608,6 +10622,34 @@ namespace EntryBuilder
                                             int last = knot.PathPoints.Length - 1;
                                             cornerLocation[j].X = knot.PathPoints[last].X;
                                             cornerLocation[j].Y = knot.PathPoints[last].Y;
+                                        }
+                                    }
+                                }
+                                else if (corner == 6)
+                                {
+                                    // 直接呈现椭圆的情况下，椭圆的边第一和最后一个点分别用做两个点
+                                    for (int i = 3, j = 0; i < vsms.Paths.Length; i++, j++)
+                                    {
+                                        var knot = (BezierKnotRecord)vsms.Paths[i];
+                                        if (j % 3 == 2)
+                                        {
+                                            cornerLocation[j].X = knot.PathPoints[0].X;
+                                            cornerLocation[j].Y = knot.PathPoints[0].Y;
+                                            j++;
+                                            int last = knot.PathPoints.Length - 1;
+                                            cornerLocation[j].X = knot.PathPoints[last].X;
+                                            cornerLocation[j].Y = knot.PathPoints[last].Y;
+                                        }
+                                        else if (j % 3 == 1)
+                                        {
+                                            int last = knot.PathPoints.Length - 1;
+                                            cornerLocation[j].X = knot.PathPoints[last].X;
+                                            cornerLocation[j].Y = knot.PathPoints[last].Y;
+                                        }
+                                        else
+                                        {
+                                            cornerLocation[j].X = knot.PathPoints[0].X;
+                                            cornerLocation[j].Y = knot.PathPoints[0].Y;
                                         }
                                     }
                                 }
@@ -10641,6 +10683,19 @@ namespace EntryBuilder
                                 else
                                     dom.CSS["border-radius"] = string.Format("{0} {1} {2} {3}", lt, rt, rb, lb);
                             }
+                        }
+                    }
+
+                    // 形状图层的填充颜色
+                    if (node.AdjustmentLayers == null)
+                    {
+                        SoCoResource soco = (SoCoResource)layer.Resources.FirstOrDefault(r => r is SoCoResource);
+                        if (soco != null)
+                        {
+                            dom.Label = "div";
+                            dom.CSS["background-color"] = JSColor(soco.Color);
+                            dom.CSS["width"] = Px2Rem(rect.Width);
+                            dom.CSS["height"] = Px2Rem(rect.Height);
                         }
                     }
                 }
