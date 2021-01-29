@@ -1,0 +1,4 @@
+﻿引用的git上的项目：https://github.com/NtreevSoft/psd-parser.git
+并做出以下修改
+1. 将PsdLayer等一系列必要类型公开
+2. 

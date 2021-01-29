@@ -25,6 +25,7 @@ using Aspose.PSD.FileFormats.Psd.Layers.LayerResources;
 using Aspose.PSD.FileFormats.Psd.Layers.Text;
 using Aspose.PSD.ImageOptions;
 using Aspose.PSD.FileFormats.Core.VectorPaths;
+using Ntreev.Library.Psd;
 
 namespace EntryBuilder
 {
@@ -512,7 +513,7 @@ namespace EntryBuilder
         [STAThread]
 		static void Main(string[] args)
         {
-            PSD2JS("首页.psd", @"C:\Yamiwamiyu\Project\YMHY2\gaming-center\dist\", true);
+            PSD2JS__("首页.psd", @"C:\Yamiwamiyu\Project\YMHY2\gaming-center\dist\", true);
             //_LOG._Logger = new LoggerConsole();
 
             //GaussianBlur gauss = new GaussianBlur(15);
@@ -4070,6 +4071,168 @@ namespace EntryBuilder
                     }
                 }
                 return parent;
+            }
+        }
+        /// <summary>图层的组织结构，跟PS里打开的一样</summary>
+        public class LayerTree2 : IEnumerable<IPsdLayer>
+        {
+            public IPsdLayer Layer;
+            public LayerTree2 Parent;
+            public List<LayerTree2> Childs = new List<LayerTree2>();
+            /// <summary>仅作用在层上的附加层，蒙版或调整层等</summary>
+            public List<IPsdLayer> AdjustmentLayers;
+
+            /// <summary>图层组时，Rect全为0，这个可以标示图层组内元素的包围盒</summary>
+            public Rectangle Rect
+            {
+                get
+                {
+                    if (IsLayer || Childs.Count == 0)
+                    {
+                        //if (Layer.LayerMaskData != null)
+                        //    return new Rectangle(Layer.LayerMaskData.Left, Layer.LayerMaskData.Top, Layer.LayerMaskData.Right - Layer.LayerMaskData.Left, Layer.LayerMaskData.Bottom - Layer.LayerMaskData.Top);
+                        //else
+                        return new Rectangle(Layer.Left, Layer.Top, Layer.Width, Layer.Height);
+                    }
+
+                    Rectangle result = new Rectangle(int.MaxValue, int.MaxValue, -int.MaxValue, -int.MaxValue);
+                    foreach (var item in Childs)
+                    {
+                        Rectangle rect = item.Rect;
+                        if (rect.X < result.X) result.X = rect.X;
+                        if (rect.Y < result.Y) result.Y = rect.Y;
+                        if (rect.Right > result.Width) result.Width = rect.Right;
+                        if (rect.Bottom > result.Height) result.Height = rect.Bottom;
+                    }
+                    result.Width -= result.X;
+                    result.Height -= result.Y;
+                    return result;
+                }
+            }
+            /// <summary>相对父图层的坐标</summary>
+            public Rectangle RectRelativeParent
+            {
+                get
+                {
+                    if (Parent == null)
+                        return Rect;
+
+                    Rectangle parent = Parent.Rect;
+                    Rectangle me = Rect;
+                    me.X -= parent.X;
+                    me.Y -= parent.Y;
+                    return me;
+                }
+            }
+
+            #region 图层Resource信息
+
+            /// <summary>通过Resource中获取属性值</summary>
+            /// <param name="property">key.key.key...</param>
+            public T Value<T>(string property)
+            {
+                object value = Layer.Resources[property];
+                if (value is T) return (T)value;
+                return (T)Convert.ChangeType(value, typeof(T));
+            }
+            /// <summary>通过Resource中获取属性值</summary>
+            /// <param name="properties">可能由于ps版本原因，同一个属性值保存在不同的属性中</param>
+            public T Value<T>(params string[] properties)
+            {
+                object value = null;
+                for (int i = 0; i < properties.Length; i++)
+                    if (Layer.Resources.Contains(properties[i]))
+                    {
+                        value = Layer.Resources[properties[i]];
+                        break;
+                    }
+                if (value is T) return (T)value;
+                return (T)Convert.ChangeType(value, typeof(T));
+            }
+            public int ID { get { return Value<int>("lyid.ID"); } }
+            public string Name { get { return Value<string>("luni.Name"); } }
+            public bool IsLayer { get { return Value<int>("lsct.SectionType", "lsdk.SectionType") == 0; } }
+            public byte Opacity { get { return Value<byte>("iOpa.Opacity"); } }
+
+            #endregion
+
+            public override string ToString()
+            {
+                return Layer.Name;
+            }
+            public IEnumerator<IPsdLayer> GetEnumerator()
+            {
+                //foreach (var item in Childs)
+                //    yield return item.Layer;
+                for (int i = Childs.Count - 1; i >= 0; i--)
+                    yield return Childs[i].Layer;
+            }
+            System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator()
+            {
+                return GetEnumerator();
+            }
+
+            public static LayerTree2 FromPSD(PsdDocument psd)
+            {
+                // 根节点
+                LayerTree2 root = new LayerTree2();
+                Action<LayerTree2, IPsdLayer> visit = null;
+                visit = (node, layer) =>
+                {
+                    if (layer.IsClipping)
+                    {
+                        node.Childs.Last().AdjustmentLayers.Add(layer);
+                        return;
+                    }
+
+                    //LayerTree2 node = new LayerTree2();
+                    //node.Parent = parent;
+                    //node.Layer = layer;
+                };
+                foreach (var item in psd.Childs)
+                    visit(root, item);
+                return root;
+            }
+            public static string PrintProperties(IProperties properties)
+            {
+                StringBuilder builder = new StringBuilder();
+                PrintProperties(builder, properties);
+                return builder.ToString();
+            }
+            static void PrintProperties(StringBuilder builder, object value)
+            {
+                if (value is string)
+                    builder.AppendFormat("\"{0}\"", value);
+                else if (value is IProperties)
+                {
+                    var properties = (IProperties)value;
+                    bool flag = false;
+                    builder.Append("{");
+                    foreach (var item in properties)
+                    {
+                        flag = true;
+                        builder.AppendFormat("\"{0}\":", item.Key);
+                        PrintProperties(builder, item.Value);
+                        builder.Append(",");
+                    }
+                    if (flag)
+                        builder = builder.Remove(builder.Length - 1, 1);
+                    builder.Append("}");
+                }
+                else if (value is System.Collections.IList)
+                {
+                    builder.Append("[");
+                    var array = (System.Collections.IList)value;
+                    for (int i = 0, e = array.Count - 1; i <= e; i++)
+                    {
+                        PrintProperties(builder, array[i]);
+                        if (i != e)
+                            builder.Append(",");
+                    }
+                    builder.Append("]");
+                }
+                else
+                    builder.Append(value);
             }
         }
         public class DOM : Tree<DOM>
@@ -10746,6 +10909,316 @@ namespace EntryBuilder
                 // 超出文档的部分隐藏
                 root.CSS["overflow"] = "hidden";
                 VisitLayerNode(tree, root);
+
+                string output = Path.Combine(outputDir, file.Key + ".html");
+                //if (File.Exists(output))
+                //{
+                //    // todo: 差分合并文件
+                //}
+                //else
+                File.WriteAllText(output, root.ToString(), Encoding.UTF8);
+            }
+        }
+        public static void PSD2JS__(string psdOrDirSplitByComma, string outputDir, bool exportTestResource)
+        {
+            string[] split = psdOrDirSplitByComma.Split(',');
+            // 所有参与生成代码的psd文件，Key为文件名，Value为文件全路径
+            Dictionary<string, string> psds = new Dictionary<string, string>();
+            for (int i = 0; i < split.Length; i++)
+                // psd文件
+                if (Path.GetExtension(split[i]).ToLower() == ".psd")
+                    try { psds.Add(Path.GetFileNameWithoutExtension(split[i]), Path.GetFullPath(split[i])); }
+                    catch { throw new Exception(string.Format("存在相同的文件名：\r\n{0}\r\n{1}", psds[Path.GetFileName(split[i])], Path.GetFullPath(split[i]))); }
+                else
+                    // 文件夹里的所有psd文件
+                    foreach (var file in GetFiles(split[i], SearchOption.AllDirectories, "*.psd"))
+                        try { psds.Add(Path.GetFileNameWithoutExtension(file), Path.GetFullPath(file)); }
+                        catch { throw new Exception(string.Format("存在相同的文件名：\r\n{0}\r\n{1}", psds[Path.GetFileName(file)], Path.GetFullPath(file))); }
+
+            // 导出的切图名字，名字一样时，自动在后面加1,2,3...
+            string exportResourceDir = null;
+            string exportResourceFullDir = null;
+            Dictionary<string, int> exportNames = new Dictionary<string, int>();
+            Action<LayerTree, DOM> VisitLayerNode = null;
+            VisitLayerNode = (node, parent) =>
+            {
+                var layer = node.Layer;
+                // 跳过显示当前图层，例如是美术效果参考用的背景图层
+                if (layer.Name.StartsWith("!"))
+                    return;
+
+                string name = node.ToString();
+
+                TextLayer text = layer as TextLayer;
+
+                DOM dom = new DOM();
+                parent.Add(dom);
+
+                #region 标签
+                if (text != null)
+                    dom.Label = "span";
+                else if (layer.Name != "ROOT" && node.IsLayer)
+                    dom.Label = "img";
+                else
+                {
+                    if (name.StartsWith("#"))
+                        // 合并的图层
+                        dom.Label = "img";
+                    else
+                        dom.Label = "div";
+                }
+                //dom.Attributes["name"] = name;
+                #endregion
+
+                Rectangle rect = node.RectRelativeParent;
+                dom.CSS["position"] = "absolute";
+                //dom.CSS["border"] = string.Format("{0} solid red", Px2Rem(1));
+                dom.CSS["left"] = Px2Rem(rect.X);
+                dom.CSS["top"] = Px2Rem(rect.Y);
+                dom.CSS["width"] = "max-content";
+                //dom.CSS["width"] = Px2Rem(rect.Width);
+                //dom.CSS["height"] = Px2Rem(rect.Height);
+
+                #region 文字图层
+                if (text != null)
+                {
+                    // 文字图层可以有多段文字，颜色，字体，段落布局等都可以各不一样
+                    var portion = text.TextData.Items;
+                    // 段落信息目前只使用对齐，且同一段文字不能使用两种对齐方式
+                    var paragraphData = portion[0].Paragraph;
+                    if (paragraphData.Justification != 0)
+                    {
+                        if (paragraphData.Justification == 1)
+                        {
+                            dom.CSS["text-align"] = "right";
+                            // 改变图层坐标
+                        }
+                        else
+                        {
+                            dom.CSS["text-align"] = "center";
+                            // 改变图层坐标
+                        }
+                    }
+                    // 前后两个段落，生成代码字体样式完全一样的，却分成了两个部分，此时应合并成一个部分keep是前面的部分
+                    int keep = 0;
+                    for (int i = 0; i < portion.Length; i++)
+                    {
+                        var data = portion[i];
+                        if (i + 1 < portion.Length)
+                        {
+                            var next = portion[i + 1];
+                            if (Math.Round(data.Style.FontSize * text.TransformMatrix[0], 1) == Math.Round(next.Style.FontSize * text.TransformMatrix[0], 1)
+                                && data.Style.FillColor == next.Style.FillColor
+                                && data.Style.FauxBold == next.Style.FauxBold
+                                && data.Style.FauxItalic == next.Style.FauxItalic
+                                && data.Style.Underline == next.Style.Underline
+                                )
+                                continue;
+                        }
+
+                        DOM span;
+                        if (portion.Length > 1 || i == keep)
+                        {
+                            span = new DOM("span");
+                            dom.Add(span);
+
+                            dom.Label = "div";
+                        }
+                        else
+                            // 只有单个部分的文字图层
+                            span = dom;
+
+                        span.CSS["font-size"] = Px2Rem(Math.Round(data.Style.FontSize * text.TransformMatrix[0], 1));
+                        span.CSS["color"] = JSColor(data.Style.FillColor);
+                        if (data.Style.FauxBold)
+                            span.CSS["font-weight"] = "bold";
+                        if (data.Style.FauxItalic)
+                            span.CSS["font-style"] = "italic";
+                        if (data.Style.Underline)
+                            span.CSS["text-decoration"] = "underline";
+
+                        // 字体样式一样时，合并样式和文字显示
+                        string result = string.Empty;
+                        for (int j = keep; j <= i; j++)
+                        {
+                            result += portion[j].Text.TrimEnd((char)3, (char)13);
+                            if (portion[j].Text.EndsWith(((char)3).ToString()))
+                                result += "<br>";
+                        }
+                        keep = i + 1;
+                        span.InnerText = result;
+                    }
+                }
+                #endregion
+
+                #region 外观
+                if (layer.Resources != null)
+                {
+                    // 圆角
+                    VectorPathDataResource vsms = (VectorPathDataResource)layer.Resources.FirstOrDefault(r => r is VectorPathDataResource);
+                    if (vsms != null)
+                    {
+                        var path = (BezierKnotRecord)vsms.Paths[3];
+                        bool flag = true;
+                        for (int i = 3; i < vsms.Paths.Length; i++)
+                            if (path.Type != VectorPathType.ClosedSubpathBezierKnotLinked)
+                            {
+                                _LOG.Warning("不支持的外观类型：{0}，外观仅支持圆角", path.Type);
+                                flag = false;
+                                break;
+                            }
+                        if (flag)
+                        {
+                            int corner = vsms.Paths.Length - 3;
+                            if (corner != 8 && corner != 6 && corner != 4)
+                            {
+                                _LOG.Warning("仅支持4,6,8个点组成的圆角");
+                            }
+                            else
+                            {
+                                // 左上角左棱上面为第一个顶点，逆时针的8个点坐标
+                                VECTOR2[] cornerLocation = new VECTOR2[8];
+                                if (corner == 8)
+                                {
+                                    for (int i = 3, j = 0; i < vsms.Paths.Length; i++, j++)
+                                    {
+                                        var knot = (BezierKnotRecord)vsms.Paths[i];
+                                        if ((j & 1) == 0)
+                                        {
+                                            cornerLocation[j].X = knot.PathPoints[0].X;
+                                            cornerLocation[j].Y = knot.PathPoints[0].Y;
+                                        }
+                                        else
+                                        {
+                                            int last = knot.PathPoints.Length - 1;
+                                            cornerLocation[j].X = knot.PathPoints[last].X;
+                                            cornerLocation[j].Y = knot.PathPoints[last].Y;
+                                        }
+                                    }
+                                }
+                                else if (corner == 6)
+                                {
+                                    // 直接呈现椭圆的情况下，椭圆的边第一和最后一个点分别用做两个点
+                                    for (int i = 3, j = 0; i < vsms.Paths.Length; i++, j++)
+                                    {
+                                        var knot = (BezierKnotRecord)vsms.Paths[i];
+                                        if (j % 3 == 2)
+                                        {
+                                            cornerLocation[j].X = knot.PathPoints[0].X;
+                                            cornerLocation[j].Y = knot.PathPoints[0].Y;
+                                            j++;
+                                            int last = knot.PathPoints.Length - 1;
+                                            cornerLocation[j].X = knot.PathPoints[last].X;
+                                            cornerLocation[j].Y = knot.PathPoints[last].Y;
+                                        }
+                                        else if (j % 3 == 1)
+                                        {
+                                            int last = knot.PathPoints.Length - 1;
+                                            cornerLocation[j].X = knot.PathPoints[last].X;
+                                            cornerLocation[j].Y = knot.PathPoints[last].Y;
+                                        }
+                                        else
+                                        {
+                                            cornerLocation[j].X = knot.PathPoints[0].X;
+                                            cornerLocation[j].Y = knot.PathPoints[0].Y;
+                                        }
+                                    }
+                                }
+                                else
+                                {
+                                    for (int i = 3, j = 0; i < vsms.Paths.Length; i++, j++)
+                                    {
+                                        var knot = (BezierKnotRecord)vsms.Paths[i];
+                                        cornerLocation[j].X = knot.PathPoints[0].X;
+                                        cornerLocation[j].Y = knot.PathPoints[0].Y;
+                                        j++;
+                                        int last = knot.PathPoints.Length - 1;
+                                        cornerLocation[j].X = knot.PathPoints[last].X;
+                                        cornerLocation[j].Y = knot.PathPoints[last].Y;
+                                    }
+                                }
+                                int shortLength = layer.Container.Width < layer.Container.Height ? layer.Container.Width : layer.Container.Height;
+                                shortLength <<= 1;
+                                // 四个角的圆角像素值
+                                float cornerLT, cornerRT, cornerRB, cornerLB;
+                                VECTOR2.Distance(ref cornerLocation[0], ref cornerLocation[7], out cornerLT);
+                                VECTOR2.Distance(ref cornerLocation[1], ref cornerLocation[2], out cornerRT);
+                                VECTOR2.Distance(ref cornerLocation[3], ref cornerLocation[4], out cornerRB);
+                                VECTOR2.Distance(ref cornerLocation[5], ref cornerLocation[6], out cornerLB);
+                                string lt = Px2Rem(cornerLT * shortLength);
+                                string rt = Px2Rem(cornerRT * shortLength);
+                                string rb = Px2Rem(cornerRB * shortLength);
+                                string lb = Px2Rem(cornerLB * shortLength);
+                                if (lt == rt && lt == rb && lt == lb)
+                                    dom.CSS["border-radius"] = lt;
+                                else
+                                    dom.CSS["border-radius"] = string.Format("{0} {1} {2} {3}", lt, rt, rb, lb);
+                            }
+                        }
+                    }
+
+                    // 形状图层的填充颜色
+                    if (node.AdjustmentLayers == null)
+                    {
+                        SoCoResource soco = (SoCoResource)layer.Resources.FirstOrDefault(r => r is SoCoResource);
+                        if (soco != null)
+                        {
+                            dom.Label = "div";
+                            dom.CSS["background-color"] = JSColor(soco.Color);
+                            dom.CSS["width"] = Px2Rem(rect.Width);
+                            dom.CSS["height"] = Px2Rem(rect.Height);
+                        }
+                    }
+                }
+                #endregion
+
+                #region 不透明度
+                if (layer.Opacity != 255)
+                {
+                    dom.CSS["opacity"] = Math.Round(layer.TransparentColor.A / 255.0, 2).ToString();
+                }
+                #endregion
+
+                // 测试页面样式
+                if (exportTestResource && dom.Label == "img")
+                {
+                    string src = name + ".png";
+                    layer.Save(Path.Combine(exportResourceFullDir, src), new PngOptions());
+                    dom.Attributes["src"] = Path.Combine(exportResourceDir, src).Replace('\\', '/');
+                }
+
+                if (!name.StartsWith("#") && node.Childs.Count > 0)
+                {
+                    // 递归访问子层
+                    for (int i = node.Childs.Count - 1; i >= 0; i--)
+                        VisitLayerNode(node.Childs[i], dom);
+                }
+            };
+
+            foreach (var file in psds)
+            {
+                var psdfile = PsdDocument.Create(file.Value, new PathResolver());
+                var testLayer = psdfile.Descendants(l => l.Name == "椭圆 913 拷贝").First();
+                string json = LayerTree2.PrintProperties(testLayer.Resources);
+
+                if (exportTestResource)
+                {
+                    // 创建导出资源的文件夹
+                    exportResourceDir = Path.Combine("img", file.Key);
+                    exportResourceFullDir = Path.Combine(outputDir, exportResourceDir);
+                    if (!Directory.Exists(exportResourceFullDir))
+                        Directory.CreateDirectory(exportResourceFullDir);
+                }
+
+                // 图层树，和PSD中一样（不包含调整层）
+                var tree = LayerTree2.FromPSD(psdfile);
+                DOM root = new DOM("div");
+                //root.CSS["position"] = "absolute";
+                //root.CSS["width"] = Px2Rem(psdfile.Width);
+                //root.CSS["height"] = Px2Rem(psdfile.Height);
+                //// 超出文档的部分隐藏
+                //root.CSS["overflow"] = "hidden";
+                //VisitLayerNode(tree, root);
 
                 string output = Path.Combine(outputDir, file.Key + ".html");
                 //if (File.Exists(output))

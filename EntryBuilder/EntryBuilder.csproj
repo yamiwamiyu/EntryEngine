@@ -154,6 +154,10 @@
       <Project>{424D14E4-1661-42E9-A192-B1C60D4669FF}</Project>
       <Name>EntryEngine</Name>
     </ProjectReference>
+    <ProjectReference Include="..\Ntreev.Library.Psd\Ntreev.Library.Psd.csproj">
+      <Project>{2F723217-59D2-4680-8DBC-771D2311C280}</Project>
+      <Name>Ntreev.Library.Psd</Name>
+    </ProjectReference>
     <ProjectReference Include="..\ReflectionHelper\ReflectionHelper.csproj">
       <Project>{D6E12A5C-CD9D-4671-9BD7-5D3E79CE3543}</Project>
       <Name>ReflectionHelper</Name>
@@ -180,7 +184,6 @@
       <Install>true</Install>
     </BootstrapperPackage>
   </ItemGroup>
-  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
     <PostBuildEvent>::copy $(TargetDir)EntryEngine.dll D:\Projects\WWC\Tools\EntryEngine.dll
