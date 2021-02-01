@@ -4193,47 +4193,6 @@ namespace EntryBuilder
                     visit(root, item);
                 return root;
             }
-            public static string PrintProperties(IProperties properties)
-            {
-                StringBuilder builder = new StringBuilder();
-                PrintProperties(builder, properties);
-                return builder.ToString();
-            }
-            static void PrintProperties(StringBuilder builder, object value)
-            {
-                if (value is string)
-                    builder.AppendFormat("\"{0}\"", value);
-                else if (value is IProperties)
-                {
-                    var properties = (IProperties)value;
-                    bool flag = false;
-                    builder.Append("{");
-                    foreach (var item in properties)
-                    {
-                        flag = true;
-                        builder.AppendFormat("\"{0}\":", item.Key);
-                        PrintProperties(builder, item.Value);
-                        builder.Append(",");
-                    }
-                    if (flag)
-                        builder = builder.Remove(builder.Length - 1, 1);
-                    builder.Append("}");
-                }
-                else if (value is System.Collections.IList)
-                {
-                    builder.Append("[");
-                    var array = (System.Collections.IList)value;
-                    for (int i = 0, e = array.Count - 1; i <= e; i++)
-                    {
-                        PrintProperties(builder, array[i]);
-                        if (i != e)
-                            builder.Append(",");
-                    }
-                    builder.Append("]");
-                }
-                else
-                    builder.Append(value);
-            }
         }
         public class DOM : Tree<DOM>
         {
@@ -11198,8 +11157,9 @@ namespace EntryBuilder
             foreach (var file in psds)
             {
                 var psdfile = PsdDocument.Create(file.Value, new PathResolver());
-                var testLayer = psdfile.Descendants(l => l.Name == "椭圆 913 拷贝").First();
-                string json = LayerTree2.PrintProperties(testLayer.Resources);
+                var testLayer = psdfile.Find(l => l.Name == "矩形 1");
+                string json = testLayer.Resources.PrintProperties();
+                ResourceVectorPath.Create(testLayer);
 
                 if (exportTestResource)
                 {

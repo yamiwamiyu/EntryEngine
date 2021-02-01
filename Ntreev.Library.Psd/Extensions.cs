@@ -76,5 +76,19 @@ namespace Ntreev.Library.Psd
                 }
             }
         }
+
+
+        public static IPsdLayer Find(this IPsdLayer layer, Func<IPsdLayer, bool> find)
+        {
+            if (find(layer))
+                return layer;
+            foreach (var item in layer.Childs)
+            {
+                var result = Find(item, find);
+                if (result != null)
+                    return result;
+            }
+            return null;
+        }
     }
 }

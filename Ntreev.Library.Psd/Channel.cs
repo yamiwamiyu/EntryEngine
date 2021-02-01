@@ -21,7 +21,7 @@ using System.IO;
 
 namespace Ntreev.Library.Psd
 {
-    class Channel : IChannel
+    public class Channel : IChannel
     {
         private byte[] data;
         private ChannelType type;
@@ -55,7 +55,7 @@ namespace Ntreev.Library.Psd
             set { this.type = value; }
         }
 
-        public void ReadHeader(PsdReader reader, CompressionType compressionType)
+        internal void ReadHeader(PsdReader reader, CompressionType compressionType)
         {
             if (compressionType != CompressionType.RLE)
                 return;
@@ -77,7 +77,7 @@ namespace Ntreev.Library.Psd
             }
         }
 
-        public void Read(PsdReader reader, int bpp, CompressionType compressionType)
+        internal void Read(PsdReader reader, int bpp, CompressionType compressionType)
         {
             switch (compressionType)
             {

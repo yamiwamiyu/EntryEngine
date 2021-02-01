@@ -23,7 +23,7 @@ using System.Text;
 
 namespace Ntreev.Library.Psd
 {
-    class LayerRecords
+    public class LayerRecords
     {
         private Channel[] channels;
 
@@ -35,7 +35,7 @@ namespace Ntreev.Library.Psd
         private Guid placedID;
         private int version;
 
-        public void SetExtraRecords(LayerMask layerMask, LayerBlendingRanges blendingRanges, IProperties resources, string name)
+        internal void SetExtraRecords(LayerMask layerMask, LayerBlendingRanges blendingRanges, IProperties resources, string name)
         {
             this.layerMask = layerMask;
             this.blendingRanges = blendingRanges;

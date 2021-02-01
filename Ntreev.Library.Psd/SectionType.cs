@@ -22,7 +22,7 @@ using System.Text;
 
 namespace Ntreev.Library.Psd
 {
-    enum SectionType
+    public enum SectionType
     {
         Normal,
 

@@ -1,4 +1,8 @@
-﻿2020/01/22
+﻿2020/02/01
+1. 引入https://github.com/NtreevSoft/psd-parser.git作为PhotoShop的默认实现库，读取速度比Aspose.PSD.dll快很多
+2. 对NtreevSoft源码进行修改，新增生成代码所需的内容，没有的部分可继续反编译参考Aspose.PSD.dll的源码
+
+2020/01/22
 1. JS代码支持Promise
 
 2020/01/20

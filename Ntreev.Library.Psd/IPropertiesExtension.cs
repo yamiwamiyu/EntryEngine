@@ -85,5 +85,71 @@ namespace Ntreev.Library.Psd
 
             return property + "." + string.Join(".", properties);
         }
+
+
+        /// <summary>通过Resource中获取属性值</summary>
+        /// <param name="property">key.key.key...</param>
+        public static T Value<T>(this IProperties p, string property)
+        {
+            object value = p[property];
+            if (value == null) return default(T);
+            if (value is T) return (T)value;
+            return (T)Convert.ChangeType(value, typeof(T));
+        }
+        /// <summary>通过Resource中获取属性值</summary>
+        /// <param name="properties">可能由于ps版本原因，同一个属性值保存在不同的属性中</param>
+        public static T Value<T>(this IProperties p, params string[] properties)
+        {
+            object value = null;
+            for (int i = 0; i < properties.Length; i++)
+                if (p.Contains(properties[i]))
+                {
+                    value = p[properties[i]];
+                    break;
+                }
+            if (value is T) return (T)value;
+            return (T)Convert.ChangeType(value, typeof(T));
+        }
+        public static string PrintProperties(this IProperties properties)
+        {
+            StringBuilder builder = new StringBuilder();
+            PrintProperties(builder, properties);
+            return builder.ToString();
+        }
+        static void PrintProperties(StringBuilder builder, object value)
+        {
+            if (value is string)
+                builder.AppendFormat("\"{0}\"", value);
+            else if (value is IProperties)
+            {
+                var properties = (IProperties)value;
+                bool flag = false;
+                builder.Append("{");
+                foreach (var item in properties)
+                {
+                    flag = true;
+                    builder.AppendFormat("\"{0}\":", item.Key);
+                    PrintProperties(builder, item.Value);
+                    builder.Append(",");
+                }
+                if (flag)
+                    builder = builder.Remove(builder.Length - 1, 1);
+                builder.Append("}");
+            }
+            else if (value is System.Collections.IList)
+            {
+                builder.Append("[");
+                var array = (System.Collections.IList)value;
+                for (int i = 0, e = array.Count - 1; i <= e; i++)
+                {
+                    PrintProperties(builder, array[i]);
+                    if (i != e)
+                        builder.Append(",");
+                }
+                builder.Append("]");
+            }
+            else
+                builder.Append(value);
+        }
     }
 }

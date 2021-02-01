@@ -25,7 +25,7 @@ using Ntreev.Library.Psd.Readers.LayerAndMaskInformation;
 
 namespace Ntreev.Library.Psd
 {
-    class PsdLayer : IPsdLayer
+    public class PsdLayer : IPsdLayer
     {
         private readonly PsdDocument document;
         private readonly LayerRecords records;
@@ -40,7 +40,7 @@ namespace Ntreev.Library.Psd
 
         private static PsdLayer[] emptyChilds = new PsdLayer[] { };
 
-        public PsdLayer(PsdReader reader, PsdDocument document)
+        internal PsdLayer(PsdReader reader, PsdDocument document)
         {
             this.document = document;
             this.records = LayerRecordsReader.Read(reader);
@@ -60,6 +60,23 @@ namespace Ntreev.Library.Psd
         public Channel[] Channels
         {
             get { return this.channels.Value; }
+        }
+
+        public ELayerType LayerType
+        {
+            get
+            {
+                if (SectionType != Psd.SectionType.Normal)
+                    return ELayerType.LayerGroup;
+                foreach (var item in Resources)
+                {
+                    if (item.Key == "TySh")
+                        return ELayerType.TextLayer;
+                    else if (item.Key == "lnsr")
+                        return ELayerType.FillShape;
+                }
+                return ELayerType.Normal;
+            }
         }
 
         public SectionType SectionType
@@ -193,7 +210,7 @@ namespace Ntreev.Library.Psd
             get { return this.records.Mask != null; }
         }
 
-        public void ReadChannels(PsdReader reader)
+        internal void ReadChannels(PsdReader reader)
         {
             this.channels = new ChannelsReader(reader, this.records.ChannelSize, this);
         }

@@ -180,6 +180,11 @@ namespace Ntreev.Library.Psd
             get { return "Document"; }
         }
 
+        ELayerType IPsdLayer.LayerType
+        {
+            get { return ELayerType.Document; }
+        }
+
         int IPsdLayer.Left
         {
             get { return 0; }

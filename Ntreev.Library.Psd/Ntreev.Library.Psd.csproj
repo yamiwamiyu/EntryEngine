@@ -115,10 +115,12 @@
     <Compile Include="Readers\LayerResources\Reader_SoLd.cs" />
     <Compile Include="Readers\LayerResources\Reader_SoLE.cs" />
     <Compile Include="Readers\LayerResources\Reader_TySh.cs" />
+    <Compile Include="Readers\LayerResources\Reader_vsms.cs" />
     <Compile Include="Readers\ReaderCollector.cs" />
     <Compile Include="Readers\ResourceReaderBase.cs" />
     <Compile Include="ResourceIDAttribute.cs" />
     <Compile Include="SectionType.cs" />
+    <Compile Include="Structure.cs" />
     <Compile Include="Structures\BaseStructure.cs" />
     <Compile Include="Structures\StructureAlias.cs" />
     <Compile Include="Structures\StructureClass.cs" />

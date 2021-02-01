@@ -1,4 +1,9 @@
 ﻿引用的git上的项目：https://github.com/NtreevSoft/psd-parser.git
 并做出以下修改
 1. 将PsdLayer等一系列必要类型公开
-2. 
+2. IPropertiesExtension新增方法
+3. Extensions新增方法
+4. IPsdLayer新增LayerType
+5. 新增Structure.cs文件，记录颜色，矩形等常用类型
+6. 根据TySh新增ResourceText用强类型描述文字图层属性
+7. 新增vsms和vmsk两种资源Reader及其相应强类型ResourceVectorPath，主要读取图层外观信息（圆角等）

@@ -22,6 +22,16 @@ using System.Text;
 
 namespace Ntreev.Library.Psd
 {
+    public enum ELayerType
+    {
+        Normal,
+        SmartObject,
+        TextLayer,
+        FillShape,
+        Document,
+        LayerGroup,
+    }
+
     public interface IPsdLayer : IImageSource
     {
         BlendMode BlendMode { get; }
@@ -47,5 +57,7 @@ namespace Ntreev.Library.Psd
         int Right { get; }
 
         int Bottom { get; }
+
+        ELayerType LayerType { get; }
     }
 }

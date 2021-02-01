@@ -90,7 +90,7 @@ namespace Ntreev.Library.Psd
                 else if (value is IDictionary<string, object> == true)
                 {
                     IDictionary<string, object> props = value as IDictionary<string, object>;
-                    value = props[item];
+                    props.TryGetValue(item, out value);
                 }
                 else if (value is IProperties == true)
                 {
