@@ -70,10 +70,12 @@ namespace Ntreev.Library.Psd
                     return ELayerType.LayerGroup;
                 foreach (var item in Resources)
                 {
-                    if (item.Key == "TySh")
-                        return ELayerType.TextLayer;
-                    else if (item.Key == "lnsr")
-                        return ELayerType.FillShape;
+                    if (item.Key == "lnsr")
+                        switch (((IProperties)item.Value).Value<string>("Name"))
+                        {
+                            case "rend": return ELayerType.TextLayer;
+                            case "shap": return ELayerType.FillShape;
+                        }
                 }
                 return ELayerType.Normal;
             }

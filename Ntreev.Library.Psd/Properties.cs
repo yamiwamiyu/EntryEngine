@@ -49,7 +49,17 @@ namespace Ntreev.Library.Psd
 
             foreach (var item in ss)
             {
-                if (value is ArrayList == true)
+                if (value is Array)
+                {
+                    Array array = value as Array;
+                    int index;
+                    if (int.TryParse(item, out index) == false)
+                        return false;
+                    if (index < 0 || index >= array.Length)
+                        return false;
+                    value = array.GetValue(index);
+                }
+                else if (value is ArrayList == true)
                 {
                     ArrayList arrayList = value as ArrayList;
                     int index;
@@ -82,7 +92,12 @@ namespace Ntreev.Library.Psd
 
             foreach (var item in ss)
             {
-                if (value is ArrayList == true)
+                if (value is Array)
+                {
+                    Array array = value as Array;
+                    value = array.GetValue(int.Parse(item));
+                }
+                else if (value is ArrayList == true)
                 {
                     ArrayList arrayList = value as ArrayList;
                     value = arrayList[int.Parse(item)];

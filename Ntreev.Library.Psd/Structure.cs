@@ -22,8 +22,8 @@ namespace Ntreev.Library.Psd
     }
     public struct PsdPoint
     {
-        public int X;
-        public int Y;
+        public double X;
+        public double Y;
 
         public override string ToString()
         {
@@ -32,8 +32,8 @@ namespace Ntreev.Library.Psd
 
         public static void Distance(ref PsdPoint p1, ref PsdPoint p2, out double distance)
         {
-            int y = p2.Y - p1.Y;
-            int x = p2.X - p1.X;
+            var y = p2.Y - p1.Y;
+            var x = p2.X - p1.X;
             distance = Math.Sqrt(y * y - x * x);
         }
     }
@@ -138,10 +138,10 @@ namespace Ntreev.Library.Psd
     /// <summary>目前主要是实现圆角，内容分别是4个圆角的像素值</summary>
     public class ResourceVectorPath
     {
-        public double LT;
-        public double RT;
-        public double LB;
-        public double RB;
+        public int LT;
+        public int RT;
+        public int LB;
+        public int RB;
 
         public static bool Is(IPsdLayer layer)
         {
@@ -160,73 +160,85 @@ namespace Ntreev.Library.Psd
                 ArrayList pointList = (ArrayList)((ArrayList)array)[i];
                 for (int j = 0; j < p3.Length; j++)
                 {
-                    p3[j].X = (int)(pointList[j << 1]);
-                    p3[j].Y = (int)(pointList[(j << 1) + 1]);
+                    p3[j].X = (double)(pointList[j << 1]);
+                    p3[j].Y = (double)(pointList[(j << 1) + 1]);
                 }
                 points[i] = p3;
             }
 
-            // 左上角左棱上面为第一个顶点，逆时针的8个点坐标
-            PsdPoint[] corner = new PsdPoint[8];
-            if (corner.Length == 8)
+            // 圆角像素：圆角点相对于矩形框的像素
+            // 例如正方形100x100：50像素即可变为圆形
+            // 左上，右上，右下，左下 4个矩形点的坐标
+            double[] corner = new double[4];
+            if (points.Length == 8 || points.Length == 4)
             {
-                for (int i = 0; i < points.Length; i++)
-                {
-                    if ((i & 1) == 0)
-                    {
-                        corner[i].X = points[i][0].X;
-                        corner[i].Y = points[i][0].Y;
-                    }
-                    else
-                    {
-                        corner[i].X = points[i][2].X;
-                        corner[i].Y = points[i][2].Y;
-                    }
-                }
+                corner[0] = points[0][2].X;
+                corner[1] = points[1][0].X;
+                corner[2] = points[4][2].X;
+                corner[3] = points[5][0].X;
             }
-            else if (corner.Length == 6)
+            else if (points.Length == 6)
             {
-                // 直接呈现椭圆的情况下，椭圆的边第一和最后一个点分别用做两个点
-                for (int i = 0; i < points.Length; i++)
-                {
-                    if (i % 3 == 2)
-                    {
-                        corner[i].X = points[i][0].X;
-                        corner[i].Y = points[i][0].Y;
-                        i++;
-                        corner[i].X = points[i][2].X;
-                        corner[i].Y = points[i][2].Y;
-                    }
-                    else if (i % 3 == 1)
-                    {
-                        corner[i].X = points[i][2].X;
-                        corner[i].Y = points[i][2].Y;
-                    }
-                    else
-                    {
-                        corner[i].X = points[i][0].X;
-                        corner[i].Y = points[i][0].Y;
-                    }
-                }
+                corner[0] = points[0][2].X;
+                corner[1] = points[1][0].X;
+                corner[2] = points[4][2].X;
+                corner[3] = points[5][0].X;
             }
-            else
+
+            result.LT = (int)Math.Round(corner[0] * layer.Document.Width - layer.Left);
+            result.RT = (int)Math.Round(layer.Right - corner[1] * layer.Document.Width);
+            result.RB = (int)Math.Round(layer.Right - corner[2] * layer.Document.Width);
+            result.LB = (int)Math.Round(corner[3] * layer.Document.Width - layer.Left);
+
+            return result;
+        }
+    }
+    /// <summary>形状图层相关信息</summary>
+    public class ResourceFill
+    {
+        /// <summary>填充形状图层的颜色</summary>
+        public PsdColor FillColor;
+
+        /// <summary>圆角像素值</summary>
+        public int RRectRadiiTopLeft;
+        /// <summary>圆角像素值</summary>
+        public int RRectRadiiTopRight;
+        /// <summary>圆角像素值</summary>
+        public int RRectRadiiBottomLeft;
+        /// <summary>圆角像素值</summary>
+        public int RRectRadiiBottomRight;
+
+        /// <summary>图形的包围盒，PS中Ctrl+T显示的矩形</summary>
+        public PsdRect ShapeBoundingBox;
+
+        public static bool Is(IPsdLayer layer)
+        {
+            return layer.Resources.Any(r => r.Key == "SoCo" || r.Key == "vscg");
+        }
+        public static ResourceFill Create(IPsdLayer layer)
+        {
+            var resource = layer.Resources.Value<IProperties>("SoCo.Clr", "vscg.Clr");
+
+            ResourceFill result = new ResourceFill();
+            result.FillColor.R = (byte)resource.Value<double>("Rd");
+            result.FillColor.G = (byte)resource.Value<double>("Grn");
+            result.FillColor.B = (byte)resource.Value<double>("Bl");
+            result.FillColor.A = 255;
+
+            resource = layer.Resources.Value<IProperties>("vogk");
+            if (resource != null)
             {
-                for (int i = 0; i < points.Length; i++)
-                {
-                    corner[i].X = points[i][0].X;
-                    corner[i].Y = points[i][0].Y;
-                    i++;
-                    corner[i].X = points[i][2].X;
-                    corner[i].Y = points[i][2].Y;
-                }
+                var radii = resource.Value<IProperties>("keyDescriptorList.Items[0].keyOriginRRectRadii");
+                result.RRectRadiiTopLeft = radii.Value<int>("topLeft.Value");
+                result.RRectRadiiTopRight = radii.Value<int>("topRight.Value");
+                result.RRectRadiiBottomLeft = radii.Value<int>("bottomLeft.Value");
+                result.RRectRadiiBottomRight = radii.Value<int>("bottomRight.Value");
+                var bbox = resource.Value<IProperties>("keyDescriptorList.Items[0].keyOriginShapeBBox");
+                result.ShapeBoundingBox.Left = bbox.Value<int>("Left.Value");
+                result.ShapeBoundingBox.Top = bbox.Value<int>("Top.Value");
+                result.ShapeBoundingBox.Right = bbox.Value<int>("Rght.Value");
+                result.ShapeBoundingBox.Bottom = bbox.Value<int>("Btom.Value");
             }
-            int shortLength = layer.Document.Width < layer.Document.Height ? layer.Document.Width : layer.Document.Height;
-            shortLength <<= 1;
-            // 四个角的圆角像素值
-            PsdPoint.Distance(ref corner[0], ref corner[7], out result.LT);
-            PsdPoint.Distance(ref corner[1], ref corner[2], out result.RT);
-            PsdPoint.Distance(ref corner[3], ref corner[4], out result.RB);
-            PsdPoint.Distance(ref corner[5], ref corner[6], out result.LB);
 
             return result;
         }
