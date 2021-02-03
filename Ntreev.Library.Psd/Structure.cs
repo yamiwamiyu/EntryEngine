@@ -207,9 +207,20 @@ namespace Ntreev.Library.Psd
     {
         public enum EShapeType
         {
-            Square = 1,
+            /// <summary>矩形也可以做到圆角矩形</summary>
+            Rectangle = 1,
+            /// <summary>旧版本的圆角矩形</summary>
+            RoundedRectangle = 2,
+            /// <summary>线段</summary>
+            Line = 4,
+            /// <summary>圆/椭圆</summary>
             Circle = 5,
+            /// <summary>三角形</summary>
+            Triangle = 7,
+            /// <summary>多边形</summary>
+            Polygon = 8,
         }
+        /// <summary>图形</summary>
         public class Shape
         {
             public EShapeType ShapeType;
@@ -260,6 +271,14 @@ namespace Ntreev.Library.Psd
 
         /// <summary>填充形状图层的颜色</summary>
         public PsdColor FillColor;
+        public bool HasFillColor { get { return FillColor.A != 0; } }
+        
+        /// <summary>描边宽度</summary>
+        public double BorderWidth;
+        public PsdColor BorderColor;
+        public bool HasBorder { get { return BorderWidth > 0; } }
+        public bool HasBorderColor { get { return BorderColor.A != 0; } }
+
         public Shape[] Shapes;
 
         public static bool Is(IPsdLayer layer)
@@ -268,14 +287,67 @@ namespace Ntreev.Library.Psd
         }
         public static ResourceFill Create(IPsdLayer layer)
         {
-            var resource = layer.Resources.Value<IProperties>("SoCo.Clr", "vscg.Clr");
-
             ResourceFill result = new ResourceFill();
-            result.FillColor.R = (byte)resource.Value<double>("Rd");
-            result.FillColor.G = (byte)resource.Value<double>("Grn");
-            result.FillColor.B = (byte)resource.Value<double>("Bl");
             result.FillColor.A = 255;
 
+            IProperties resource;
+
+            // 描边 & 是否填充
+            resource = layer.Resources.Value<IProperties>("vstk");
+            if (resource != null)
+            {
+                if (resource.Value<bool>("strokeEnabled"))
+                {
+                    result.BorderWidth = resource.Value<double>("strokeStyleLineWidth.Value");
+                    switch (resource.Value<string>("strokeStyleContent.ClassID"))
+                    {
+                        // 描边固定颜色
+                        case "solidColorLayer":
+                            result.BorderColor.R = (byte)resource.Value<double>("strokeStyleContent.Clr.Rd");
+                            result.BorderColor.G = (byte)resource.Value<double>("strokeStyleContent.Clr.Grn");
+                            result.BorderColor.B = (byte)resource.Value<double>("strokeStyleContent.Clr.Bl");
+                            result.BorderColor.A = 255;
+                            break;
+
+                        // todo: 描边渐变颜色
+                        case "gradientLayer":
+                            break;
+
+                        default:
+                            break;
+                    }
+                }
+                // 是否填充颜色
+                if (!resource.Value<bool>("fillEnabled"))
+                {
+                    result.FillColor.A = 0;
+                }
+            }
+
+            if (result.FillColor.A != 0)
+            {
+                resource = layer.Resources.Value<IProperties>("SoCo", "vscg");
+                if (resource != null)
+                {
+                    // 形状图层填充颜色
+                    resource = resource.Value<IProperties>("Clr");
+                    if (resource != null)
+                    {
+                        result.FillColor.R = (byte)resource.Value<double>("Rd");
+                        result.FillColor.G = (byte)resource.Value<double>("Grn");
+                        result.FillColor.B = (byte)resource.Value<double>("Bl");
+                        result.FillColor.A = 255;
+                    }
+
+                    resource = resource.Value<IProperties>("Grad");
+                    if (resource != null)
+                    {
+                        // todo: 填充渐变颜色
+                    }
+                }
+            }
+
+            // 形状
             resource = layer.Resources.Value<IProperties>("vogk");
             if (resource != null)
             {
@@ -287,6 +359,9 @@ namespace Ntreev.Library.Psd
                     var item = (IProperties)array[i];
                     Shape shape = new Shape();
                     shape.ShapeType = (EShapeType)item.Value<int>("keyOriginType");
+                    // 三角形：边数keyOriginPolySides / 圆角值keyOriginPolyCornerRadius / 星形keyOriginPolyIndentBy.Value(单位%)
+                    // 线段：宽度keyOriginLineWeight / 起始点keyOriginLineStart.Hrzn|Vrtc / 结束点keyOriginLineEnd.Hrzn|Vrtc
+                    // 矩形圆角
                     var radii = item.Value<IProperties>("keyOriginRRectRadii");
                     if (radii != null)
                     {
@@ -295,6 +370,7 @@ namespace Ntreev.Library.Psd
                         shape.RRectRadiiBottomLeft = radii.Value<int>("bottomLeft.Value");
                         shape.RRectRadiiBottomRight = radii.Value<int>("bottomRight.Value");
                     }
+                    // 形状包围盒
                     var bbox = item.Value<IProperties>("keyOriginShapeBBox");
                     if (bbox != null)
                     {

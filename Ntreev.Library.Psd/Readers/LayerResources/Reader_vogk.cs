@@ -5,6 +5,7 @@ using System.Text;
 
 namespace Ntreev.Library.Psd.Readers.LayerResources
 {
+    /// <summary>形状图层形状信息</summary>
     [ResourceID("vogk")]
     class Reader_vogk : ResourceReaderBase
     {

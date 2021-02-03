@@ -505,7 +505,7 @@ namespace EntryBuilder
         [STAThread]
 		static void Main(string[] args)
         {
-            //PSD2JS("首页.psd", @"C:\Yamiwamiyu\Project\YMHY2\gaming-center\dist\", true);
+            PSD2JS("测试形状图层.psd", @"C:\Yamiwamiyu\Project\YMHY2\gaming-center\dist\", true);
             //_LOG._Logger = new LoggerConsole();
 
             //GaussianBlur gauss = new GaussianBlur(15);
@@ -4019,6 +4019,9 @@ namespace EntryBuilder
                     if (!layer.IsVisible)
                         return;
 
+                    //if (layer.Name.StartsWith("-"))
+                    //    return;
+
                     if (layer.IsClipping)
                     {
                         node.Childs.Last().AdjustmentLayers.Add(layer);
@@ -4030,7 +4033,7 @@ namespace EntryBuilder
                     childs.Parent = node;
                     node.Childs.Add(childs);
 
-                    if (!layer.Name.StartsWith("#"))
+                    //if (!layer.Name.StartsWith("#"))
                         for (int i = 0; i < layer.Childs.Length; i++)
                         //for (int i = layer.Childs.Length - 1; i >= 0; i--)
                             visit(childs, layer.Childs[i]);
@@ -10419,6 +10422,13 @@ namespace EntryBuilder
         }
         public static void PSD2JS(string psdOrDirSplitByComma, string outputDir, bool exportTestResource)
         {
+            /* [-]忽略图层
+             * [!]仅作用于图层
+             * [#]将图层视为一张图片
+             * [/]将图层样式作为注释输出
+             * {}相同级别的图层生成组件，页面则以数组形式引用组件
+             * {Name}同上，指定组件名字，将组件生成成为全局组件
+             */
             string[] split = psdOrDirSplitByComma.Split(',');
             // 所有参与生成代码的psd文件，Key为文件名，Value为文件全路径
             Dictionary<string, string> psds = new Dictionary<string, string>();
@@ -10442,7 +10452,7 @@ namespace EntryBuilder
             {
                 var layer = node.Layer;
                 // 跳过显示当前图层，例如是美术效果参考用的背景图层
-                if (layer.Name.StartsWith("!"))
+                if (layer.Name.StartsWith("-"))
                     return;
 
                 int id = node.ID;
@@ -10594,46 +10604,66 @@ namespace EntryBuilder
                         if (!single)
                         {
                             _LOG.Warning(
-    @"ID: {0} 图层: {1}
-不建议在一个形状图层中绘制多个形状
+@"ID: {0} 图层: {1}
+不能在一个形状图层中绘制多个形状，程序将只识别第一个形状
 1. 图层名前加上'#'将形状图层视为一张图片
 2. 将图层转换成智能对象
 3. 将两个形状分开各自放入一个形状图层", id, name);
                         }
 
-                        foreach (var item in fill.Shapes)
+                        var item = fill.Shapes[0];
+                        switch (item.ShapeType)
                         {
-                            DOM shape = dom;
+                            case ResourceFill.EShapeType.Rectangle:
+                            case ResourceFill.EShapeType.RoundedRectangle:
+                                // 圆角
+                                if (item.HasRadii)
+                                {
+                                    if (item.IsSameRadii)
+                                        dom.CSS["border-radius"] = Px2Rem(item.RRectRadiiTopLeft);
+                                    else
+                                        dom.CSS["border-radius"] = string.Format("{0} {1} {2} {3}",
+                                            item.RRectRadiiTopLeft, item.RRectRadiiTopRight,
+                                            item.RRectRadiiBottomLeft, item.RRectRadiiBottomRight);
+                                }
+                                break;
+
+                            case ResourceFill.EShapeType.Line:
+                                break;
+
+                            case ResourceFill.EShapeType.Circle:
+                                break;
+
+                            default:
+                                _LOG.Warning(
+@"ID: {0} 图层: {1}
+暂不支持的形状类型：{2}
+1. 形状图层只能使用矩形，圆角矩形，线段，圆形
+2. 图层名前加上'#'将形状图层视为一张图片
+3. 可以尝试联系开发者增加对该形状的支持", id, name, item.ShapeType);
+                                break;
+                        }
+
+                        // 填充颜色
+                        if (fill.HasFillColor)
+                        {
+                            dom.CSS["background-color"] = JSColor(fill.FillColor);
+                        }
+                        // 边界颜色
+                        if (fill.HasBorder && fill.HasBorderColor)
+                        {
+                            dom.CSS["border"] = string.Format("{0}px solid {1}", Px2Rem(fill.BorderWidth), JSColor(fill.BorderColor));
+                        }
+
+                        if (item.HasBoundingBox)
+                        {
                             if (!single)
                             {
-                                shape = new DOM("div");
-                                dom.Add(shape);
+                                width = (int)item.ShapeBoundingBox.Width;
+                                height = (int)item.ShapeBoundingBox.Height;
                             }
-                            // 圆角
-                            if (item.HasRadii)
-                            {
-                                if (item.IsSameRadii)
-                                    shape.CSS["border-radius"] = Px2Rem(item.RRectRadiiTopLeft);
-                                else
-                                    shape.CSS["border-radius"] = string.Format("{0} {1} {2} {3}",
-                                        item.RRectRadiiTopLeft, item.RRectRadiiTopRight,
-                                        item.RRectRadiiBottomLeft, item.RRectRadiiBottomRight);
-                            }
-                            // 包围盒
-                            //dom.CSS["left"] = Px2Rem(rect.X + fill.ShapeBoundingBox.Left - layer.Left);
-                            //dom.CSS["top"] = Px2Rem(rect.Y + fill.ShapeBoundingBox.Top - layer.Top);
-                            // 填充颜色
-                            if (item.HasBoundingBox)
-                            {
-                                shape.CSS["background-color"] = JSColor(fill.FillColor);
-                                if (!single)
-                                {
-                                    width = (int)item.ShapeBoundingBox.Width;
-                                    height = (int)item.ShapeBoundingBox.Height;
-                                }
-                                shape.CSS["width"] = Px2Rem(item.ShapeBoundingBox.Width);
-                                shape.CSS["height"] = Px2Rem(item.ShapeBoundingBox.Height);
-                            }
+                            dom.CSS["width"] = Px2Rem(item.ShapeBoundingBox.Width);
+                            dom.CSS["height"] = Px2Rem(item.ShapeBoundingBox.Height);
                         }
                     }
                     #endregion
@@ -10673,8 +10703,9 @@ namespace EntryBuilder
             foreach (var file in psds)
             {
                 var psdfile = PsdDocument.Create(file.Value, new PathResolver());
-                var testLayer = psdfile.Find(l => l.Name == "矩形 4");
-                string json = testLayer.Resources.PrintProperties();
+                //var testLayer = psdfile.Find(l => l.Name == "矩形 4");
+                //string json = testLayer.Resources.PrintProperties();
+                string json = psdfile.Childs[4].Resources.PrintProperties();
 
                 if (exportTestResource)
                 {

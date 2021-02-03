@@ -81,6 +81,7 @@ namespace Ntreev.Library.Psd
                         {
                             case "rend": return ELayerType.TextLayer;
                             case "shap": return ELayerType.FillShape;
+                            //case "bgnd": return ELayerType.Normal;
                         }
                 }
                 return ELayerType.Normal;

@@ -117,6 +117,7 @@
     <Compile Include="Readers\LayerResources\Reader_SoLE.cs" />
     <Compile Include="Readers\LayerResources\Reader_TySh.cs" />
     <Compile Include="Readers\LayerResources\Reader_vsms.cs" />
+    <Compile Include="Readers\LayerResources\Reader_vstk.cs" />
     <Compile Include="Readers\ReaderCollector.cs" />
     <Compile Include="Readers\LayerResources\Reader_vogk.cs" />
     <Compile Include="Readers\ResourceReaderBase.cs" />
