@@ -165,6 +165,11 @@ namespace Ntreev.Library.Psd
             get { return false; }
         }
 
+        bool IPsdLayer.IsVisible
+        {
+            get { return true; }
+        }
+
         PsdDocument IPsdLayer.Document
         {
             get { return this; }

@@ -1,4 +1,7 @@
-﻿2020/02/01
+﻿2020/02/03
+1. PSD转JS基础部分完成，可以看到绝对布局样式
+
+2020/02/01
 1. 引入https://github.com/NtreevSoft/psd-parser.git作为PhotoShop的默认实现库，读取速度比Aspose.PSD.dll快很多
 2. 对NtreevSoft源码进行修改，新增生成代码所需的内容，没有的部分可继续反编译参考Aspose.PSD.dll的源码
 

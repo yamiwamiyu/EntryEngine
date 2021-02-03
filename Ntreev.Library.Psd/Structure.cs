@@ -10,6 +10,15 @@ namespace Ntreev.Library.Psd
         public byte G;
         public byte B;
         public byte A;
+
+        public static bool operator ==(PsdColor p1, PsdColor p2)
+        {
+            return p1.R == p2.R && p1.G == p2.G && p1.B == p2.B && p1.A == p2.A;
+        }
+        public static bool operator !=(PsdColor p1, PsdColor p2)
+        {
+            return p1.R != p2.R || p1.G != p2.G || p1.B != p2.B || p1.A != p2.A;
+        }
     }
     public struct PsdRect
     {
@@ -50,9 +59,9 @@ namespace Ntreev.Library.Psd
         public class TextPortion
         {
             public string Text;
-            public float FontSize;
+            public double FontSize;
             /// <summary>向下偏移的像素值</summary>
-            public float BaselineShift;
+            public double BaselineShift;
             public bool FauxBold;
             public bool FauxItalic;
             public bool Underline;
@@ -65,13 +74,12 @@ namespace Ntreev.Library.Psd
         }
 
         public double[] Transforms;
-        public bool IsScale { get { return Transforms[0] == Transforms[3]; } }
-        public double Scale { get { return Transforms[0]; } }
+        protected double Scale { get { return Transforms[0]; } }
 
         public string Text;
 
         public PsdRect Bounds;
-        public PsdRect BoundingBox;
+        //public PsdRect BoundingBox;
 
         /// <summary>暂不支持使用多个段落对齐方式</summary>
         public EJustification Justification;
@@ -89,16 +97,17 @@ namespace Ntreev.Library.Psd
             result.Transforms = resource.Value<double[]>("Transforms");
             result.Text = resource.Value<string>("Text.Txt");
 
-            // todo: 单位是点，而不是像素，应该转换成像素
-            result.Bounds.Left = resource.Value<double>("Text.bounds.Left.Value");
-            result.Bounds.Top = resource.Value<double>("Text.bounds.Top.Value");
-            result.Bounds.Right = resource.Value<double>("Text.bounds.Rght.Value");
-            result.Bounds.Bottom = resource.Value<double>("Text.bounds.Btom.Value");
+            double scale = result.Scale;
 
-            result.BoundingBox.Left = resource.Value<double>("Text.boundingBox.Left.Value");
-            result.BoundingBox.Top = resource.Value<double>("Text.boundingBox.Top.Value");
-            result.BoundingBox.Right = resource.Value<double>("Text.boundingBox.Rght.Value");
-            result.BoundingBox.Bottom = resource.Value<double>("Text.boundingBox.Btom.Value");
+            result.Bounds.Left = resource.Value<double>("Text.bounds.Left.Value") * scale + result.Transforms[4];
+            result.Bounds.Top = resource.Value<double>("Text.bounds.Top.Value") * scale + result.Transforms[5];
+            result.Bounds.Right = resource.Value<double>("Text.bounds.Rght.Value") * scale + result.Transforms[4];
+            result.Bounds.Bottom = resource.Value<double>("Text.bounds.Btom.Value") * scale + result.Transforms[5];
+
+            //result.BoundingBox.Left = resource.Value<double>("Text.boundingBox.Left.Value") * scale + result.Transforms[4];
+            //result.BoundingBox.Top = resource.Value<double>("Text.boundingBox.Top.Value") * scale + result.Transforms[5];
+            //result.BoundingBox.Right = resource.Value<double>("Text.boundingBox.Rght.Value") * scale + result.Transforms[4];
+            //result.BoundingBox.Bottom = resource.Value<double>("Text.boundingBox.Btom.Value") * scale + result.Transforms[5];
 
             var engineData = resource.ToValue<IProperties>("Text", "EngineData", "EngineDict");
             result.Justification = (EJustification)engineData.Value<int>("ParagraphRun.RunArray[0].ParagraphSheet.Properties.Justification");
@@ -118,16 +127,16 @@ namespace Ntreev.Library.Psd
                     portion.Text = result.Text.Substring(start, length);
                     start += length;
                     var style = ((IProperties)styles[i]).Value<IProperties>("StyleSheet.StyleSheetData");
-                    portion.FontSize = style.Value<float>("FontSize");
-                    portion.BaselineShift = style.Value<float>("BaselineShift");
+                    portion.FontSize = Math.Round(style.Value<double>("FontSize") * scale, 1);
+                    portion.BaselineShift = style.Value<double>("BaselineShift");
                     portion.FauxBold = style.Value<bool>("FauxBold");
                     portion.FauxItalic = style.Value<bool>("FauxItalic");
                     portion.Underline = style.Value<bool>("Underline");
                     var color = style.Value<System.Collections.ArrayList>("FillColor.Values");
-                    portion.FillColor.R = (byte)((float)color[0] * 255);
-                    portion.FillColor.G = (byte)((float)color[1] * 255);
-                    portion.FillColor.B = (byte)((float)color[2] * 255);
-                    portion.FillColor.A = (byte)((float)color[3] * 255);
+                    portion.FillColor.A = (byte)((float)color[0] * 255);
+                    portion.FillColor.R = (byte)((float)color[1] * 255);
+                    portion.FillColor.G = (byte)((float)color[2] * 255);
+                    portion.FillColor.B = (byte)((float)color[3] * 255);
                     result.Portion[i] = portion;
                 }
             }
@@ -196,20 +205,62 @@ namespace Ntreev.Library.Psd
     /// <summary>形状图层相关信息</summary>
     public class ResourceFill
     {
+        public enum EShapeType
+        {
+            Square = 1,
+            Circle = 5,
+        }
+        public class Shape
+        {
+            public EShapeType ShapeType;
+
+            /// <summary>圆角像素值</summary>
+            public int RRectRadiiTopLeft;
+            /// <summary>圆角像素值</summary>
+            public int RRectRadiiTopRight;
+            /// <summary>圆角像素值</summary>
+            public int RRectRadiiBottomLeft;
+            /// <summary>圆角像素值</summary>
+            public int RRectRadiiBottomRight;
+            /// <summary>是否有圆角</summary>
+            public bool HasRadii
+            {
+                get
+                {
+                    return RRectRadiiTopLeft != 0
+                        || RRectRadiiTopRight != 0
+                        || RRectRadiiBottomLeft != 0
+                        || RRectRadiiBottomRight != 0;
+                }
+            }
+            /// <summary>是否每个角的圆角值都一样</summary>
+            public bool IsSameRadii
+            {
+                get
+                {
+                    return RRectRadiiTopLeft == RRectRadiiTopRight
+                        && RRectRadiiTopLeft == RRectRadiiBottomLeft
+                        && RRectRadiiTopLeft == RRectRadiiBottomRight;
+                }
+            }
+
+            /// <summary>图形的包围盒，PS中Ctrl+T显示的矩形，但是也有不准确的时候</summary>
+            public PsdRect ShapeBoundingBox;
+            public bool HasBoundingBox
+            {
+                get
+                {
+                    return ShapeBoundingBox.Left != 0
+                        || ShapeBoundingBox.Top != 0
+                        || ShapeBoundingBox.Right != 0
+                        || ShapeBoundingBox.Bottom != 0;
+                }
+            }
+        }
+
         /// <summary>填充形状图层的颜色</summary>
         public PsdColor FillColor;
-
-        /// <summary>圆角像素值</summary>
-        public int RRectRadiiTopLeft;
-        /// <summary>圆角像素值</summary>
-        public int RRectRadiiTopRight;
-        /// <summary>圆角像素值</summary>
-        public int RRectRadiiBottomLeft;
-        /// <summary>圆角像素值</summary>
-        public int RRectRadiiBottomRight;
-
-        /// <summary>图形的包围盒，PS中Ctrl+T显示的矩形</summary>
-        public PsdRect ShapeBoundingBox;
+        public Shape[] Shapes;
 
         public static bool Is(IPsdLayer layer)
         {
@@ -228,16 +279,32 @@ namespace Ntreev.Library.Psd
             resource = layer.Resources.Value<IProperties>("vogk");
             if (resource != null)
             {
-                var radii = resource.Value<IProperties>("keyDescriptorList.Items[0].keyOriginRRectRadii");
-                result.RRectRadiiTopLeft = radii.Value<int>("topLeft.Value");
-                result.RRectRadiiTopRight = radii.Value<int>("topRight.Value");
-                result.RRectRadiiBottomLeft = radii.Value<int>("bottomLeft.Value");
-                result.RRectRadiiBottomRight = radii.Value<int>("bottomRight.Value");
-                var bbox = resource.Value<IProperties>("keyDescriptorList.Items[0].keyOriginShapeBBox");
-                result.ShapeBoundingBox.Left = bbox.Value<int>("Left.Value");
-                result.ShapeBoundingBox.Top = bbox.Value<int>("Top.Value");
-                result.ShapeBoundingBox.Right = bbox.Value<int>("Rght.Value");
-                result.ShapeBoundingBox.Bottom = bbox.Value<int>("Btom.Value");
+                var array = resource.Value<IList>("keyDescriptorList.Items");
+                int count = array.Count;
+                result.Shapes = new Shape[count];
+                for (int i = 0; i < count; i++)
+                {
+                    var item = (IProperties)array[i];
+                    Shape shape = new Shape();
+                    shape.ShapeType = (EShapeType)item.Value<int>("keyOriginType");
+                    var radii = item.Value<IProperties>("keyOriginRRectRadii");
+                    if (radii != null)
+                    {
+                        shape.RRectRadiiTopLeft = radii.Value<int>("topLeft.Value");
+                        shape.RRectRadiiTopRight = radii.Value<int>("topRight.Value");
+                        shape.RRectRadiiBottomLeft = radii.Value<int>("bottomLeft.Value");
+                        shape.RRectRadiiBottomRight = radii.Value<int>("bottomRight.Value");
+                    }
+                    var bbox = item.Value<IProperties>("keyOriginShapeBBox");
+                    if (bbox != null)
+                    {
+                        shape.ShapeBoundingBox.Left = bbox.Value<int>("Left.Value");
+                        shape.ShapeBoundingBox.Top = bbox.Value<int>("Top.Value");
+                        shape.ShapeBoundingBox.Right = bbox.Value<int>("Rght.Value");
+                        shape.ShapeBoundingBox.Bottom = bbox.Value<int>("Btom.Value");
+                    }
+                    result.Shapes[i] = shape;
+                }
             }
 
             return result;
