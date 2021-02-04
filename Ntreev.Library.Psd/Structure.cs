@@ -267,6 +267,29 @@ namespace Ntreev.Library.Psd
                         || ShapeBoundingBox.Bottom != 0;
                 }
             }
+
+            /// <summary>形状为线段时，线段的粗度</summary>
+            public double LineWeight;
+            /// <summary>形状为线段时，线段的起始点</summary>
+            public PsdPoint LineStartPoint;
+            /// <summary>形状为线段时，线段的结束点</summary>
+            public PsdPoint LineEndPoint;
+            public bool IsLine { get { return ShapeType == EShapeType.Line; } }
+            public bool IsHorizontalLine { get { return IsLine && LineEndPoint.Y == LineStartPoint.Y; } }
+            public bool IsVerticalLine { get { return IsLine && LineEndPoint.X == LineStartPoint.X; } }
+
+            public bool IsEllipse
+            {
+                get { return ShapeType == EShapeType.Circle && !IsCircle; }
+            }
+            public bool IsCircle
+            {
+                get
+                {
+                    if (ShapeType != EShapeType.Circle || !HasBoundingBox) return false;
+                    return ShapeBoundingBox.Width == ShapeBoundingBox.Height;
+                }
+            }
         }
 
         /// <summary>填充形状图层的颜色</summary>
@@ -361,6 +384,14 @@ namespace Ntreev.Library.Psd
                     shape.ShapeType = (EShapeType)item.Value<int>("keyOriginType");
                     // 三角形：边数keyOriginPolySides / 圆角值keyOriginPolyCornerRadius / 星形keyOriginPolyIndentBy.Value(单位%)
                     // 线段：宽度keyOriginLineWeight / 起始点keyOriginLineStart.Hrzn|Vrtc / 结束点keyOriginLineEnd.Hrzn|Vrtc
+                    if (shape.ShapeType == EShapeType.Line)
+                    {
+                        shape.LineWeight = item.Value<double>("keyOriginLineWeight");
+                        shape.LineStartPoint.X = item.Value<double>("keyOriginLineStart.Hrzn");
+                        shape.LineStartPoint.Y = item.Value<double>("keyOriginLineStart.Vrtc");
+                        shape.LineEndPoint.X = item.Value<double>("keyOriginLineEnd.Hrzn");
+                        shape.LineEndPoint.Y = item.Value<double>("keyOriginLineEnd.Vrtc");
+                    }
                     // 矩形圆角
                     var radii = item.Value<IProperties>("keyOriginRRectRadii");
                     if (radii != null)

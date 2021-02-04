@@ -505,7 +505,7 @@ namespace EntryBuilder
         [STAThread]
 		static void Main(string[] args)
         {
-            PSD2JS("测试形状图层.psd", @"C:\Yamiwamiyu\Project\YMHY2\gaming-center\dist\", true);
+            PSD2JS("首页.psd", @"C:\Yamiwamiyu\Project\YMHY2\gaming-center\dist\", true);
             //_LOG._Logger = new LoggerConsole();
 
             //GaussianBlur gauss = new GaussianBlur(15);
@@ -10422,12 +10422,12 @@ namespace EntryBuilder
         }
         public static void PSD2JS(string psdOrDirSplitByComma, string outputDir, bool exportTestResource)
         {
-            /* [-]忽略图层
-             * [!]仅作用于图层
-             * [#]将图层视为一张图片
-             * [/]将图层样式作为注释输出
-             * {}相同级别的图层生成组件，页面则以数组形式引用组件
-             * {Name}同上，指定组件名字，将组件生成成为全局组件
+            /* - 忽略图层
+             * ! 仅作用于图层
+             * # 将图层视为一张图片
+             * / 将图层样式作为注释输出
+             * []相同级别的图层生成组件，页面则以数组形式引用组件
+             * [Name]同上，指定组件名字，将组件生成成为全局组件
              */
             string[] split = psdOrDirSplitByComma.Split(',');
             // 所有参与生成代码的psd文件，Key为文件名，Value为文件全路径
@@ -10451,13 +10451,30 @@ namespace EntryBuilder
             VisitLayerNode = (node, parent) =>
             {
                 var layer = node.Layer;
+                string name = node.ToString();
                 // 跳过显示当前图层，例如是美术效果参考用的背景图层
-                if (layer.Name.StartsWith("-"))
+                if (name.StartsWith("-"))
                     return;
+
+                if (name.StartsWith("["))
+                {
+                    int index = name.IndexOf(']', 1);
+                    if (index != -1)
+                    {
+                        // 生成组件
+                        if (index == 1)
+                        {
+                            // []
+                        }
+                        else
+                        {
+                            // [Name]
+                        }
+                    }
+                }
 
                 int id = node.ID;
                 ELayerType type = node.Layer.LayerType;
-                string name = node.ToString();
 
                 if (id == 131)
                 {
@@ -10629,9 +10646,21 @@ namespace EntryBuilder
                                 break;
 
                             case ResourceFill.EShapeType.Line:
+                                throw new NotImplementedException();
                                 break;
 
                             case ResourceFill.EShapeType.Circle:
+                                if (!item.IsCircle)
+                                {
+                                    _LOG.Warning(
+@"ID: {0} 图层: {1}
+形状图层原型暂时仅支持正圆形，椭圆后续提供支持
+1. 图层名前加上'#'将形状图层视为一张图片", id, name, item.ShapeType);
+                                }
+                                else
+                                {
+                                    dom.CSS["border-radius"] = "50%";
+                                }
                                 break;
 
                             default:
@@ -10705,7 +10734,6 @@ namespace EntryBuilder
                 var psdfile = PsdDocument.Create(file.Value, new PathResolver());
                 //var testLayer = psdfile.Find(l => l.Name == "矩形 4");
                 //string json = testLayer.Resources.PrintProperties();
-                string json = psdfile.Childs[4].Resources.PrintProperties();
 
                 if (exportTestResource)
                 {
