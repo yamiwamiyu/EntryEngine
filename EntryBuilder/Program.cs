@@ -3934,16 +3934,115 @@ namespace EntryBuilder
             return string.Format("#{0:x2}{1:x2}{2:x2}{3}", color.R, color.G, color.B, color.A == 255 ? string.Empty : color.A.ToString("x2"));
         }
         /// <summary>图层的组织结构，跟PS里打开的一样</summary>
-        public class LayerTree : IEnumerable<IPsdLayer>
+        public class LayerTree : Tree<LayerTree>
         {
+            /// <summary>为了横竖布局方便，扩展添加的布局图层</summary>
+            class LayoutLayer : IPsdLayer
+            {
+                public BlendMode BlendMode
+                {
+                    get { return BlendMode.Normal; }
+                }
+                public bool IsClipping
+                {
+                    get { return false; }
+                }
+                public bool IsVisible
+                {
+                    get { return true; }
+                }
+                public ILinkedLayer LinkedLayer
+                {
+                    get { return null; }
+                }
+                public ELayerType LayerType
+                {
+                    get { return ELayerType.LayerGroup; }
+                }
+                public int Depth
+                {
+                    get { return Document.Depth; }
+                }
+                public IChannel[] Channels
+                {
+                    get { return null; }
+                }
+                public float Opacity
+                {
+                    get { return 1; }
+                }
+                public bool HasImage
+                {
+                    get { return false; }
+                }
+                public bool HasMask
+                {
+                    get { return false; }
+                }
+
+                public string Name { get { return "LayoutLayer"; } }
+                public IPsdLayer[] Childs { get; set; }
+                public IPsdLayer Parent { get; set; }
+                public PsdDocument Document { get; set; }
+
+                public IProperties Resources
+                {
+                    get
+                    {
+                        Properties p = new Properties();
+                        p.Add("lyid.ID", "-1");
+                        return p;
+                    }
+                }
+
+                public int Left { get; set; }
+                public int Top { get; set; }
+                public int Right { get; set; }
+                public int Bottom { get; set; }
+                public int Width
+                {
+                    get { return Right - Left; }
+                }
+                public int Height
+                {
+                    get { return Bottom - Top; }
+                }
+
+                public LayoutLayer(PsdDocument document, IPsdLayer parent)
+                {
+                    this.Document = document;
+                    this.Parent = parent;
+                }
+            }
+            /// <summary>相对定位布局</summary>
+            public class LayoutRelative
+            {
+                /// <summary>是否采用Flex布局（有任意横向摆放的元素就采用Flex）</summary>
+                public bool Flex;
+                /// <summary>相对于父容器或上一个对象的X值</summary>
+                public double RelativeX;
+                /// <summary>相对于父容器或上一个对象的Y值</summary>
+                public double RelativeY;
+                /// <summary>图层布局块的索引
+                /// 布局举例:
+                /// 图层分左中右三块，左1张图标，中三行文字属性，右1个按钮
+                /// 布局为flex，中间三行文字属性不使用flex属性
+                /// 三块整体属于同一大行内的元素，整块内容应该按照从左往右，从上往下的顺序排序
+                /// </summary>
+                public int Layout;
+            }
+
             public IPsdLayer Layer;
-            public LayerTree Parent;
-            public List<LayerTree> Childs = new List<LayerTree>();
             /// <summary>仅作用在层上的附加层，蒙版或调整层等</summary>
             public List<IPsdLayer> AdjustmentLayers = new List<IPsdLayer>();
 
-            /// <summary>图层组时，Rect全为0，这个可以标示图层组内元素的包围盒</summary>
-            public Rectangle Rect
+            /// <summary>自己的区域，相对于父容器的绝对坐标</summary>
+            public PsdRect Area;
+            /// <summary>网页相对布局信息，没有则采用绝对定位</summary>
+            public LayoutRelative Layout;
+
+            /// <summary>子对象的包围盒</summary>
+            public PsdRect BoundingBox
             {
                 get
                 {
@@ -3952,36 +4051,19 @@ namespace EntryBuilder
                         //if (Layer.LayerMaskData != null)
                         //    return new Rectangle(Layer.LayerMaskData.Left, Layer.LayerMaskData.Top, Layer.LayerMaskData.Right - Layer.LayerMaskData.Left, Layer.LayerMaskData.Bottom - Layer.LayerMaskData.Top);
                         //else
-                        return new Rectangle(Layer.Left, Layer.Top, Layer.Width, Layer.Height);
+                        return new PsdRect(Layer.Left, Layer.Top, Layer.Width, Layer.Height);
                     }
 
-                    Rectangle result = new Rectangle(int.MaxValue, int.MaxValue, -int.MaxValue, -int.MaxValue);
+                    PsdRect result = new PsdRect(int.MaxValue, int.MaxValue, -int.MaxValue, -int.MaxValue);
                     foreach (var item in Childs)
                     {
-                        Rectangle rect = item.Rect;
-                        if (rect.X < result.X) result.X = rect.X;
-                        if (rect.Y < result.Y) result.Y = rect.Y;
-                        if (rect.Right > result.Width) result.Width = rect.Right;
-                        if (rect.Bottom > result.Height) result.Height = rect.Bottom;
+                        PsdRect rect = item.Area;
+                        if (rect.Left < result.Left) result.Left = rect.Left;
+                        if (rect.Top < result.Top) result.Top = rect.Top;
+                        if (rect.Right > result.Right) result.Right = rect.Right;
+                        if (rect.Bottom > result.Bottom) result.Bottom = rect.Bottom;
                     }
-                    result.Width -= result.X;
-                    result.Height -= result.Y;
                     return result;
-                }
-            }
-            /// <summary>相对父图层的坐标</summary>
-            public Rectangle RectRelativeParent
-            {
-                get
-                {
-                    if (Parent == null)
-                        return Rect;
-
-                    Rectangle parent = Parent.Rect;
-                    Rectangle me = Rect;
-                    me.X -= parent.X;
-                    me.Y -= parent.Y;
-                    return me;
                 }
             }
 
@@ -3996,20 +4078,10 @@ namespace EntryBuilder
             {
                 return Layer.Name;
             }
-            public IEnumerator<IPsdLayer> GetEnumerator()
-            {
-                //foreach (var item in Childs)
-                //    yield return item.Layer;
-                for (int i = Childs.Count - 1; i >= 0; i--)
-                    yield return Childs[i].Layer;
-            }
-            System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator()
-            {
-                return GetEnumerator();
-            }
 
             public static LayerTree FromPSD(PsdDocument psd)
             {
+                #region 根据PSD文档结构得出图层树
                 // 根节点
                 LayerTree root = new LayerTree();
                 root.Layer = psd;
@@ -4019,8 +4091,8 @@ namespace EntryBuilder
                     if (!layer.IsVisible)
                         return;
 
-                    //if (layer.Name.StartsWith("-"))
-                    //    return;
+                    if (layer.Name.StartsWith("-"))
+                        return;
 
                     if (layer.IsClipping)
                     {
@@ -4028,20 +4100,165 @@ namespace EntryBuilder
                         return;
                     }
 
-                    LayerTree childs = new LayerTree();
-                    childs.Layer = layer;
-                    childs.Parent = node;
-                    node.Childs.Add(childs);
+                    LayerTree child = new LayerTree();
+                    child.Layer = layer;
+                    node.Add(child);
+                    // 仅对第一个名字"!"开头的图层做处理
+                    if (layer.Name.StartsWith("!") && root.Layer == psd)
+                        root = child;
 
-                    //if (!layer.Name.StartsWith("#"))
+                    if (!layer.Name.StartsWith("#"))
                         for (int i = 0; i < layer.Childs.Length; i++)
-                        //for (int i = layer.Childs.Length - 1; i >= 0; i--)
-                            visit(childs, layer.Childs[i]);
+                            //for (int i = layer.Childs.Length - 1; i >= 0; i--)
+                            visit(child, layer.Childs[i]);
                 };
                 for (int i = 0; i < psd.Childs.Length; i++)
-                //for (int i = psd.Childs.Length - 1; i >= 0; i--)
+                    //for (int i = psd.Childs.Length - 1; i >= 0; i--)
                     visit(root, psd.Childs[i]);
+                #endregion
+
+                // 得出所有图层的绝对坐标区域
+                ForeachChildPriority(root, null, child =>
+                {
+                    child.Area = child.BoundingBox;
+                });
+                // 相对于父容器的坐标
+                ForeachChildPriority(root, null, child =>
+                {
+                    if (child.Parent != null)
+                    {
+                        child.Area.Left -= child.Parent.Area.Left;
+                        child.Area.Top -= child.Parent.Area.Top;
+                    }
+                });
                 return root;
+            }
+            /// <summary>对图层树进行网页的static布局，会生成必要的一些布局图层，并对所有图层进行排序</summary>
+            public static void HTMLStaticLayout(LayerTree root)
+            {
+                /* - 忽略图层
+                 * ::+ 图层单独布局（类似于悬浮窗口，覆盖掉其它图层时）
+                 * ! 仅作用于图层
+                 * # 将图层视为一张图片
+                 * / 将图层样式作为注释输出
+                 * []相同级别的图层生成组件，页面则以数组形式引用组件
+                 * [Name]同上，指定组件名字，将组件生成成为全局组件
+                 */
+                // 对图层进行布局
+                //ForeachParentPriority(root, null, parent =>
+                //{
+                //    if (parent.Layout == null)
+                //        parent.Layout = new LayoutRelative();
+
+                //    if (parent.ChildCount == 0) return;
+
+                //    #region 布局块
+                //    PsdRect[] layouts = new PsdRect[parent.ChildCount];
+                //    int layout = -1;
+                //    // 生成布局块
+                //    foreach (var item in parent)
+                //    {
+                //        // -1代表新建布局，否则代表已有布局的索引
+                //        int layoutIndex;
+                //        if (
+                //            // 还没有布局，建立新布局
+                //            layout == -1
+                //            // 图层单独布局
+                //            || item.Layer.Name.StartsWith("+"))
+                //        {
+                //            layoutIndex = -1;
+                //        }
+                //        else
+                //        {
+                //            layoutIndex = -1;
+                //            for (int i = 0; i <= layout; i++)
+                //            {
+                //                if (
+                //                    // 同一块布局，扩大布局范围
+                //                    ((item.Area.Top >= layouts[layout].Top && item.Area.Top < layouts[layout].Bottom)
+                //                    || (item.Area.Top <= layouts[layout].Top && item.Area.Bottom > layouts[layout].Top))
+                //                    // 检测到图层间覆盖比较大时，也视为新布局
+                //                    && ((item.Area.Left >= layouts[layout].Left && item.Area.Left < layouts[layout].Right - layouts[layout].Width * 0.25f)
+                //                    || (item.Area.Left <= layouts[layout].Left && item.Area.Right - layouts[layout].Width * 0.25f > layouts[layout].Left))
+                //                    )
+                //                {
+                //                    layoutIndex = i;
+                //                }
+                //            }
+                //        }
+
+                //        if (layoutIndex == -1)
+                //        {
+                //            layout++;
+                //            layouts[layout] = item.Area;
+                //            item.Layout = layout;
+                //        }
+                //        else
+                //        {
+                //            if (item.Area.Top < layouts[layoutIndex].Top)
+                //                layouts[layoutIndex].Top = item.Area.Top;
+                //            if (item.Area.Left < layouts[layoutIndex].Left)
+                //                layouts[layoutIndex].Left = item.Area.Left;
+                //            if (item.Area.Right > layouts[layoutIndex].Right)
+                //                layouts[layoutIndex].Right = item.Area.Right;
+                //            if (item.Area.Bottom > layouts[layoutIndex].Bottom)
+                //                layouts[layoutIndex].Bottom = item.Area.Bottom;
+                //            item.Layout = layoutIndex;
+                //        }
+                //    }
+                //    #endregion
+
+                //    #region 按照布局排序
+                //    parent.Childs.Sort((l1, l2) =>
+                //    {
+                //        if (l1 == null)
+                //            return -1;
+                //        if (l2 == null)
+                //            return 1;
+                //        if (l1.Layout == l2.Layout)
+                //            // 同一块布局中，按照从左往右，从上往下进行排序
+                //            if (l1.Layer.Left == l2.Layer.Left)
+                //                return l1.Layer.Top - l2.Layer.Top;
+                //            else
+                //                return l1.Layer.Left - l2.Layer.Left;
+                //        else
+                //        {
+                //            // 不同布局中，按照从上往下，从左往右进行排序
+                //            var layout1 = layouts[l1.Layout];
+                //            var layout2 = layouts[l2.Layout];
+                //            if (layout1.Top == layout2.Top)
+                //                return (int)(layout1.Left - layout2.Left);
+                //            else
+                //                return (int)(layout1.Top - layout2.Top);
+                //        }
+                //    });
+                //    #endregion
+
+                //    parent.Layout.Flex = layout == 0 && parent.ChildCount > 1;
+                //    for (int i = 1; i < parent.ChildCount; i++)
+                //    {
+                //        var current = parent[i];
+                //        var previous = parent[i - 1];
+                //        if (current.Layout != previous.Layout)
+                //        {
+                //            // 不同布局块，新起节点且相对于父容器
+                //            current.Newline = true;
+                //            // X相对于父容器
+                //            current.RelativeX = current.Area.Left - parent.Area.Left;
+                //            // Y相对于前一个对象
+                //            current.RelativeY = current.Area.Top - previous.Area.Bottom;
+                //        }
+                //        else
+                //        {
+                //            // 相同布局块内
+                //            // X相对于前一个对象
+                //            current.RelativeX = current.Area.Left - previous.Area.Right;
+                //            current.RelativeY = current.Area.Top - parent.Area.Top;
+                //        }
+                //    }
+                //    parent[0].RelativeX = parent[0].Area.Left - parent.Area.Left;
+                //    parent[0].RelativeY = parent[0].Area.Top - parent.Area.Top;
+                //});
             }
         }
         public class DOM : Tree<DOM>
@@ -10447,11 +10664,10 @@ namespace EntryBuilder
             string exportResourceDir = null;
             string exportResourceFullDir = null;
             Dictionary<string, int> exportNames = new Dictionary<string, int>();
-            Action<LayerTree, DOM> VisitLayerNode = null;
-            VisitLayerNode = (node, parent) =>
+            Action<LayerTree, LayerTree, LayerTree, DOM> VisitLayerNode = null;
+            VisitLayerNode = (previous, current, next, parent) =>
             {
-                var layer = node.Layer;
-                string name = node.ToString();
+                string name = current.ToString();
                 // 跳过显示当前图层，例如是美术效果参考用的背景图层
                 if (name.StartsWith("-"))
                     return;
@@ -10473,17 +10689,16 @@ namespace EntryBuilder
                     }
                 }
 
-                int id = node.ID;
-                ELayerType type = node.Layer.LayerType;
+                int id = current.ID;
+                ELayerType type = current.Layer.LayerType;
 
                 if (id == 131)
                 {
-                    string json = layer.Resources.PrintProperties();
+                    string json = current.Layer.Resources.PrintProperties();
                     int test = 0;
                 }
 
                 DOM dom = new DOM();
-                parent.Add(dom);
 
                 bool combine = name.StartsWith("#");
                 #region 标签
@@ -10501,7 +10716,7 @@ namespace EntryBuilder
                             break;
 
                         case ELayerType.FillShape:
-                            if (node.AdjustmentLayers.Count > 0)
+                            if (current.AdjustmentLayers.Count > 0)
                                 dom.Label = "img";
                             else
                                 dom.Label = "div";
@@ -10523,14 +10738,41 @@ namespace EntryBuilder
                 #endregion
 
                 int width, height;
-                Rectangle rect = node.RectRelativeParent;
-                dom.CSS["position"] = "absolute";
                 //dom.CSS["border"] = string.Format("{0} solid red", Px2Rem(1));
-                dom.CSS["left"] = Px2Rem(rect.X);
-                dom.CSS["top"] = Px2Rem(rect.Y);
-                dom.CSS["width"] = "max-content";
-                width = rect.Width;
-                height = rect.Height;
+                if (current.Layout == null)
+                {
+                    dom.CSS["position"] = "absolute";
+                    dom.CSS["left"] = Px2Rem(current.Area.Left);
+                    dom.CSS["top"] = Px2Rem(current.Area.Top);
+                    dom.CSS["width"] = "max-content";
+                }
+                else
+                {
+                    if (current.Layout.Flex)
+                    {
+                        dom.CSS["display"] = "flex";
+                    }
+                    if (next != null && current.Layout == next.Layout)
+                    {
+                        if (next.Layout.RelativeX != 0)
+                            dom.CSS["margin-right"] = Px2Rem(next.Layout.RelativeX);
+                    }
+                    if (previous == null || previous.Layout != current.Layout)
+                    {
+                        if (current.Layout.RelativeX != 0)
+                            dom.CSS["margin-left"] = Px2Rem(current.Layout.RelativeX);
+                        if (current.Layout.RelativeY != 0)
+                            dom.CSS["margin-top"] = Px2Rem(current.Layout.RelativeY);
+                    }
+                    else
+                    {
+                        if (current.Layout.RelativeY != 0)
+                            dom.CSS["padding-top"] = Px2Rem(current.Layout.RelativeY);
+                    }
+                }
+                //dom.CSS["width"] = "max-content";
+                width = current.Layer.Width;
+                height = current.Layer.Height;
                 //dom.CSS["width"] = Px2Rem(rect.Width);
                 //dom.CSS["height"] = Px2Rem(rect.Height);
 
@@ -10541,7 +10783,7 @@ namespace EntryBuilder
                     if (type == ELayerType.TextLayer)
                     {
                         // 文字图层可以有多段文字，颜色，字体，段落布局等都可以各不一样
-                        var textData = ResourceText.Create(layer);
+                        var textData = ResourceText.Create(current.Layer);
                         // 段落信息目前只使用对齐，且同一段文字不能使用两种对齐方式
                         if (textData.Justification != ResourceText.EJustification.Left)
                         {
@@ -10556,8 +10798,12 @@ namespace EntryBuilder
                                 // 改变图层坐标
                             }
                         }
-                        dom.CSS["left"] = Px2Rem(rect.X + textData.Bounds.Left - layer.Left);
-                        dom.CSS["top"] = Px2Rem(rect.Y + textData.Bounds.Top - layer.Top);
+                        var _temp = textData.Bounds.Left - current.Layer.Left;
+                        if (_temp != 0)
+                            dom.CSS["padding-left"] = Px2Rem(_temp);
+                        _temp = textData.Bounds.Top - current.Layer.Top;
+                        if (_temp != 0)
+                            dom.CSS["padding-top"] = Px2Rem(_temp);
                         // 前后两个段落，生成代码字体样式完全一样的，却分成了两个部分，此时应合并成一个部分keep是前面的部分
                         var portion = textData.Portion;
                         int keep = 0;
@@ -10566,12 +10812,12 @@ namespace EntryBuilder
                             var data = portion[i];
                             if (i + 1 < portion.Length)
                             {
-                                var next = portion[i + 1];
-                                if (data.FontSize == next.FontSize
-                                    && data.FillColor == next.FillColor
-                                    && data.FauxBold == next.FauxBold
-                                    && data.FauxItalic == next.FauxItalic
-                                    && data.Underline == next.Underline
+                                var _next = portion[i + 1];
+                                if (data.FontSize == _next.FontSize
+                                    && data.FillColor == _next.FillColor
+                                    && data.FauxBold == _next.FauxBold
+                                    && data.FauxItalic == _next.FauxItalic
+                                    && data.Underline == _next.Underline
                                     )
                                     continue;
                             }
@@ -10616,7 +10862,7 @@ namespace EntryBuilder
                     #region 外观
                     if (type == ELayerType.FillShape)
                     {
-                        var fill = ResourceFill.Create(layer);
+                        var fill = ResourceFill.Create(current.Layer);
                         bool single = fill.Shapes.Length == 1;
                         if (!single)
                         {
@@ -10681,7 +10927,13 @@ namespace EntryBuilder
                         // 边界颜色
                         if (fill.HasBorder && fill.HasBorderColor)
                         {
-                            dom.CSS["border"] = string.Format("{0}px solid {1}", Px2Rem(fill.BorderWidth), JSColor(fill.BorderColor));
+                            dom.CSS["border"] = string.Format("{0} solid {1}", Px2Rem(fill.BorderWidth), JSColor(fill.BorderColor));
+                            // 网页的边框会扩大包围盒，所以包围盒要减少边框的尺寸
+                            if (item.HasBoundingBox)
+                            {
+                                item.ShapeBoundingBox.Right -= fill.BorderWidth * 2;
+                                item.ShapeBoundingBox.Bottom -= fill.BorderWidth * 2;
+                            }
                         }
 
                         if (item.HasBoundingBox)
@@ -10698,9 +10950,9 @@ namespace EntryBuilder
                     #endregion
 
                     #region 不透明度
-                    if (layer.Opacity != 1)
+                    if (current.Layer.Opacity != 1)
                     {
-                        dom.CSS["opacity"] = Math.Round(layer.Opacity, 2).ToString();
+                        dom.CSS["opacity"] = Math.Round(current.Layer.Opacity, 2).ToString();
                     }
                     #endregion
 
@@ -10721,11 +10973,16 @@ namespace EntryBuilder
                     }
                 }
 
-                if (!combine && node.Childs.Count > 0)
+                parent.Add(dom);
+
+                if (!combine && current.ChildCount > 0)
                 {
                     // 递归访问子层
-                    for (int i = 0; i < node.Childs.Count; i++)
-                        VisitLayerNode(node.Childs[i], dom);
+                    for (int i = 0; i < current.ChildCount; i++)
+                        VisitLayerNode(i == 0 ? null : current[i - 1], 
+                            current[i], 
+                            (i + 1) == current.ChildCount ? null : current[i + 1],
+                            dom);
                 }
             };
 
@@ -10746,13 +11003,20 @@ namespace EntryBuilder
 
                 // 图层树，和PSD中一样（不包含调整层）
                 var tree = LayerTree.FromPSD(psdfile);
+                LayerTree.HTMLStaticLayout(tree);
                 DOM root = new DOM("div");
-                root.CSS["position"] = "absolute";
+                if (tree.Layout == null)
+                    root.CSS["position"] = "absolute";
+                root.CSS["line-height"] = "0.8";
                 root.CSS["width"] = Px2Rem(psdfile.Width);
                 root.CSS["height"] = Px2Rem(psdfile.Height);
                 // 超出文档的部分隐藏
                 root.CSS["overflow"] = "hidden";
-                VisitLayerNode(tree, root);
+                for (int i = 0; i < tree.ChildCount; i++)
+                    VisitLayerNode(i == 0 ? null : tree[i - 1],
+                            tree[i],
+                            (i + 1) == tree.ChildCount ? null : tree[i + 1],
+                            root);
 
                 string output = Path.Combine(outputDir, file.Key + ".html");
                 //if (File.Exists(output))

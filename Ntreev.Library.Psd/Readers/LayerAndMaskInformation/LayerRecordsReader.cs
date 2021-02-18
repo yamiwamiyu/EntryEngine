@@ -41,10 +41,14 @@ namespace Ntreev.Library.Psd.Readers.LayerAndMaskInformation
             LayerRecords records = new LayerRecords();
 
             // +2 +2 -1 -1 后跟PS中显示的值完全一样
-            records.Top = reader.ReadInt32() + 2;
-            records.Left = reader.ReadInt32() + 2;
-            records.Bottom = reader.ReadInt32() - 1;
-            records.Right = reader.ReadInt32() - 1;
+            //records.Top = reader.ReadInt32() + 2;
+            //records.Left = reader.ReadInt32() + 2;
+            //records.Bottom = reader.ReadInt32() - 1;
+            //records.Right = reader.ReadInt32() - 1;
+            records.Top = reader.ReadInt32();
+            records.Left = reader.ReadInt32();
+            records.Bottom = reader.ReadInt32();
+            records.Right = reader.ReadInt32();
             records.ValidateSize();
 
             int channelCount = reader.ReadUInt16();

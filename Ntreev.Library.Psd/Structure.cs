@@ -26,8 +26,36 @@ namespace Ntreev.Library.Psd
         public double Top;
         public double Right;
         public double Bottom;
-        public double Width { get { return Right - Left; } }
-        public double Height { get { return Bottom - Top; } }
+        public double Width
+        {
+            get { return Right - Left; }
+            set { Right = Left + value; }
+        }
+        public double Height
+        {
+            get { return Bottom - Top; }
+            set { Bottom = Top + value; }
+        }
+        public double Center { get { return (Left + Right) * 0.5; } }
+        public double Middle { get { return (Top + Bottom) * 0.5; } }
+        public bool IsEmpty { get { return Left == 0 && Top == 0 && Right == 0 && Bottom == 0; } }
+
+        public PsdRect(double left, double top, double right, double bottom)
+        {
+            this.Left = left;
+            this.Top = top;
+            this.Right = right;
+            this.Bottom = bottom;
+        }
+
+        public bool Intersects(PsdRect value)
+        {
+            return value.Left < this.Right && this.Left < value.Right && value.Top < this.Bottom && this.Top < value.Bottom;
+        }
+        public override string ToString()
+        {
+            return string.Format("L: {0} T: {1} R: {2} B: {3}", Left, Top, Right, Bottom);
+        }
     }
     public struct PsdPoint
     {
@@ -296,7 +324,7 @@ namespace Ntreev.Library.Psd
         public PsdColor FillColor;
         public bool HasFillColor { get { return FillColor.A != 0; } }
         
-        /// <summary>描边宽度</summary>
+        /// <summary>描边宽度（描边会在图形内测，不会扩大包围盒）</summary>
         public double BorderWidth;
         public PsdColor BorderColor;
         public bool HasBorder { get { return BorderWidth > 0; } }

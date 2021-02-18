@@ -22,7 +22,7 @@ using System.Text;
 
 namespace Ntreev.Library.Psd
 {
-    class Properties : IProperties
+    public class Properties : IProperties
     {
         private readonly Dictionary<string, object> props;
 
