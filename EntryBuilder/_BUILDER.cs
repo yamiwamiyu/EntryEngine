@@ -245,6 +245,41 @@ namespace EntryBuilder
                 bitmap.Save(output);
             }
         }
+
+        static Dictionary<char, string> HTMLSpecialChar = new Dictionary<char,string>()
+        {
+            { ' ', "&nbsp;" },
+            { '<', "&lt;" },
+            { '>', "&gt;" },
+        };
+        public static string ReplaceHTMLSpecialChar(this string text)
+        {
+            Dictionary<int, string> specials = new Dictionary<int, string>();
+            string replace;
+            for (int i = 0; i < text.Length; i++)
+            {
+                char c = text[i];
+                if (HTMLSpecialChar.TryGetValue(c, out replace))
+                    specials.Add(i, replace);
+            }
+            if (specials.Count > 0)
+            {
+                StringBuilder builder = new StringBuilder();
+                int begin = 0;
+                foreach (var item in specials)
+                {
+                    if (item.Key != begin)
+                        builder.Append(text, begin, item.Key - begin);
+                    builder.Append(item.Value);
+                    begin = item.Key + 1;
+                }
+                if (begin != text.Length)
+                    builder.Append(text, begin, text.Length - begin);
+                return builder.ToString();
+            }
+            else
+                return text;
+        }
     }
 
     public static class _UNICODE

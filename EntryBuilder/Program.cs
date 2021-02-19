@@ -4081,6 +4081,15 @@ namespace EntryBuilder
 
             public static LayerTree FromPSD(PsdDocument psd)
             {
+                /* - 忽略图层
+                 * ::+ 图层单独布局（类似于悬浮窗口，覆盖掉其它图层时）
+                 * ! 仅作用于图层
+                 * # 将图层视为一张图片
+                 * / 将图层样式作为注释输出
+                 * []相同级别的图层生成组件，页面则以数组形式引用组件
+                 * [Name]同上，指定组件名字，将组件生成成为全局组件
+                 */
+
                 #region 根据PSD文档结构得出图层树
                 // 根节点
                 LayerTree root = new LayerTree();
@@ -4136,15 +4145,7 @@ namespace EntryBuilder
             /// <summary>对图层树进行网页的static布局，会生成必要的一些布局图层，并对所有图层进行排序</summary>
             public static void HTMLStaticLayout(LayerTree root)
             {
-                /* - 忽略图层
-                 * ::+ 图层单独布局（类似于悬浮窗口，覆盖掉其它图层时）
-                 * ! 仅作用于图层
-                 * # 将图层视为一张图片
-                 * / 将图层样式作为注释输出
-                 * []相同级别的图层生成组件，页面则以数组形式引用组件
-                 * [Name]同上，指定组件名字，将组件生成成为全局组件
-                 */
-                // 对图层进行布局
+                //// 对图层进行布局
                 //ForeachParentPriority(root, null, parent =>
                 //{
                 //    if (parent.Layout == null)
@@ -4315,8 +4316,11 @@ namespace EntryBuilder
                 }
                 protected override void VisitBeforeChild(DOM dom)
                 {
-                    builder.AppendLine();
-                    WriteIndent();
+                    if (dom.Label != "span")
+                    {
+                        builder.AppendLine();
+                        WriteIndent();
+                    }
                     builder.AppendFormat("<{0}", dom.Label);
                     if (dom.Attributes.Count > 0)
                     {
@@ -10728,7 +10732,8 @@ namespace EntryBuilder
                             break;
 
                         case ELayerType.TextLayer:
-                            dom.Label = "span";
+                            //dom.Label = "span";
+                            dom.Label = "div";
                             break;
                     }
                 }
@@ -10741,10 +10746,10 @@ namespace EntryBuilder
                 //dom.CSS["border"] = string.Format("{0} solid red", Px2Rem(1));
                 if (current.Layout == null)
                 {
-                    dom.CSS["position"] = "absolute";
+                    //dom.CSS["position"] = "absolute";
                     dom.CSS["left"] = Px2Rem(current.Area.Left);
                     dom.CSS["top"] = Px2Rem(current.Area.Top);
-                    dom.CSS["width"] = "max-content";
+                    //dom.CSS["width"] = "max-content";
                 }
                 else
                 {
@@ -10797,13 +10802,19 @@ namespace EntryBuilder
                                 dom.CSS["text-align"] = "center";
                                 // 改变图层坐标
                             }
+                            //if (current.Parent != null)
+                            //{
+                            //    dom.CSS["width"] = Px2Rem(current.Parent.Area.Width);
+                            //    dom.CSS.Remove("left");
+                            //    dom.CSS.Remove("margin-left");
+                            //}
                         }
-                        var _temp = textData.Bounds.Left - current.Layer.Left;
-                        if (_temp != 0)
-                            dom.CSS["padding-left"] = Px2Rem(_temp);
-                        _temp = textData.Bounds.Top - current.Layer.Top;
-                        if (_temp != 0)
-                            dom.CSS["padding-top"] = Px2Rem(_temp);
+                        //var _temp = textData.Bounds.Left - current.Layer.Left;
+                        //if (_temp != 0)
+                        //    dom.CSS["margin-left"] = Px2Rem(_temp);
+                        //_temp = textData.Bounds.Top - current.Layer.Top;
+                        //if (_temp != 0)
+                        //    dom.CSS["margin-top"] = Px2Rem(_temp);
                         // 前后两个段落，生成代码字体样式完全一样的，却分成了两个部分，此时应合并成一个部分keep是前面的部分
                         var portion = textData.Portion;
                         int keep = 0;
@@ -10823,7 +10834,7 @@ namespace EntryBuilder
                             }
 
                             DOM span;
-                            if (portion.Length > 1 || i == keep)
+                            if (portion.Length > 1 || (i == keep))
                             {
                                 span = new DOM("span");
                                 dom.Add(span);
@@ -10842,8 +10853,8 @@ namespace EntryBuilder
                                 span.CSS["font-style"] = "italic";
                             if (data.Underline)
                                 span.CSS["text-decoration"] = "underline";
-                            if (data.BaselineShift > 0)
-                                span.CSS["padding-top"] = Px2Rem(data.BaselineShift);
+                            //if (data.BaselineShift > 0)
+                            //    span.CSS["padding-top"] = Px2Rem(data.BaselineShift);
 
                             // 字体样式一样时，合并样式和文字显示
                             string result = string.Empty;
@@ -10854,7 +10865,7 @@ namespace EntryBuilder
                                     result += "<br>";
                             }
                             keep = i + 1;
-                            span.InnerText = result;
+                            span.InnerText = result.ReplaceHTMLSpecialChar();
                         }
                     }
                     #endregion
