@@ -10912,12 +10912,14 @@ namespace EntryBuilder
                         {
                             if (current.Area.Left != current.Parent.Area.Left)
                                 dom.CSS["margin-left"] = Px2Rem(current.Area.Left - current.Parent.Area.Left);
-                            // 所有毗邻的两个或更多盒元素的margin将会合并为一个margin共享之
                             if (current.Area.Top != current.Parent.Area.Top)
-                                if (dom.Parent.CSS.ContainsKey("margin-top"))
+                            {
+                                // 所有毗邻的两个或更多盒元素的margin将会合并为一个margin共享之
+                                if (type == ELayerType.TextLayer)
                                     dom.CSS["padding-top"] = Px2Rem(current.Area.Top - current.Parent.Area.Top);
                                 else
                                     dom.CSS["margin-top"] = Px2Rem(current.Area.Top - current.Parent.Area.Top);
+                            }
                         }
                     }
                     else
@@ -10937,7 +10939,12 @@ namespace EntryBuilder
                                     dom.CSS["margin-top"] = Px2Rem(current.Area.Top);
                             }
                             if (current.Area.Left != previous.Area.Right)
+                            {
+                                // 负数向左移动，会影响父级元素的宽度
+                                if (current.Area.Left < previous.Area.Right && dom.Parent != null && !dom.Parent.CSS.ContainsKey("width"))
+                                    dom.Parent.CSS["width"] = Px2Rem(current.Parent.Area.Width);
                                 dom.CSS["margin-left"] = Px2Rem(current.Area.Left - previous.Area.Right);
+                            }
                         }
                         else
                         {
@@ -10953,7 +10960,12 @@ namespace EntryBuilder
                                     dom.CSS["margin-left"] = Px2Rem(current.Area.Left);
                             }
                             if (current.Area.Top != previous.Area.Bottom)
+                            {
+                                // 负数向上移动，会影响父级元素的高度
+                                if (current.Area.Top < previous.Area.Bottom && dom.Parent != null && !dom.Parent.CSS.ContainsKey("height"))
+                                    dom.Parent.CSS["height"] = Px2Rem(current.Parent.Area.Height);
                                 dom.CSS["margin-top"] = Px2Rem(current.Area.Top - previous.Area.Bottom);
+                            }
                         }
                     }
                 }
@@ -11168,7 +11180,7 @@ namespace EntryBuilder
                         {
                             using (Graphics g = Graphics.FromImage(bitmap))
                             {
-                                g.Clear(Color.FromArgb(128, 
+                                g.Clear(Color.FromArgb(255, 
                                     _RANDOM.Next(0, 256),
                                     _RANDOM.Next(0, 256),
                                     _RANDOM.Next(0, 256)));
@@ -11229,7 +11241,7 @@ namespace EntryBuilder
                 DOM root = new DOM("div");
                 if (tree.Layout == null)
                     root.CSS["position"] = "absolute";
-                root.CSS["line-height"] = "0.8";
+                root.CSS["line-height"] = "1";
                 root.CSS["width"] = Px2Rem(psdfile.Width);
                 root.CSS["height"] = Px2Rem(psdfile.Height);
                 // 超出文档的部分隐藏
