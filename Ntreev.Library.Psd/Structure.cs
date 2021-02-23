@@ -48,9 +48,20 @@ namespace Ntreev.Library.Psd
             this.Bottom = bottom;
         }
 
+        public bool Contains(PsdRect value)
+        {
+            return value.Left >= this.Left && value.Right <= this.Right && value.Top >= this.Top && value.Bottom <= this.Bottom;
+        }
         public bool Intersects(PsdRect value)
         {
             return value.Left < this.Right && this.Left < value.Right && value.Top < this.Bottom && this.Top < value.Bottom;
+        }
+        public void Union(PsdRect value)
+        {
+            if (value.Left < this.Left) this.Left = value.Left;
+            if (value.Top < this.Top) this.Top = value.Top;
+            if (value.Right > this.Right) this.Right = value.Right;
+            if (value.Bottom > this.Bottom) this.Bottom = value.Bottom;
         }
         public override string ToString()
         {
@@ -88,7 +99,7 @@ namespace Ntreev.Library.Psd
         {
             public string Text;
             public double FontSize;
-            /// <summary>向下偏移的像素值</summary>
+            /// <summary>向上偏移的像素值，暂时不使用</summary>
             public double BaselineShift;
             public bool FauxBold;
             public bool FauxItalic;
@@ -156,7 +167,7 @@ namespace Ntreev.Library.Psd
                     start += length;
                     var style = ((IProperties)styles[i]).Value<IProperties>("StyleSheet.StyleSheetData");
                     portion.FontSize = Math.Round(style.Value<double>("FontSize") * scale, 1);
-                    portion.BaselineShift = style.Value<double>("BaselineShift");
+                    portion.BaselineShift = Math.Round(style.Value<double>("BaselineShift") * scale, 1);
                     portion.FauxBold = style.Value<bool>("FauxBold");
                     portion.FauxItalic = style.Value<bool>("FauxItalic");
                     portion.Underline = style.Value<bool>("Underline");
