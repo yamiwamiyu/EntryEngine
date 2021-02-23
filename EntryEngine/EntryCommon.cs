@@ -1899,7 +1899,10 @@ namespace EntryEngine
 
         public virtual IEnumerator<T> GetEnumerator()
         {
-            return Childs.GetEnumerator();
+            T[] array = Childs.ToArray();
+            int count = array.Length;
+            for (int i = 0; i < count; i++)
+                yield return array[i];
         }
         IEnumerator IEnumerable.GetEnumerator()
         {
