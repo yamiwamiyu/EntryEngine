@@ -10823,6 +10823,7 @@ namespace EntryBuilder
                 }
 
                 DOM dom = new DOM();
+                parent.Add(dom);
 
                 bool combine = name.StartsWith("#");
                 #region 标签
@@ -10868,7 +10869,7 @@ namespace EntryBuilder
                 //dom.CSS["border"] = string.Format("{0} solid red", Px2Rem(1));
                 if (current.Layout == null)
                 {
-                    //dom.CSS["position"] = "absolute";
+                    dom.CSS["position"] = "absolute";
                     dom.CSS["left"] = Px2Rem(current.Area.Left);
                     dom.CSS["top"] = Px2Rem(current.Area.Top);
                     //dom.CSS["width"] = "max-content";
@@ -10882,21 +10883,21 @@ namespace EntryBuilder
                         dom.CSS["display"] = "inline-flex";
 
                     // 确定前后两个元素的间距
-                    if (next != null)
-                    {
-                        if (current.Parent != null && current.Parent.Layout.Flex)
-                        {
-                            // 横板
-                            if (next.Area.Left != current.Area.Right)
-                                dom.CSS["margin-right"] = Px2Rem(next.Area.Left - current.Area.Right);
-                        }
-                        else
-                        {
-                            // 竖版
-                            if (next.Area.Top != current.Area.Bottom)
-                                dom.CSS["margin-bottom"] = Px2Rem(next.Area.Top - current.Area.Bottom);
-                        }
-                    }
+                    //if (next != null)
+                    //{
+                    //    if (current.Parent != null && current.Parent.Layout.Flex)
+                    //    {
+                    //        // 横板
+                    //        if (next.Area.Left != current.Area.Right)
+                    //            dom.CSS["margin-right"] = Px2Rem(next.Area.Left - current.Area.Right);
+                    //    }
+                    //    else
+                    //    {
+                    //        // 竖版
+                    //        if (next.Area.Top != current.Area.Bottom)
+                    //            dom.CSS["margin-bottom"] = Px2Rem(next.Area.Top - current.Area.Bottom);
+                    //    }
+                    //}
                     // 确定初始位置
                     if (previous == null)
                     {
@@ -10906,19 +10907,22 @@ namespace EntryBuilder
                                 dom.CSS["margin-left"] = Px2Rem(current.Area.Left);
                             if (current.Area.Top != 0)
                                 dom.CSS["margin-top"] = Px2Rem(current.Area.Top);
-                                //dom.CSS["padding-top"] = Px2Rem(current.Area.Top);
                         }
                         else
                         {
                             if (current.Area.Left != current.Parent.Area.Left)
                                 dom.CSS["margin-left"] = Px2Rem(current.Area.Left - current.Parent.Area.Left);
+                            // 所有毗邻的两个或更多盒元素的margin将会合并为一个margin共享之
                             if (current.Area.Top != current.Parent.Area.Top)
-                                dom.CSS["margin-top"] = Px2Rem(current.Area.Top - current.Parent.Area.Top);
-                                //dom.CSS["padding-top"] = Px2Rem(current.Area.Top - current.Parent.Area.Top);
+                                if (dom.Parent.CSS.ContainsKey("margin-top"))
+                                    dom.CSS["padding-top"] = Px2Rem(current.Area.Top - current.Parent.Area.Top);
+                                else
+                                    dom.CSS["margin-top"] = Px2Rem(current.Area.Top - current.Parent.Area.Top);
                         }
                     }
                     else
                     {
+                        // 确定前后两个元素的间距
                         if (current.Parent != null && current.Parent.Layout.Flex)
                         {
                             // 横板确定上边距
@@ -10932,6 +10936,8 @@ namespace EntryBuilder
                                 if (current.Area.Top != 0)
                                     dom.CSS["margin-top"] = Px2Rem(current.Area.Top);
                             }
+                            if (current.Area.Left != previous.Area.Right)
+                                dom.CSS["margin-left"] = Px2Rem(current.Area.Left - previous.Area.Right);
                         }
                         else
                         {
@@ -10946,6 +10952,8 @@ namespace EntryBuilder
                                 if (current.Area.Left != 0)
                                     dom.CSS["margin-left"] = Px2Rem(current.Area.Left);
                             }
+                            if (current.Area.Top != previous.Area.Bottom)
+                                dom.CSS["margin-top"] = Px2Rem(current.Area.Top - previous.Area.Bottom);
                         }
                     }
                 }
@@ -11143,15 +11151,16 @@ namespace EntryBuilder
 
                 }
 
-                // 测试页面样式
                 if (dom.Label == "img")
                 {
+                    // 图片一定要指定宽高
                     if (!dom.CSS.ContainsKey("width"))
                     {
                         dom.CSS["width"] = Px2Rem(width);
                         dom.CSS["height"] = Px2Rem(height);
                     }
 
+                    // 测试页面样式，导出图片
                     if (exportTestResource)
                     {
                         string src = id + ".png";
@@ -11159,15 +11168,16 @@ namespace EntryBuilder
                         {
                             using (Graphics g = Graphics.FromImage(bitmap))
                             {
-                                g.Clear(Color.Black);
+                                g.Clear(Color.FromArgb(128, 
+                                    _RANDOM.Next(0, 256),
+                                    _RANDOM.Next(0, 256),
+                                    _RANDOM.Next(0, 256)));
                                 bitmap.Save(Path.Combine(exportResourceFullDir, src), ImageFormat.Png);
                                 dom.Attributes["src"] = Path.Combine(exportResourceDir, src).Replace('\\', '/');
                             }
                         }
                     }
                 }
-
-                parent.Add(dom);
 
                 if (!combine && current.ChildCount > 0)
                 {
@@ -11182,6 +11192,12 @@ namespace EntryBuilder
                         }
                         dom.Label = "div";
                     }
+
+                    //if (dom.Label == "div" && current.ChildCount > 0)
+                    //{
+                    //    if (current[0].Area.Top != current.Area.Top)
+                    //        dom.CSS["padding-top"] = Px2Rem(current[0].Area.Top - current.Area.Top);
+                    //}
 
                     // 递归访问子层
                     for (int i = 0; i < current.ChildCount; i++)
