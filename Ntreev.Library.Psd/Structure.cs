@@ -262,6 +262,8 @@ namespace Ntreev.Library.Psd
         /// <summary>图形</summary>
         public class Shape
         {
+            public bool keyShapeInvalidated;
+
             public EShapeType ShapeType;
 
             /// <summary>圆角像素值</summary>
@@ -342,14 +344,91 @@ namespace Ntreev.Library.Psd
         public bool HasBorderColor { get { return BorderColor.A != 0; } }
 
         public Shape[] Shapes;
+        public PsdRect BoundingBox
+        {
+            get
+            {
+                if (Shapes == null || Shapes.Length == 0)
+                    return new PsdRect();
+                PsdRect box = new PsdRect();
+                for (int i = 0; i < Shapes.Length; i++)
+                {
+                    var shape = Shapes[i];
+                    if (shape.HasBoundingBox && !shape.keyShapeInvalidated)
+                    {
+                        if (box.IsEmpty)
+                        {
+                            box = shape.ShapeBoundingBox;
+                        }
+                        else
+                        {
+                            if (shape.ShapeBoundingBox.Left < box.Left) box.Left = shape.ShapeBoundingBox.Left;
+                            if (shape.ShapeBoundingBox.Top < box.Top) box.Top = shape.ShapeBoundingBox.Top;
+                            if (shape.ShapeBoundingBox.Right > box.Right) box.Right = shape.ShapeBoundingBox.Right;
+                            if (shape.ShapeBoundingBox.Bottom > box.Bottom) box.Bottom = shape.ShapeBoundingBox.Bottom;
+                        }
+                    }
+                }
+                return box;
+            }
+        }
 
         public static bool Is(IPsdLayer layer)
         {
             return layer.Resources.Any(r => r.Key == "SoCo" || r.Key == "vscg");
         }
-        public static ResourceFill Create(IPsdLayer layer)
+        public static ResourceFill CreateShapeOnly(IPsdLayer layer)
         {
             ResourceFill result = new ResourceFill();
+            // 形状
+            var resource = layer.Resources.Value<IProperties>("vogk");
+            if (resource != null)
+            {
+                var array = resource.Value<IList>("keyDescriptorList.Items");
+                int count = array.Count;
+                result.Shapes = new Shape[count];
+                for (int i = 0; i < count; i++)
+                {
+                    var item = (IProperties)array[i];
+                    Shape shape = new Shape();
+                    shape.keyShapeInvalidated = item.Value<bool>("keyShapeInvalidated");
+                    shape.ShapeType = (EShapeType)item.Value<int>("keyOriginType");
+                    // 三角形：边数keyOriginPolySides / 圆角值keyOriginPolyCornerRadius / 星形keyOriginPolyIndentBy.Value(单位%)
+                    // 线段：宽度keyOriginLineWeight / 起始点keyOriginLineStart.Hrzn|Vrtc / 结束点keyOriginLineEnd.Hrzn|Vrtc
+                    if (shape.ShapeType == EShapeType.Line)
+                    {
+                        shape.LineWeight = item.Value<double>("keyOriginLineWeight");
+                        shape.LineStartPoint.X = item.Value<double>("keyOriginLineStart.Hrzn");
+                        shape.LineStartPoint.Y = item.Value<double>("keyOriginLineStart.Vrtc");
+                        shape.LineEndPoint.X = item.Value<double>("keyOriginLineEnd.Hrzn");
+                        shape.LineEndPoint.Y = item.Value<double>("keyOriginLineEnd.Vrtc");
+                    }
+                    // 矩形圆角
+                    var radii = item.Value<IProperties>("keyOriginRRectRadii");
+                    if (radii != null)
+                    {
+                        shape.RRectRadiiTopLeft = radii.Value<int>("topLeft.Value");
+                        shape.RRectRadiiTopRight = radii.Value<int>("topRight.Value");
+                        shape.RRectRadiiBottomLeft = radii.Value<int>("bottomLeft.Value");
+                        shape.RRectRadiiBottomRight = radii.Value<int>("bottomRight.Value");
+                    }
+                    // 形状包围盒
+                    var bbox = item.Value<IProperties>("keyOriginShapeBBox");
+                    if (bbox != null)
+                    {
+                        shape.ShapeBoundingBox.Left = bbox.Value<int>("Left.Value");
+                        shape.ShapeBoundingBox.Top = bbox.Value<int>("Top.Value");
+                        shape.ShapeBoundingBox.Right = bbox.Value<int>("Rght.Value");
+                        shape.ShapeBoundingBox.Bottom = bbox.Value<int>("Btom.Value");
+                    }
+                    result.Shapes[i] = shape;
+                }
+            }
+            return result;
+        }
+        public static ResourceFill Create(IPsdLayer layer)
+        {
+            ResourceFill result = CreateShapeOnly(layer);
             result.FillColor.A = 255;
 
             IProperties resource;
@@ -406,50 +485,6 @@ namespace Ntreev.Library.Psd
                     {
                         // todo: 填充渐变颜色
                     }
-                }
-            }
-
-            // 形状
-            resource = layer.Resources.Value<IProperties>("vogk");
-            if (resource != null)
-            {
-                var array = resource.Value<IList>("keyDescriptorList.Items");
-                int count = array.Count;
-                result.Shapes = new Shape[count];
-                for (int i = 0; i < count; i++)
-                {
-                    var item = (IProperties)array[i];
-                    Shape shape = new Shape();
-                    shape.ShapeType = (EShapeType)item.Value<int>("keyOriginType");
-                    // 三角形：边数keyOriginPolySides / 圆角值keyOriginPolyCornerRadius / 星形keyOriginPolyIndentBy.Value(单位%)
-                    // 线段：宽度keyOriginLineWeight / 起始点keyOriginLineStart.Hrzn|Vrtc / 结束点keyOriginLineEnd.Hrzn|Vrtc
-                    if (shape.ShapeType == EShapeType.Line)
-                    {
-                        shape.LineWeight = item.Value<double>("keyOriginLineWeight");
-                        shape.LineStartPoint.X = item.Value<double>("keyOriginLineStart.Hrzn");
-                        shape.LineStartPoint.Y = item.Value<double>("keyOriginLineStart.Vrtc");
-                        shape.LineEndPoint.X = item.Value<double>("keyOriginLineEnd.Hrzn");
-                        shape.LineEndPoint.Y = item.Value<double>("keyOriginLineEnd.Vrtc");
-                    }
-                    // 矩形圆角
-                    var radii = item.Value<IProperties>("keyOriginRRectRadii");
-                    if (radii != null)
-                    {
-                        shape.RRectRadiiTopLeft = radii.Value<int>("topLeft.Value");
-                        shape.RRectRadiiTopRight = radii.Value<int>("topRight.Value");
-                        shape.RRectRadiiBottomLeft = radii.Value<int>("bottomLeft.Value");
-                        shape.RRectRadiiBottomRight = radii.Value<int>("bottomRight.Value");
-                    }
-                    // 形状包围盒
-                    var bbox = item.Value<IProperties>("keyOriginShapeBBox");
-                    if (bbox != null)
-                    {
-                        shape.ShapeBoundingBox.Left = bbox.Value<int>("Left.Value");
-                        shape.ShapeBoundingBox.Top = bbox.Value<int>("Top.Value");
-                        shape.ShapeBoundingBox.Right = bbox.Value<int>("Rght.Value");
-                        shape.ShapeBoundingBox.Bottom = bbox.Value<int>("Btom.Value");
-                    }
-                    result.Shapes[i] = shape;
                 }
             }
 

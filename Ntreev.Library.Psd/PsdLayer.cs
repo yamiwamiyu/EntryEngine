@@ -57,6 +57,11 @@ namespace Ntreev.Library.Psd
             return this.Name;
         }
 
+        public int ID
+        {
+            get { return this.Resources.Value<int>("lyid.ID"); }
+        }
+
         public Channel[] Channels
         {
             get { return this.channels.Value; }
