@@ -3927,7 +3927,10 @@ namespace EntryBuilder
             if (value == (int)value)
                 return value + "rem";  
             else
-                return (value + 0.01).ToString("0.00") + "rem";
+                if (value < 0)
+                    return (value - 0.01).ToString("0.00") + "rem";
+                else
+                    return (value + 0.01).ToString("0.00") + "rem";
         }
         public static string JSColor(PsdColor color)
         {
@@ -4160,9 +4163,16 @@ namespace EntryBuilder
                     var item = parent[i];
                     if (item.Layer.Name.StartsWith("+"))
                     {
+                        LayerTree newLayout = new LayerTree();
+                        newLayout.Layout = new LayoutRelative();
+                        newLayout.Layout.Layout = -1;
+                        newLayout.Area = new PsdRect(parent.Parent.Area.Left, item.Area.Top, item.Area.Right, item.Area.Bottom);
+                        newLayout.Layer = new LayoutLayer(parent.Layer.Document, parent.Layer, newLayout.Area);
+
                         // 丢到上一个层级的最后面，确保覆盖，下面的代码也可以排除掉当前图层
-                        item.Layout.Layout = -1;
-                        parent.Parent.Add(item);
+                        parent.Parent.Add(newLayout);
+                        newLayout.Add(item);
+                        //parent.Parent.Add(item);
                         HTMLStaticLayout(item);
                     }
                 }
@@ -10776,6 +10786,18 @@ namespace EntryBuilder
         }
         public static void PSD2JS(string psdOrDirSplitByComma, string outputDir, bool exportTestResource)
         {
+            /* 注意事项
+             * 1. body默认有8px的边距，会导致单独布局的元素坐标不正确 .body { margin:auto }
+             * 2. 滚动条导致内容被遮挡::-webkit-scrollbar { display: none; }
+             * 3. 自动设置尺寸以适应窗口大小
+             * function FixWindow() {
+	           document.getElementsByTagName('html')[0].style.fontSize = 
+		           (Math.max(window.innerHeight, 720) * 14 / 1334) + 'px';
+               }
+               FixWindow();
+               window.onresize = FixWindow;
+             */
+
             /* - 忽略图层
              * ! 仅作用于图层
              * # 将图层视为一张图片
@@ -10861,27 +10883,17 @@ namespace EntryBuilder
                 //dom.CSS["border"] = string.Format("{0} solid red", Px2Rem(1));
                 if (current.Layout == null || current.Layout.Layout == -1)
                 {
-                    if (current.Layout.Layout == -1)
-                        dom.CSS["position"] = "fixed";
-                    else
-                        dom.CSS["position"] = "absolute";
-                    if (current.Parent != null)
-                    {
-                        if (current.Area.Left != current.Parent.Area.Left)
-                            dom.CSS["left"] = Px2Rem(current.Area.Left - current.Parent.Area.Left);
-                        if (current.Area.Top != current.Parent.Area.Top)
-                            dom.CSS["top"] = Px2Rem(current.Area.Top - current.Parent.Area.Top);
-                    }
-                    else
-                    {
-                        if (current.Area.Left != 0)
-                            dom.CSS["left"] = Px2Rem(current.Area.Left);
-                        if (current.Area.Top != 0)
-                            dom.CSS["top"] = Px2Rem(current.Area.Top);
-                    }
+                    dom.CSS["position"] = "absolute";
+                    if (current.Area.Left != current.Parent.Area.Left)
+                        dom.CSS["left"] = Px2Rem(current.Area.Left - current.Parent.Area.Left);
+                    if (current.Area.Top != current.Parent.Area.Top)
+                        dom.CSS["top"] = Px2Rem(current.Area.Top - current.Parent.Area.Top);
                 }
                 else
                 {
+                    //if (current.Layout.Layout == -1)
+                    //    dom.CSS["position"] = "relative";
+
                     // flex会导致图片必须指定宽高，否则会变形
                     if (current.Layout.Flex)
                         dom.CSS["display"] = "inline-flex";
@@ -10889,43 +10901,25 @@ namespace EntryBuilder
                     // 确定初始位置
                     if (previous == null)
                     {
-                        if (current.Parent == null)
+                        if (current.Area.Left != current.Parent.Area.Left)
+                            dom.CSS["margin-left"] = Px2Rem(current.Area.Left - current.Parent.Area.Left);
+                        if (current.Area.Top != current.Parent.Area.Top)
                         {
-                            if (current.Area.Left != 0)
-                                dom.CSS["margin-left"] = Px2Rem(current.Area.Left);
-                            if (current.Area.Top != 0)
-                                dom.CSS["margin-top"] = Px2Rem(current.Area.Top);
-                        }
-                        else
-                        {
-                            if (current.Area.Left != current.Parent.Area.Left)
-                                dom.CSS["margin-left"] = Px2Rem(current.Area.Left - current.Parent.Area.Left);
-                            if (current.Area.Top != current.Parent.Area.Top)
-                            {
-                                // 所有毗邻的两个或更多盒元素的margin将会合并为一个margin共享之
-                                if (type == ELayerType.TextLayer)
-                                    dom.CSS["padding-top"] = Px2Rem(current.Area.Top - current.Parent.Area.Top);
-                                else
-                                    dom.CSS["margin-top"] = Px2Rem(current.Area.Top - current.Parent.Area.Top);
-                            }
+                            // 所有毗邻的两个或更多盒元素的margin将会合并为一个margin共享之
+                            if (type == ELayerType.TextLayer)
+                                dom.CSS["padding-top"] = Px2Rem(current.Area.Top - current.Parent.Area.Top);
+                            else
+                                dom.CSS["margin-top"] = Px2Rem(current.Area.Top - current.Parent.Area.Top);
                         }
                     }
                     else
                     {
                         // 确定前后两个元素的间距
-                        if (current.Parent != null && current.Parent.Layout.Flex)
+                        if (current.Parent.Layout.Flex)
                         {
                             // 横板确定上边距
-                            if (current.Parent != null)
-                            {
-                                if (current.Area.Top != current.Parent.Area.Top)
-                                    dom.CSS["margin-top"] = Px2Rem(current.Area.Top - current.Parent.Area.Top);
-                            }
-                            else
-                            {
-                                if (current.Area.Top != 0)
-                                    dom.CSS["margin-top"] = Px2Rem(current.Area.Top);
-                            }
+                            if (current.Area.Top != current.Parent.Area.Top)
+                                dom.CSS["margin-top"] = Px2Rem(current.Area.Top - current.Parent.Area.Top);
                             if (current.Area.Left != previous.Area.Right)
                             {
                                 // 负数向左移动，会影响父级元素的宽度
@@ -10937,16 +10931,8 @@ namespace EntryBuilder
                         else
                         {
                             // 竖版确定左边距
-                            if (current.Parent != null)
-                            {
-                                if (current.Area.Left != current.Parent.Area.Left)
-                                    dom.CSS["margin-left"] = Px2Rem(current.Area.Left - current.Parent.Area.Left);
-                            }
-                            else
-                            {
-                                if (current.Area.Left != 0)
-                                    dom.CSS["margin-left"] = Px2Rem(current.Area.Left);
-                            }
+                            if (current.Area.Left != current.Parent.Area.Left)
+                                dom.CSS["margin-left"] = Px2Rem(current.Area.Left - current.Parent.Area.Left);
                             if (current.Area.Top != previous.Area.Bottom)
                             {
                                 // 负数向上移动，会影响父级元素的高度
@@ -10980,11 +10966,7 @@ namespace EntryBuilder
                                 dom.CSS["text-align"] = "center";
                                 // 改变图层坐标
                             }
-                            if (current.Parent != null)
-                            {
-                                //dom.CSS["width"] = Px2Rem(current.Parent.Area.Width);
-                                dom.CSS.Remove("margin-left");
-                            }
+                            dom.CSS.Remove("margin-left");
                         }
                         //var _temp = textData.Bounds.Left - current.Layer.Left;
                         //if (_temp != 0)
@@ -11218,15 +11200,21 @@ namespace EntryBuilder
                 //var testLayer = tree.Find(t => t.ID == 306);
                 //string json = testLayer.Layer.Resources.PrintProperties();
                 LayerTree.HTMLStaticLayout(tree);
+
+                // 图层负责滚动，以免滚动条
                 DOM root = new DOM("div");
                 if (tree.Layout == null)
                     root.CSS["position"] = "absolute";
                 root.CSS["line-height"] = "1";
                 root.CSS["width"] = Px2Rem(psdfile.Width);
                 root.CSS["height"] = Px2Rem(psdfile.Height);
-                root.CSS["background-color"] = "black";
+                root.CSS["margin-left"] = "auto";
+                root.CSS["margin-right"] = "auto";
+                //root.CSS["background-color"] = "black";
                 // 超出文档的部分隐藏
-                root.CSS["overflow"] = "hidden";
+                root.CSS["overflow-x"] = "hidden";
+                // 超出的部分可以滚动，但是不显示滚动条
+                root.CSS["overflow-y"] = "auto";
                 for (int i = 0; i < tree.ChildCount; i++)
                     VisitLayerNode(i == 0 ? null : tree[i - 1],
                             tree[i],
