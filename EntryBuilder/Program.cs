@@ -4038,6 +4038,14 @@ namespace EntryBuilder
                 /// <summary>原本的覆盖顺序，大的覆盖小的</summary>
                 public int ZIndex = -1;
             }
+            /// <summary>组件布局</summary>
+            public class LayoutComponent
+            {
+                /// <summary>组件名称，名称不为空时，会用Vue.component生成组件</summary>
+                public string Name;
+                /// <summary>组件内的可配置动态参数(文字的值，图片的路径等)</summary>
+                public Dictionary<string, string> Props = new Dictionary<string, string>();
+            }
 
             public IPsdLayer Layer;
             /// <summary>仅作用在层上的附加层，蒙版或调整层等</summary>
@@ -4047,6 +4055,8 @@ namespace EntryBuilder
             public PsdRect Area;
             /// <summary>网页相对布局信息，没有则采用绝对定位</summary>
             public LayoutRelative Layout;
+            /// <summary>图层元素生成VUE组件代码</summary>
+            public LayoutComponent Component;
 
             /// <summary>子对象的包围盒</summary>
             public PsdRect BoundingBox
@@ -4150,6 +4160,61 @@ namespace EntryBuilder
                 });
                 return root;
             }
+
+            static void BuildComponent(List<LayerTree> layers)
+            {
+            }
+            /// <summary>将图层结构构建成组件的形式，一般要在FromPSD之后，HTMLStaticLayout布局之前进行</summary>
+            public static void BuildComponent(LayerTree root)
+            {
+                // 根据规则生成组件
+                ForeachParentPriority(root, null, parent =>
+                {
+                    int count = parent.ChildCount;
+                    if (count == 0) return;
+
+                    List<LayerTree> componentLayers = new List<LayerTree>();
+                    for (int i = 0; i < count; i++)
+                    {
+                        var child = parent[i];
+                        string name = child.Layer.Name;
+                        if (name.StartsWith("["))
+                        {
+                            int index = name.IndexOf(']');
+                            if (index == -1) continue;
+
+                            child.Component = new LayoutComponent();
+                            if (index > 1)
+                                child.Component.Name = name.Substring(1, index - 1);
+
+                            if (componentLayers.Count == 0)
+                                componentLayers.Add(child);
+                            else
+                            {
+                                var componentLayer = componentLayers[0];
+                                if (child.Component.Name != componentLayer.Component.Name)
+                                {
+                                    // 将前面需要生成的组件的图层进行整理
+                                    BuildComponent(componentLayers);
+                                    // 新组件
+                                    componentLayers.Clear();
+                                    componentLayers.Add(child);
+                                }
+                            }
+                        }
+                    }
+                    // 将前面需要生成的组件的图层进行整理
+                    if (componentLayers.Count > 0)
+                        BuildComponent(componentLayers);
+                });
+
+                // 得出所有图层的绝对坐标区域
+                ForeachChildPriority(root, null, child =>
+                {
+                    child.Area = child.BoundingBox;
+                });
+            }
+
             static bool StaticLayout(LayerTree parent, bool isVertical)
             {
                 if (parent.Layout == null)
@@ -4205,14 +4270,27 @@ namespace EntryBuilder
                             for (int j = 0; j < list.Count; j++)
                             {
                                 var contains = parent[list[j]];
-                                if (contains.Layout.ZIndex == -1)
-                                    continue;
+                                //if (contains.Layout.ZIndex == -1)
+                                //    continue;
+
                                 // 没有被包含，但是与包含的内容相交的也需要拉入子图层
                                 for (int k = list[j] + 1; k < parent.ChildCount; k++)
-                                    if (parent[k].Layout.ZIndex > -1 && contains.Area.Intersects(parent[k].Area))
+                                    if (!list.Contains(k) && contains.Area.Intersects(parent[k].Area))
+                                        list.Add(k);
+
+                                if (!contains.Layer.Name.StartsWith("["))
+                                    continue;
+                                int index = contains.Layer.Name.IndexOf(']');
+                                if (index == -1)
+                                    continue;
+                                string componentName = contains.Layer.Name.Substring(0, index + 1);
+                                // 将相同组件的图层放入相同层级
+                                for (int k = 0; k < parent.ChildCount; k++)
+                                    if (!list.Contains(k) && parent[k].Layer.Name.StartsWith(componentName))
                                         list.Add(k);
                             }
-                            // 新增层级
+                            list.Sort();
+                            // 将被包含的图层放入包含容器的子集中
                             for (int j = list.Count - 1; j >= 0; j--)
                             {
                                 var add = parent[list[j]];
@@ -4420,19 +4498,23 @@ namespace EntryBuilder
 
             public override string ToString()
             {
-                return VCodeWriter.Write<VCW_JS_VUE>(this);
+                return VCodeWriter.Write<VCW_JS_INLINE_STYLE>(this);
             }
 
             public abstract class DOMVisitor
             {
                 private int depth = -1;
                 public int Depth { get { return depth; } }
-                public void Visit(DOM dom)
+                public virtual void Visit(DOM dom)
+                {
+                    InternalVisit(dom);
+                }
+                protected void InternalVisit(DOM dom)
                 {
                     depth++;
                     VisitBeforeChild(dom);
                     foreach (var item in dom.Childs)
-                        Visit(item);
+                        InternalVisit(item);
                     VisitAfterChild(dom);
                     depth--;
                 }
@@ -4446,11 +4528,11 @@ namespace EntryBuilder
                 public static string Write<T>(DOM dom) where T : VCodeWriter, new()
                 {
                     T writer = new T();
-                    writer.Visit(dom);
+                    writer.InternalVisit(dom);
                     return writer.Result;
                 }
             }
-            public class VCW_JS_VUE : VCodeWriter
+            public class VCW_JS_INLINE_STYLE : VCodeWriter
             {
                 private void WriteIndent()
                 {
@@ -10830,12 +10912,6 @@ namespace EntryBuilder
                 int id = current.ID;
                 ELayerType type = current.Layer.LayerType;
 
-                if (id == 131)
-                {
-                    string json = current.Layer.Resources.PrintProperties();
-                    int test = 0;
-                }
-
                 DOM dom = new DOM();
                 bool combine = name.StartsWith("#");
                 #region 标签
@@ -10872,7 +10948,7 @@ namespace EntryBuilder
                 }
                 if (id != 0)
                     dom.Attributes["id"] = id.ToString();
-                if (exportTestResource)
+                //if (exportTestResource)
                     dom.Attributes["name"] = name;
                 #endregion
 
@@ -10880,7 +10956,6 @@ namespace EntryBuilder
                 width = current.Layer.Width;
                 height = current.Layer.Height;
                 #region 布局 & 坐标
-                //dom.CSS["border"] = string.Format("{0} solid red", Px2Rem(1));
                 if (current.Layout == null || current.Layout.Layout == -1)
                 {
                     dom.CSS["position"] = "absolute";
@@ -10891,9 +10966,6 @@ namespace EntryBuilder
                 }
                 else
                 {
-                    //if (current.Layout.Layout == -1)
-                    //    dom.CSS["position"] = "relative";
-
                     // flex会导致图片必须指定宽高，否则会变形
                     if (current.Layout.Flex)
                         dom.CSS["display"] = "inline-flex";
@@ -10959,14 +11031,16 @@ namespace EntryBuilder
                             if (textData.Justification == ResourceText.EJustification.Right)
                             {
                                 dom.CSS["text-align"] = "right";
+                                parent.CSS["text-align"] = "right";
                                 // 改变图层坐标
                             }
                             else
                             {
                                 dom.CSS["text-align"] = "center";
+                                parent.CSS["text-align"] = "center";
                                 // 改变图层坐标
                             }
-                            dom.CSS.Remove("margin-left");
+                            //dom.CSS.Remove("margin-left");
                         }
                         //var _temp = textData.Bounds.Left - current.Layer.Left;
                         //if (_temp != 0)
@@ -11175,10 +11249,23 @@ namespace EntryBuilder
 
                     // 递归访问子层
                     for (int i = 0; i < current.ChildCount; i++)
-                        VisitLayerNode(i == 0 ? null : current[i - 1], 
-                            current[i], 
+                        VisitLayerNode(i == 0 ? null : current[i - 1],
+                            current[i],
                             (i + 1) == current.ChildCount ? null : current[i + 1],
                             dom);
+
+                    // 若有对齐布局，则将偏移值都清空
+                    string align;
+                    if (dom.CSS.TryGetValue("text-align", out align))
+                        foreach (var item in dom)
+                        {
+                            // 有宽度的div不受text-align影响
+                            if (item.Label != "div" || !item.CSS.ContainsKey("width"))
+                                item.CSS.Remove("margin-left");
+                            // 由于text-align属性会继承，所以为了不影响其内部布局，将其属性设置成左对齐
+                            if (item.Label == "div" && !item.CSS.ContainsKey("text-align"))
+                                item.CSS["text-align"] = "left";
+                        }
                 }
             };
 
@@ -11197,6 +11284,7 @@ namespace EntryBuilder
 
                 // 图层树，和PSD中一样（不包含调整层）
                 var tree = LayerTree.FromPSD(psdfile);
+                LayerTree.BuildComponent(tree);
                 //var testLayer = tree.Find(t => t.ID == 306);
                 //string json = testLayer.Layer.Resources.PrintProperties();
                 LayerTree.HTMLStaticLayout(tree);
