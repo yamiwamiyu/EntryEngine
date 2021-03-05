@@ -3923,14 +3923,22 @@ namespace EntryBuilder
         /// <summary>像素转Rem</summary>
         public static string Px2Rem(double px)
         {
-            double value = Math.Round(px / REM, 2);
+            double value = px / REM;
             if (value == (int)value)
-                return value + "rem";  
+                return value + "rem";
             else
-                if (value < 0)
-                    return (value - 0.01).ToString("0.00") + "rem";
+            {
+                int ivalue = (int)(value * 1000);
+                if (ivalue % 10 == 0)
+                    // 不进位
+                    return value.ToString("0.00") + "rem";
                 else
-                    return (value + 0.01).ToString("0.00") + "rem";
+                    // 进位
+                    if (value < 0)
+                        return ((ivalue / 10 - 1) / 100.0).ToString("0.00") + "rem";
+                    else
+                        return ((ivalue / 10 + 1) / 100.0).ToString("0.00") + "rem";
+            }
         }
         public static string JSColor(PsdColor color)
         {
@@ -4045,6 +4053,26 @@ namespace EntryBuilder
                 public string Name;
                 /// <summary>组件内的可配置动态参数(文字的值，图片的路径等)</summary>
                 public Dictionary<string, string> Props = new Dictionary<string, string>();
+
+                public static bool IsComponent(string layerName)
+                {
+                    string cname;
+                    return IsComponent(layerName, out cname);
+                }
+                public static bool IsComponent(string layerName, out string componentName)
+                {
+                    componentName = null;
+                    if (layerName.StartsWith("["))
+                    {
+                        int index = layerName.IndexOf(']');
+                        if (index == -1) return false;
+
+                        if (index > 1)
+                            componentName = layerName.Substring(1, index - 1);
+                        return true;
+                    }
+                    return false;
+                }
             }
 
             public IPsdLayer Layer;
@@ -4163,58 +4191,57 @@ namespace EntryBuilder
 
             static void BuildComponent(List<LayerTree> layers)
             {
-            }
-            /// <summary>将图层结构构建成组件的形式，一般要在FromPSD之后，HTMLStaticLayout布局之前进行</summary>
-            public static void BuildComponent(LayerTree root)
-            {
-                // 根据规则生成组件
-                ForeachParentPriority(root, null, parent =>
+                // 组件图层应该单独放到同一个图层组内
+                // 组件图层应该内部生成一个适当的包围盒，让每个图层大小一致并且左(上)间距一致
+
+                // 相同组件若和其它图层混在一起，则单独抽出放入一个单独的图层组
+                if (layers.Count != layers[0].Parent.ChildCount)
                 {
-                    int count = parent.ChildCount;
-                    if (count == 0) return;
-
-                    List<LayerTree> componentLayers = new List<LayerTree>();
-                    for (int i = 0; i < count; i++)
-                    {
-                        var child = parent[i];
-                        string name = child.Layer.Name;
-                        if (name.StartsWith("["))
-                        {
-                            int index = name.IndexOf(']');
-                            if (index == -1) continue;
-
-                            child.Component = new LayoutComponent();
-                            if (index > 1)
-                                child.Component.Name = name.Substring(1, index - 1);
-
-                            if (componentLayers.Count == 0)
-                                componentLayers.Add(child);
-                            else
-                            {
-                                var componentLayer = componentLayers[0];
-                                if (child.Component.Name != componentLayer.Component.Name)
-                                {
-                                    // 将前面需要生成的组件的图层进行整理
-                                    BuildComponent(componentLayers);
-                                    // 新组件
-                                    componentLayers.Clear();
-                                    componentLayers.Add(child);
-                                }
-                            }
-                        }
-                    }
-                    // 将前面需要生成的组件的图层进行整理
-                    if (componentLayers.Count > 0)
-                        BuildComponent(componentLayers);
-                });
-
-                // 得出所有图层的绝对坐标区域
-                ForeachChildPriority(root, null, child =>
+                    var layer = layers[0];
+                    var parent = layer.Parent;
+                    LayerTree newLayout = new LayerTree();
+                    newLayout.Layout = new LayoutRelative();
+                    foreach (var item in layers)
+                        newLayout.Add(item);
+                    newLayout.Layer = new LayoutLayer(layer.Layer.Document, parent.Layer, newLayout.Area);
+                    newLayout.Area = newLayout.BoundingBox;
+                    parent.Add(newLayout);
+                }
+                else
                 {
-                    child.Area = child.BoundingBox;
-                });
-            }
+                    //// 得出组件最大的尺寸
+                    //double width = layers[0].Area.Width;
+                    //double height = layers[0].Area.Height;
+                    //for (int i = 1; i < layers.Count; i++)
+                    //{
+                    //    if (layers[i].Area.Width > width)
+                    //        width = layers[i].Area.Width;
+                    //    if (layers[i].Area.Height > height)
+                    //        height = layers[i].Area.Height;
+                    //}
 
+                    ////width += 20;
+                    ////height += 20;
+
+                    //// 让组件的所有图层保持最大的尺寸
+                    //for (int i = 0; i < layers.Count; i++)
+                    //{
+                    //    var item = layers[i];
+                    //    double d = (width - item.Area.Width) * 0.5f;
+                    //    if (d != 0)
+                    //    {
+                    //        item.Area.Left -= d;
+                    //        item.Area.Right += d;
+                    //    }
+                    //    d = (height - item.Area.Height) * 0.5f;
+                    //    if (d != 0)
+                    //    {
+                    //        item.Area.Top -= d;
+                    //        item.Area.Bottom += d;
+                    //    }
+                    //}
+                }
+            }
             static bool StaticLayout(LayerTree parent, bool isVertical)
             {
                 if (parent.Layout == null)
@@ -4234,7 +4261,7 @@ namespace EntryBuilder
                         newLayout.Area = new PsdRect(parent.Parent.Area.Left, item.Area.Top, item.Area.Right, item.Area.Bottom);
                         newLayout.Layer = new LayoutLayer(parent.Layer.Document, parent.Layer, newLayout.Area);
 
-                        // 丢到上一个层级的最后面，确保覆盖，下面的代码也可以排除掉当前图层
+                        // 丢到上一个层级的最后面，确保覆盖，下面的代码也可以排除掉当前图层 
                         parent.Parent.Add(newLayout);
                         newLayout.Add(item);
                         //parent.Parent.Add(item);
@@ -4301,6 +4328,42 @@ namespace EntryBuilder
                         }
                     }
                 }
+                #endregion
+                #region 组件图层
+                // 相同组件若和其它图层混在一起，则单独抽出放入一个单独的图层组
+                List<LayerTree> componentLayers = new List<LayerTree>();
+                for (int i = parent.ChildCount - 1; i >= 0; i--)
+                {
+                    var child = parent[i];
+                    string name = child.Layer.Name;
+                    if (name.StartsWith("["))
+                    {
+                        int index = name.IndexOf(']');
+                        if (index == -1) continue;
+
+                        child.Component = new LayoutComponent();
+                        if (index > 1)
+                            child.Component.Name = name.Substring(1, index - 1);
+
+                        if (componentLayers.Count == 0)
+                            componentLayers.Add(child);
+                        else
+                        {
+                            var componentLayer = componentLayers[0];
+                            if (child.Component.Name != componentLayer.Component.Name)
+                            {
+                                // 将前面需要生成的组件的图层进行整理
+                                BuildComponent(componentLayers);
+                                // 新组件
+                                componentLayers.Clear();
+                            }
+                            componentLayers.Add(child);
+                        }
+                    }
+                }
+                // 将前面需要生成的组件的图层进行整理
+                if (componentLayers.Count > 0)
+                    BuildComponent(componentLayers);
                 #endregion
                 PsdRect[] layouts = new PsdRect[parent.ChildCount];
                 int layout = -1;
@@ -10952,9 +11015,11 @@ namespace EntryBuilder
                     dom.Attributes["name"] = name;
                 #endregion
 
-                int width, height;
-                width = current.Layer.Width;
-                height = current.Layer.Height;
+                double width, height;
+                //width = current.Layer.Width;
+                //height = current.Layer.Height;
+                width = current.Area.Width;
+                height = current.Area.Height;
                 #region 布局 & 坐标
                 if (current.Layout == null || current.Layout.Layout == -1)
                 {
@@ -11190,13 +11255,13 @@ namespace EntryBuilder
                         dom.CSS["height"] = Px2Rem(height);
 
                         // 填充颜色
-                        if (dom.Label != "img" && fill.HasFillColor)
+                        if (dom.Label != "img" && fill.HasFillColor && current.Layer.Opacity != 0)
                             dom.CSS["background-color"] = JSColor(fill.FillColor);
                     }
                     #endregion
 
                     #region 不透明度
-                    if (current.Layer.Opacity != 1)
+                    if (current.Layer.Opacity != 1 && current.Layer.Opacity != 0)
                     {
                         dom.CSS["opacity"] = Math.Round(current.Layer.Opacity, 2).ToString();
                     }
@@ -11217,7 +11282,7 @@ namespace EntryBuilder
                     if (exportTestResource)
                     {
                         string src = id + ".png";
-                        using (Bitmap bitmap = new Bitmap(width, height))
+                        using (Bitmap bitmap = new Bitmap((int)width, (int)height))
                         {
                             using (Graphics g = Graphics.FromImage(bitmap))
                             {
@@ -11231,6 +11296,13 @@ namespace EntryBuilder
                         }
                     }
                 }
+
+                // 组件一定要指定宽高
+                //if (LayerTree.LayoutComponent.IsComponent(name) && !dom.CSS.ContainsKey("width"))
+                //{
+                //    dom.CSS["width"] = Px2Rem(width);
+                //    dom.CSS["height"] = Px2Rem(height);
+                //}
 
                 parent.Add(dom);
                 if (!combine && current.ChildCount > 0)
@@ -11284,7 +11356,6 @@ namespace EntryBuilder
 
                 // 图层树，和PSD中一样（不包含调整层）
                 var tree = LayerTree.FromPSD(psdfile);
-                LayerTree.BuildComponent(tree);
                 //var testLayer = tree.Find(t => t.ID == 306);
                 //string json = testLayer.Layer.Resources.PrintProperties();
                 LayerTree.HTMLStaticLayout(tree);
@@ -11308,6 +11379,7 @@ namespace EntryBuilder
                             tree[i],
                             (i + 1) == tree.ChildCount ? null : tree[i + 1],
                             root);
+                //VisitLayerNode(null, tree, null, root);
 
                 string output = Path.Combine(outputDir, file.Key + ".html");
                 //if (File.Exists(output))
