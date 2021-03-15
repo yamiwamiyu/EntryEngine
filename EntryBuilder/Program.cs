@@ -3271,6 +3271,30 @@ namespace EntryBuilder
 
             return special;
         }
+        private static string DefaultValueJS(string type)
+        {
+            switch (type)
+            {
+                case "boolean": return "false";
+                case "string": return "null";
+
+                case "enum":
+                case "byte":
+                case "sbyte":
+                case "char":
+                case "ushort":
+                case "short":
+                case "float":
+                case "uint":
+                case "int":
+                case "double":
+                case "ulong":
+                case "long":
+                    return "0";
+
+                default: return "null";
+            }
+        }
 
 		private const string IMAGE_FORMAT = "*.png";
 		private static string[] IMAGE_FORMATS =
@@ -4136,6 +4160,7 @@ namespace EntryBuilder
                  */
 
                 #region 根据PSD文档结构得出图层树
+                LayerTree only = null;
                 // 根节点
                 LayerTree root = new LayerTree();
                 root.Layer = psd;
@@ -4143,6 +4168,9 @@ namespace EntryBuilder
                 visit = (node, layer) =>
                 {
                     if (!layer.IsVisible)
+                        return;
+
+                    if (layer.Width == 0 || layer.Height == 0)
                         return;
 
                     if (layer.Name.StartsWith("-"))
@@ -4160,8 +4188,8 @@ namespace EntryBuilder
                     // 仅对第一个名字"!"开头的图层做处理
                     if (layer.Name.StartsWith("!"))
                     {
-                        if (root.Layer == psd)
-                            root = child;
+                        if (only == null)
+                            only = child;
                         else
                             _LOG.Warning(
 @"ID: {0} 图层: {1}
@@ -4179,6 +4207,8 @@ namespace EntryBuilder
                 for (int i = 0; i < psd.Childs.Length; i++)
                     //for (int i = psd.Childs.Length - 1; i >= 0; i--)
                     visit(root, psd.Childs[i]);
+                if (only != null)
+                    root = only;
                 #endregion
 
                 // 得出所有图层的绝对坐标区域
@@ -4189,6 +4219,12 @@ namespace EntryBuilder
                 return root;
             }
 
+            struct Space
+            {
+                public bool IsHorizontal;
+                public double Min;
+                public double Max;
+            }
             static void BuildComponent(List<LayerTree> layers)
             {
                 // 组件图层应该单独放到同一个图层组内
@@ -4197,50 +4233,129 @@ namespace EntryBuilder
                 // 相同组件若和其它图层混在一起，则单独抽出放入一个单独的图层组
                 if (layers.Count != layers[0].Parent.ChildCount)
                 {
-                    var layer = layers[0];
-                    var parent = layer.Parent;
-                    LayerTree newLayout = new LayerTree();
-                    newLayout.Layout = new LayoutRelative();
-                    foreach (var item in layers)
-                        newLayout.Add(item);
-                    newLayout.Layer = new LayoutLayer(layer.Layer.Document, parent.Layer, newLayout.Area);
-                    newLayout.Area = newLayout.BoundingBox;
-                    parent.Add(newLayout);
+                    CreateNewLayer(layers[0].Parent, layers);
                 }
                 else
                 {
-                    //// 得出组件最大的尺寸
-                    //double width = layers[0].Area.Width;
-                    //double height = layers[0].Area.Height;
-                    //for (int i = 1; i < layers.Count; i++)
-                    //{
-                    //    if (layers[i].Area.Width > width)
-                    //        width = layers[i].Area.Width;
-                    //    if (layers[i].Area.Height > height)
-                    //        height = layers[i].Area.Height;
-                    //}
+                    if (layers.Count == 0)
+                        throw new InvalidOperationException("组件数不能是0");
 
-                    ////width += 20;
-                    ////height += 20;
+                    // v-for生成组件时，组件间margin-left不设置，用一个等大的包围盒将各个组件放进去
+                    Space[] spaces = new Space[layers.Count - 1];
+                    // 得出组件最大的尺寸
+                    double width = layers[0].Area.Width;
+                    double height = layers[0].Area.Height;
+                    for (int i = 0; i < spaces.Length; i++)
+                    {
+                        var layer1 = layers[i];
+                        var layer2 = layers[i + 1];
+                        if (layer2.Area.Left < layer1.Area.Right)
+                        {
+                            // 竖版
+                            spaces[i].Min = layer2.Area.Top - layer1.Area.Bottom;
+                            spaces[i].Max = layer2.Area.Bottom - layer1.Area.Bottom;
+                            spaces[i].IsHorizontal = false;
+                        }
+                        else
+                        {
+                            // 横板
+                            spaces[i].Min = layer2.Area.Left - layer1.Area.Right;
+                            spaces[i].Max = layer2.Area.Right - layer1.Area.Right;
+                            spaces[i].IsHorizontal = true;
+                        }
 
-                    //// 让组件的所有图层保持最大的尺寸
-                    //for (int i = 0; i < layers.Count; i++)
+                        if (layer2.Area.Width > width)
+                            width = layer2.Area.Width;
+                        if (layer2.Area.Height > height)
+                            height = layer2.Area.Height;
+                    }
+
+                    // 检查组件间隔是否合理
+                    Space space = spaces[0];
+                    for (int i = 1; i < spaces.Length; i++)
+                    {
+                        if (spaces[i].Min > space.Max || spaces[i].Max < space.Min)
+                        {
+                            _LOG.Warning(
+@"首个组件图层: {0} 组件数：{1}
+组件间隔小于了最大组件的尺寸
+1. 调整组件间的间隔使组件间没有相交的部分", layers[0].Layer.Name, layers.Count);
+                            return;
+                        }
+
+                        if (spaces[i].Min > space.Min)
+                            space.Min = spaces[i].Min;
+                        if (spaces[i].Max < space.Max)
+                            space.Max = spaces[i].Max;
+                    }
+
+                    double spaceValue = (space.Min + space.Max) * 0.5;
+                    double forward;
+                    double back;
+                    // 生成包围盒，让每个图层大小一致
+                    for (int i = 0; i < spaces.Length; i++)
+                    {
+                        forward = spaceValue - spaces[i].Min;
+                        back = spaceValue - forward;
+                        if (space.IsHorizontal)
+                        {
+                            CreateNewLayer(layers[i],
+                                new PsdRect(
+                                    layers[i].Area.Left - back, 
+                                    layers[i].Area.Top,
+                                    layers[i].Area.Right + forward, 
+                                    layers[i].Area.Bottom));
+                        }
+                        else
+                        {
+                            CreateNewLayer(layers[i],
+                                new PsdRect(
+                                    layers[i].Area.Left,
+                                    layers[i].Area.Top - back,
+                                    layers[i].Area.Right,
+                                    layers[i].Area.Bottom + forward));
+                        }
+                    }
+                    //if (layers.Count > 1)
                     //{
-                    //    var item = layers[i];
-                    //    double d = (width - item.Area.Width) * 0.5f;
-                    //    if (d != 0)
+                    //    if (space.IsHorizontal)
                     //    {
-                    //        item.Area.Left -= d;
-                    //        item.Area.Right += d;
+                    //        var last = layers[spaces.Length - 1];
+                    //        var current = layers[spaces.Length];
+                    //        CreateNewLayer(layers[spaces.Length],
+                    //            new PsdRect(
+                    //                last.Area.Left - back,
+                    //                last.Area.Top,
+                    //                last.Area.Right + forward,
+                    //                last.Area.Bottom));
                     //    }
-                    //    d = (height - item.Area.Height) * 0.5f;
-                    //    if (d != 0)
+                    //    else
                     //    {
-                    //        item.Area.Top -= d;
-                    //        item.Area.Bottom += d;
                     //    }
                     //}
                 }
+            }
+            static LayerTree CreateNewLayer(LayerTree parent, List<LayerTree> childs)
+            {
+                LayerTree newLayout = new LayerTree();
+                newLayout.Layout = new LayoutRelative();
+                newLayout.Layout.Layout = -1;
+                foreach (var item in childs)
+                    newLayout.Add(item);
+                newLayout.Layer = new LayoutLayer(parent.Layer.Document, parent.Layer, newLayout.Area);
+                newLayout.Area = newLayout.BoundingBox;
+                parent.Add(newLayout);
+                return newLayout;
+            }
+            static LayerTree CreateNewLayer(LayerTree parent, PsdRect rect)
+            {
+                LayerTree newLayout = new LayerTree();
+                newLayout.Layout = new LayoutRelative();
+                newLayout.Layout.Layout = -1;
+                newLayout.Area = rect;
+                newLayout.Layer = new LayoutLayer(parent.Layer.Document, parent.Layer, rect);
+                parent.Add(newLayout);
+                return newLayout;
             }
             static bool StaticLayout(LayerTree parent, bool isVertical)
             {
@@ -4255,16 +4370,11 @@ namespace EntryBuilder
                     var item = parent[i];
                     if (item.Layer.Name.StartsWith("+"))
                     {
-                        LayerTree newLayout = new LayerTree();
-                        newLayout.Layout = new LayoutRelative();
-                        newLayout.Layout.Layout = -1;
-                        newLayout.Area = new PsdRect(parent.Parent.Area.Left, item.Area.Top, item.Area.Right, item.Area.Bottom);
-                        newLayout.Layer = new LayoutLayer(parent.Layer.Document, parent.Layer, newLayout.Area);
-
-                        // 丢到上一个层级的最后面，确保覆盖，下面的代码也可以排除掉当前图层 
-                        parent.Parent.Add(newLayout);
+                        LayerTree newLayout = CreateNewLayer(
+                            // 丢到上一个层级的最后面，确保覆盖，下面的代码也可以排除掉当前图层 
+                            parent.Parent,
+                            new PsdRect(parent.Parent.Area.Left, item.Area.Top, item.Area.Right, item.Area.Bottom));
                         newLayout.Add(item);
-                        //parent.Parent.Add(item);
                         HTMLStaticLayout(item);
                     }
                 }
@@ -4446,27 +4556,11 @@ namespace EntryBuilder
                         parent.Layout.Flex = true;
                     for (int i = 0; i <= layout; i++)
                     {
-                        LayoutLayer newLayer = new LayoutLayer(parent.Layer.Document, parent.Layer, layouts[i]);
-
-                        LayerTree newLayout = new LayerTree();
-                        newLayout.Layout = new LayoutRelative();
+                        LayerTree newLayout = CreateNewLayer(parent, layouts[i]);
                         newLayout.Layout.Layout = i;
-                        newLayout.Area = layouts[i];
-                        newLayout.Layer = newLayer;
-
                         foreach (var item in parent)
                             if (item.Layout.Layout == i)
                                 newLayout.Add(item);
-
-                        if (newLayout.ChildCount > 1)
-                        {
-                            parent.Add(newLayout);
-                            //if (!StaticLayout(newLayout, true))
-                            //    StaticLayout(newLayout, false);
-                        }
-                        else
-                            foreach (var item in newLayout)
-                                parent.Add(item);
                     }
                 }
                 #endregion
@@ -5905,6 +5999,30 @@ namespace EntryBuilder
 
 			File.WriteAllText(outputTable, result, Encoding.UTF8);
 		}
+        private class ClassFromCSV
+        {
+            protected StringBuilder writer = new StringBuilder();
+            public abstract string StringToValue(string value, string type);
+            protected abstract void WriteClass(string name);
+        }
+        private class C2C_CSharp : ClassFromCSV
+        {
+            private void WriteUsing()
+            {
+                writer.AppendLine("using System;");
+                writer.AppendLine("using System.Collections.Generic;");
+                writer.AppendLine("using System.Linq;");
+                writer.AppendLine("using EntryEngine;");
+                writer.AppendLine("using EntryEngine.Serialize;");
+                writer.AppendLine();
+            }
+            protected override void WriteClass(string name, StringTable table)
+            {
+                writer.AppendLine("[AReflexible]public partial class {0}", name);
+                writer.AppendLine("{");
+                writer.AppendLine("public static bool __Load = true;");
+            }
+        }
 		public static void BuildOutputCSV(string languageTableCSV, string csvDirOrFile)
 		{
 			// 去掉Source
@@ -11305,7 +11423,7 @@ namespace EntryBuilder
                 //}
 
                 parent.Add(dom);
-                if (!combine && current.ChildCount > 0)
+                if (current.ChildCount > 0)
                 {
                     // 有内容悬浮在图片上面时，图片需要采用背景图片的形式
                     if (dom.Label == "img")
