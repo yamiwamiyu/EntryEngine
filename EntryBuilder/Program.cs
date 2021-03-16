@@ -505,7 +505,7 @@ namespace EntryBuilder
         [STAThread]
 		static void Main(string[] args)
         {
-            PSD2JS("首页.psd", @"C:\Yamiwamiyu\Project\YMHY2\gaming-center\dist\", true);
+            //PSD2JS("首页.psd", @"C:\Yamiwamiyu\Project\YMHY2\gaming-center\dist\", true);
             //_LOG._Logger = new LoggerConsole();
 
             //GaussianBlur gauss = new GaussianBlur(15);
@@ -5680,12 +5680,12 @@ namespace EntryBuilder
                                         typeName += "[]";
                                     if (special.IsArray2)
                                         typeName += "[]";
-                                    writer.AppendLine("public string {0};", table.GetColumn(i));
+                                    writer.AppendLine("public string {0} {{ get; set; }}", table.GetColumn(i));
                                     // 特殊字段生成属性，避免序列化读取时的错误，不过 实例.结构属性.字段 = 解析赋值 会出错
                                     // 增加不序列化标记解决问题
                                     if (!string.IsNullOrEmpty(desc))
                                         writer.AppendSummary(desc);
-                                    writer.AppendLine("[NonSerialized]");
+                                    //writer.AppendLine("[NonSerialized]");
                                     writer.AppendLine("public {0} _{1};", typeName, table.GetColumn(i));
 
                                     nonOptimize.AppendLine("{0}.{1} = null;", name, column);
