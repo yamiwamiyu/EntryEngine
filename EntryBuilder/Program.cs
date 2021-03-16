@@ -5999,30 +5999,6 @@ namespace EntryBuilder
 
 			File.WriteAllText(outputTable, result, Encoding.UTF8);
 		}
-        private class ClassFromCSV
-        {
-            protected StringBuilder writer = new StringBuilder();
-            public abstract string StringToValue(string value, string type);
-            protected abstract void WriteClass(string name);
-        }
-        private class C2C_CSharp : ClassFromCSV
-        {
-            private void WriteUsing()
-            {
-                writer.AppendLine("using System;");
-                writer.AppendLine("using System.Collections.Generic;");
-                writer.AppendLine("using System.Linq;");
-                writer.AppendLine("using EntryEngine;");
-                writer.AppendLine("using EntryEngine.Serialize;");
-                writer.AppendLine();
-            }
-            protected override void WriteClass(string name, StringTable table)
-            {
-                writer.AppendLine("[AReflexible]public partial class {0}", name);
-                writer.AppendLine("{");
-                writer.AppendLine("public static bool __Load = true;");
-            }
-        }
 		public static void BuildOutputCSV(string languageTableCSV, string csvDirOrFile)
 		{
 			// 去掉Source
