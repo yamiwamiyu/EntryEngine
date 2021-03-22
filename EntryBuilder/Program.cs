@@ -6081,12 +6081,25 @@ namespace EntryBuilder
             builder.AppendLine("[AReflexible]public static partial class {0}", className);
             builder.AppendBlock(() =>
             {
+                builder.AppendLine("[AReflexible]public partial class _{0}", className);
+                builder.AppendBlock(() =>
+                {
+                    for (int i = 0; i < count; i++)
+                    {
+                        string summary = table[2, i];
+                        if (!string.IsNullOrEmpty(summary))
+                            builder.AppendSummary(summary);
+                        builder.AppendLine("public {0} {1};", table[1, i], table[0, i]);
+                    }
+                });
+                builder.AppendLine("public static _{0} __{0};", className);
+
                 for (int i = 0; i < count; i++)
                 {
                     string summary = table[2, i];
                     if (!string.IsNullOrEmpty(summary))
                         builder.AppendSummary(summary);
-                    builder.AppendLine("public static {0} {1};", table[1, i], table[0, i]);
+                    builder.AppendLine("public static {0} {1} {{ get {{ return __{2}.{1}; }} }}", table[1, i], table[0, i], className);
                 }
                 builder.AppendLine();
 
@@ -6096,13 +6109,14 @@ namespace EntryBuilder
                 builder.AppendBlock(() =>
                 {
                     builder.AppendLine("if (OnSave != null) OnSave();");
-                    builder.AppendLine("_IO.WriteText(file, new XmlWriter().WriteStatic(typeof({0})));", className);
+                    builder.AppendLine("_IO.WriteText(file, XmlWriter.Serialize(__{0}));", className);
                 });
 
                 builder.AppendLine("public static void Load(string content)");
                 builder.AppendBlock(() =>
                 {
-                    builder.AppendLine("new XmlReader(content).ReadStatic(typeof({0}));", className);
+
+                    builder.AppendLine("__{0} = XmlReader.Deserialize<_{0}>(content);", className);
                     builder.AppendLine("if (OnLoad != null) OnLoad();");
                 });
             });
