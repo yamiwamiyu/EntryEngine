@@ -611,9 +611,8 @@ namespace EntryEngine.Network
         }
         private static void Read(IDataReader reader, Type type, int offset, int count, object instance)
         {
-            SerializeSetting setting = SerializeSetting.DefaultSerializeAll;
-            var properties = setting.GetProperties(type).ToDictionary(v => v.Name);
-            var fields = setting.GetFields(type).ToDictionary(v => v.Name);
+            var properties = type.GetProperties().ToDictionary(v => v.Name);
+            var fields = type.GetFields().ToDictionary(v => v.Name);
             PropertyInfo property;
             FieldInfo field;
             for (int i = offset, e = offset + count; i < e; i++)
@@ -645,9 +644,8 @@ namespace EntryEngine.Network
         public static void MultiReadPrepare(IDataReader reader, Type type, int offset, int count,
             out List<PropertyInfo> properties, out List<FieldInfo> fields, ref int[] indices)
         {
-            SerializeSetting setting = SerializeSetting.DefaultSerializeAll;
-            properties = setting.GetProperties(type).ToList();
-            fields = setting.GetFields(type).ToList();
+            properties = type.GetProperties().ToList();
+            fields = type.GetFields().ToList();
             if (indices == null || indices.Length != reader.FieldCount)
                 indices = new int[reader.FieldCount];
             for (int i = offset, e = offset + count; i < e; i++)
