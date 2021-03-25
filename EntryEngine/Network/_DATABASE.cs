@@ -246,7 +246,7 @@ namespace EntryEngine.Network
                             if (value == null || value is DBNull)
                                 list.Add(default(T));
                             else
-                                list.Add((T)reader[0]);
+                                list.Add((T)ChangeType(reader[0], typeof(T)));
                         }
                     }, sql, parameters);
                 return list;
