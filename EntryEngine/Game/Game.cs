@@ -22,7 +22,7 @@ namespace EntryEngine.Game
         int ItemID { get; }
         int Count { get; set; }
     }
-    public abstract class BAG<T> where T : IBagItem
+    public class BAG<T> where T : IBagItem
     {
         const int CAPCITY = 128;
 
@@ -42,6 +42,10 @@ namespace EntryEngine.Game
         private Dictionary<int, T> bag = new Dictionary<int, T>();
         private Dictionary<int, ArrangeRecord> records = new Dictionary<int, ArrangeRecord>();
 
+        public Action<T, List<object>, StringBuilder> BuildInsert;
+        public Action<T, List<object>, StringBuilder> BuildUpdate;
+        public Action<int, List<object>, StringBuilder> BuildDelete;
+
         public Dictionary<int, T> Bag
         {
             get { return bag; }
@@ -54,6 +58,16 @@ namespace EntryEngine.Game
         }
         public ICollection<T> Items { get { return bag.Values; } }
         public T this[int id] { get { return bag[id]; } }
+
+        public BAG() { }
+        public BAG(Action<T, List<object>, StringBuilder> insert,
+            Action<T, List<object>, StringBuilder> update,
+            Action<int, List<object>, StringBuilder> delete)
+        {
+            this.BuildInsert = insert;
+            this.BuildUpdate = update;
+            this.BuildDelete = delete;
+        }
 
         public bool CheckCount(int itemID, int count, out T item)
         {
@@ -187,9 +201,18 @@ namespace EntryEngine.Game
             //record.ItemID = item.ItemID;
             record.End = mode;
         }
-        protected abstract void BuildInsert(T item, List<object> args, StringBuilder builder);
-        protected abstract void BuildUpdate(T item, List<object> args, StringBuilder builder);
-        protected abstract void BuildDelete(int itemID, List<object> args, StringBuilder builder);
+        protected virtual void OnBuildInsert(T item, List<object> args, StringBuilder builder)
+        {
+            if (BuildInsert != null) BuildInsert(item, args, builder);
+        }
+        protected virtual void OnBuildUpdate(T item, List<object> args, StringBuilder builder)
+        {
+            if (BuildInsert != null) BuildUpdate(item, args, builder);
+        }
+        protected virtual void OnBuildDelete(int itemID, List<object> args, StringBuilder builder)
+        {
+            if (BuildInsert != null) BuildDelete(itemID, args, builder);
+        }
         public BAG_PACKAGE Save()
         {
             List<BAG_PACKAGE> list = new List<BAG_PACKAGE>();
