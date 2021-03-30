@@ -341,6 +341,7 @@ namespace EntryEngine.Game
         {
             return ID;
         }
+        /// <summary>整合道具到字典中；新增道具或者添加数量</summary>
         public static void Integration(Dictionary<int, int> dic, ITEM item)
         {
             int count;
@@ -352,6 +353,7 @@ namespace EntryEngine.Game
             else
                 dic.Add(item.ID, item.Count);
         }
+        /// <summary>整合道具到字典中；新增道具或者添加数量</summary>
         public static void Integration(Dictionary<int, int> dic, ITEM[] items)
         {
             if (items == null) return;
@@ -385,7 +387,7 @@ namespace EntryEngine.Game
         /// <param name="random">随机对象</param>
         /// <param name="weightVary">权重变化量，可通过_MATH.WeightVary计算，权重变化的ID在掉落列表中不存在时，权重变化不起作用</param>
         /// <returns>掉落的道具，ID为0则代表空道具</returns>
-        public static ITEM Drop(IEnumerable<IDrop> list, _RANDOM.Random random, DROP[] weightVary)
+        public static IDrop Drop(IEnumerable<IDrop> list, _RANDOM.Random random, DROP[] weightVary)
         {
             double weight = 0;
             foreach (var item in list)
@@ -406,7 +408,7 @@ namespace EntryEngine.Game
             }
 
             if (weight == 0)
-                return new ITEM();
+                return null;
 
             double dropPoint = random.Next(weight);
             foreach (var item in list)
@@ -426,7 +428,7 @@ namespace EntryEngine.Game
                 }
 
                 if (dropPoint < item.Weight + varyWeight)
-                    return new ITEM(item.ItemID, item.Count);
+                    return item;
                 else
                     dropPoint -= item.Weight + varyWeight;
             }

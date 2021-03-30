@@ -521,7 +521,7 @@ namespace EntryBuilder
             //BuildTableTranslate("", "");
             //BuildDatabaseMysql(@"C:\Yamiwamiyu\Project\YMHY\Code\Protocol\Protocol\bin\Release\Protocol.dll", "Server._DB", @"C:\Yamiwamiyu\Project\YMHY\Code\Server\Server\_DB.design.cs", "", "", false);
             //BuildProtocolAgentHttp("", @"D:\Project2\xss\xss\Code\ServerImpl\", @"D:\Project2\xss\xss\Code\Protocol\Protocol\bin\Release\Protocol.dll", false);
-            //BuildCSVFromExcel(@"C:\Yamiwamiyu\Project\IslandChronicle\Design\Tables_Build", @"C:\Yamiwamiyu\Project\IslandChronicle\Design\Tables_Build", null, "12.0", "a.cs", false);
+            //BuildCSVFromExcel(@"C:\Yamiwamiyu\Project\hdcq2\Design\Tables_Build", @"C:\Yamiwamiyu\Project\IslandChronicle\Design\Tables_Build", null, "12.0", "a.cs", false);
             //Console.ReadKey();
             //return;
 
@@ -5440,6 +5440,7 @@ namespace EntryBuilder
                         tables[0].Name = Path.GetFileNameWithoutExtension(file);
                     foreach (var table in tables)
                     {
+                        _LOG.Debug("数据表：{0}", table.Name);
                         // 去除没有类型的注释列
                         for (int i = table.ColumnCount - 1; i >= 0; i--)
                             if (string.IsNullOrEmpty(table[i, 0]))
@@ -5670,6 +5671,7 @@ namespace EntryBuilder
                                     s = new Dictionary<string, SpecialType>();
                                     specials.Add(name, s);
                                 }
+                                // 多个Dictionary<T, Dictionary<U, ... Dictionary<Y, Z[]>...>
                                 s.Add(table.GetColumn(i), special);
 
                                 if (!special.IsEnum && !special.IsDictionary)
