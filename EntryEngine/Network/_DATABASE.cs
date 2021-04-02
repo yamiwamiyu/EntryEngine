@@ -145,6 +145,10 @@ namespace EntryEngine.Network
                 }
                 return -1;
             }
+            public int ExecuteNonQuery(Action<StringBuilder, List<object>> action)
+            {
+                return ExecuteNonQuery(action, false);
+            }
             public int ExecuteNonQuery(string sql, params object[] parameters)
             {
                 var command = CreateCommand(sql, parameters);
