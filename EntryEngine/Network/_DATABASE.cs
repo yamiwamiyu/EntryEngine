@@ -128,6 +128,23 @@ namespace EntryEngine.Network
                 }
                 _LOG.Error(ex, "sql: {0}\r\nparam: {1}", sql, JsonWriter.Serialize(parameters));
             }
+            public int ExecuteNonQuery(Action<StringBuilder, List<object>> action, bool transaction)
+            {
+                StringBuilder sqlBuilder = new StringBuilder();
+                List<object> sqlParams = new List<object>();
+                action(sqlBuilder, sqlParams);
+                if (sqlBuilder.Length > 0)
+                {
+                    string command;
+                    if (transaction)
+                        command = string.Concat("begin;", sqlBuilder.ToString(), "commit;");
+                    else
+                        command = sqlBuilder.ToString();
+
+                    return ExecuteNonQuery(command, sqlParams.ToArray());
+                }
+                return -1;
+            }
             public int ExecuteNonQuery(string sql, params object[] parameters)
             {
                 var command = CreateCommand(sql, parameters);
