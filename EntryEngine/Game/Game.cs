@@ -90,6 +90,14 @@ namespace EntryEngine.Game
             bag.TryGetValue(itemID, out item);
             return item;
         }
+        public int GetItemCount(int itemID)
+        {
+            T item;
+            if (bag.TryGetValue(itemID, out item))
+                return item.Count;
+            else
+                return 0;
+        }
         public bool Add(int itemID, int count)
         {
             T item;
