@@ -232,14 +232,14 @@ namespace EntryEngine.Game
         public BAG_PACKAGE Save()
         {
             List<BAG_PACKAGE> list = new List<BAG_PACKAGE>();
-            Save(list, -1);
+            Save(list, -1, new StringBuilder(), new List<object>(CAPCITY));
             return list[0];
         }
         /// <summary>保存数据变动</summary>
         /// <param name="output">SQL数据包，包括语句和参数</param>
         /// <param name="batchLength">分批打包的sql语句长度，超过长度则分批，-1则不分批</param>
         /// <returns>是否有保存数据</returns>
-        public bool Save(List<BAG_PACKAGE> output, int batchLength)
+        public bool Save(List<BAG_PACKAGE> output, int batchLength, StringBuilder builder, List<object> args)
         {
             //sql = null;
             //values = null;
@@ -251,8 +251,6 @@ namespace EntryEngine.Game
             // 修改 -> ... -> !删除：修改
             // 删除 -> ... -> 删除：删除
             // 删除 -> ... -> !删除：修改
-            List<object> args = new List<object>(CAPCITY);
-            StringBuilder builder = new StringBuilder();
             foreach (var record in records)
             {
                 var arrange = record.Value;
@@ -303,7 +301,7 @@ namespace EntryEngine.Game
         }
         public bool Save(List<BAG_PACKAGE> output)
         {
-            return Save(output, BAG_PACKAGE.BATCH);
+            return Save(output, BAG_PACKAGE.BATCH, new StringBuilder(), new List<object>());
         }
     }
     public struct BAG_PACKAGE
