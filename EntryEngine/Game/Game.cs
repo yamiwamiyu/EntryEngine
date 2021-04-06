@@ -69,6 +69,14 @@ namespace EntryEngine.Game
             this.BuildDelete = delete;
         }
 
+        public bool CheckCount(int itemID, int count)
+        {
+            T item;
+            if (bag.TryGetValue(itemID, out item))
+                return item.Count >= Math.Abs(count);
+            else
+                return false;
+        }
         public bool CheckCount(int itemID, int count, out T item)
         {
             if (bag.TryGetValue(itemID, out item))
