@@ -665,7 +665,10 @@ namespace EntryEngine.Serialize
 				|| value is long
 				|| value is ulong
 				|| value is double
-                || value is decimal)
+#if !HTML5
+                || value is decimal
+#endif
+                )
 			{
 				WriteNumber(value);
 			}

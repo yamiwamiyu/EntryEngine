@@ -6924,6 +6924,10 @@ namespace EntryBuilder.CodeAnalysis.Refactoring
             if (member.IsAbstract)
                 return;
 
+            if (member.IsIndexer)
+            {
+            }
+
             string name = member.Name.Name;
             // virtual属性且有被重写时，视为字段可能会出现错误
             //if (node.IsAuto)
@@ -6977,6 +6981,13 @@ namespace EntryBuilder.CodeAnalysis.Refactoring
             //if (node.IsIndexer)
             //{
             //    /* 普通的get|set方法的实现 */
+            //    builder.Append("{0}.prototype.{1} = function(");
+            //    Visit(node.Arguments);
+            //    builder.Append(")");
+            //    builder.AppendBlockWithEnd(() =>
+            //    {
+            //        builder.AppendLine("if (!__");
+            //    });
             //    if (node.Getter != null)
             //    {
             //        builder.Append("{0}.prototype.{1}{2} = function(", TypeName, GET, name);
@@ -7014,6 +7025,7 @@ namespace EntryBuilder.CodeAnalysis.Refactoring
         }
         public override void Visit(Accessor node)
         {
+            Visit(node.Body);
         }
         protected override void Write(DefineConstructor node)
         {
@@ -13665,7 +13677,7 @@ namespace EntryBuilder.CodeAnalysis.Refactoring
                         elementType = enumerableType.TypeArguments[0];
                     }
                     // node.In除了引用对象或类型外，还应该引用其GetEnumerator函数
-                    var getEnumerator = enumerableType.MemberDefinitions.FirstOrDefault(m => m.Name.Name == _BuildMember.GET_ENUMERATOR.Name);
+                    var getEnumerator = enumerableType.Members.FirstOrDefault(m => m.Name.Name == _BuildMember.GET_ENUMERATOR.Name);
                     if (getEnumerator == null)
                     {
                         throw new InvalidCastException();

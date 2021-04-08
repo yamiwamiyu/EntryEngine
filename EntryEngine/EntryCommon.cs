@@ -2267,6 +2267,7 @@ namespace EntryEngine
                     yield return item;
         }
     }
+#if SERVER
     /// <summary>
     /// 平衡二叉树
     /// 扩展应用: B+Tree
@@ -2952,6 +2953,7 @@ namespace EntryEngine
             return base.DeleteNode(visitor);
         }
     }
+#endif
 
 
     // 协程

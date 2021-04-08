@@ -17,6 +17,19 @@ namespace EntryEngine.Serialize
             {
                 bool first = true;
                 builder.Append('{');
+#if HTML5
+                var e = ((IDictionary)value);
+                var keys = e.Keys;
+                foreach (var item in keys)
+                {
+                    if (!first)
+                        builder.Append(',');
+                    WriteObject(item);
+                    builder.Append(':');
+                    this.WriteObject(e[item]);
+                    first = false;
+                }
+#else
                 var e = ((IDictionary)value).GetEnumerator();
                 while (e.MoveNext())
                 {
@@ -28,6 +41,7 @@ namespace EntryEngine.Serialize
                     this.WriteObject(e.Value);
                     first = false;
                 }
+#endif
                 builder.Append('}');
             }
             else
