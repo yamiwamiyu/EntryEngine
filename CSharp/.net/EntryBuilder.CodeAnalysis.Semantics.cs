@@ -204,6 +204,8 @@ namespace EntryBuilder.CodeAnalysis.Semantics
         internal static TypeDefinitionInfo ENUM;
         /// <summary>struct默认继承</summary>
         internal static TypeDefinitionInfo VALUE_TYPE;
+        /// <summary>数学类</summary>
+        internal static TypeDefinitionInfo MATH;
         internal static TypeDefinitionInfo VOID;
         internal static TypeDefinitionInfo BOOL;
         internal static TypeDefinitionInfo BYTE;

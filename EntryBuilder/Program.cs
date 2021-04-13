@@ -517,7 +517,7 @@ namespace EntryBuilder
             //}
 
             //PublishToPC(@"D:\Project\xss\xss\Launch\Client", @"D:\Project\xss\xss\Launch\Client");
-            //PublishToWebGL(@"C:\Yamiwamiyu\Project\EntryEngineGit\trunk\", @"C:\Yamiwamiyu\Project\ChamberH5New\Code\Client", "", @"C:\Yamiwamiyu\Project\ChamberH5New\Publish\WebGL\index.html", false, 1);
+            PublishToWebGL(@"C:\Yamiwamiyu\Project\EntryEngineGit\trunk\", @"C:\Yamiwamiyu\Project\ChamberH5New\Code\Client", "", @"C:\Yamiwamiyu\Project\ChamberH5New\Publish\WebGL\index.html", false, 1);
             //BuildTableTranslate("", "");
             //BuildDatabaseMysql(@"C:\Yamiwamiyu\Project\YMHY\Code\Protocol\Protocol\bin\Release\Protocol.dll", "Server._DB", @"C:\Yamiwamiyu\Project\YMHY\Code\Server\Server\_DB.design.cs", "", "", false);
             //BuildProtocolAgentHttp("", @"D:\Project2\xss\xss\Code\ServerImpl\", @"D:\Project2\xss\xss\Code\Protocol\Protocol\bin\Release\Protocol.dll", false);

@@ -131,18 +131,19 @@ namespace __System
             }
         }
     }
-    public static partial class Math
-    {
-        public static double Sqrt(double d) { return window.Math.sqrt(d); }
-        public static double Acos(double d) { return window.Math.acos(d); }
-        public static double Asin(double d) { return window.Math.asin(d); }
-        public static double Atan(double d) { return window.Math.atan(d); }
-        public static double Atan2(double y, double x) { return window.Math.atan2(y, x); }
-        public static double Tan(double d) { return window.Math.tan(d); }
-        public static double Sin(double d) { return window.Math.sin(d); }
-        public static double Cos(double d) { return window.Math.cos(d); }
-        public static double Pow(double x, double y) { return window.Math.pow(x, y); }
-    }
+    // 直接将方法名重命名了，不需要再声明方法
+    //public partial class Math : window.Math
+    //{
+    //    public static double Sqrt(double d) { return sqrt(d); }
+    //    public static double Acos(double d) { return acos(d); }
+    //    public static double Asin(double d) { return asin(d); }
+    //    public static double Atan(double d) { return atan(d); }
+    //    public static double Atan2(double y, double x) { return atan2(y, x); }
+    //    public static double Tan(double d) { return tan(d); }
+    //    public static double Sin(double d) { return sin(d); }
+    //    public static double Cos(double d) { return cos(d); }
+    //    public static double Pow(double x, double y) { return pow(x, y); }
+    //}
     public static partial class Convert
     {
         public static object ChangeType(object value, Type type)

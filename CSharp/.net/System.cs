@@ -1836,17 +1836,26 @@ namespace __System
         RemoveEmptyEntries = 1,
     }
 
-    [ASystemAPI]public static partial class Math
+    [ASystemAPI]public partial class Math
     {
-        public static double Sqrt(double value) { throw new NotImplementedException(); }
-        public static double Acos(double value) { throw new NotImplementedException(); }
-        public static double Asin(double value) { throw new NotImplementedException(); }
-        public static double Atan(double value) { throw new NotImplementedException(); }
-        public static double Atan2(double y, double x) { throw new NotImplementedException(); }
-        public static double Tan(double value) { throw new NotImplementedException(); }
-        public static double Sin(double value) { throw new NotImplementedException(); }
-        public static double Cos(double value) { throw new NotImplementedException(); }
-        public static double Pow(double x, double y) { throw new NotImplementedException(); }
+        //public static double Sqrt(double value) { throw new NotImplementedException(); }
+        //public static double Acos(double value) { throw new NotImplementedException(); }
+        //public static double Asin(double value) { throw new NotImplementedException(); }
+        //public static double Atan(double value) { throw new NotImplementedException(); }
+        //public static double Atan2(double y, double x) { throw new NotImplementedException(); }
+        //public static double Tan(double value) { throw new NotImplementedException(); }
+        //public static double Sin(double value) { throw new NotImplementedException(); }
+        //public static double Cos(double value) { throw new NotImplementedException(); }
+        //public static double Pow(double x, double y) { throw new NotImplementedException(); }
+        public extern static double Sqrt(double value);
+        public extern static double Acos(double value);
+        public extern static double Asin(double value);
+        public extern static double Atan(double value);
+        public extern static double Atan2(double y, double x);
+        public extern static double Tan(double value);
+        public extern static double Sin(double value);
+        public extern static double Cos(double value);
+        public extern static double Pow(double x, double y);
     }
     public static class Environment
     {

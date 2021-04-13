@@ -102,8 +102,8 @@ namespace EntryEngine.HTML5
                     //window.clearTimeout(timer);
                     double wait = elapsed.TotalMilliseconds;
                     double frameRate = entry.IPlatform.FrameRate.TotalMilliseconds;
-                    while (wait > frameRate)
-                        wait -= frameRate;
+                    if (wait > frameRate)
+                        wait %= frameRate;
                     timer = window.setTimeout(Update, wait);
                     overheat = 0;
                     return;

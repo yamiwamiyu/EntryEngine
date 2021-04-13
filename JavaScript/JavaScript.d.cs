@@ -5,53 +5,54 @@ using System.Text;
 
 public class Object
 {
-    public string toString() { return null; }
+    public extern Object this[Object obj] { get; set; }
+    public extern string toString();
 }
 public class Date
 {
-    public Date() { }
-    public Date(string str) { }
-    public Date(int year, int month, int day) { }
-    public Date(int year, int month, int day, int hour, int minute, int second) { }
-    public Date(int time) { }
-    public int getDate() { return 0; }
-    public void setDate(int time) { }
-    public int getDay() { return 0; }
-    public void setDay(int time) { }
-    public int getMonth() { return 0; }
-    public void setMonth(int time) { }
-    public int getFullYear() { return 0; }
-    public void setFullYear(int time) { }
-    public int getHours() { return 0; }
-    public void setHours(int time) { }
-    public int getMinutes() { return 0; }
-    public void setMinutes(int time) { }
-    public int getSeconds() { return 0; }
-    public void setSeconds(int time) { }
-    public int getMilliseconds() { return 0; }
-    public void setMilliseconds(int time) { }
-    /// <summary>返回 1970 年 1 月 1 日至今的毫秒数</summary>
-    public int getTime() { return 0; }
-    public void setTime(int time) { }
-    public static long now() { return 0; }
-    public static long UTC(int year, int month, int date, int hours, int minutes, int seconds, int ms) { return 0; }
+    public extern Date();
+    public extern Date(string str);
+    public extern Date(int year, int month, int day);
+    public extern Date(int year, int month, int day, int hour, int minute, int second);
+    public extern Date(int time);
+    public extern int getDate();
+    public extern void setDate(int time);
+    public extern int getDay();
+    public extern void setDay(int time);
+    public extern int getMonth();
+    public extern void setMonth(int time);
+    public extern int getFullYear();
+    public extern void setFullYear(int time);
+    public extern int getHours();
+    public extern void setHours(int time);
+    public extern int getMinutes();
+    public extern void setMinutes(int time);
+    public extern int getSeconds();
+    public extern void setSeconds(int time);
+    public extern int getMilliseconds();
+    public extern void setMilliseconds(int time);
+    /// <suextern mmary>返回 1970 年 1 月 1 日至今的毫秒数</summary>
+    public extern int getTime();
+    public extern void setTime(int time);
+    public extern static long now();
+    public extern static long UTC(int year, int month, int date, int hours, int minutes, int seconds, int ms);
 }
 public class String
 {
     public int length;
-    public string charAt(int index) { return null; }
-    public ushort charCodeAt(int index) { return 0; }
-    public int indexOf(string str) { return 0; }
-    public int indexOf(string str, int index) { return 0; }
-    public string slice(int start) { return null; }
-    /// <summary>SubString，后面的参数是结束的索引</summary>
-    public string slice(int start, int end) { return null; }
-    public string[] split(string str) { return null; }
-    public string replace(string regexp, string str2) { return null; }
+    public extern string charAt(int index);
+    public extern ushort charCodeAt(int index);
+    public extern int indexOf(string str);
+    public extern int indexOf(string str, int index);
+    public extern string slice(int start);
+    /// <suextern mmary>SubString，后面的参数是结束的索引</summary>
+    public extern string slice(int start, int end);
+    public extern string[] split(string str);
+    public extern string replace(string regexp, string str2);
     public extern string replace(RegExp searchValue, string replaceValue);
-    public string substring(int start) { return null; }
-    public string substring(int start, int end) { return null; }
-    public static string fromCharCode(params char[] unicodes) { return null; }
+    public extern string substring(int start);
+    public extern string substring(int start, int end);
+    public extern static string fromCharCode(params char[] unicodes);
 }
 public class RegExp
 {
@@ -66,7 +67,7 @@ public class Number
     public static double NEGATIVE_INFINITY;
     /// <summary>正无穷大，溢出时返回该值</summary>
     public static double POSITIVE_INFINITY;
-    public Number(string str) { }
+    public extern Number(object obj);
 }
 //public class Array
 //{
@@ -91,7 +92,7 @@ public class Error
 }
 public static class console
 {
-    public static void log(object obj) { }
+    public extern static void log(object obj);
 }
 public static class window
 {
@@ -150,26 +151,26 @@ public static class window
         public Action<WheelEvent> onmousewheel;
         public HTMLElement documentElement;
         public HTMLElement body;
-        public HTMLElement getElementById(string elementId) { return null; }
+        public extern HTMLElement getElementById(string elementId);
         public extern HTMLElement createElement(string label);
-        public void write(string content) { }
-        public void writeln(string content) { }
+        public extern void write(string content);
+        public extern void writeln(string content);
     }
-    public static class Math
+    public class Math
     {
-        public static double sqrt(double d) { return 0; }
-        public static double acos(double value) { return 0; }
-        public static double asin(double value) { return 0; }
+        public extern static double sqrt(double d);
+        public extern static double acos(double value);
+        public extern static double asin(double value);
         /// <summary>以介于 -PI/2 与 PI/2 弧度之间的数值来返回 x 的反正切值</summary>
-        public static double atan(double value) { return 0; }
+        public extern static double atan(double value);
         /// <summary>返回从 x 轴到点 (x,y) 的角度（介于 -PI/2 与 PI/2 弧度之间）</summary>
-        public static double atan2(double y, double x) { return 0; }
-        public static double tan(double value) { return 0; }
-        public static double sin(double value) { return 0; }
-        public static double cos(double value) { return 0; }
-        public static double pow(double x, double y) { return 0; }
+        public extern static double atan2(double y, double x);
+        public extern static double tan(double value);
+        public extern static double sin(double value);
+        public extern static double cos(double value);
+        public extern static double pow(double x, double y);
         /// <summary>返回 0 ~ 1 之间的随机数</summary>
-        public static double random() { return 0; }
+        public extern static double random();
     }
 
     public static Action onresize;
@@ -177,30 +178,30 @@ public static class window
     public static Storage localStorage;
     public static URL URL;
     public static Navigator navigator;
-    public static int parseInt(object obj) { return 0; }
-    public static float parseFloat(object obj) { return 0; }
-    public static bool isNaN(object obj) { return false; }
-    public static bool isFinite(object obj) { return false; }
-    public static int setTimeout(Action action, double ms) { return 0; }
-    public static int setInterval(Action action, double ms) { return 0; }
-    public static void clearTimeout(int timer) { }
-    public static void clearInterval(int timer) { }
+    public extern static int parseInt(object obj);
+    public extern static float parseFloat(object obj);
+    public extern static bool isNaN(object obj);
+    public extern static bool isFinite(object obj);
+    public extern static int setTimeout(Action action, double ms);
+    public extern static int setInterval(Action action, double ms);
+    public extern static void clearTimeout(int timer);
+    public extern static void clearInterval(int timer);
     /// <summary>转换成base64编码</summary>
-    public static string btoa(string str) { return null; }
+    public extern static string btoa(string str);
     /// <summary>base64编码转换为原先的字符串</summary>
-    public static string atob(string str) { return null; }
-    public static extern void open(string url);
+    public extern static string atob(string str);
+    public extern static void open(string url);
 }
-public abstract class Storage
+public class Storage
 {
     public int length;
-    public abstract void clear();
-    public abstract string getItem(string key);
-    public abstract string key(int index);
-    public abstract void removeItem(string key);
-    public abstract void setItem(string key, string data);
+    public extern void clear();
+    public extern string getItem(string key);
+    public extern string key(int index);
+    public extern void removeItem(string key);
+    public extern void setItem(string key, string data);
 }
-public abstract class URL
+public class URL
 {
     public string hash;
     public string host;
@@ -213,8 +214,8 @@ public abstract class URL
     public string protocol;
     public string search;
     public string username;
-    public string createObjectURL(object obj) { return null; }
-    public void revokeObjectURL(string url) { }
+    public extern string createObjectURL(object obj);
+    public extern void revokeObjectURL(string url);
 }
 public class Image
 {
@@ -224,8 +225,8 @@ public class Image
     public int width;
     public int height;
     public bool complete;
-    public Image() { }
-    public Image(int width, int height) { }
+    public extern Image();
+    public extern Image(int width, int height);
 }
 public interface EventTarget
 {
@@ -282,16 +283,16 @@ public class XMLHttpRequest : XMLHttpRequestEventTarget, EventTarget
     //readonly upload: XMLHttpRequestUpload;
     public bool withCredentials;
     public string responseURL;
-    public void abort() { }
-    public string getAllResponseHeaders() { return null; }
-    public string getResponseHeader(string header) { return null; }
-    public bool msCachingEnabled() { return false; }
-    public void open(string method, string url, bool async) { }
-    public void overrideMimeType(string mime) { }
-    public void send() { }
-    public void send(string data) { }
-    public void send(object data) { }
-    public void setRequestHeader(string header, string value) { }
+    public extern void abort();
+    public extern string getAllResponseHeaders();
+    public extern string getResponseHeader(string header);
+    public extern bool msCachingEnabled();
+    public extern void open(string method, string url, bool async);
+    public extern void overrideMimeType(string mime);
+    public extern void send();
+    public extern void send(string data);
+    public extern void send(object data);
+    public extern void setRequestHeader(string header, string value);
     public int DONE;
     public int HEADERS_RECEIVED;
     public int LOADING;
@@ -322,13 +323,13 @@ public struct WebGLShaderPrecisionFormat
     public float rangeMax;
     public float rangeMin;
 }
-public abstract class Blob
+public class Blob
 {
     public int size;
     public string type;
-    public abstract void msClose();
-    public abstract object msDetachStream();
-    public abstract Blob slice(int start, int end, string contentType);
+    public extern void msClose();
+    public extern object msDetachStream();
+    public extern Blob slice(int start, int end, string contentType);
 }
 public class WebGLActiveInfo
 {
@@ -401,16 +402,16 @@ public abstract class HTMLCanvasElement : HTMLElement
      * WebGLRenderingContext: "webgl" | "experimental-webgl"
      * CanvasRenderingContext2D: "2d"
       */
-    public abstract object getContext(string contextId);
+    public extern object getContext(string contextId);
     /**
       * Returns a blob object encoded as a Portable Network Graphics (PNG) format from a canvas image or drawing.
       */
-    public abstract Blob msToBlob();
+    public extern Blob msToBlob();
     /**
       * Returns the content of the current canvas as an image that you can use as a source for another canvas or an HTML element.
       * @param type The standard MIME type for the image format to return. If you do not specify this parameter, the default value is a PNG format image.
       */
-    public abstract string toDataURL(string type);
+    public extern string toDataURL(string type);
 }
 /**
   * Represents a raw buffer of binary data, which is used to store data for the
@@ -421,7 +422,7 @@ public abstract class HTMLCanvasElement : HTMLElement
 public abstract class ArrayBuffer
 {
     public int byteLength;
-    public ArrayBuffer slice(int begin, int end) { return null; }
+    public extern ArrayBuffer slice(int begin, int end);
 }
 public class ArrayBufferView
 {
@@ -434,167 +435,167 @@ public abstract class DataView
     public ArrayBuffer buffer;
     public int byteLength;
     public int byteOffset;
-    public abstract int getFloat32(int byteOffset, bool littleEndian);
-    public abstract int getFloat64(int byteOffset, bool littleEndian);
-    public abstract int getInt8(int byteOffset);
-    public abstract int getInt16(int byteOffset, bool littleEndian);
-    public abstract int getInt32(int byteOffset, bool littleEndian);
-    public abstract int getUint8(int byteOffset);
-    public abstract int getUint16(int byteOffset, bool littleEndian);
-    public abstract int getUint32(int byteOffset, bool littleEndian);
-    public abstract void setFloat32(int byteOffset, float value, bool littleEndian);
-    public abstract void setFloat64(int byteOffset, double value, bool littleEndian);
-    public abstract void setInt8(int byteOffset, sbyte value);
-    public abstract void setInt16(int byteOffset, short value, bool littleEndian);
-    public abstract void setInt32(int byteOffset, int value, bool littleEndian);
-    public abstract void setUint8(int byteOffset, byte value);
-    public abstract void setUint16(int byteOffset, ushort value, bool littleEndian);
-    public abstract void setUint32(int byteOffset, uint value, bool littleEndian);
+    public extern int getFloat32(int byteOffset, bool littleEndian);
+    public extern int getFloat64(int byteOffset, bool littleEndian);
+    public extern int getInt8(int byteOffset);
+    public extern int getInt16(int byteOffset, bool littleEndian);
+    public extern int getInt32(int byteOffset, bool littleEndian);
+    public extern int getUint8(int byteOffset);
+    public extern int getUint16(int byteOffset, bool littleEndian);
+    public extern int getUint32(int byteOffset, bool littleEndian);
+    public extern void setFloat32(int byteOffset, float value, bool littleEndian);
+    public extern void setFloat64(int byteOffset, double value, bool littleEndian);
+    public extern void setInt8(int byteOffset, sbyte value);
+    public extern void setInt16(int byteOffset, short value, bool littleEndian);
+    public extern void setInt32(int byteOffset, int value, bool littleEndian);
+    public extern void setUint8(int byteOffset, byte value);
+    public extern void setUint16(int byteOffset, ushort value, bool littleEndian);
+    public extern void setUint32(int byteOffset, uint value, bool littleEndian);
 }
 public abstract class WebGLRenderingContext
 {
     public HTMLCanvasElement canvas;
     public int drawingBufferHeight;
     public int drawingBufferWidth;
-    public abstract void activeTexture(int texture);
-    public abstract void attachShader(WebGLProgram program, WebGLShader shader);
-    public abstract void bindAttribLocation(WebGLProgram program, int index, string name);
-    public abstract void bindBuffer(int target, WebGLBuffer buffer);
-    public abstract void bindFramebuffer(int target, WebGLFramebuffer framebuffer);
-    public abstract void bindRenderbuffer(int target, WebGLRenderbuffer renderbuffer);
-    public abstract void bindTexture(int target, WebGLTexture texture);
-    public abstract void blendColor(float red, float green, float blue, float alpha);
-    public abstract void blendFunc(int sfactor, int dfactor);
-    public abstract void blendEquation(int mode);
-    public abstract void blendEquationSeparate(int modeRGB, int modeAlpha);
-    public abstract void bufferData(int target, ArrayBuffer size, int usage);
-    public abstract int checkFramebufferStatus(int target);
-    public abstract void clear(int mask);
-    public abstract void clearColor(float red, float green, float blue, float alpha);
-    public abstract void clearDepth(float depth);
-    public abstract void clearStencil(int s);
-    public abstract void colorMask(bool red, bool green, bool blue, bool alpha);
-    public abstract void compileShader(WebGLShader shader);
-    public abstract void compressedTexImage2D(int target, int level, int internalformat, int width, int height, int border, ArrayBufferView data);
-    public abstract void compressedTexSubImage2D(int target, int level, int xoffset, int yoffset, int width, int height, int format, ArrayBufferView data);
-    public abstract void copyTexImage2D(int target, int level, int internalformat, int x, int y, int width, int height, int border);
-    public abstract void copyTexSubImage2D(int target, int level, int xoffset, int yoffset, int x, int y, int width, int height);
-    public abstract WebGLBuffer createBuffer();
-    public abstract WebGLFramebuffer createFramebuffer();
-    public abstract WebGLProgram createProgram();
-    public abstract WebGLRenderbuffer createRenderbuffer();
-    public abstract WebGLShader createShader(int type);
-    public abstract WebGLTexture createTexture();
-    public abstract void cullFace(int mode);
-    public abstract void deleteBuffer(WebGLBuffer buffer);
-    public abstract void deleteFramebuffer(WebGLFramebuffer framebuffer);
-    public abstract void deleteProgram(WebGLProgram program);
-    public abstract void deleteRenderbuffer(WebGLRenderbuffer renderbuffer);
-    public abstract void deleteShader(WebGLShader shader);
-    public abstract void deleteTexture(WebGLTexture texture);
-    public abstract void depthFunc(int func);
-    public abstract void depthMask(bool flag);
-    public abstract void depthRange(float zNear, float zFar);
-    public abstract void detachShader(WebGLProgram program, WebGLShader shader);
-    public abstract void disable(int cap);
-    public abstract void disableVertexAttribArray(int index);
-    public abstract void drawArrays(int mode, int first, int count);
-    public abstract void drawElements(int mode, int count, int type, int offset);
-    public abstract void enable(int cap);
-    public abstract void enableVertexAttribArray(int index);
-    public abstract void finish();
-    public abstract void flush();
-    public abstract void framebufferRenderbuffer(int target, int attachment, int renderbuffertarget, WebGLRenderbuffer renderbuffer);
-    public abstract void framebufferTexture2D(int target, int attachment, int textarget, WebGLTexture texture, int level);
-    public abstract void frontFace(int mode);
-    public abstract void generateMipmap(int target);
-    public abstract WebGLActiveInfo getActiveAttrib(WebGLProgram program, int index);
-    public abstract WebGLActiveInfo getActiveUniform(WebGLProgram program, int index);
-    public abstract WebGLShader[] getAttachedShaders(WebGLProgram program);
-    public abstract int getAttribLocation(WebGLProgram program, string name);
-    public abstract object getBufferParameter(int target, int pname);
-    public abstract WebGLContextAttributes getContextAttributes();
-    public abstract int getError();
-    public abstract object getExtension(string name);
-    public abstract object getFramebufferAttachmentParameter(int target, int attachment, int pname);
-    public abstract object getParameter(int pname);
-    public abstract string getProgramInfoLog(WebGLProgram program);
-    public abstract object getProgramParameter(WebGLProgram program, int pname);
-    public abstract object getRenderbufferParameter(int target, int pname);
-    public abstract string getShaderInfoLog(WebGLShader shader);
-    public abstract object getShaderParameter(WebGLShader shader, int pname);
-    public abstract WebGLShaderPrecisionFormat getShaderPrecisionFormat(int shadertype, int precisiontype);
-    public abstract string getShaderSource(WebGLShader shader);
-    public abstract string[] getSupportedExtensions();
-    public abstract object getTexParameter(int target, int pname);
-    public abstract object getUniform(WebGLProgram program, WebGLUniformLocation location);
-    public abstract WebGLUniformLocation getUniformLocation(WebGLProgram program, string name);
-    public abstract object getVertexAttrib(int index, int pname);
-    public abstract int getVertexAttribOffset(int index, int pname);
-    public abstract object hint(int target, int mode);
-    public abstract bool isBuffer(WebGLBuffer buffer);
-    public abstract bool isContextLost();
-    public abstract bool isEnabled(int cap);
-    public abstract bool isFramebuffer(WebGLFramebuffer framebuffer);
-    public abstract bool isProgram(WebGLProgram program);
-    public abstract bool isRenderbuffer(WebGLRenderbuffer renderbuffer);
-    public abstract bool isShader(WebGLShader shader);
-    public abstract bool isTexture(WebGLTexture texture);
-    public abstract void lineWidth(int width);
-    public abstract void linkProgram(WebGLProgram program);
-    public abstract void pixelStorei(int pname, int param);
-    public abstract void polygonOffset(float factor, int units);
-    public abstract void readPixels(int x, int y, int width, int height, int format, int type, ArrayBufferView pixels);
-    public abstract void renderbufferStorage(int target, int internalformat, int width, int height);
-    public abstract void sampleCoverage(int value, bool invert);
+    public extern void activeTexture(int texture);
+    public extern void attachShader(WebGLProgram program, WebGLShader shader);
+    public extern void bindAttribLocation(WebGLProgram program, int index, string name);
+    public extern void bindBuffer(int target, WebGLBuffer buffer);
+    public extern void bindFramebuffer(int target, WebGLFramebuffer framebuffer);
+    public extern void bindRenderbuffer(int target, WebGLRenderbuffer renderbuffer);
+    public extern void bindTexture(int target, WebGLTexture texture);
+    public extern void blendColor(float red, float green, float blue, float alpha);
+    public extern void blendFunc(int sfactor, int dfactor);
+    public extern void blendEquation(int mode);
+    public extern void blendEquationSeparate(int modeRGB, int modeAlpha);
+    public extern void bufferData(int target, ArrayBuffer size, int usage);
+    public extern int checkFramebufferStatus(int target);
+    public extern void clear(int mask);
+    public extern void clearColor(float red, float green, float blue, float alpha);
+    public extern void clearDepth(float depth);
+    public extern void clearStencil(int s);
+    public extern void colorMask(bool red, bool green, bool blue, bool alpha);
+    public extern void compileShader(WebGLShader shader);
+    public extern void compressedTexImage2D(int target, int level, int internalformat, int width, int height, int border, ArrayBufferView data);
+    public extern void compressedTexSubImage2D(int target, int level, int xoffset, int yoffset, int width, int height, int format, ArrayBufferView data);
+    public extern void copyTexImage2D(int target, int level, int internalformat, int x, int y, int width, int height, int border);
+    public extern void copyTexSubImage2D(int target, int level, int xoffset, int yoffset, int x, int y, int width, int height);
+    public extern WebGLBuffer createBuffer();
+    public extern WebGLFramebuffer createFramebuffer();
+    public extern WebGLProgram createProgram();
+    public extern WebGLRenderbuffer createRenderbuffer();
+    public extern WebGLShader createShader(int type);
+    public extern WebGLTexture createTexture();
+    public extern void cullFace(int mode);
+    public extern void deleteBuffer(WebGLBuffer buffer);
+    public extern void deleteFramebuffer(WebGLFramebuffer framebuffer);
+    public extern void deleteProgram(WebGLProgram program);
+    public extern void deleteRenderbuffer(WebGLRenderbuffer renderbuffer);
+    public extern void deleteShader(WebGLShader shader);
+    public extern void deleteTexture(WebGLTexture texture);
+    public extern void depthFunc(int func);
+    public extern void depthMask(bool flag);
+    public extern void depthRange(float zNear, float zFar);
+    public extern void detachShader(WebGLProgram program, WebGLShader shader);
+    public extern void disable(int cap);
+    public extern void disableVertexAttribArray(int index);
+    public extern void drawArrays(int mode, int first, int count);
+    public extern void drawElements(int mode, int count, int type, int offset);
+    public extern void enable(int cap);
+    public extern void enableVertexAttribArray(int index);
+    public extern void finish();
+    public extern void flush();
+    public extern void framebufferRenderbuffer(int target, int attachment, int renderbuffertarget, WebGLRenderbuffer renderbuffer);
+    public extern void framebufferTexture2D(int target, int attachment, int textarget, WebGLTexture texture, int level);
+    public extern void frontFace(int mode);
+    public extern void generateMipmap(int target);
+    public extern WebGLActiveInfo getActiveAttrib(WebGLProgram program, int index);
+    public extern WebGLActiveInfo getActiveUniform(WebGLProgram program, int index);
+    public extern WebGLShader[] getAttachedShaders(WebGLProgram program);
+    public extern int getAttribLocation(WebGLProgram program, string name);
+    public extern object getBufferParameter(int target, int pname);
+    public extern WebGLContextAttributes getContextAttributes();
+    public extern int getError();
+    public extern object getExtension(string name);
+    public extern object getFramebufferAttachmentParameter(int target, int attachment, int pname);
+    public extern object getParameter(int pname);
+    public extern string getProgramInfoLog(WebGLProgram program);
+    public extern object getProgramParameter(WebGLProgram program, int pname);
+    public extern object getRenderbufferParameter(int target, int pname);
+    public extern string getShaderInfoLog(WebGLShader shader);
+    public extern object getShaderParameter(WebGLShader shader, int pname);
+    public extern WebGLShaderPrecisionFormat getShaderPrecisionFormat(int shadertype, int precisiontype);
+    public extern string getShaderSource(WebGLShader shader);
+    public extern string[] getSupportedExtensions();
+    public extern object getTexParameter(int target, int pname);
+    public extern object getUniform(WebGLProgram program, WebGLUniformLocation location);
+    public extern WebGLUniformLocation getUniformLocation(WebGLProgram program, string name);
+    public extern object getVertexAttrib(int index, int pname);
+    public extern int getVertexAttribOffset(int index, int pname);
+    public extern object hint(int target, int mode);
+    public extern bool isBuffer(WebGLBuffer buffer);
+    public extern bool isContextLost();
+    public extern bool isEnabled(int cap);
+    public extern bool isFramebuffer(WebGLFramebuffer framebuffer);
+    public extern bool isProgram(WebGLProgram program);
+    public extern bool isRenderbuffer(WebGLRenderbuffer renderbuffer);
+    public extern bool isShader(WebGLShader shader);
+    public extern bool isTexture(WebGLTexture texture);
+    public extern void lineWidth(int width);
+    public extern void linkProgram(WebGLProgram program);
+    public extern void pixelStorei(int pname, int param);
+    public extern void polygonOffset(float factor, int units);
+    public extern void readPixels(int x, int y, int width, int height, int format, int type, ArrayBufferView pixels);
+    public extern void renderbufferStorage(int target, int internalformat, int width, int height);
+    public extern void sampleCoverage(int value, bool invert);
     /// <summary>左下角0,0，宽高单位为像素</summary>
-    public abstract void scissor(int x, int y, int width, int height);
-    public abstract void shaderSource(WebGLShader shader, string source);
-    public abstract void stencilFunc(int func, int _ref, int mask);
-    public abstract void stencilFuncSeparate(int face, int func, int _ref, int mask);
-    public abstract void stencilMask(int mask);
-    public abstract void stencilMaskSeparate(int face, int mask);
-    public abstract void stencilOp(int fail, int zfail, int zpass);
-    public abstract void stencilOpSeparate(int face, int fail, int zfail, int zpass);
-    public abstract void texImage2D(int target, int level, int internalformat, int width, int height, int border, int format, int type, ArrayBufferView pixels);
-    public abstract void texImage2D(int target, int level, int internalformat, int format, int type, Image pixels);
-    public abstract void texImage2D(int target, int level, int internalformat, int format, int type, ImageData pixels);
-    public abstract void texParameterf(int target, int pname, int param);
-    public abstract void texParameteri(int target, int pname, int param);
-    public abstract void texSubImage2D(int target, int level, int xoffset, int yoffset, int width, int height, int format, int type, ArrayBufferView pixels);
-    public abstract void texSubImage2D(int target, int level, int xoffset, int yoffset, int format, int type, Image pixels);
-    public abstract void uniform1f(WebGLUniformLocation location, float x);
-    public abstract void uniform1fv(WebGLUniformLocation location, float[] v);
-    public abstract void uniform1i(WebGLUniformLocation location, int x);
-    public abstract void uniform1iv(WebGLUniformLocation location, int[] v);
-    public abstract void uniform2f(WebGLUniformLocation location, float x, float y);
-    public abstract void uniform2fv(WebGLUniformLocation location, float[] v);
-    public abstract void uniform2i(WebGLUniformLocation location, int x, int y);
-    public abstract void uniform2iv(WebGLUniformLocation location, int[] v);
-    public abstract void uniform3f(WebGLUniformLocation location, float x, float y, float z);
-    public abstract void uniform3fv(WebGLUniformLocation location, float[] v);
-    public abstract void uniform3i(WebGLUniformLocation location, int x, int y, int z);
-    public abstract void uniform3iv(WebGLUniformLocation location, int[] v);
-    public abstract void uniform4f(WebGLUniformLocation location, float x, float y, float z, float w);
-    public abstract void uniform4fv(WebGLUniformLocation location, float[] v);
-    public abstract void uniform4i(WebGLUniformLocation location, int x, int y, int z, int w);
-    public abstract void uniform4iv(WebGLUniformLocation location, int[] v);
-    public abstract void uniformMatrix2fv(WebGLUniformLocation location, bool transpose, float[] value);
-    public abstract void uniformMatrix3fv(WebGLUniformLocation location, bool transpose, float[] value);
-    public abstract void uniformMatrix4fv(WebGLUniformLocation location, bool transpose, float[] value);
-    public abstract void useProgram(WebGLProgram program);
-    public abstract void validateProgram(WebGLProgram program);
-    public abstract void vertexAttrib1f(int indx, float x);
-    public abstract void vertexAttrib1fv(int indx, float[] values);
-    public abstract void vertexAttrib2f(int indx, float x, float y);
-    public abstract void vertexAttrib2fv(int indx, float[] values);
-    public abstract void vertexAttrib3f(int indx, float x, float y, float z);
-    public abstract void vertexAttrib3fv(int indx, float[] values);
-    public abstract void vertexAttrib4f(int indx, float x, float y, float z, float w);
-    public abstract void vertexAttrib4fv(int indx, float[] values);
-    public abstract void vertexAttribPointer(int indx, int size, int type, bool normalized, int stride, int offset);
+    public extern void scissor(int x, int y, int width, int height);
+    public extern void shaderSource(WebGLShader shader, string source);
+    public extern void stencilFunc(int func, int _ref, int mask);
+    public extern void stencilFuncSeparate(int face, int func, int _ref, int mask);
+    public extern void stencilMask(int mask);
+    public extern void stencilMaskSeparate(int face, int mask);
+    public extern void stencilOp(int fail, int zfail, int zpass);
+    public extern void stencilOpSeparate(int face, int fail, int zfail, int zpass);
+    public extern void texImage2D(int target, int level, int internalformat, int width, int height, int border, int format, int type, ArrayBufferView pixels);
+    public extern void texImage2D(int target, int level, int internalformat, int format, int type, Image pixels);
+    public extern void texImage2D(int target, int level, int internalformat, int format, int type, ImageData pixels);
+    public extern void texParameterf(int target, int pname, int param);
+    public extern void texParameteri(int target, int pname, int param);
+    public extern void texSubImage2D(int target, int level, int xoffset, int yoffset, int width, int height, int format, int type, ArrayBufferView pixels);
+    public extern void texSubImage2D(int target, int level, int xoffset, int yoffset, int format, int type, Image pixels);
+    public extern void uniform1f(WebGLUniformLocation location, float x);
+    public extern void uniform1fv(WebGLUniformLocation location, float[] v);
+    public extern void uniform1i(WebGLUniformLocation location, int x);
+    public extern void uniform1iv(WebGLUniformLocation location, int[] v);
+    public extern void uniform2f(WebGLUniformLocation location, float x, float y);
+    public extern void uniform2fv(WebGLUniformLocation location, float[] v);
+    public extern void uniform2i(WebGLUniformLocation location, int x, int y);
+    public extern void uniform2iv(WebGLUniformLocation location, int[] v);
+    public extern void uniform3f(WebGLUniformLocation location, float x, float y, float z);
+    public extern void uniform3fv(WebGLUniformLocation location, float[] v);
+    public extern void uniform3i(WebGLUniformLocation location, int x, int y, int z);
+    public extern void uniform3iv(WebGLUniformLocation location, int[] v);
+    public extern void uniform4f(WebGLUniformLocation location, float x, float y, float z, float w);
+    public extern void uniform4fv(WebGLUniformLocation location, float[] v);
+    public extern void uniform4i(WebGLUniformLocation location, int x, int y, int z, int w);
+    public extern void uniform4iv(WebGLUniformLocation location, int[] v);
+    public extern void uniformMatrix2fv(WebGLUniformLocation location, bool transpose, float[] value);
+    public extern void uniformMatrix3fv(WebGLUniformLocation location, bool transpose, float[] value);
+    public extern void uniformMatrix4fv(WebGLUniformLocation location, bool transpose, float[] value);
+    public extern void useProgram(WebGLProgram program);
+    public extern void validateProgram(WebGLProgram program);
+    public extern void vertexAttrib1f(int indx, float x);
+    public extern void vertexAttrib1fv(int indx, float[] values);
+    public extern void vertexAttrib2f(int indx, float x, float y);
+    public extern void vertexAttrib2fv(int indx, float[] values);
+    public extern void vertexAttrib3f(int indx, float x, float y, float z);
+    public extern void vertexAttrib3fv(int indx, float[] values);
+    public extern void vertexAttrib4f(int indx, float x, float y, float z, float w);
+    public extern void vertexAttrib4fv(int indx, float[] values);
+    public extern void vertexAttribPointer(int indx, int size, int type, bool normalized, int stride, int offset);
     /// <summary>左下角0,0，宽高单位为像素</summary>
-    public abstract void viewport(float x, float y, float width, float height);
+    public extern void viewport(float x, float y, float width, float height);
     public int ACTIVE_ATTRIBUTES;
     public int ACTIVE_TEXTURE;
     public int ACTIVE_UNIFORMS;
@@ -903,7 +904,7 @@ public class ImageData
     //public byte[] data;
     public int height;
     public int width;
-    public ImageData(int width, int height) { }
+    public extern ImageData(int width, int height);
 }
 public class Uint8ClampedArray
 {
@@ -912,41 +913,41 @@ public class Uint8ClampedArray
     public int byteLength;
     public int byteOffset;
     public extern byte this[int index] { get; set; }
-    public Uint8ClampedArray(ArrayBuffer buffer) { }
-    public Uint8ClampedArray(ArrayBuffer buffer, int start, int length) { }
-    public Uint8ClampedArray copyWithin(int target, int start, int end) { return null; }
-    public Uint8ClampedArray fill(int value, int start, int end) { return null; }
+    public extern Uint8ClampedArray(ArrayBuffer buffer);
+    public extern Uint8ClampedArray(ArrayBuffer buffer, int start, int length);
+    public extern Uint8ClampedArray copyWithin(int target, int start, int end);
+    public extern Uint8ClampedArray fill(int value, int start, int end);
     public int length;
-    public Uint8ClampedArray reverse() { return null; }
-    public void set(int index, byte value) { }
-    public void set(Uint8ClampedArray array, int offset) { }
-    public Uint8ClampedArray slice(int start, int end) { return null; }
+    public extern Uint8ClampedArray reverse();
+    public extern void set(int index, byte value);
+    public extern void set(Uint8ClampedArray array, int offset);
+    public extern Uint8ClampedArray slice(int start, int end);
 }
 public class Uint8Array : ArrayBuffer
 {
     public int length;
     public int byteLength;
     public extern byte this[int index] { get; set; }
-    public Uint8Array() { }
-    public Uint8Array(ArrayBuffer buffer) { }
+    public extern Uint8Array();
+    public extern Uint8Array(ArrayBuffer buffer);
 }
 public class Float32Array : ArrayBuffer
 {
     public int length;
     public int byteLength;
     public extern float this[int index] { get; set; }
-    public Float32Array(int length) { }
-    public Float32Array(float[] array) { }
-    public Float32Array(ArrayBuffer buffer, int byteOffset, int length) { }
+    public extern Float32Array(int length);
+    public extern Float32Array(float[] array);
+    public extern Float32Array(ArrayBuffer buffer, int byteOffset, int length);
     public extern Float32Array subarray(int begin, int end);
 }
 public class Uint16Array : ArrayBuffer
 {
     public extern ushort this[int index] { get; set; }
-    public Uint16Array(int length) { }
-    public Uint16Array(short[] array) { }
-    public Uint16Array(ushort[] array) { }
-    public Uint16Array(ArrayBuffer buffer, int byteOffset, int length) { }
+    public extern Uint16Array(int length);
+    public extern Uint16Array(short[] array);
+    public extern Uint16Array(ushort[] array);
+    public extern Uint16Array(ArrayBuffer buffer, int byteOffset, int length);
 }
 public abstract class CanvasRenderingContext2D
 {
@@ -972,24 +973,24 @@ public abstract class CanvasRenderingContext2D
     public bool mozImageSmoothingEnabled;
     public bool webkitImageSmoothingEnabled;
     public bool oImageSmoothingEnabled;
-    public abstract void beginPath();
-    public abstract void clearRect(int x, int y, int w, int h);
-    public abstract void clip(string fillRule);
-    public abstract ImageData createImageData(int imageDataOrSw, int sh);
-    public abstract void drawImage(Image image, int offsetX, int offsetY, int width, int height, int canvasOffsetX, int canvasOffsetY, int canvasImageWidth, int canvasImageHeight);
-    public abstract void fillRect(int x, int y, int w, int h);
-    public abstract void fillText(string text, int x, int y, int maxWidth);
-    public abstract ImageData getImageData(int sx, int sy, int sw, int sh);
-    public abstract TextMetrics measureText(string text);
-    public abstract void putImageData(ImageData imagedata, int dx, int dy, int dirtyX, int dirtyY, int dirtyWidth, int dirtyHeight);
-    public abstract void restore();
-    public abstract void rotate(float angle);
-    public abstract void save();
-    public abstract void scale(float x, float y);
-    public abstract void setTransform(float m11, float m12, float m21, float m22, float dx, float dy);
-    public abstract void stroke();
-    public abstract void strokeRect(int x, int y, int w, int h);
-    public abstract void strokeText(string text, int x, int y, int maxWidth);
-    public abstract void transform(float m11, float m12, float m21, float m22, float dx, float dy);
-    public abstract void translate(float x, float y);
+    public extern void beginPath();
+    public extern void clearRect(int x, int y, int w, int h);
+    public extern void clip(string fillRule);
+    public extern ImageData createImageData(int imageDataOrSw, int sh);
+    public extern void drawImage(Image image, int offsetX, int offsetY, int width, int height, int canvasOffsetX, int canvasOffsetY, int canvasImageWidth, int canvasImageHeight);
+    public extern void fillRect(int x, int y, int w, int h);
+    public extern void fillText(string text, int x, int y, int maxWidth);
+    public extern ImageData getImageData(int sx, int sy, int sw, int sh);
+    public extern TextMetrics measureText(string text);
+    public extern void putImageData(ImageData imagedata, int dx, int dy, int dirtyX, int dirtyY, int dirtyWidth, int dirtyHeight);
+    public extern void restore();
+    public extern void rotate(float angle);
+    public extern void save();
+    public extern void scale(float x, float y);
+    public extern void setTransform(float m11, float m12, float m21, float m22, float dx, float dy);
+    public extern void stroke();
+    public extern void strokeRect(int x, int y, int w, int h);
+    public extern void strokeText(string text, int x, int y, int maxWidth);
+    public extern void transform(float m11, float m12, float m21, float m22, float dx, float dy);
+    public extern void translate(float x, float y);
 }

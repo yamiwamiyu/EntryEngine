@@ -1,4 +1,9 @@
-﻿2020/02/03
+﻿2020/04/13
+1. 修复生成JS代码BinaryOperator运算符错误的BUG
+2. 减少bind(this)，优化运行效率
+3. 优化Object.toString，Math等方法
+
+2020/02/03
 1. PSD转JS基础部分完成，可以看到绝对布局样式
 2. 新增Reader_vstk读取形状图层的描边信息
 

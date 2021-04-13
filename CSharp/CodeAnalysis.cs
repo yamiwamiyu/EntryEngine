@@ -2679,19 +2679,26 @@ namespace EntryBuilder.CodeAnalysis.Syntax
         /// <summary>left * right</summary>
         Multiply = 1,
         /// <summary>left / right</summary>
-        Division,
+        Division = 2,
         /// <summary>left % right</summary>
-        Modulus,
+        Modulus = 3,
 
         /// <summary>left + right</summary>
-        Addition,
+        Addition = 4,
         /// <summary>left - right</summary>
-        Subtraction,
+        Subtraction = 5,
 
         // left << right
-        ShiftLeft,
+        ShiftLeft = 6,
         /// <summary>left >> right</summary>
-        ShiftRight,
+        ShiftRight = 7,
+
+        // left & right
+        BitwiseAnd = 8,
+        /// <summary>left ^ right</summary>
+        ExclusiveOr = 9,
+        /// <summary>left | right</summary>
+        BitwiseOr = 10,
 
         /// <summary>left > right</summary>
         GreaterThan,
@@ -2706,13 +2713,6 @@ namespace EntryBuilder.CodeAnalysis.Syntax
         /// <summary>left != right</summary>
         Inequality,
 
-        // left & right
-        BitwiseAnd,
-        /// <summary>left ^ right</summary>
-        ExclusiveOr,
-        /// <summary>left | right</summary>
-        BitwiseOr,
-
         // left && right
         ConditionalAnd,
         /// <summary>left || right</summary>
@@ -2724,25 +2724,25 @@ namespace EntryBuilder.CodeAnalysis.Syntax
         /// <summary>left = right，后面的赋值运算符-100就是其对应的计算运算符</summary>
         Assign = 100,
         /// <summary>left *= right</summary>
-        AssignMultiply,
+        AssignMultiply = 101,
         /// <summary>left /= right</summary>
-        AssignDivide,
+        AssignDivide = 102,
         /// <summary>left %= right</summary>
-        AssignModulus,
+        AssignModulus = 103,
         /// <summary>left += right</summary>
-        AssignAdd,
+        AssignAdd = 104,
         /// <summary>left -= right</summary>
-        AssignSubtract,
+        AssignSubtract = 105,
         // left <<= right
-        AssignShiftLeft,
+        AssignShiftLeft = 106,
         /// <summary>left >>= right</summary>
-        AssignShiftRight,
+        AssignShiftRight = 107,
         // left &= right
-        AssignBitwiseAnd,
+        AssignBitwiseAnd = 108,
         /// <summary>left ^= right</summary>
-        AssignExclusiveOr,
+        AssignExclusiveOr = 109,
         /// <summary>left |= right</summary>
-        AssignBitwiseOr,
+        AssignBitwiseOr = 110,
     }
     public class BinaryOperator : SyntaxNode
     {
@@ -4525,7 +4525,7 @@ namespace EntryBuilder.CodeAnalysis.Refactoring
         Dictionary<object, BEREF> _refs;
         Dictionary<SyntaxNode, REF> _syntax;
         private Stack<CSharpType> _definingTypes = new Stack<CSharpType>();
-        private CSharpMember _definingMember;
+        private Stack<CSharpMember> _definingMembers = new Stack<CSharpMember>();
         internal Dictionary<SyntaxNode, DefinedType> types
         {
             get
@@ -4568,19 +4568,26 @@ namespace EntryBuilder.CodeAnalysis.Refactoring
         }
         protected CSharpMember DefiningMember
         {
-            get { return _definingMember; }
+            get { return _definingMembers.Peek(); }
         }
         protected bool SetMember(SyntaxNode node)
         {
             MemberDefinitionInfo member;
             if (members.TryGetValue(node, out member) && HasMember(member))
             {
-                _definingMember = member;
+                _definingMembers.Clear();
+                _definingMembers.Push(member);
                 OnSetMember(member);
                 return true;
             }
             return false;
         }
+        /// <summary>除了定义方法外，lambda表达式，闭包等都会生成临时方法；会影响实参，return表达式</summary>
+        public void PushMember(CSharpMember member)
+        {
+            _definingMembers.Push(member);
+        }
+        public void PopMember() { _definingMembers.Pop(); }
         public bool HasMember(CSharpMember member)
         {
             return !member.IsExtern && (HasReference(member) || member.Attributes.Any(a => a.Type.Name.Name == ANonOptimize.Name));
@@ -4623,22 +4630,33 @@ namespace EntryBuilder.CodeAnalysis.Refactoring
         }
         public CSharpType GetSyntaxType(SyntaxNode node)
         {
+            CSharpType type;
+            CSharpMember member;
+            VAR _var;
+            return GetSyntaxType(node, out type, out member, out _var);
+        }
+        public CSharpType GetSyntaxType(SyntaxNode node, out CSharpType type, out CSharpMember member, out VAR _var)
+        {
+            type = null;
+            member = null;
+            _var = null;
+
             REF _ref;
             if (syntax.TryGetValue(node, out _ref))
             {
-                CSharpType type = _ref.Definition.Define as CSharpType;
+                type = _ref.Definition.Define as CSharpType;
                 if (type != null) return type;
 
-                CSharpMember member = _ref.Definition.Define as CSharpMember;
+                member = _ref.Definition.Define as CSharpMember;
                 if (member != null)
                 {
                     //if (member.IsConstructor && !member.IsStatic)
                     //    return member.ContainingType;
                     //else
-                        return member.ReturnType;
+                    return member.ReturnType;
                 }
 
-                VAR _var = _ref.Definition.Define as VAR;
+                _var = _ref.Definition.Define as VAR;
                 if (_var != null) return _var.Type;
             }
             return null;
@@ -4658,6 +4676,8 @@ namespace EntryBuilder.CodeAnalysis.Refactoring
                     VisitTypeString(node);
                 else if (type == CSharpType.ARRAY)
                     VisitTypeArray(node);
+                else if (type == CSharpType.MATH)
+                    VisitTypeMath(node);    
                 else if (type == CSharpType.BOOL)
                     VisitTypeBool(node);
                 else if (type == CSharpType.BYTE)
@@ -4728,6 +4748,10 @@ namespace EntryBuilder.CodeAnalysis.Refactoring
             Write(type);
         }
         protected virtual void VisitTypeArray(DefineType type)
+        {
+            Write(type);
+        }
+        protected virtual void VisitTypeMath(DefineType type)
         {
             Write(type);
         }
@@ -4828,10 +4852,10 @@ namespace EntryBuilder.CodeAnalysis.Refactoring
             base.Visit(node);
         }
 
-        internal virtual void WriteBegin(DefineFile[] files)
+        internal virtual void WriteBegin(IEnumerable<DefineFile> files)
         {
         }
-        internal virtual void WriteEnd(DefineFile[] files)
+        internal virtual void WriteEnd(IEnumerable<DefineFile> files)
         {
         }
     }
@@ -5917,7 +5941,7 @@ namespace EntryBuilder.CodeAnalysis.Refactoring
         {
             Check(node);
         }
-        public static void Rename(DefineFile[] files, Rewriter processor, out Dictionary<CSharpType, string> renamedTypes, out Dictionary<CSharpMember, string> renamedMembers)
+        public static void Rename(IEnumerable<DefineFile> files, Rewriter processor, out Dictionary<CSharpType, string> renamedTypes, out Dictionary<CSharpMember, string> renamedMembers)
         {
             if (processor == null || files == null)
                 throw new InvalidOperationException();
@@ -6030,7 +6054,7 @@ namespace EntryBuilder.CodeAnalysis.Refactoring
         {
             Check(node);
         }
-        public static List<CSharpType> Reflexible(DefineFile[] files, Rewriter processor)
+        public static List<CSharpType> Reflexible(IEnumerable<DefineFile> files, Rewriter processor)
         {
             if (processor == null || files == null)
                 throw new InvalidOperationException();
@@ -6276,7 +6300,6 @@ namespace EntryBuilder.CodeAnalysis.Refactoring
         /// <summary>扩展方法this参数的节点</summary>
         SyntaxNode exThisParam;
         bool inYieldEnumerable = false;
-        int closure;
         bool isStaticYield = false;
         int assignOperator;
 
@@ -6314,7 +6337,6 @@ namespace EntryBuilder.CodeAnalysis.Refactoring
                 return endWriter;
             }
         }
-        bool InClosure { get { return closure > 0; } }
         bool MultiAssign { get { return assignOperator > 1; } }
         public override string Result
         {
@@ -6402,6 +6424,7 @@ namespace EntryBuilder.CodeAnalysis.Refactoring
                 Renamer.Rename(_ref.Definition.Define, this, nameProvider.Provide());
             }
         }
+        /// <summary>builder替换成临时的StringBuilder进行写入操作</summary>
         void FixedBuilder(Action action, StringBuilder fix)
         {
             var temp2 = builder;
@@ -6433,15 +6456,8 @@ namespace EntryBuilder.CodeAnalysis.Refactoring
         // 2. string str = 'a' + "abc" => "97abc"   应写成'a'.ToString()
         // 3. if (base.Base == null) Base = Texture; 此时Base = Texture在闭包内生成的var temp = this.__getBase()将导致死循环   应写成base.Base = Texture
 
-        public override void Visit(DefineFile node)
-        {
-            foreach (var item in node.DefineNamespaces) Visit(item);
-        }
-        public override void Visit(DefineNamespace node)
-        {
-            foreach (var item in node.DefineTypes) Visit(item);
-            foreach (var item in node.DefineNamespaces) Visit(item);
-        }
+        public override void Visit(DefineFile node) { }
+        public override void Visit(DefineNamespace node) { }
         public override void Visit(List<DefineGenericArgument> node)
         {
             /*
@@ -6456,7 +6472,7 @@ namespace EntryBuilder.CodeAnalysis.Refactoring
             builder = beginWriter;
             typeNames.Push(targetType);
             WriteReflectionInfo(null, false);
-            foreach (var item in node.Fields.Where(f => (f.Modifier & EModifier.Static) != EModifier.None || (f.Modifier & EModifier.Const) != null)) Visit(item);
+            foreach (var item in node.Fields.Where(f => (f.Modifier & EModifier.Static) != EModifier.None || (f.Modifier & EModifier.Const) != EModifier.None)) Visit(item);
             foreach (var item in node.Properties) Visit(item);
             foreach (var item in node.Methods.Where(m => m is DefineMethod)) Visit(item);
             foreach (var item in node.NestedType) Visit(item);
@@ -6494,16 +6510,7 @@ namespace EntryBuilder.CodeAnalysis.Refactoring
         {
             AppendPrototype(type, "Object");
             builder.AppendLine("Object.prototype.GetType = function() { return $tof(this.constructor); };");
-            // Object.ToString
-            //builder.AppendLine("var TO_STRING = Object.prototype.ToString;");
-            //builder.AppendLine("Object.prototype.ToString = function()");
-            //builder.AppendBlock(() =>
-            //{
-            //    builder.AppendLine("if (this instanceof Number || this instanceof Boolean) return this.toString();");
-            //    builder.AppendLine("this.TO_STRING = TO_STRING;");
-            //    builder.AppendLine("this.TO_STRING();");
-            //});
-            builder.AppendLine("Object.prototype.ToString = function() { return this.toString(); };");
+            //builder.AppendLine("Object.prototype.ToString = function() { return this.toString(); };");
             builder.AppendLine("Object.prototype.GetHashCode = function() { if (!this.$hash) this.$hash = new Date().getTime() & $H32; return this.$hash; };");
         }
         protected override void VisitTypeString(DefineType type)
@@ -6534,6 +6541,10 @@ namespace EntryBuilder.CodeAnalysis.Refactoring
             //    builder.AppendLine("array[i] = $dtf();");
             //});
         }
+        protected override void VisitTypeMath(DefineType type)
+        {
+            AppendPrototype(type, "Math");
+        }
         bool IsCanInherit(CSharpType type)
         {
             if (type == null || type == CSharpType.OBJECT || type == CSharpType.ARRAY || type.IsPrivate || IsDefineOnly(type))
@@ -6558,15 +6569,6 @@ namespace EntryBuilder.CodeAnalysis.Refactoring
 
             CSharpType type = DefiningType;
             bool isPrimitive = CSharpType.IsPrimitive(type);
-
-            string oname = GetRenamedTypeOriginName(type);
-            if (oname == "Math")
-            {
-                // 防止和window.Math冲突
-                AppendPrototype(node, oname);
-                Renamer.Rename(DefiningType, this, "Math");
-                return;
-            }
 
             typeNames.Push(type.Name.Name);
 
@@ -6610,8 +6612,7 @@ namespace EntryBuilder.CodeAnalysis.Refactoring
 
                 // 默认构造函数来定义类型
                 var baseClass = type.BaseClass;
-                if (baseClass == CSharpType.OBJECT
-                    || baseClass == CSharpType.VALUE_TYPE)
+                if (baseClass == CSharpType.OBJECT || baseClass == CSharpType.VALUE_TYPE)
                     baseClass = null;
 
                 CSharpMember[] baseMembers = FinderBaseMember.FindBaseMembers(node, this);
@@ -6625,7 +6626,6 @@ namespace EntryBuilder.CodeAnalysis.Refactoring
                 // 接口：KEYBOARD : Input<IKeyboardState>，保留接口定义使其不报错即可
                 if (node.Type != EType.INTERFACE)
                 {
-
                     if (!type.IsStatic && !isPrimitive)
                     {
                         // 假原型：用于定义类型有哪些字段；没有显示声明构造函数时也是类型的默认构造函数
@@ -6675,27 +6675,27 @@ namespace EntryBuilder.CodeAnalysis.Refactoring
                                 builder.AppendLine(";");
                             }
                             // todo:考虑将委托右边，方法参数加上.bind(this)，就不需要在构造函数里bind所有方法了
-                            foreach (var item in node.Properties.Where(m => (m.Modifier & EModifier.Static) == EModifier.None))
-                            {
-                                if (!SetMember(item))
-                                    continue;
-                                // 有可能abstract override
-                                if (!DefiningMember.IsAbstract && DefiningMember.IsOverride)
-                                    continue;
-                                if (item.Getter != null)
-                                    builder.AppendLine("this.{0}{1} = this.{0}{1}.bind(this);", GET, DefiningMember.Name.Name);
-                                if (item.Setter != null)
-                                    builder.AppendLine("this.{0}{1} = this.{0}{1}.bind(this);", SET, DefiningMember.Name.Name);
-                            }
-                            foreach (DefineMethod item in node.Methods.Where(m => m is DefineMethod && (m.Modifier & EModifier.Static) == EModifier.None))
-                            {
-                                if (!SetMember(item))
-                                    continue;
-                                // 有可能abstract override
-                                if (!DefiningMember.IsAbstract && DefiningMember.IsOverride)
-                                    continue;
-                                builder.AppendLine("this.{0} = this.{0}.bind(this);", DefiningMember.Name.Name);
-                            }
+                            //foreach (var item in node.Properties.Where(m => (m.Modifier & EModifier.Static) == EModifier.None))
+                            //{
+                            //    if (!SetMember(item))
+                            //        continue;
+                            //    // 有可能abstract override
+                            //    if (!DefiningMember.IsAbstract && DefiningMember.IsOverride)
+                            //        continue;
+                            //    if (item.Getter != null)
+                            //        builder.AppendLine("this.{0}{1} = this.{0}{1}.bind(this);", GET, DefiningMember.Name.Name);
+                            //    if (item.Setter != null)
+                            //        builder.AppendLine("this.{0}{1} = this.{0}{1}.bind(this);", SET, DefiningMember.Name.Name);
+                            //}
+                            //foreach (DefineMethod item in node.Methods.Where(m => m is DefineMethod && (m.Modifier & EModifier.Static) == EModifier.None))
+                            //{
+                            //    if (!SetMember(item))
+                            //        continue;
+                            //    // 有可能abstract override
+                            //    if (!DefiningMember.IsAbstract && DefiningMember.IsOverride)
+                            //        continue;
+                            //    builder.AppendLine("this.{0} = this.{0}.bind(this);", DefiningMember.Name.Name);
+                            //}
                         });
                         if (baseClass != null)
                         {
@@ -6706,28 +6706,31 @@ namespace EntryBuilder.CodeAnalysis.Refactoring
                             }
                             else
                             {
-                                var tempBuilder = builder;
-                                builder = beginWriter;
+                                //var tempBuilder = builder;
+                                //builder = beginWriter;
 
-                                builder.AppendLine("window.$sp{0} = function()", TypeName);
-                                builder.AppendBlockWithEnd(() =>
-                                {
-                                    builder.AppendLine("if ($sp{0}.$initd) return;", TypeName);
-                                    builder.AppendLine("$sp{0}.$initd = true;", TypeName);
-                                    if (baseClass.TypeArguments.Count == 0)
-                                    {
-                                        // A:B B:C 若生成顺序为A>B>C，那么A.prototype=new B(); B.prototype=new C();，最终A将不继承C
-                                        // 调用父类型的设置prototype函数来先设置父类型的继承关系
-                                        builder.AppendLine("if (window.$sp{0}) $sp{0}();", baseClass.Name.Name);
-                                        //builder.AppendLine("delete $sp{0};", baseClass.Name.Name);
-                                        builder.AppendLine("window.$sp{0} = undefined;", baseClass.Name.Name);
-                                    }
-                                    builder.AppendLine("{0}.prototype = new {1}();", TypeName, GetTypeName(baseClass));
-                                });
+                                //builder.AppendLine("window.$sp{0} = function()", TypeName);
+                                //builder.AppendBlockWithEnd(() =>
+                                //{
+                                //    builder.AppendLine("if ($sp{0}.$initd) return;", TypeName);
+                                //    builder.AppendLine("$sp{0}.$initd = true;", TypeName);
+                                //    if (baseClass.TypeArguments.Count == 0)
+                                //    {
+                                //        // A:B B:C 若生成顺序为A>B>C，那么A.prototype=new B(); B.prototype=new C();，最终A将不继承C
+                                //        // 调用父类型的设置prototype函数来先设置父类型的继承关系
+                                //        builder.AppendLine("if (window.$sp{0}) $sp{0}();", baseClass.Name.Name);
+                                //        //builder.AppendLine("delete $sp{0};", baseClass.Name.Name);
+                                //        builder.AppendLine("window.$sp{0} = undefined;", baseClass.Name.Name);
+                                //    }
+                                //    builder.AppendLine("{0}.prototype = new {1}();", TypeName, GetTypeName(baseClass));
+                                //});
 
-                                builder = tempBuilder;
+                                //builder = tempBuilder;
 
-                                builder.AppendLine("if (window.$sp{0}) $sp{0}();", TypeName);
+                                //builder.AppendLine("if (window.$sp{0}) $sp{0}();", TypeName);
+
+                                // 类型的生成顺序已经根据引用关系排序了，直接指定prototype即可
+                                builder.AppendLine("{0}.prototype = new {1}();", TypeName, GetTypeName(baseClass));
                             }
                         }
                         builder.AppendLine("{0}.$.prototype = {0}.prototype;", TypeName);
@@ -6801,7 +6804,6 @@ namespace EntryBuilder.CodeAnalysis.Refactoring
                         {
                             //builder.AppendLine("{0}.$ctor = {0}.{1};", TypeName, constructor.Name.Name);
                             builder.AppendLine("_R.$TC[\"{0}\"] = {1}.{2};", GetRenamedRuntimeTypeName(type), TypeName, constructor.Name.Name);
-
                         }
                         else
                         {
@@ -6817,7 +6819,6 @@ namespace EntryBuilder.CodeAnalysis.Refactoring
                     // 内部类
                     foreach (var item in node.NestedType) Visit(item);
 
-
                     // 赋值的静态字段 & 静态构造函数 应该放在最后面执行，但仍然有先后顺序
 
                     FixedBuilder(() =>
@@ -6831,7 +6832,7 @@ namespace EntryBuilder.CodeAnalysis.Refactoring
                         foreach (var item in node.Methods.Where(m => m is DefineConstructor && (m.Modifier & EModifier.Static) != EModifier.None))
                         {
                             builder.Append("(function()");
-                            WriteBody(item.Body, true, null, null);
+                            Visit(item.Body);
                             // 直接调用此构造函数
                             builder.AppendLine(")();");
                         }
@@ -6848,7 +6849,7 @@ namespace EntryBuilder.CodeAnalysis.Refactoring
                         builder.AppendLine("__array[{0}] = {1};", i, item.Name.Name);
                     }
                     // keys=泛型实参类型数组 value=类型
-                    builder.AppendLine("{0}.types[__i] = new Object();", ParentTypeName);
+                    builder.AppendLine("{0}.types[__i] = {{}};", ParentTypeName);
                     builder.AppendLine("{0}.types[__i].keys = __array;", ParentTypeName);
                     builder.AppendLine("{0}.types[__i].value = {1};", ParentTypeName, TypeName);
                     builder.AppendLine("return {0};", TypeName);
@@ -6866,8 +6867,8 @@ namespace EntryBuilder.CodeAnalysis.Refactoring
         {
             typeNames.Push(GetTypeName(DefiningType));
 
-            if (DefiningType.ContainingType == null)
-                builder.Append("window.");
+            //if (DefiningType.ContainingType == null)
+            //    builder.Append("window.");
             builder.AppendLine("{0} = function(v,n){{this.v=v;this.n=n;}};", TypeName);
             WriteReflectionInfo(null, false);
             builder.AppendLine("{0}.{2} = {1};", TypeName, GetStructSize(DefiningType.UnderlyingType), ENUM);
@@ -6900,9 +6901,7 @@ namespace EntryBuilder.CodeAnalysis.Refactoring
 
             typeNames.Pop();
         }
-        protected override void Write(DefineDelegate node)
-        {
-        }
+        protected override void Write(DefineDelegate node) { }
         protected override void Write(DefineField node)
         {
             if (DefiningMember.IsStatic || DefiningMember.IsConstant)
@@ -6923,10 +6922,6 @@ namespace EntryBuilder.CodeAnalysis.Refactoring
             var member = DefiningMember;
             if (member.IsAbstract)
                 return;
-
-            if (member.IsIndexer)
-            {
-            }
 
             string name = member.Name.Name;
             // virtual属性且有被重写时，视为字段可能会出现错误
@@ -6978,50 +6973,55 @@ namespace EntryBuilder.CodeAnalysis.Refactoring
                 }
             }
 
+            /* JS类似C#属性的实现，索引器可使用属性的实现方式，用到的参数改为实例变量 */
             //if (node.IsIndexer)
             //{
             //    /* 普通的get|set方法的实现 */
-            //    builder.Append("{0}.prototype.{1} = function(");
+            //    builder.Append("{0}.{1}__{2} = function(", TypeName, isStatic, name);
             //    Visit(node.Arguments);
-            //    builder.Append(")");
+            //    builder.AppendLine(")");
             //    builder.AppendBlockWithEnd(() =>
             //    {
-            //        builder.AppendLine("if (!__");
+            //        foreach (var item in node.Arguments)
+            //            builder.AppendLine("{0}.___{1} = {1};", isThis, item.Name);
+
+            //        // 参数作为实例参数，每次调用时赋值
+            //        foreach (var item in node.Arguments)
+            //            item.Name.Name = string.Format("{0}.___{1}", isThis, item.Name.Name);
             //    });
+            //}
+            //if (member.IsStatic)
+            //    builder.AppendLine("Object.defineProperty({0}, \"{1}\",", TypeName, name);
+            //else
+            //    builder.AppendLine("Object.defineProperty({0}.prototype, \"{1}\",", TypeName, name);
+            //builder.AppendBlock(() =>
+            //{
             //    if (node.Getter != null)
             //    {
-            //        builder.Append("{0}.prototype.{1}{2} = function(", TypeName, GET, name);
-            //        Visit(node.Arguments);
-            //        builder.Append(")");
-            //        Visit(node.Getter.Body);
+            //        builder.Append("get:function()");
+            //        if (node.Getter.Body == null)
+            //            builder.AppendLine("{{return {2}.{0}{1};}}", AUTO_PROPERTY, name, isThis);
+            //        else
+            //        {
+            //            builder.AppendLine();
+            //            WriteIEnumerableBody(node.Arguments, member, node.Getter.Body);
+            //        }
             //    }
             //    if (node.Setter != null)
             //    {
-            //        builder.Append("{0}.prototype.{1}{2} = function(value, ", TypeName, SET, name);
-            //        paramArgumentOffset = 1;
-            //        Visit(node.Arguments);
-            //        builder.Append(")");
-            //        Visit(node.Setter.Body);
-            //    }
-            //}
-            //else
-            //{
-            //    /* JS类似C#属性的实现，索引器暂不可用 */
-            //    builder.AppendLine("Object.defineProperty({0}.prototype, \"{1}\",", TypeName, name);
-            //    builder.AppendBlockWithEnd(() =>
-            //    {
             //        if (node.Getter != null)
+            //            builder.Append(',');
+            //        builder.Append("set:function(value)");
+            //        if (node.Setter.Body == null)
+            //            builder.AppendLine("{{{2}.{0}{1}=value;}}", AUTO_PROPERTY, name, isThis);
+            //        else
             //        {
-            //            builder.Append("get:function()");
-            //            Visit(node.Getter.Body);
-            //        }
-            //        if (node.Setter != null)
-            //        {
-            //            builder.Append("set:function(value)");
+            //            builder.AppendLine();
             //            Visit(node.Setter.Body);
             //        }
-            //    });
-            //}
+            //    }
+            //});
+            //builder.AppendLine(");");
         }
         public override void Visit(Accessor node)
         {
@@ -7081,7 +7081,7 @@ namespace EntryBuilder.CodeAnalysis.Refactoring
                 // constructor一定指向真原型
                 builder.AppendLine("this.constructor = {0};", TypeName);
                 if (node.Body != null)
-                    WriteBody(node.Body, false, null, null);
+                    Visit(node.Body);
             });
             builder.AppendLine("{0}.{1}.prototype = {0}.prototype;", TypeName, node.Name.Name);
         }
@@ -7291,6 +7291,11 @@ namespace EntryBuilder.CodeAnalysis.Refactoring
         }
         public override void Visit(List<ActualArgument> node)
         {
+            VisitActualArgument(node, DefiningMember);
+        }
+        /// <summary>调用方法时传的实参，传入方法以确定每个参数的类型</summary>
+        void VisitActualArgument(List<ActualArgument> node, CSharpMember member)
+        {
             bool hasArguments = node != null && node.Count > 0;
             // 扩展方法的this参数
             if (exThisParam != null)
@@ -7303,6 +7308,7 @@ namespace EntryBuilder.CodeAnalysis.Refactoring
             }
             if (hasArguments)
             {
+                var parameters = member == null ? null : member.Parameters;
                 for (int i = 0, n = node.Count - 1; i <= n; i++)
                 {
                     var item = node[i];
@@ -7313,8 +7319,17 @@ namespace EntryBuilder.CodeAnalysis.Refactoring
                         Visit(REF_P);
                     }
                     else
-                        //Visit(item.Expression);
-                        WriteStructClone(item.Expression, false);
+                    {
+                        CSharpType delegateType = null;
+                        if (parameters != null)
+                        {
+                            if (parameters.Count > 0 && i >= parameters.Count && parameters.Last().IsParams)
+                                delegateType = parameters.Last().Type;
+                            else
+                                delegateType = parameters[i].Type;
+                        }
+                        WriteStructClone(item.Expression, delegateType);
+                    }
                     if (i != n)
                         builder.Append(", ");
                 }
@@ -7322,9 +7337,8 @@ namespace EntryBuilder.CodeAnalysis.Refactoring
         }
         public override void Visit(Body node)
         {
-            if (node == null)
-                throw new NotImplementedException();
             scopeDepth++;
+            builder.AppendLine();
             builder.AppendLine("{");
             WriteParamsArgument();
             if (inBody.Length > 0)
@@ -7337,31 +7351,6 @@ namespace EntryBuilder.CodeAnalysis.Refactoring
             builder.AppendLine("}");
             scopeDepth--;
         }
-        void WriteBody(Body node, bool withBlock, Action start, Action end)
-        {
-            if (node == null)
-                throw new NotImplementedException();
-            scopeDepth++;
-            if (withBlock)
-            {
-                builder.AppendLine();
-                builder.AppendLine("{");
-            }
-            WriteParamsArgument();
-            if (start != null) start();
-            if (inBody.Length > 0)
-            {
-                builder.Append(inBody);
-                inBody.Clear();
-            }
-            foreach (var item in node.Statements)
-                VisitStatement(item);
-            if (end != null)
-                end();
-            if (withBlock)
-                builder.AppendLine("}");
-            scopeDepth--;
-        }
         public override void Visit(Field node)
         {
             builder.Append(node.Name.Name);
@@ -7369,7 +7358,7 @@ namespace EntryBuilder.CodeAnalysis.Refactoring
             {
                 builder.Append(" = ");
                 //Visit(node.Value);
-                WriteStructClone(node.Value, false);
+                WriteStructClone(node.Value, null);
             }
         }
         public override void Visit(FieldLocal node)
@@ -7399,9 +7388,7 @@ namespace EntryBuilder.CodeAnalysis.Refactoring
             if (node.IsMember)
                 builder.AppendLine(";");
         }
-        public override void Visit(EModifier node)
-        {
-        }
+        public override void Visit(EModifier node) { }
 
         public override void Visit(ForeachStatement node)
         {
@@ -7524,11 +7511,15 @@ namespace EntryBuilder.CodeAnalysis.Refactoring
             if (node.Value != null)
             {
                 builder.Append(" ");
-                WriteStructClone(node.Value, true);
+                WriteStructClone(node.Value, DefiningMember.ReturnType);
             }
             builder.AppendLine(";");
         }
-        void WriteStructClone(SyntaxNode node, bool isReturn)
+        /// <summary><para>事件 += obj; return obj; 方法(obj); obj都有可能是一个方法，此时需要bind(当时的指针对象)</para>
+        /// <para>结构体在调用方法，return时，需要克隆结构体</para></summary>
+        /// <param name="node">obj表达式</param>
+        /// <param name="delegateType">表达式的类型</param>
+        void WriteStructClone(SyntaxNode node, CSharpType delegateType)
         {
             if (node == null)
                 return;
@@ -7540,9 +7531,17 @@ namespace EntryBuilder.CodeAnalysis.Refactoring
                 VAR _var = _ref.Definition.Define as VAR;
                 if (_var != null)
                 {
-                    // 内部定义的临时变量不需要clone
-                    //if (isReturn && _var.DeclaringMember != DefiningMember)
-                        structType = _var.Type;
+                    structType = _var.Type;
+                    if ((delegateType != null && delegateType.IsDelegate) && structType == delegateType)
+                    {
+                        // 委托方法作为参数，需要bind(this)
+                        builder.Append("(");
+                        Visit(node);
+                        builder.Append(")");
+                        if (!DefiningMember.IsStatic)
+                            builder.Append(".bind(this)");
+                        return;
+                    }
                 }
                 else
                 {
@@ -7553,6 +7552,28 @@ namespace EntryBuilder.CodeAnalysis.Refactoring
                         if (member.IsField || member.IsConstant)
                         {
                             structType = member.ReturnType;
+                        }
+                        if ((delegateType != null && delegateType.IsDelegate) && 
+                            (member.IsMethod || (structType != null && structType.IsDelegate)))
+                        {
+                            // 委托方法作为参数，需要bind(this)
+                            builder.Append("(");
+                            Visit(node);
+                            builder.Append(")");
+                            if (node is ReferenceMember)
+                            {
+                                ReferenceMember r = (ReferenceMember)node;
+                                if (r.Target != null)
+                                {
+                                    builder.Append(".bind(");
+                                    Visit(r.Target);
+                                    builder.Append(")");
+                                    return;
+                                }
+                            }
+                            if (!DefiningMember.IsStatic)
+                                builder.Append(".bind(this)");
+                            return;
                         }
                     }
                     else
@@ -7805,7 +7826,7 @@ namespace EntryBuilder.CodeAnalysis.Refactoring
                 if (refMember.IsIndexer)
                 {
                     // 索引器不能使用带ref和out的参数，但可以使用params
-                    indexerArg = PeekLastWrittenExpression(() => Visit(((InvokeMethod)expression).Arguments));
+                    indexerArg = PeekLastWrittenExpression(() => VisitActualArgument(((InvokeMethod)expression).Arguments, refMember));
                     getBuilder.Append(indexerArg);
                 }
                 getBuilder.Append(")");
@@ -7992,16 +8013,24 @@ namespace EntryBuilder.CodeAnalysis.Refactoring
                     opName = _BuildTypeSystem.BinaryOperator[bop].Name;
             }
 
-            string right = PeekLastWrittenExpression(() => WriteStructClone(node.Right, false));
+            CSharpType delegateType = null;
+            if (refVar != null)
+                delegateType = refVar.Type;
+            else if (refMember != null)
+                delegateType = refMember.ReturnType;
+            string right = PeekLastWrittenExpression(() => WriteStructClone(node.Right, delegateType));
             // event = a; event += a; event -= a;
             if ((node.Operator == EBinaryOperator.Assign || node.Operator == EBinaryOperator.AssignSubtract || node.Operator == EBinaryOperator.AssignAdd) &&
-                (refVar != null && refVar.Type.IsDelegate) || (refMember != null && refMember.ReturnType.IsDelegate) && !(node.Right is PrimitiveValue))
+                //(refVar != null && refVar.Type.IsDelegate) || (refMember != null && refMember.ReturnType.IsDelegate) && !(node.Right is PrimitiveValue))
+                (delegateType != null && delegateType.IsDelegate))
             {
                 //if (node.Right is ReferenceMember)
                 //{
                 //    int targetPoint = right.LastIndexOf('.');
                 //    if (targetPoint != -1)
                 //        right = string.Format("{0}.bind({1})", right, right.Substring(0, targetPoint));
+                //    else
+                //        right = string.Format("{0}.bind(this)", right);
                 //}
 
                 if (node.Operator == EBinaryOperator.Assign)
@@ -8040,7 +8069,7 @@ namespace EntryBuilder.CodeAnalysis.Refactoring
                             if (refMember.IsIndexer)
                             {
                                 builder.Append(", ");
-                                Visit(((InvokeMethod)node.Left).Arguments);
+                                VisitActualArgument(((InvokeMethod)node.Left).Arguments, refMember);
                             }
                             builder.Append(")");
                         }
@@ -8176,7 +8205,8 @@ namespace EntryBuilder.CodeAnalysis.Refactoring
             REF lambda = syntax[node];
             CSharpType delegateType = (CSharpType)lambda.Definition.Define;
             CSharpMember invoker = delegateType.DelegateInvokeMethod;
-            closure++;
+
+            PushMember(invoker);
 
             builder.Append("function(");
             Visit(node.Parameters);
@@ -8186,7 +8216,7 @@ namespace EntryBuilder.CodeAnalysis.Refactoring
                 builder.Append("{");
                 if (!CSharpType.IsVoid(invoker.ReturnType))
                     builder.Append(" return ");
-                Visit(node.Body.Statements[0]);
+                WriteStructClone(node.Body.Statements[0], invoker.ReturnType);
                 builder.Append("; }.bind(this)");
             }
             else
@@ -8195,7 +8225,8 @@ namespace EntryBuilder.CodeAnalysis.Refactoring
                 Visit(node.Body);
                 builder.AppendLine(".bind(this)");
             }
-            closure--;
+
+            PopMember();
         }
         void WriteReferenceValue(ReferenceMember node)
         {
@@ -8668,9 +8699,10 @@ namespace EntryBuilder.CodeAnalysis.Refactoring
             }
             syntax.TryGetValue(node, out _ref);
             bool indexerFlag = true;
+            CSharpMember _member = null;
             if (_ref != null && node.IsIndexer)
             {
-                CSharpMember _member = _ref.Definition.Define as CSharpMember;
+                _member = _ref.Definition.Define as CSharpMember;
                 if (_member != null && _member.IsIndexer &&
                     // ArrayBuffer的数组形式调用变成了调用索引器导致语法错误
                     !IsJSArray(_member))
@@ -8686,7 +8718,7 @@ namespace EntryBuilder.CodeAnalysis.Refactoring
                 if (node.Arguments != null && node.Arguments.Count > 0)
                 {
                     builder.Append("[");
-                    Visit(node.Arguments);
+                    VisitActualArgument(node.Arguments, _member);
                     builder.Append("]");
                 }
             }
@@ -8694,15 +8726,15 @@ namespace EntryBuilder.CodeAnalysis.Refactoring
             {
                 if (_ref != null)
                 {
-                    CSharpMember member = _ref.Definition.Define as CSharpMember;
+                    _member = _ref.Definition.Define as CSharpMember;
                     //if (member != null && (member.IsMethod || member.IsIndexer))
-                    if (member != null && member.IsMethod)
+                    if (_member != null && _member.IsMethod)
                     {
                         // 若为泛型方法，node引用的则是泛型方法的原型，用于防止被优化掉的
-                        member = (CSharpMember)syntax[node.Target].Definition.Define;
+                        _member = (CSharpMember)syntax[node.Target].Definition.Define;
                         if (!((ReferenceMember)node.Target).IsGeneric)
                         {
-                            var typeArguments = member.TypeArguments;
+                            var typeArguments = _member.TypeArguments;
                             if (typeArguments.Count > 0)
                             {
                                 builder.Append("(");
@@ -8720,10 +8752,10 @@ namespace EntryBuilder.CodeAnalysis.Refactoring
 
                     // 委托类型调用Invoke方法，Function.prototype也追加了这个方法
                     CSharpType dtype = null;
-                    if (member != null)
+                    if (_member != null)
                     {
-                        if (!member.IsConstructor && !member.IsIndexer && member.ReturnType.IsDelegate)
-                            dtype = member.ReturnType;
+                        if (!_member.IsConstructor && !_member.IsIndexer && _member.ReturnType.IsDelegate)
+                            dtype = _member.ReturnType;
                     }
                     else if (_ref.Definition.Define is CSharpType)
                     {
@@ -8743,7 +8775,7 @@ namespace EntryBuilder.CodeAnalysis.Refactoring
                     }
                 }
                 builder.Append("(");
-                Visit(node.Arguments);
+                VisitActualArgument(node.Arguments, _member);
                 builder.Append(")");
             }
         }
@@ -8762,7 +8794,7 @@ namespace EntryBuilder.CodeAnalysis.Refactoring
                 CSharpType dConstructor = _ref.Definition.Define as CSharpType;
                 if (dConstructor != null && dConstructor.IsDelegate)
                 {
-                    Visit(node.Method.Arguments);
+                    VisitActualArgument(node.Method.Arguments, null);
                     return;
                 }
             }
@@ -9074,6 +9106,7 @@ namespace EntryBuilder.CodeAnalysis.Refactoring
                 names.Push(builder.ToString());
                 builder.Clear();
                 type = type.ContainingType;
+                //break;
             }
             while (names.Count > 0)
             {
@@ -9135,8 +9168,65 @@ namespace EntryBuilder.CodeAnalysis.Refactoring
             return depth;
         }
 
-        internal override void WriteBegin(DefineFile[] files)
+        /// <summary>定义的所有类型，按照被引用的类型优先排序</summary>
+        List<DefineMember> DefineTypes = new List<DefineMember>();
+        /// <summary>还未添加的有继承的类型，需要用于排序后逐步生成类型</summary>
+        Dictionary<CSharpType, DefineMember> DefineTypes2 = new Dictionary<CSharpType, DefineMember>();
+        void AddDefineType(DefineMember type)
         {
+            if (type is DefineType)
+            {
+                var dt = ((DefineType)type);
+                if (dt.Inherits.Count == 0)
+                    DefineTypes.Add(type);
+                else
+                    DefineTypes2.Add(types[type].Type, type);
+                //foreach (var item in dt.NestedType)
+                //    AddDefineType(item);
+            }
+            else
+                // enum | delegate
+                DefineTypes.Add(type);
+        }
+        /// <summary>获取类型引用了的所有类型</summary>
+        /// <param name="type">类型</param>
+        /// <returns>引用了的所有类型</returns>
+        IEnumerable<CSharpType> TypeReferences(CSharpType type)
+        {
+            if (type.BaseClass != null)
+                yield return type.BaseClass;
+            foreach (var item in type.BaseInterfaces)
+                yield return item;
+        }
+        internal override void WriteBegin(IEnumerable<DefineFile> files)
+        {
+            // 添加全部的类型然后排序
+            foreach (var item in files)
+                foreach (var n in item.DefineNamespaces)
+                    foreach (var t in n.DefineTypes)
+                        AddDefineType(t);
+            // 没有继承的类型已经加入DefineTypes，需要排序加入的类型在DefineTypes2
+            while (DefineTypes2.Count > 0)
+            {
+                int count = DefineTypes2.Count;
+                // 本次被添入的类型
+                List<DefineMember> addTypes = new List<DefineMember>();
+                foreach (var item in DefineTypes2)
+                {
+                    if (TypeReferences(item.Key).Any(i => DefineTypes2.ContainsKey(i)))
+                        continue;
+                    addTypes.Add(item.Value);
+                }
+                if (addTypes.Count == 0)
+                    // 所有类型都互相有引用，陷入了死循环
+                    throw new Exception("所有类型都互相有引用，陷入了死循环");
+                foreach (var item in addTypes)
+                {
+                    DefineTypes2.Remove(types[item].Type);
+                    DefineTypes.Add(item);
+                }
+            }
+
             YieldJS.Initialize(this);
             builder = new StringBuilder();
             // 需要生成反射程序集信息的类型
@@ -9145,10 +9235,17 @@ namespace EntryBuilder.CodeAnalysis.Refactoring
             Renamer.Rename(files, this, out this.renamedTypes, out this.renamedMembers);
             Renamer.Rename(CSharpType.STRING, this, "String");
             Renamer.Rename(CSharpType.OBJECT, this, "Object");
+            Renamer.Rename(CSharpType.OBJECT.MemberDefinitions.First(m => m.Name.Name == "ToString"), this, "toString");
             Renamer.Rename(CSharpType.ARRAY, this, "Array");
-            StringBuilder sb = new StringBuilder();
-            foreach (var item in renamedTypes)
-                sb.AppendLine(item.ToString());
+            Renamer.Rename(CSharpType.MATH, this, "Math");
+            foreach (var item in CSharpType.MATH.MemberDefinitions)
+            {
+                string oname = GetRenamedMemberOriginName(item);
+                Renamer.Rename(item, this, oname.ToLower());
+            }
+            //StringBuilder sb = new StringBuilder();
+            //foreach (var item in renamedTypes)
+            //    sb.AppendLine(item.ToString());
             //System.IO.File.WriteAllText("index.txt", sb.ToString());
 
             builder.AppendLine("Number.prototype.GetHashCode = function() { return this; };");
@@ -9735,8 +9832,11 @@ namespace EntryBuilder.CodeAnalysis.Refactoring
             beginWriter = builder;
             builder = new StringBuilder();
             swapWriter = builder;
+
+            foreach (var item in DefineTypes)
+                Visit(item);
         }
-        internal override void WriteEnd(DefineFile[] files)
+        internal override void WriteEnd(IEnumerable<DefineFile> files)
         {
             // BUG: 泛型类型的构造函数暂未解决，也就是没法反射构建List<T>
             endWriter.AppendLine("Activator.CreateDefault = function(t)");
@@ -10601,17 +10701,11 @@ namespace EntryBuilder.CodeAnalysis.Refactoring
                 default: throw new NotImplementedException();
             }
 
-            rewriter.WriteBegin(files);
-            foreach (var file in files)
-            {
-                if (CodeFileHelper.ParseFileType(file.Name) == EFileType.Define)
-                {
-                    _LOG.Debug("跳过定义文件：[{0}]", file.Name);
-                    continue;
-                }
+            var defineFiles = files.Where(f => CodeFileHelper.ParseFileType(f.Name) != EFileType.Define);
+            rewriter.WriteBegin(defineFiles);
+            foreach (var file in defineFiles)
                 rewriter.Visit(file);
-            }
-            rewriter.WriteEnd(files);
+            rewriter.WriteEnd(defineFiles);
             return rewriter.Result;
         }
         private static void BuildTypeSystem(_BuildTypeSystem target, CSharpAssembly assembly, _BuildTypeSystem previous, Project project)
@@ -11514,6 +11608,7 @@ namespace EntryBuilder.CodeAnalysis.Refactoring
                 case "MulticastDelegate": CSharpType.MULTICAST_DELEGATE = type; break;
                 case "Array": if (DefiningNamespace.Name == "System") CSharpType.ARRAY = type; break;
                 case "Enum": CSharpType.ENUM = type; break;
+                case "Math": if (DefiningNamespace.Name == "System") CSharpType.MATH = type; break;
                 case "ValueType": CSharpType.VALUE_TYPE = type; break;
                 case "void": CSharpType.VOID = type; break;
                 case "bool": CSharpType.BOOL = type; break;
