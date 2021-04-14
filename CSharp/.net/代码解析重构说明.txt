@@ -84,3 +84,11 @@ _Request.GetServicesByRequestID((int)Request.ID, (res) =>
             }
         }
     });
+
+)18
+需要覆盖掉.net的默认方法时，例如JS的字符串的length字段，要直接取代C#字符串的Length属性时
+定义扩展可替换的class @_string
+将要替换的字段定义成public extern int Length { get; }这样的extern字段，此时这个字段不会生成代码
+在生成代码时，重命名字段即可
+Renamer.Rename(CSharpType.STRING.MemberDefinitions.First(m => m.Name.Name == "Length"), this, "length");
+需要时，将属性修改成字段((MemberDefinitionInfo)item)._Kind = MemberDefinitionKind.Field;

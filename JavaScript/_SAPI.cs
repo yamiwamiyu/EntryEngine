@@ -17,18 +17,19 @@ public partial class @_double
         return window.isNaN(f);
     }
 }
+public partial class @_object : Object_ { }
 public partial class @_string : String
 {
-    public int Length { get { return this.length; } }
+    public extern int Length { get; }
     public char this[int index] { get { return (char)this.charCodeAt(index); } }
-    public int IndexOf(string value)
-    {
-        return indexOf(value);
-    }
-    public int IndexOf(string value, int startIndex)
-    {
-        return indexOf(value, startIndex);
-    }
+    //public int IndexOf(string value)
+    //{
+    //    return indexOf(value);
+    //}
+    //public int IndexOf(string value, int startIndex)
+    //{
+    //    return indexOf(value, startIndex);
+    //}
     public string Substring(int startIndex, int length)
     {
         return this.substring(startIndex, startIndex + length);
@@ -101,6 +102,17 @@ public partial class @_string : String
     //    //}
     //    //return str;
     //}
+
+    public extern int IndexOf(string str);
+    // IndexOf改名为JS类型的indexOf
+    public extern int IndexOf(string str, int index);
+    public extern override string ToString();
+#if !DEBUG
+    public static string Join(string separator, string[] values)
+    {
+        return values.join(separator);
+    }
+#endif
 }
 
 namespace __System
@@ -170,7 +182,8 @@ namespace __System
     }
     public abstract partial class @_Array : Array_
     {
-        public int Length { get { return this.length; } }
+        // 代码生成时，直接将Length属性改为了JS代码的length字段
+        //public int Length { get { return this.length; } }
     }
     public partial class Exception : Error
     {

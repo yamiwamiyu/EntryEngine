@@ -805,10 +805,10 @@ using __System.Text;
 #endif
     }
 #if !DEBUG
-    public override string ToString()
-    {
-        return this;
-    }
+    //public override string ToString()
+    //{
+    //    return this;
+    //}
 #endif
     
     public static bool IsNullOrEmpty(string value)

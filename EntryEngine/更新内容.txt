@@ -1,4 +1,7 @@
 ﻿2020/04/13
+1. 进一步优化生成JS代码，减少String.Length，Math.Sqrt等多个方法的生成
+
+2020/04/13
 1. 修复生成JS代码BinaryOperator运算符错误的BUG
 2. 减少bind(this)，优化运行效率
 3. 优化Object.toString，Math等方法

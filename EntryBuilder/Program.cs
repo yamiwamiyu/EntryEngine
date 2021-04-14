@@ -505,6 +505,7 @@ namespace EntryBuilder
         [STAThread]
 		static void Main(string[] args)
         {
+            new XmlReader("<root><test>巴拉巴拉</test></root>").ReadToNode();
             //PSD2JS("首页.psd", @"C:\Yamiwamiyu\Project\YMHY2\gaming-center\dist\", true);
             //_LOG._Logger = new LoggerConsole();
 

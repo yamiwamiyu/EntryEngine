@@ -6831,7 +6831,7 @@ namespace EntryBuilder.CodeAnalysis.Refactoring
                         // 静态构造函
                         foreach (var item in node.Methods.Where(m => m is DefineConstructor && (m.Modifier & EModifier.Static) != EModifier.None))
                         {
-                            builder.Append("(function()");
+                            builder.AppendLine("(function()");
                             Visit(item.Body);
                             // 直接调用此构造函数
                             builder.AppendLine(")();");
@@ -7338,7 +7338,7 @@ namespace EntryBuilder.CodeAnalysis.Refactoring
         public override void Visit(Body node)
         {
             scopeDepth++;
-            builder.AppendLine();
+            //builder.AppendLine();
             builder.AppendLine("{");
             WriteParamsArgument();
             if (inBody.Length > 0)
@@ -8388,7 +8388,7 @@ namespace EntryBuilder.CodeAnalysis.Refactoring
                             if (member.IsProperty)
                                 builder.Append("()");
                         }
-                        else if (member.IsMethod && invokeType == CSharpType.CHAR && member.Name.Name == "ToString")
+                        else if (member.IsMethod && invokeType == CSharpType.CHAR && member.Name.Name == "toString")
                         {
                             // char|enum.ToString等的特殊处理
                             builder.Append("$c2s");
@@ -9234,9 +9234,38 @@ namespace EntryBuilder.CodeAnalysis.Refactoring
             // 重命名类型和成员名称，达到减少代码量和混淆的作用
             Renamer.Rename(files, this, out this.renamedTypes, out this.renamedMembers);
             Renamer.Rename(CSharpType.STRING, this, "String");
+            foreach (var item in CSharpType.STRING.MemberDefinitions)
+            {
+                string name = GetRenamedMemberOriginName(item);
+                switch (name)
+                {
+                    case "Length":
+                        // 把Length属性直接改为JS字符串的length字段
+                        ((MemberDefinitionInfo)item)._Kind = MemberDefinitionKind.Field;
+                        Renamer.Rename(item, this, "length");
+                        break;
+
+                    case "IndexOf":
+                        if (item.Parameters[0].Type == CSharpType.STRING)
+                            Renamer.Rename(item, this, "indexOf");
+                        break;
+                }
+            }
             Renamer.Rename(CSharpType.OBJECT, this, "Object");
             Renamer.Rename(CSharpType.OBJECT.MemberDefinitions.First(m => m.Name.Name == "ToString"), this, "toString");
             Renamer.Rename(CSharpType.ARRAY, this, "Array");
+            foreach (var item in CSharpType.ARRAY.MemberDefinitions)
+            {
+                string name = GetRenamedMemberOriginName(item);
+                switch (name)
+                {
+                    case "Length":
+                        // 把Length属性直接改为JS数组的length字段
+                        ((MemberDefinitionInfo)item)._Kind = MemberDefinitionKind.Field;
+                        Renamer.Rename(item, this, "length");
+                        break;
+                }
+            }
             Renamer.Rename(CSharpType.MATH, this, "Math");
             foreach (var item in CSharpType.MATH.MemberDefinitions)
             {
@@ -10716,6 +10745,7 @@ namespace EntryBuilder.CodeAnalysis.Refactoring
         }
         private static T BuildTypeSystem<T>(CSharpAssembly assembly, _BuildTypeSystem previous, Project project) where T : _BuildTypeSystem, new()
         {
+            _LOG.Info("{0}解析中", typeof(T).Name);
             T target = new T();
             BuildTypeSystem(target, assembly, previous, project);
             return target;
@@ -13116,8 +13146,7 @@ namespace EntryBuilder.CodeAnalysis.Refactoring
                     {
                         var current = parents.Pop();
                         // todo: test
-                        if (current.Name.Name == "GetServicesByRequestID" && definingMember != null && definingMember.Name.Name == "MyLoading")
-                        //if (current.Name.Name == "IndexOf" && definingMember != null && definingMember.Name.Name == "IndexOf" && definingType.Name.Name == "Utility")
+                        if (current.Name.Name == "Sqrt" && definingMember != null && definingMember.Name.Name == "IsPrime")
                         {
                             CSharpMember member2 = definingType.Members.FirstOrDefault(f => f.Name.Name == current.Name.Name);
                         }

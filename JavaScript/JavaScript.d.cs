@@ -3,9 +3,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-public class Object
+public class Object_
 {
-    public extern Object this[Object obj] { get; set; }
+    public extern object this[object obj] { get; set; }
     public extern string toString();
 }
 public class Date
@@ -69,21 +69,18 @@ public class Number
     public static double POSITIVE_INFINITY;
     public extern Number(object obj);
 }
-//public class Array
-//{
-//    public int length;
-//    public extern object this[int index] { get; set; }
-//    public Array() { }
-//    public Array(int size) { }
-//    public Array(params object[] args) { }
-//    public string join(string seperator) { return null; }
-//    public Array slice(int start, int end) { return null; }
-//}
-// 用于给Array继承
+/// <summary>用于给Array继承</summary>
 public class Array_
 {
     public int length;
-    public extern object this[int index] { get; set; }
+    //public extern object this[int index] { get; set; }
+    public extern Array_();
+    public extern Array_(int size);
+    public extern Array_(params object[] args);
+    public extern string join(string split);
+    public extern void push(object obj);
+    public extern object pop();
+    public extern Array slice(int start, int end);
 }
 public class Error
 {
@@ -132,12 +129,11 @@ public static class window
         /// <summary>120为单位，向前滚为120，相反为-120</summary>
         public sbyte wheelDelta;
     }
-
     public class Document
     {
         /* 事件处理
-         * 收到down事件后，直到未收到up事件期间都认为down事件有效
-         */
+            * 收到down事件后，直到未收到up事件期间都认为down事件有效
+            */
         public Action<MouseEvent> onmousedown;
         public Action<MouseEvent> onmousemove;
         public Action<MouseEvent> onmouseup;

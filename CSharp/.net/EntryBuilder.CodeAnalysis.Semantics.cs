@@ -1186,7 +1186,11 @@ namespace EntryBuilder.CodeAnalysis.Semantics
                     else if (IsEnum)
                         _base = ENUM;
                     // 在运行时环境以上可能都为null
-                    if (_base == null && this != OBJECT)
+                    if (_base == null && this != OBJECT
+#if DEBUG
+                        && (OBJECT._BaseTypes.Count == 0 || OBJECT._BaseTypes[0] != this)
+#endif
+                        )
                         _base = OBJECT;
                 }
                 return _base;
@@ -1234,6 +1238,13 @@ namespace EntryBuilder.CodeAnalysis.Semantics
             get
             {
                 var _base = BaseClass;
+                // 防止object继承其它框架的object类型时陷入死循环
+                //if (this == OBJECT && _base != null)
+                //{
+                //    List<CSharpType> temp = new List<CSharpType>(1);
+                //    temp.Add(_base);
+                //    return temp;
+                //}
                 if (_base != null)
                     return _NestedTypes.Concat(_base.NestedTypes).ToList();
                 else
