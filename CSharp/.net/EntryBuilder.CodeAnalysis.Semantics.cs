@@ -2801,7 +2801,17 @@ namespace EntryBuilder.CodeAnalysis.Semantics
             public bool IsRef { get { return Direction == EDirection.REF; } }
             public bool IsOut { get { return Direction == EDirection.OUT; } }
             public string DefaultValueString;
+            public bool MatchParameter(CSharpParameter parameter)
+            {
+                if (IsRef != parameter.IsRef
+                    || IsOut != parameter.IsOut
+                    || IsParams != parameter.IsParams
+                    || IsThis != parameter.IsThis)
+                    return false;
+                return Type.Equals(parameter.Type);
+            }
         }
+        internal static ParameterData[] EmptyList = new ParameterData[0];
 
         private TypeDefinitionInfo definingType;
         private readonly int memberIndex;
@@ -4363,6 +4373,21 @@ namespace EntryBuilder.CodeAnalysis.Semantics
                 sb.Append(' ');
                 sb.Append(this.Name);
             }
+        }
+        public static bool Equals(IList<CSharpParameter> p1, IList<CSharpParameter> p2)
+        {
+            if (p1.Count != p2.Count)
+                return false;
+            for (int i = 0; i < p1.Count; i++)
+            {
+                if (p1[i].Type != p2[i].Type
+                    || p1[i].IsOut != p2[i].IsOut
+                    || p1[i].IsParams != p2[i].IsParams
+                    || p1[i].IsRef != p2[i].IsRef
+                    || p1[i].IsThis != p2[i].IsThis)
+                    return false;
+            }
+            return true;
         }
     }
     public class CSharpDefaultParameterValue

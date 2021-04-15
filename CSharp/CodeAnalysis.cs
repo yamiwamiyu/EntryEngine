@@ -5908,12 +5908,13 @@ namespace EntryBuilder.CodeAnalysis.Refactoring
                         if (member.IsOverride || member.ExplicitInterfaceImplementation != null || member.IsExtern)
                             continue;
 
-                        // 隐式实现接口的成员也应该不修改名字
-                        if (CSharpType.GetAllBaseInterfaces(type.BaseInterfaces).SelectMany(i => i.MemberDefinitions).Any(m => m.Name == member.Name))
-                            continue;
-
                         BEREF beref2;
                         if (!processor.HasMember(member, out beref2))
+                            continue;
+
+                        // 隐式实现接口的成员也应该不修改名字
+                        if (CSharpType.GetAllBaseInterfaces(type.BaseInterfaces).SelectMany(i => i.MemberDefinitions).Any(m => 
+                            m.Name == member.Name && CSharpParameter.Equals(m.Parameters, member.Parameters)))
                             continue;
 
                         if (member.Attributes.Any(a => a.Type.Name.Name == AInvariant.Name))
@@ -14363,13 +14364,6 @@ namespace EntryBuilder.CodeAnalysis.Refactoring
             else if (beRefObj is CSharpMember)
             {
                 CSharpMember member = (CSharpMember)beRefObj;
-                //if (member.DefiningMember != null)
-                //{
-                //    while (member.DefiningMember != null)
-                //        member = member.DefiningMember;
-                //    // 新增一个引用去引用定义
-                //    AddRef(new ReferenceMember(reference), member, reference);
-                //}
                 while (member.DefiningMember != null)
                 {
                     member = member.DefiningMember;
@@ -14609,11 +14603,15 @@ namespace EntryBuilder.CodeAnalysis.Refactoring
         void ReferenceBaseMember(DefineMember define, int gcount, List<FormalArgument> arguments)
         {
             int count = arguments == null ? 0 : arguments.Count;
-            CSharpType[] argTypes;
-            if (count == 0) argTypes = CSharpType.EmptyList;
-            else argTypes = new CSharpType[count];
+            MemberDefinitionInfo.ParameterData[] argTypes;
+            //CSharpType[] argTypes;
+            if (count == 0) argTypes = MemberDefinitionInfo.EmptyList;
+            else argTypes = new MemberDefinitionInfo.ParameterData[count];
             for (int i = 0; i < argTypes.Length; i++)
-                argTypes[i] = FindType(arguments[i].Type);
+            {
+                argTypes[i].Type = FindType(arguments[i].Type);
+                argTypes[i].Direction = arguments[i].Direction;
+            }
 
             var member = MatchOverridedOrImplementedMember(DefiningMember, gcount, argTypes);
             if (member != null)
@@ -14643,7 +14641,7 @@ namespace EntryBuilder.CodeAnalysis.Refactoring
             }
         }
         /// <summary>重写的成员或接口的实现成员应该引用base成员</summary>
-        CSharpMember MatchOverridedOrImplementedMember(CSharpMember member, int gcount, CSharpType[] argTypes)
+        CSharpMember MatchOverridedOrImplementedMember(CSharpMember member, int gcount, MemberDefinitionInfo.ParameterData[] argTypes)
         {
             // 显示实现的接口成员引用接口成员
             // 若没有显示实现的接口成员，但有隐式实现的接口成员，也引用接口成员
@@ -14664,7 +14662,7 @@ namespace EntryBuilder.CodeAnalysis.Refactoring
                 if (args.Count != argTypes.Length)
                     continue;
                 int i = 0;
-                if (argTypes.All(a => a.Equals(args[i++].Type)))
+                if (argTypes.All(a => a.MatchParameter(args[i++])))
                     result = item;
             }
             if (result == null || result == member) return null;
