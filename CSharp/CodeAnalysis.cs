@@ -6169,6 +6169,7 @@ namespace EntryBuilder.CodeAnalysis.Refactoring
                 }
             }
         }
+        /// <summary>寻找body中是否使用有this的内容，关系着委托方法是否需要bind(this)</summary>
         class ThisReference : SyntaxWalker
         {
             public static ThisReference ins;
@@ -7298,8 +7299,10 @@ namespace EntryBuilder.CodeAnalysis.Refactoring
         {
             bool hasArguments = node != null && node.Count > 0;
             // 扩展方法的this参数
+            int offset = 0;
             if (exThisParam != null)
             {
+                offset++;
                 var temp = exThisParam;
                 exThisParam = null;
                 Visit(temp);
@@ -7309,7 +7312,7 @@ namespace EntryBuilder.CodeAnalysis.Refactoring
             if (hasArguments)
             {
                 var parameters = member == null ? null : member.Parameters;
-                for (int i = 0, n = node.Count - 1; i <= n; i++)
+                for (int i = 0, n = node.Count - 1; i <= n; i++, offset++)
                 {
                     var item = node[i];
                     // ref && out
@@ -7323,10 +7326,10 @@ namespace EntryBuilder.CodeAnalysis.Refactoring
                         CSharpType delegateType = null;
                         if (parameters != null)
                         {
-                            if (parameters.Count > 0 && i >= parameters.Count && parameters.Last().IsParams)
+                            if (parameters.Count > 0 && offset >= parameters.Count && parameters.Last().IsParams)
                                 delegateType = parameters.Last().Type;
                             else
-                                delegateType = parameters[i].Type;
+                                delegateType = parameters[offset].Type;
                         }
                         WriteStructClone(item.Expression, delegateType);
                     }
@@ -7524,6 +7527,12 @@ namespace EntryBuilder.CodeAnalysis.Refactoring
             if (node == null)
                 return;
 
+            // expression ? expression.bind(bind) : expression;
+            string expression = null;
+            string bind = null;
+            // isNull为false时，例如引用this.方法时，肯定不为null，此时不需要判断null，直接bind(this)即可
+            bool isNull = true;
+
             REF _ref;
             if (syntax.TryGetValue(node, out _ref))
             {
@@ -7532,15 +7541,16 @@ namespace EntryBuilder.CodeAnalysis.Refactoring
                 if (_var != null)
                 {
                     structType = _var.Type;
-                    if ((delegateType != null && delegateType.IsDelegate) && structType == delegateType)
+                    if ((delegateType != null && (delegateType.IsDelegate || delegateType == CSharpType.DELEGATE))
+                        //&& structType.Equals(delegateType)
+                        )
                     {
                         // 委托方法作为参数，需要bind(this)
-                        builder.Append("(");
-                        Visit(node);
-                        builder.Append(")");
+                        //builder.Append("(");
+                        //Visit(node);
+                        //builder.Append(")");
                         if (!DefiningMember.IsStatic)
-                            builder.Append(".bind(this)");
-                        return;
+                            bind = "this";
                     }
                 }
                 else
@@ -7553,27 +7563,24 @@ namespace EntryBuilder.CodeAnalysis.Refactoring
                         {
                             structType = member.ReturnType;
                         }
-                        if ((delegateType != null && delegateType.IsDelegate) && 
+                        if ((delegateType != null && (delegateType.IsDelegate || delegateType == CSharpType.DELEGATE)) && 
                             (member.IsMethod || (structType != null && structType.IsDelegate)))
                         {
+                            isNull = !member.IsMethod;
                             // 委托方法作为参数，需要bind(this)
-                            builder.Append("(");
-                            Visit(node);
-                            builder.Append(")");
+                            //builder.Append("(");
+                            //Visit(node);
+                            //builder.Append(")");
                             if (node is ReferenceMember)
                             {
                                 ReferenceMember r = (ReferenceMember)node;
                                 if (r.Target != null)
                                 {
-                                    builder.Append(".bind(");
-                                    Visit(r.Target);
-                                    builder.Append(")");
-                                    return;
+                                    bind = PeekLastWrittenExpression(() => Visit(r.Target));
                                 }
                             }
-                            if (!DefiningMember.IsStatic)
-                                builder.Append(".bind(this)");
-                            return;
+                            if (bind == null && !DefiningMember.IsStatic)
+                                bind = "this";
                         }
                     }
                     else
@@ -7581,7 +7588,7 @@ namespace EntryBuilder.CodeAnalysis.Refactoring
                         CSharpType type = _ref.Definition.Define as CSharpType;
                         if (type != null)
                         {
-                            // array[i]的情况
+                            // array[i] | 临时委托
                             if (type.IsArray)
                                 structType = type.ElementType;
                             else
@@ -7589,21 +7596,41 @@ namespace EntryBuilder.CodeAnalysis.Refactoring
                                 if (!(node is PrimitiveValue))
                                     structType = type;
                             }
+                            // 临时委托
+                            if (delegateType != null && (delegateType.IsDelegate || delegateType == CSharpType.DELEGATE))
+                            {
+                                isNull = type.IsArray;
+                                if (!DefiningMember.IsStatic)
+                                    bind = "this";
+                            }
                         }
                     }
                 }
 
                 if (structType != null && structType.IsValueType && !CSharpType.IsPrimitive(structType) && !structType.IsEnum)
                 {
-                    builder.Append("(");
+                    //builder.Append("(");
                     Visit(node);
-                    builder.Append(").{0}()", STRUCT_CLONE);
+                    builder.Append(".{0}()", STRUCT_CLONE);
                 }
                 else
-                    Visit(node);
+                {
+                    //Visit(node);
+                    expression = PeekLastWrittenExpression(() => Visit(node));
+                    if (!(node is PrimitiveValue) && bind != null)
+                        if (isNull)
+                            builder.Append("{0} ? {0}.bind({1}) : {0}", expression, bind);
+                        else
+                            builder.Append("{0}.bind({1})", expression, bind);
+                    else
+                        builder.Append(expression);
+                }
             }
             else
                 Visit(node);
+            // null除外
+            //if (!(node is PrimitiveValue) && delegateType != null && delegateType.IsDelegate)
+            //    builder.Append(".bind(this)");
         }
 
         void VisitOperatorParameter(SyntaxNode memberNode, SyntaxNode opNode, out VAR refVar, out CSharpMember refMember, out CSharpMember refOperator)
@@ -8032,7 +8059,6 @@ namespace EntryBuilder.CodeAnalysis.Refactoring
                 //    else
                 //        right = string.Format("{0}.bind(this)", right);
                 //}
-
                 if (node.Operator == EBinaryOperator.Assign)
                 {
                 }
@@ -8217,13 +8243,14 @@ namespace EntryBuilder.CodeAnalysis.Refactoring
                 if (!CSharpType.IsVoid(invoker.ReturnType))
                     builder.Append(" return ");
                 WriteStructClone(node.Body.Statements[0], invoker.ReturnType);
-                builder.Append("; }.bind(this)");
+                //builder.Append("; }.bind(this)");
+                builder.Append("; }");
             }
             else
             {
                 builder.AppendLine();
                 Visit(node.Body);
-                builder.AppendLine(".bind(this)");
+                //builder.AppendLine(".bind(this)");
             }
 
             PopMember();
@@ -8557,7 +8584,7 @@ namespace EntryBuilder.CodeAnalysis.Refactoring
 
             var refNew = this.refNewNode;
             this.refNewNode = null;
-            
+
             // 泛型构造函数调用 new (List(int))();
             CSharpType returnType;
             object define;
@@ -8794,7 +8821,7 @@ namespace EntryBuilder.CodeAnalysis.Refactoring
                 CSharpType dConstructor = _ref.Definition.Define as CSharpType;
                 if (dConstructor != null && dConstructor.IsDelegate)
                 {
-                    VisitActualArgument(node.Method.Arguments, null);
+                    VisitActualArgument(node.Method.Arguments, dConstructor.Members.First(d => d.IsConstructor));
                     return;
                 }
             }
