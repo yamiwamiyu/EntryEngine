@@ -6107,7 +6107,6 @@ namespace EntryBuilder.CodeAnalysis.Refactoring
         const string REF = "_r";
         static ReferenceMember REF_P = new ReferenceMember(new Named(null));
         const string TYPE_NAME = "_TN";
-        const string INHERIT = "_TI";
         static ReferenceMember CONSTRUCTOR = new ReferenceMember(new Named("this.constructor"));
         const string STRUCT_COPY = "$copy2";
         const string STRUCT_CLONE = "$clone";
@@ -8434,9 +8433,8 @@ namespace EntryBuilder.CodeAnalysis.Refactoring
                         }
                         else
                         {
-                            //if (type.IsArray)
-                            //    builder.Append(GetTypeName(type));
-                            builder.Append(GetTypeDefinitionName(type));
+                            // default(内部类)，生成JS需要外部类.内部类
+                            builder.Append(GetTypeName(type, node.Target == null && type.ContainingType != null));
                         }
                     }
                     else
@@ -9042,53 +9040,7 @@ namespace EntryBuilder.CodeAnalysis.Refactoring
             else
                 return "null";
         }
-        internal static string GetTypeDefinitionName(CSharpType t)
-        {
-            if (t == null)
-                return null;
-
-            if (t.ContainingType == null && !t.IsConstructed)
-            {
-                // 数组类型 reader.ReadObject<Piece[]>() => reader.ReadObject(___Array(Piece))()
-                if (t.IsArray)
-                {
-                    return string.Format("$array({0})", GetTypeName(t.ElementType));
-                    //return string.Format("___Array({0})", GetTypeName(t.ElementType));
-                }
-                else if (t.TypeParametersCount > 0)
-                {
-                    // 泛型定义类型
-                    return GENERIC_NAME;
-                }
-                return t.Name.Name;
-            }
-
-            StringBuilder builder = new StringBuilder();
-            var type = t;
-            // 泛型
-            var typeArguments = type.TypeArguments;
-            int n = typeArguments.Count - 1;
-            if (n >= 0)
-                builder.Append("(");
-            builder.Append(type.Name.Name);
-            if (n >= 0)
-            {
-                builder.Append("(");
-                for (int i = 0; i <= n; i++)
-                {
-                    builder.Append(GetTypeName(typeArguments[i]));
-                    if (i != n)
-                        builder.Append(", ");
-                }
-                builder.Append("))");
-            }
-            return builder.ToString();
-
-            //if (t.IsArray)
-            //    return GetTypeDefinitionName(t.ElementType);
-            //return t.Name.Name;
-        }
-        internal static string GetTypeName(CSharpType t)
+        internal static string GetTypeName(CSharpType t, bool full = true)
         {
             if (t == null)
                 return null;
@@ -9134,7 +9086,8 @@ namespace EntryBuilder.CodeAnalysis.Refactoring
                 names.Push(builder.ToString());
                 builder.Clear();
                 type = type.ContainingType;
-                //break;
+                if (!full)
+                    break;
             }
             while (names.Count > 0)
             {
