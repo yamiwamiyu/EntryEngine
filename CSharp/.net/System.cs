@@ -1594,7 +1594,7 @@ namespace __System
         }
         public static object Parse(Type enumType, string value)
         {
-            throw new Exception();
+            return Convert.ChangeType(long.Parse(value), GetUnderlyingType(enumType));
         }
     }
     /// <summary>delegate默认先继承MulticastDelegate</summary>
