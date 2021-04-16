@@ -505,7 +505,6 @@ namespace EntryBuilder
         [STAThread]
 		static void Main(string[] args)
         {
-            new XmlReader("<root><test>巴拉巴拉</test></root>").ReadToNode();
             //PSD2JS("首页.psd", @"C:\Yamiwamiyu\Project\YMHY2\gaming-center\dist\", true);
             //_LOG._Logger = new LoggerConsole();
 
@@ -519,6 +518,7 @@ namespace EntryBuilder
 
             //PublishToPC(@"D:\Project\xss\xss\Launch\Client", @"D:\Project\xss\xss\Launch\Client");
             PublishToWebGL(@"C:\Yamiwamiyu\Project\EntryEngineGit\trunk\", @"C:\Yamiwamiyu\Project\ChamberH5New\Code\Client", "", @"C:\Yamiwamiyu\Project\ChamberH5New\Publish\WebGL\index.html", false, 1);
+            //PublishToWebGL(@"C:\Yamiwamiyu\Project\EntryEngineGit\trunk\", @"C:\Yamiwamiyu\Project\IslandChronicle\Code\Client", "", @"C:\Yamiwamiyu\Project\ChamberH5New\Publish\WebGL\index.html", false, 1);
             //BuildTableTranslate("", "");
             //BuildDatabaseMysql(@"C:\Yamiwamiyu\Project\YMHY\Code\Protocol\Protocol\bin\Release\Protocol.dll", "Server._DB", @"C:\Yamiwamiyu\Project\YMHY\Code\Server\Server\_DB.design.cs", "", "", false);
             //BuildProtocolAgentHttp("", @"D:\Project2\xss\xss\Code\ServerImpl\", @"D:\Project2\xss\xss\Code\Protocol\Protocol\bin\Release\Protocol.dll", false);

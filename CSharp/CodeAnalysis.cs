@@ -6513,6 +6513,7 @@ namespace EntryBuilder.CodeAnalysis.Refactoring
             builder.AppendLine("Object.prototype.GetType = function() { return $tof(this.constructor); };");
             //builder.AppendLine("Object.prototype.ToString = function() { return this.toString(); };");
             builder.AppendLine("Object.prototype.GetHashCode = function() { if (!this.$hash) this.$hash = new Date().getTime() & $H32; return this.$hash; };");
+            builder.AppendLine("Object.prototype[Symbol.iterator] = function() { return this.GetEnumerator()[Symbol.iterator](); };");
         }
         protected override void VisitTypeString(DefineType type)
         {
@@ -6529,6 +6530,7 @@ namespace EntryBuilder.CodeAnalysis.Refactoring
                 builder.AppendLine("for (var i = c0 * 5; i < n; i++) strs[i0++] = String.fromCharCode(chars[i]);");
                 builder.AppendLine("return strs.join(\"\");");
             });
+            builder.AppendLine("String.prototype[Symbol.iterator] = function*() { for (var i = 0; i < this.length; i++) yield this.charCodeAt(i); }");
         }
         protected override void VisitTypeArray(DefineType type)
         {
@@ -6817,6 +6819,11 @@ namespace EntryBuilder.CodeAnalysis.Refactoring
                     foreach (DefineMethod item in node.Methods.Where(m => m is DefineMethod && (m.Modifier & EModifier.Static) != EModifier.None)) Visit(item);
                     // 实例方法
                     foreach (DefineMethod item in node.Methods.Where(m => m is DefineMethod && (m.Modifier & EModifier.Static) == EModifier.None)) Visit(item);
+                    // IEnumerator生成单独的迭代方法
+                    if (type.Is(CSharpType.IENUMERATOR))
+                    {
+                        builder.AppendLine("{0}.prototype[Symbol.iterator] = function*() {{ while (this.MoveNext()) yield this.{1}Current(); }}", TypeName, GET);
+                    }
                     // 内部类
                     foreach (var item in node.NestedType) Visit(item);
 
@@ -6941,7 +6948,7 @@ namespace EntryBuilder.CodeAnalysis.Refactoring
                 // 防止显示实现的成员覆盖掉隐式实现的成员
                 if (!member.IsStatic && node.ExplicitImplement != null)
                     builder.AppendLine("if (!{0}.{3}{1}{2})", TypeName, GET, name, isStatic);
-                builder.Append("{0}.{3}{1}{2} = function(", TypeName, GET, name, isStatic);
+                builder.Append("{0}.{3}{1}{2} = function{4}(", TypeName, GET, name, isStatic, IEnumeratorTester.TestYield(node.Getter.Body) ? "*" : string.Empty);
                 Visit(node.Arguments);
                 builder.Append(")");
                 if (node.Getter.Body == null)
@@ -7148,6 +7155,7 @@ namespace EntryBuilder.CodeAnalysis.Refactoring
         }
         void WriteIEnumerableBody(List<FormalArgument> arguments, CSharpMember method, Body body)
         {
+            //Visit(body);
             if (body == null)
             {
                 Visit(body);
@@ -7157,106 +7165,133 @@ namespace EntryBuilder.CodeAnalysis.Refactoring
                 var e = IEnumeratorTester.EnumeratorType(method.ReturnType);
                 if (e != EEnumerator.None && IEnumeratorTester.TestYield(body))
                 {
-                    inYieldEnumerable = true;
-                    isStaticYield = DefiningMember.IsStatic;
-                    DefineType define;
-                    var stateList = IEnumeratorRebuilder.Build(arguments, method, body, out define);
+                    #region 旧Yield块
+                    //inYieldEnumerable = true;
+                    //isStaticYield = DefiningMember.IsStatic;
+                    //DefineType define;
+                    //var stateList = IEnumeratorRebuilder.Build(arguments, method, body, out define);
+                    //builder.AppendBlock(() =>
+                    //{
+                    //    builder.AppendLine("function $create()");
+                    //    builder.AppendBlock(() =>
+                    //    {
+                    //        // 方法体使用此类型
+                    //        builder.AppendLine("var _ = new {0}.{1}();", TypeName, define.Name.Name);
+                    //        if (arguments != null)
+                    //            foreach (var item in arguments)
+                    //                builder.AppendLine("_.{0} = {0};", item.Name.Name);
+                    //        // $this
+                    //        if (!DefiningMember.IsStatic)
+                    //            builder.AppendLine("_.{0} = this;", TEMP_THIS);
+                    //        builder.AppendLine("return _;");
+                    //    });
+
+                    //    // yield方法块做缓存
+                    //    builder.AppendLine("if (!{0}.{1})", TypeName, define.Name.Name);
+                    //    // 声明此迭代器类型
+                    //    builder.AppendBlock(() =>
+                    //    {
+                    //        // Constructor
+                    //        builder.AppendLine("{0}.{1} = function()", TypeName, define.Name.Name);
+                    //        builder.AppendBlockWithEnd(() =>
+                    //        {
+                    //            //WriteReflectionInfo(define.Name.Name, true);
+                    //            //builder.AppendLine("this.{0}Current = function(){{return {0};", GetDefaultValueCode(method.ReturnType.TypeArguments[0]));
+                    //            builder.AppendLine("{0} = 0;", IEnumeratorRebuilder.ENUMERATOR_STATE);
+                    //            //if (!DefiningMember.IsStatic)
+                    //            //    builder.AppendLine("$bind($this, [this.GetEnumerator,this.MoveNext]);");
+                    //        });
+                    //        // TypeName
+                    //        //builder.AppendLine("{0}.{1}.{2} = \"0_{0}_{1}\";", TypeName, define.Name.Name, TYPE_NAME);
+                    //        // GetEnumerator
+                    //        //builder.AppendLine("{0}.{1}.prototype.GetEnumerator = function() {{ return this; }}", TypeName, define.Name.Name);
+                    //        builder.AppendLine("{0}.{1}.prototype.GetEnumerator = function()", TypeName, define.Name.Name);
+                    //        builder.AppendBlockWithEnd(() =>
+                    //        {
+                    //            // 第一次就使用本身，后面再创建新实例
+                    //            builder.AppendLine("if (!this.$get) { this.$get = true; return this; }");
+                    //            builder.AppendLine("var __ = new {0}.{1}();", TypeName, define.Name.Name);
+                    //            if (arguments != null)
+                    //                foreach (var item in arguments)
+                    //                    builder.AppendLine("__.{0} = this.{0};", item.Name.Name);
+                    //            builder.AppendLine("return __;");
+                    //        });
+                    //        // Current
+                    //        builder.AppendLine("{0}.{1}.prototype.{2}Current = function() {{ return this.$current; }};", TypeName, define.Name.Name, GET);
+                    //        builder.AppendLine("{0}.{1}.prototype.{2}Current = function(v) {{ return this.$current = v; }};", TypeName, define.Name.Name, SET);
+                    //        // Reset
+                    //        builder.AppendLine("{0}.{1}.prototype.Reset = function(){{}};", TypeName, define.Name.Name);
+                    //        // Dispose
+                    //        builder.AppendLine("{0}.{1}.prototype.Dispose = function(){{}};", TypeName, define.Name.Name);
+                    //        // MoveNext
+                    //        builder.AppendLine("{0}.{1}.prototype.MoveNext = function()", TypeName, define.Name.Name);
+                    //        builder.AppendBlockWithEnd(() =>
+                    //        {
+                    //            builder.AppendLine("var temp = {0};", IEnumeratorRebuilder.ENUMERATOR_STATE);
+                    //            builder.AppendLine("do { temp = this.__Move(temp); } while (temp >= 0);");
+                    //            builder.AppendLine("return temp == -1");
+                    //        });
+                    //        // 生成Yield的核心代码__Move
+                    //        builder.AppendLine("{0}.{1}.prototype.__Move = function(__s)", TypeName, define.Name.Name);
+                    //        builder.AppendBlockWithEnd(() =>
+                    //        {
+                    //            // 调用方法传入的参数全部追加this
+                    //            if (arguments != null)
+                    //                foreach (var item in arguments)
+                    //                    Renamer.Rename(syntax[item].Definition.Define, this, "this." + item.Name.Name);
+                    //            // $this
+                    //            if (!DefiningMember.IsStatic)
+                    //                builder.AppendLine("var {0} = this.{0};", TEMP_THIS);
+                    //            builder.AppendLine("switch (__s)");
+                    //            builder.AppendBlock(() =>
+                    //            {
+                    //                for (int i = 0; i < stateList.Count; i++)
+                    //                {
+                    //                    builder.AppendLine("case {0}:", i);
+                    //                    foreach (var item in stateList[i])
+                    //                    {
+                    //                        VisitStatement(item);
+                    //                    }
+                    //                    builder.AppendLine();
+                    //                }
+                    //            });
+                    //            builder.AppendLine("return -2;");
+                    //        });
+                    //    });
+
+                    //    builder.AppendLine("return $create.bind(this)();");
+                    //});// end of enumerator body
+                    //inYieldEnumerable = false;
+                    #endregion
                     builder.AppendBlock(() =>
                     {
-                        builder.AppendLine("function $create()");
-                        builder.AppendBlock(() =>
+                        if (e == EEnumerator.Enumerable)
                         {
-                            // 方法体使用此类型
-                            builder.AppendLine("var _ = new {0}.{1}();", TypeName, define.Name.Name);
-                            if (arguments != null)
-                                foreach (var item in arguments)
-                                    builder.AppendLine("_.{0} = {0};", item.Name.Name);
-                            // $this
-                            if (!DefiningMember.IsStatic)
-                                builder.AppendLine("_.{0} = this;", TEMP_THIS);
-                            builder.AppendLine("return _;");
-                        });
-
-                        // yield方法块做缓存
-                        builder.AppendLine("if (!{0}.{1})", TypeName, define.Name.Name);
-                        // 声明此迭代器类型
-                        builder.AppendBlock(() =>
+                            builder.AppendLine("return new $enumerable(function*()");
+                            Visit(body);
+                            builder.AppendLine(".bind(this));");
+                        }
+                        else
                         {
-                            // Constructor
-                            builder.AppendLine("{0}.{1} = function()", TypeName, define.Name.Name);
-                            builder.AppendBlockWithEnd(() =>
-                            {
-                                //WriteReflectionInfo(define.Name.Name, true);
-                                //builder.AppendLine("this.{0}Current = function(){{return {0};", GetDefaultValueCode(method.ReturnType.TypeArguments[0]));
-                                builder.AppendLine("{0} = 0;", IEnumeratorRebuilder.ENUMERATOR_STATE);
-                                //if (!DefiningMember.IsStatic)
-                                //    builder.AppendLine("$bind($this, [this.GetEnumerator,this.MoveNext]);");
-                            });
-                            // TypeName
-                            //builder.AppendLine("{0}.{1}.{2} = \"0_{0}_{1}\";", TypeName, define.Name.Name, TYPE_NAME);
-                            // GetEnumerator
-                            //builder.AppendLine("{0}.{1}.prototype.GetEnumerator = function() {{ return this; }}", TypeName, define.Name.Name);
-                            builder.AppendLine("{0}.{1}.prototype.GetEnumerator = function()", TypeName, define.Name.Name);
-                            builder.AppendBlockWithEnd(() =>
-                            {
-                                // 第一次就使用本身，后面再创建新实例
-                                builder.AppendLine("if (!this.$get) { this.$get = true; return this; }");
-                                builder.AppendLine("var __ = new {0}.{1}();", TypeName, define.Name.Name);
-                                if (arguments != null)
-                                    foreach (var item in arguments)
-                                        builder.AppendLine("__.{0} = this.{0};", item.Name.Name);
-                                builder.AppendLine("return __;");
-                            });
-                            // Current
-                            builder.AppendLine("{0}.{1}.prototype.{2}Current = function() {{ return this.$current; }};", TypeName, define.Name.Name, GET);
-                            builder.AppendLine("{0}.{1}.prototype.{2}Current = function(v) {{ return this.$current = v; }};", TypeName, define.Name.Name, SET);
-                            // Reset
-                            builder.AppendLine("{0}.{1}.prototype.Reset = function(){{}};", TypeName, define.Name.Name);
-                            // Dispose
-                            builder.AppendLine("{0}.{1}.prototype.Dispose = function(){{}};", TypeName, define.Name.Name);
-                            // MoveNext
-                            builder.AppendLine("{0}.{1}.prototype.MoveNext = function()", TypeName, define.Name.Name);
-                            builder.AppendBlockWithEnd(() =>
-                            {
-                                builder.AppendLine("var temp = {0};", IEnumeratorRebuilder.ENUMERATOR_STATE);
-                                builder.AppendLine("do { temp = this.__Move(temp); } while (temp >= 0);");
-                                builder.AppendLine("return temp == -1");
-                            });
-                            // 生成Yield的核心代码__Move
-                            builder.AppendLine("{0}.{1}.prototype.__Move = function(__s)", TypeName, define.Name.Name);
-                            builder.AppendBlockWithEnd(() =>
-                            {
-                                // 调用方法传入的参数全部追加this
-                                if (arguments != null)
-                                    foreach (var item in arguments)
-                                        Renamer.Rename(syntax[item].Definition.Define, this, "this." + item.Name.Name);
-                                // $this
-                                if (!DefiningMember.IsStatic)
-                                    builder.AppendLine("var {0} = this.{0};", TEMP_THIS);
-                                builder.AppendLine("switch (__s)");
-                                builder.AppendBlock(() =>
-                                {
-                                    for (int i = 0; i < stateList.Count; i++)
-                                    {
-                                        builder.AppendLine("case {0}:", i);
-                                        foreach (var item in stateList[i])
-                                        {
-                                            VisitStatement(item);
-                                        }
-                                        builder.AppendLine();
-                                    }
-                                });
-                                builder.AppendLine("return -2;");
-                            });
-                        });
-
-                        builder.AppendLine("return $create.bind(this)();");
-                    });// end of enumerator body
-                    inYieldEnumerable = false;
+                            builder.AppendLine("return new $enumerator(function*()");
+                            Visit(body);
+                            builder.AppendLine(".bind(this));");
+                        }
+                    });
                 }
                 else
                     Visit(body);
             }
+        }
+        public override void Visit(YieldReturnStatement node)
+        {
+            builder.Append("yield ");
+            Visit(node.Value);
+            builder.AppendLine(";");
+        }
+        public override void Visit(YieldBreakStatement node)
+        {
+            builder.AppendLine("return;");
         }
         public override void Visit(List<FormalArgument> node)
         {
@@ -7396,8 +7431,33 @@ namespace EntryBuilder.CodeAnalysis.Refactoring
         public override void Visit(ForeachStatement node)
         {
             // HACK: 同一域内两个相同的foreach则可能导致重名，不过在JS里重名只是后一个覆盖前一个所以暂时没问题
-            string name = ENUMERABLE + scopeDepth;
-            builder.Append("var {0} = ", name);
+            //string name = ENUMERABLE + scopeDepth;
+            //builder.Append("var {0} = ", name);
+            //Visit(node.In);
+            //CSharpType etype;
+            //var obj = syntax[node.In].Definition.Define;
+            //if (obj is CSharpMember)
+            //    etype = ((CSharpMember)obj).ReturnType;
+            //else if (obj is VAR)
+            //    etype = ((VAR)obj).Type;
+            //else
+            //    etype = (CSharpType)obj;
+            //if (IEnumeratorTester.EnumeratorType(etype) == EEnumerator.Enumerable)
+            //    builder.Append(".GetEnumerator()");
+            //else
+            //    throw new ArgumentException("foreach只能对应IEnumerable类型的对象");
+            //builder.AppendLine(";");
+
+            //builder.AppendLine("while ({0}.MoveNext())", name);
+            //builder.AppendBlock(() =>
+            //{
+            //    builder.AppendLine("var {0} = {1}.{2}Current();", node.Name.Name, name, GET);
+            //    Visit(node.Body);
+            //});
+
+
+            // JS语法 for (var item of enumerable)
+            builder.Append("for (var {0} of ", node.Name.Name);
             Visit(node.In);
             CSharpType etype;
             var obj = syntax[node.In].Definition.Define;
@@ -7407,16 +7467,8 @@ namespace EntryBuilder.CodeAnalysis.Refactoring
                 etype = ((VAR)obj).Type;
             else
                 etype = (CSharpType)obj;
-            if (IEnumeratorTester.EnumeratorType(etype) == EEnumerator.Enumerable)
-                builder.Append(".GetEnumerator()");
-            builder.AppendLine(";");
-
-            builder.AppendLine("while ({0}.MoveNext())", name);
-            builder.AppendBlock(() =>
-            {
-                builder.AppendLine("var {0} = {1}.{2}Current();", node.Name.Name, name, GET);
-                Visit(node.Body);
-            });
+            builder.AppendLine(")");
+            Visit(node.Body);
         }
         public override void Visit(TryCatchFinallyStatement node)
         {
@@ -9264,6 +9316,16 @@ namespace EntryBuilder.CodeAnalysis.Refactoring
             // todo: enum.ToString
             // builder.AppendLine("Number.prototype.$e2s = function() { this.GetType() }");
             builder.AppendLine("Function.prototype.Invoke = function() { return this.apply(null, arguments); };");
+            // IEnumerable
+            builder.AppendLine("function $enumerable(e) { this.$e = e; };");
+            builder.AppendLine("$enumerable.prototype.GetEnumerator = function() { return new $enumerator(this.$e); };");
+            builder.AppendLine("$enumerable.prototype[Symbol.iterator] = function() { return this.$e(); };");
+            builder.AppendLine("function $enumerator(e) { this.e = e; this.$e = e(); };");
+            builder.AppendLine("$enumerator.prototype.MoveNext = function() { var e = this.$e.next(); if (e.done) { return false; } else { this.$c = e.value; return true; } }");
+            builder.AppendLine("$enumerator.prototype.{0}Current = function() {{ return this.$c; }};", GET);
+            builder.AppendLine("$enumerator.prototype.Reset = function() { this.$e = this.e(); };");
+            builder.AppendLine("$enumerator.prototype.Dispose = function() { };");
+            builder.AppendLine("$enumerator.prototype[Symbol.iterator] = function() { return this.e(); };");
 
             /*
              * 关键字
