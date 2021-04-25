@@ -852,7 +852,7 @@ namespace EntryEngine
         private int _updated;
         private float _elapsed;
         internal int _stream;
-        public List<ParticleStream> Flow;
+        public ParticleStream[] Flow;
 
         public int Count
         {
@@ -900,7 +900,7 @@ namespace EntryEngine
         public void Update(float elapsed)
         {
             _updated = GameTime.Time.FrameID;
-            if (Flow == null || Flow.Count == 0 || elapsed == 0)
+            if (Flow == null || Flow.Length == 0 || elapsed == 0)
                 return;
 
             _stream = 0;
@@ -913,7 +913,7 @@ namespace EntryEngine
         {
             if (Flow != null)
             {
-                int end = Flow.Count;
+                int end = Flow.Length;
                 for (int i = p.StreamIndex; i < end; i++)
                 {
                     var flow = Flow[i];
@@ -1018,7 +1018,7 @@ namespace EntryEngine
             _updated = 0;
             particles.ClearToFree();
             if (Flow != null)
-                for (int i = 0; i < Flow.Count; i++)
+                for (int i = 0; i < Flow.Length; i++)
                     if (Flow[i] != null)
                         Flow[i].Reset();
         }
@@ -1028,11 +1028,11 @@ namespace EntryEngine
             var cache = new ParticleEmitter();
             if (this.Flow != null)
             {
-                cache.Flow = new List<ParticleStream>();
-                int count = this.Flow.Count;
+                int count = this.Flow.Length;
+                cache.Flow = new ParticleStream[count];
                 for (int i = 0; i < count; i++)
                 {
-                    cache.Flow.Add(this.Flow[i].Clone());
+                    cache.Flow[i] = this.Flow[i].Clone();
                 }
             }
             return cache;

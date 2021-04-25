@@ -6861,7 +6861,7 @@ namespace EntryBuilder.CodeAnalysis.Refactoring
                     builder.AppendLine("{0}.types[__i].keys = __array;", ParentTypeName);
                     builder.AppendLine("{0}.types[__i].value = {1};", ParentTypeName, TypeName);
                     builder.AppendLine("return {0};", TypeName);
-                    builder.AppendLine("}");
+                    builder.AppendLine("};");
                     typeNames.Pop();
                     WriteReflectionInfo(null, false);
                 }
@@ -7570,7 +7570,7 @@ namespace EntryBuilder.CodeAnalysis.Refactoring
             }
             builder.AppendLine(";");
         }
-        /// <summary><para>事件 += obj; return obj; 方法(obj); obj都有可能是一个方法，此时需要bind(当时的指针对象)</para>
+        /// <summary><para>var = obj; 事件 += obj; return obj; 方法(obj); obj都有可能是一个方法，此时需要bind(当时的指针对象)</para>
         /// <para>结构体在调用方法，return时，需要克隆结构体</para></summary>
         /// <param name="node">obj表达式</param>
         /// <param name="delegateType">表达式的类型</param>
@@ -7651,7 +7651,10 @@ namespace EntryBuilder.CodeAnalysis.Refactoring
                             // 临时委托
                             if (delegateType != null && (delegateType.IsDelegate || delegateType == CSharpType.DELEGATE))
                             {
-                                isNull = type.IsArray;
+                                isNull = type.IsArray
+                                    // _read = PARENT.onDeserialize[i](type, ReadingField);
+                                    // 引用的是委托类型的委托方法，返回一个委托，此时返回的委托要判空
+                                    || (type.IsDelegate && type.DelegateInvokeMethod.ReturnType.IsDelegate);
                                 if (!DefiningMember.IsStatic)
                                     bind = "this";
                             }
@@ -7671,7 +7674,7 @@ namespace EntryBuilder.CodeAnalysis.Refactoring
                     expression = PeekLastWrittenExpression(() => Visit(node));
                     if (!(node is PrimitiveValue) && bind != null)
                         if (isNull)
-                            builder.Append("{0} ? {0}.bind({1}) : {0}", expression, bind);
+                            builder.Append("$bind({0}, {1})", expression, bind);
                         else
                             builder.Append("{0}.bind({1})", expression, bind);
                     else
@@ -7718,7 +7721,12 @@ namespace EntryBuilder.CodeAnalysis.Refactoring
             {
                 CSharpMember member = refOp.Definition.Define as CSharpMember;
                 if (member != null && member.IsOperator)
+                {
+                    // 泛型委托实例的方法，改为调用Delegate的方法
+                    while (member.DefiningMember != null)
+                        member = member.DefiningMember;
                     refOperator = member;
+                }
             }
         }
         string CheckOverflow(VAR refVar, CSharpMember refMember, string arg)
@@ -9313,6 +9321,8 @@ namespace EntryBuilder.CodeAnalysis.Refactoring
             builder.AppendLine("Number.prototype.GetHashCode = function() { return this; };");
             builder.AppendLine("Number.prototype.$c2s = function() { return String.fromCharCode(this); };");
             builder.AppendLine("Number.prototype.Equals = function(v) { return this.valueOf() === v; };");
+            // bind(this)
+            builder.AppendLine("function $bind(func, t) { if (func) { return func.bind(t); } else { return func; } };");
             // todo: enum.ToString
             // builder.AppendLine("Number.prototype.$e2s = function() { this.GetType() }");
             builder.AppendLine("Function.prototype.Invoke = function() { return this.apply(null, arguments); };");
@@ -9482,10 +9492,10 @@ namespace EntryBuilder.CodeAnalysis.Refactoring
             */
             builder.AppendLine("function _R(){}");
             builder.AppendLine("_R.$TC = [];"); // CSharpType Cache
-            builder.AppendLine("_R.RTC = [];"); // RuntimeType Cache
-            builder.AppendLine("_R.AC = [];");  // Assembly Cache
-            builder.AppendLine("_R.CAC = [];"); // CSharpAssembly Cache
-            builder.AppendLine("_R.NC = [];");  // Namespace Cache
+            //builder.AppendLine("_R.RTC = [];"); // RuntimeType Cache
+            //builder.AppendLine("_R.AC = [];");  // Assembly Cache
+            //builder.AppendLine("_R.CAC = [];"); // CSharpAssembly Cache
+            //builder.AppendLine("_R.NC = [];");  // Namespace Cache
 
             #region CSharpType AllocType(string name)
             // 命名空间
@@ -9512,6 +9522,7 @@ namespace EntryBuilder.CodeAnalysis.Refactoring
             builder.AppendLine("_R.BuildType = function(name)");
             builder.AppendBlockWithEnd(() =>
             {
+                builder.AppendLine("name = name.valueOf();");
                 builder.AppendLine("switch (name)");
                 builder.AppendBlock(() =>
                 {
@@ -9911,7 +9922,12 @@ namespace EntryBuilder.CodeAnalysis.Refactoring
         internal override void WriteEnd(IEnumerable<DefineFile> files)
         {
             // BUG: 泛型类型的构造函数暂未解决，也就是没法反射构建List<T>
-            endWriter.AppendLine("Activator.CreateDefault = function(t)");
+            endWriter.AppendLine("_R.$GetType = function(t)");
+            endWriter.AppendBlockWithEnd(() =>
+            {
+                endWriter.AppendLine("");
+            });
+            endWriter.AppendLine("_R.CreateObject = function(t)");
             endWriter.AppendBlockWithEnd(() =>
             {
                 endWriter.AppendLine("var name = CSharpType.GetRuntimeTypeName(t.type);");

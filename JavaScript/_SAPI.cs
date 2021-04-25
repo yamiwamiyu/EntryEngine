@@ -18,6 +18,7 @@ public partial class @_double
     }
 }
 public partial class @_object : Object_ { }
+/// <summary>todo: String类型实例方法中返回this时，会是个String实例，而不是字符串的值，在switch时会失效</summary>
 public partial class @_string : String
 {
     public extern int Length { get; }

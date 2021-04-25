@@ -1485,37 +1485,11 @@ namespace EntryEngine.Serialize
     public static class _SERIALIZE
     {
         public static readonly object[] EmptyObjects = new object[0];
-        private static Dictionary<char, char> ESC = new Dictionary<char, char>();
+        private static Dictionary<char, char> ESC;
         /// <summary>变量名不能使用的字符</summary>
         public const string VARIABLE_NAME = "/?.>,<;:'\"\\|}]{[=+-)(*&^%$#@!`~\r\n\t ";
         /// <summary>变量名不能使用的C#关键字</summary>
         public static HashSet<string> Keywords;
-
-        static _SERIALIZE()
-        {
-            ESC.Add('t', '\t');
-            ESC.Add('r', '\r');
-            ESC.Add('n', '\n');
-            ESC.Add('0', '\0');
-
-            Keywords = new HashSet<string>(new string[]
-            {
-                // 访问修饰符
-                "volatile", "partial", "private", "internal", "protected", "public", "abstract", "virtual", "override", "sealed", "static", "readonly", "const", "new", "partial", "extern", "unsafe", "explicit", "implicit", "event", "operator",
-                // 类型
-                "class", "struct", "interface", "enum", "delegate",
-                // 泛型，参数
-                "in", "out", "ref", "params", "this", "base",
-                // 运算符
-                "typeof", "sizeof", "default", "checked", "unchecked", "as", "is",
-                // 声明
-                "if", "else", "switch", "case", "goto", "for", "foreach", "while", "do", "continue", "break", "return", "yield", "throw", "try", "catch", "finally", "using", "fixed", "lock",
-                // 类型
-                "bool", "true", "false", "sbyte", "byte", "char", "short", "ushort", "int", "uint", "float", "long", "ulong", "double", "decimal", "object", "null", "void",
-                // 其它
-                "namespace", "stackalloc",
-            });
-        }
 
         public static T ReadObject<T>(this IReader reader)
         {
@@ -1563,8 +1537,20 @@ namespace EntryEngine.Serialize
             reader.Setting.Static = true;
             reader.ReadObject(staticType);
         }
+        private static void InitializeESC()
+        {
+            if (ESC == null)
+            {
+                ESC = new Dictionary<char, char>();
+                ESC.Add('t', '\t');
+                ESC.Add('r', '\r');
+                ESC.Add('n', '\n');
+                ESC.Add('0', '\0');
+            }
+        }
         public static char GetEscapeChar(char c)
         {
+            InitializeESC();
             char ec;
             if (ESC.TryGetValue(c, out ec))
                 return ec;
@@ -1573,6 +1559,7 @@ namespace EntryEngine.Serialize
         }
         public static char GetUnescapeChar(char c, out bool unescaped)
         {
+            InitializeESC();
             unescaped = true;
             foreach (var item in ESC)
                 if (item.Value == c)
@@ -1638,6 +1625,26 @@ namespace EntryEngine.Serialize
         /// <summary>是否是合法的变量名</summary>
         public static bool IsVariableName(string name)
         {
+            if (Keywords == null)
+            {
+                Keywords = new HashSet<string>(new string[]
+                {
+                    // 访问修饰符
+                    "volatile", "partial", "private", "internal", "protected", "public", "abstract", "virtual", "override", "sealed", "static", "readonly", "const", "new", "partial", "extern", "unsafe", "explicit", "implicit", "event", "operator",
+                    // 类型
+                    "class", "struct", "interface", "enum", "delegate",
+                    // 泛型，参数
+                    "in", "out", "ref", "params", "this", "base",
+                    // 运算符
+                    "typeof", "sizeof", "default", "checked", "unchecked", "as", "is",
+                    // 声明
+                    "if", "else", "switch", "case", "goto", "for", "foreach", "while", "do", "continue", "break", "return", "yield", "throw", "try", "catch", "finally", "using", "fixed", "lock",
+                    // 类型
+                    "bool", "true", "false", "sbyte", "byte", "char", "short", "ushort", "int", "uint", "float", "long", "ulong", "double", "decimal", "object", "null", "void",
+                    // 其它
+                    "namespace", "stackalloc",
+                });
+            }
             if (string.IsNullOrEmpty(name)) return false;
             // 不能数字开头
             char c = name[0];
@@ -1743,78 +1750,24 @@ namespace EntryEngine.Serialize
 #if DEBUG
                 if (type == null)
                 {
-                    // 缓存
-                    int index = name.IndexOf('[', 0);
-                    if (index == -1)
-                    {
-                        string[] names = name.Split(',');
-                        names[1] = names[1].Trim();
-                        var assemblies = AppDomain.CurrentDomain.GetAssemblies();
-                        var ass = assemblies.FirstOrDefault(a => a.GetName().Name == names[1]);
-                        if (ass == null)
-                            return null;
-                        // mono: 若没有类型则肯定抛出TypeLoadException
-                        type = ass.GetType(names[0]);
-                    }
-                    else
-                    {
-                        string typeName = name.Substring(0, index);
-                        // 追加最后的程序集信息
-                        int lastIndex = name.LastIndexOf(',');
-                        typeName += name.Substring(lastIndex);
-                        type = LoadSimpleAQName(typeName);
-                        int index2 = typeName.IndexOf('`', 0);
-                        if (index2 != -1)
+                    var assemblies = AppDomain.CurrentDomain.GetAssemblies();
+                    type = _SERIALIZE.ParseTypeName<Type>(name,
+                        (typeName, assemblyName) =>
                         {
-                            int typeParameterCount = int.Parse(name.Substring(index2 + 1, index - index2 - 1));
-                            Type[] typeArguments = new Type[typeParameterCount];
-                            int gcount = 1;
-                            index += 2;
-                            index2 = index;
-                            int tai = 0;
-                            while (true)
-                            {
-                                int end = name.IndexOf(']', index2);
-                                int start = name.IndexOf('[', index2);
-                                if (start != -1 && start < end)
-                                {
-                                    // 有其它的泛型类型
-                                    gcount++;
-                                    index2 = start + 1;
-                                    continue;
-                                }
-                                if (gcount > 0)
-                                {
-                                    // 其它泛型类型的结束
-                                    gcount--;
-                                    if (gcount > 0)
-                                    {
-                                        index2 = end + 1;
-                                        continue;
-                                    }
-                                }
-                                typeName = name.Substring(index, end - index);
-                                typeArguments[tai++] = LoadSimpleAQName(typeName);
-                                if (tai == typeArguments.Length)
-                                {
-                                    // 跳过字符]]
-                                    index = end + 2;
-                                    break;
-                                }
-                                // 跳过字符：],[
-                                index = end + 3;
-                                index2 = index;
-                                gcount = 1;
-                            }
-                            type = type.MakeGenericType(typeArguments);
-                        }
-                        // name[index] == '[' 用于处理 System.Int32[], mscorlib
-                        while (index < name.Length && name[index] == '[')
+                            var ass = assemblies.FirstOrDefault(a => a.GetName().Name == assemblyName);
+                            if (ass == null)
+                                return null;
+                            // mono: 若没有类型则肯定抛出TypeLoadException
+                            return ass.GetType(typeName);
+                        },
+                        (t1, tArray) =>
                         {
-                            type = type.MakeArrayType();
-                            index += 2;
-                        }
-                    }
+                            return t1.MakeGenericType(tArray);
+                        },
+                        (t) =>
+                        {
+                            return t.MakeArrayType();
+                        });
                 }
 #endif
             }
@@ -1823,6 +1776,93 @@ namespace EntryEngine.Serialize
                 type = null;
             }
             return type;
+        }
+        /// <summary>解析类型全名称</summary>
+        /// <param name="name">类型全名称</param>
+        /// <param name="onParseType">例如System.Int32, mscorlib，根据类型名System.Int32和程序集名mscorlib构造类型T</param>
+        /// <param name="onGeneric">构造泛型类型</param>
+        /// <param name="onArray">构造数组类型</param>
+        public static T ParseTypeName<T>(string name, 
+            Func<string, string, T> onParseType,
+            Func<T, T[], T> onGeneric,
+            Func<T, T> onArray)
+        {
+            int index = name.IndexOf('[', 0);
+            if (index == -1)
+            {
+                string[] names = name.Split(',');
+                if (names.Length > 1)
+                {
+                    names[1] = names[1].Trim();
+                    return onParseType(names[0], names[1]);
+                }
+                else
+                    return onParseType(names[0], null);
+            }
+            else
+            {
+                string typeName = name.Substring(0, index);
+                // 追加最后的程序集信息
+                int lastIndex = name.LastIndexOf(']');
+                lastIndex = name.IndexOf(',', lastIndex);
+                string aname = null;
+                if (lastIndex != -1)
+                    aname = name.Substring(lastIndex + 2);
+                T type = onParseType(typeName, aname);
+                int index2 = typeName.IndexOf('`', 0);
+                if (index2 != -1)
+                {
+                    int typeParameterCount = int.Parse(name.Substring(index2 + 1, index - index2 - 1));
+                    T[] typeArguments = new T[typeParameterCount];
+                    int gcount = 1;
+                    index += 2;
+                    index2 = index;
+                    int tai = 0;
+                    while (true)
+                    {
+                        int end = name.IndexOf(']', index2);
+                        int start = name.IndexOf('[', index2);
+                        if (start != -1 && start < end)
+                        {
+                            // 有其它的泛型类型
+                            gcount++;
+                            index2 = start + 1;
+                            continue;
+                        }
+                        if (gcount > 0)
+                        {
+                            // 其它泛型类型的结束
+                            gcount--;
+                            if (gcount > 0)
+                            {
+                                index2 = end + 1;
+                                continue;
+                            }
+                        }
+                        typeName = name.Substring(index, end - index);
+                        typeArguments[tai++] = ParseTypeName(typeName, onParseType, onGeneric, onArray);
+                        if (tai == typeArguments.Length)
+                        {
+                            // 跳过字符]]
+                            index = end + 2;
+                            break;
+                        }
+                        // 跳过字符：],[
+                        index = end + 3;
+                        index2 = index;
+                        gcount = 1;
+                    }
+
+                    type = onGeneric(type, typeArguments);
+                }
+                // name[index] == '[' 用于处理 System.Int32[], mscorlib
+                while (index < name.Length && name[index] == '[')
+                {
+                    type = onArray(type);
+                    index += 2;
+                }
+                return type;
+            }
         }
         public static bool IsCustomType(this Type type)
         {

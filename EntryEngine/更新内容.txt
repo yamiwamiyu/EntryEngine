@@ -1,4 +1,9 @@
-﻿2020/04/16
+﻿2020/04/25
+1. 优化生成JS反射代码的逻辑和API
+2. ParticleEmitter.Flow由List改为数组，方便JS进行反射
+3. 修复CSharpType一些底层方法BUG
+
+2020/04/16
 1. 生成JS代码yield代码块直接使用
 
 2020/04/15

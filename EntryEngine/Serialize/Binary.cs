@@ -72,6 +72,25 @@ namespace EntryEngine.Serialize
             return flush;
         }
 
+        /// <summary>检测类型是否是可支持的泛型类型</summary>
+        /// <param name="type">检测的类型</param>
+        /// <returns>-1: 不支持 / 否则: 支持</returns>
+        public int SupportGenericType(Type type)
+        {
+            if (!type.IsGenericType) return -1;
+            //return type.AssemblyQualifiedName
+            throw new NotImplementedException();
+        }
+
+        protected static string[] SupportiveGenericTypes =
+        {
+            "System.Collections.Generic.List^1",
+            "System.Collections.Generic.Queue^1",
+            "System.Collections.Generic.Stack^1",
+            "System.Collections.Generic.LinkedList^1",
+            "System.Collections.Generic.Dictionary^2",
+            "System.Nullable^1",
+        };
         protected static Type[] SupportiveTypes =
         {
             typeof(bool),

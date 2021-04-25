@@ -68,4 +68,4 @@ internal class ANonOptimize : Attribute { public static readonly string Name = t
 /// <summary>标识此特性的类型在重构代码时生成程序集信息</summary>
 internal class AReflexible : Attribute { public static readonly string Name = typeof(AReflexible).Name; }
 /// <summary>标识此特性的类型或成员需要在目标语言上实现重写覆盖API</summary>
-internal class ASystemAPI : Attribute { public static readonly string Name = typeof(AReflexible).Name; }
+internal class ASystemAPI : Attribute { public static readonly string Name = typeof(ASystemAPI).Name; }

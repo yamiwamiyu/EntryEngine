@@ -52,6 +52,7 @@ public class String
     public extern string replace(RegExp searchValue, string replaceValue);
     public extern string substring(int start);
     public extern string substring(int start, int end);
+    public extern string valueOf();
     public extern static string fromCharCode(params char[] unicodes);
 }
 public class RegExp

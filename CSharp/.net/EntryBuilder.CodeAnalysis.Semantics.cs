@@ -438,73 +438,23 @@ namespace EntryBuilder.CodeAnalysis.Semantics
                 return false;
             }
         }
-        public virtual CSharpType DefiningType
-        {
-            get
-            {
-                return null;
-            }
-        }
-        public virtual CSharpMember DefiningMember
-        {
-            get
-            {
-                return null;
-            }
-        }
-        public virtual CSharpNamespace ContainingNamespace
-        {
-            get
-            {
-                return null;
-            }
-        }
-        public virtual CSharpType ContainingType
-        {
-            get
-            {
-                return null;
-            }
-        }
-        public virtual CSharpType UnderlyingType
-        {
-            get
-            {
-                return null;
-            }
-        }
-        public virtual IList<CSharpType> NestedTypes
-        {
-            get
-            {
-                return CSharpType.EmptyList;
-            }
-        }
-        public virtual IList<CSharpType> TypeParameters
-        {
-            get
-            {
-                return CSharpType.EmptyList;
-            }
-        }
-        public virtual int TypeParametersCount
-        {
-            get { return 0; }
-        }
-        public virtual CSharpType BaseClass
-        {
-            get
-            {
-                return null;
-            }
-        }
-        public virtual IList<CSharpType> BaseInterfaces
-        {
-            get
-            {
-                return CSharpType.EmptyList;
-            }
-        }
+        /// <summary>泛型类型的定义类，例如List^1[[int]]，这个类型就是List^1</summary>
+        public virtual CSharpType DefiningType { get { return null; } }
+        /// <summary>泛型类型的成员类，例如List^1[[int]]的ToArray(返回int[])，这个类型就是List^1的ToArray(返回T[])</summary>
+        public virtual CSharpMember DefiningMember { get { return null; } }
+        /// <summary>类型所在的命名空间</summary>
+        public virtual CSharpNamespace ContainingNamespace { get { return null; } }
+        /// <summary>类型的外部类</summary>
+        public virtual CSharpType ContainingType { get { return null; } }
+        public virtual CSharpType UnderlyingType { get { return null; } }
+        /// <summary>内部类</summary>
+        public virtual IList<CSharpType> NestedTypes { get { return CSharpType.EmptyList; } }
+        /// <summary>泛型形参</summary>
+        public virtual IList<CSharpType> TypeParameters { get { return CSharpType.EmptyList; } }
+        public virtual int TypeParametersCount { get { return TypeParameters.Count; } }
+        /// <summary>继承的父类</summary>
+        public virtual CSharpType BaseClass { get { return null; } }
+        public virtual IList<CSharpType> BaseInterfaces { get { return CSharpType.EmptyList; } }
         public virtual CSharpMember DelegateInvokeMethod
         {
             get
@@ -516,94 +466,31 @@ namespace EntryBuilder.CodeAnalysis.Semantics
                 return null;
             }
         }
-        public virtual IList<CSharpMember> Members
-        {
-            get
-            {
-                return CSharpMember.EmptyList;
-            }
-        }
-        internal virtual IList<CSharpMember> MemberDefinitions
-        {
-            get { return CSharpMember.EmptyList; }
-        }
-        public virtual IList<CSharpType> TypeArguments
-        {
-            get
-            {
-                return CSharpType.EmptyList;
-            }
-        }
-        public virtual int TypeParameterPosition
-        {
-            get
-            {
-                return -1;
-            }
-        }
-        public virtual bool HasConstructorConstraint
-        {
-            get
-            {
-                return false;
-            }
-        }
-        public virtual bool HasValueTypeConstraint
-        {
-            get
-            {
-                return false;
-            }
-        }
-        public virtual bool HasReferenceTypeConstraint
-        {
-            get
-            {
-                return false;
-            }
-        }
-        public virtual IList<CSharpType> TypeConstraints
-        {
-            get
-            {
-                return CSharpType.EmptyList;
-            }
-        }
-        public virtual bool IsCovariant
-        {
-            get
-            {
-                return false;
-            }
-        }
-        public virtual bool IsContravariant
-        {
-            get
-            {
-                return false;
-            }
-        }
-        public virtual CSharpType ElementType
-        {
-            get
-            {
-                return null;
-            }
-        }
-        public virtual int Rank
-        {
-            get
-            {
-                return -1;
-            }
-        }
-        public virtual IList<CSharpAttribute0> Attributes
-        {
-            get
-            {
-                return CSharpAttribute0.EmptyList;
-            }
-        }
+        /// <summary>类型定义的成员，包含父类继承的成员</summary>
+        public virtual IList<CSharpMember> Members { get { return CSharpMember.EmptyList; } }
+        /// <summary>类型定义的成员，不包含父类继承的成员</summary>
+        internal virtual IList<CSharpMember> MemberDefinitions { get { return CSharpMember.EmptyList; } }
+        /// <summary>泛型实参</summary>
+        public virtual IList<CSharpType> TypeArguments { get { return CSharpType.EmptyList; } }
+        /// <summary>泛型参数的位置，例如Dictionary^2[[T],[U]]，T就是0，U就是1</summary>
+        public virtual int TypeParameterPosition { get { return -1; } }
+        /// <summary>where T : new()</summary>
+        public virtual bool HasConstructorConstraint { get { return false; } }
+        /// <summary>where T : class</summary>
+        public virtual bool HasValueTypeConstraint { get { return false; } }
+        /// <summary>where T : class</summary>
+        public virtual bool HasReferenceTypeConstraint { get { return false; } }
+        /// <summary>泛型类型的约束类型，定义泛型时例如where T : 约束类型</summary>
+        public virtual IList<CSharpType> TypeConstraints { get { return CSharpType.EmptyList; } }
+        /// <summary>协变</summary>
+        public virtual bool IsCovariant { get { return false; } }
+        /// <summary>逆变</summary>
+        public virtual bool IsContravariant { get { return false; } }
+        /// <summary>数组类型</summary>
+        public virtual CSharpType ElementType { get { return null; } }
+        /// <summary>数组维度</summary>
+        public virtual int Rank { get { return -1; } }
+        public virtual IList<CSharpAttribute0> Attributes { get { return CSharpAttribute0.EmptyList; } }
         [AInvariant]public abstract CSharpAssembly Assembly
         {
             get;
@@ -962,10 +849,13 @@ namespace EntryBuilder.CodeAnalysis.Semantics
             builder.Append(type.Name.Name);
             if (tempType.TypeParametersCount > 0)
             {
+#if DEBUG
+                // 生成反射信息时，泛型类型的名字已经将^1生成进去了
                 builder.Append("`");
                 // 泛型个数
                 builder.Append(tempType.TypeParametersCount);
-                if (type.IsConstructed)
+#endif
+                if (tempType.IsConstructed)
                 {
                     // 泛型参数
                     var typeArguments = tempType.TypeArguments;
@@ -1146,13 +1036,13 @@ namespace EntryBuilder.CodeAnalysis.Semantics
                 return _typeParameters;
             }
         }
-        public override int TypeParametersCount
-        {
-            get
-            {
-                return _TypeParameters == null ? 0 : _TypeParameters.Length;
-            }
-        }
+        //public override int TypeParametersCount
+        //{
+        //    get
+        //    {
+        //        return _TypeParameters == null ? 0 : _TypeParameters.Length;
+        //    }
+        //}
         public override CSharpNamespace ContainingNamespace
         {
             get { return _ContainingNamespace != null ? _ContainingNamespace : (_ContainingType != null ? _ContainingType.ContainingNamespace : null); }
@@ -1608,104 +1498,24 @@ namespace EntryBuilder.CodeAnalysis.Semantics
     }
     internal class ConstructedTypeReference : CSharpType, IEquatable<ConstructedTypeReference>
     {
-        private readonly TypeDefinitionInfo definingType;
+        private readonly CSharpType definingType;
         private readonly CSharpType containingType;
         private readonly IList<CSharpType> typeArguments;
-        public override bool IsConstructed
-        {
-            get
-            {
-                return true;
-            }
-        }
-        public override Named Name
-        {
-            get
-            {
-                return this.definingType.Name;
-            }
-        }
-        internal TypeDefinitionInfo DefiningTypeInfo
-        {
-            get
-            {
-                return this.definingType;
-            }
-        }
-        public override CSharpType DefiningType
-        {
-            get
-            {
-                return this.definingType;
-            }
-        }
-        public override CSharpType ContainingType
-        {
-            get
-            {
-                return this.containingType;
-            }
-        }
-        public override IList<CSharpType> TypeArguments
-        {
-            get
-            {
-                return this.typeArguments;
-            }
-        }
-        private IEnumerable<CSharpMember> _Members
-        {
-            get
-            {
-                return definingType._Members.Select(m => new MemberWithType(this, m.MemberIndex));
-            }
-        }
+        private List<CSharpType> typeParameters = new List<CSharpType>();
+        public override bool IsConstructed { get { return true; } }
+        public override Named Name { get { return this.definingType.Name; } }
+        public override CSharpType DefiningType { get { return this.definingType; } }
+        public override CSharpType ContainingType { get { return this.containingType; } }
+        public override IList<CSharpType> TypeArguments { get { return this.typeArguments; } }
+
+
         public override IList<CSharpMember> Members
         {
-            get
-            {
-                var _base = BaseClass;
-                if (_base != null)
-                {
-                    if (IsInterface)
-                    {
-                        // 接口要包含其继承的所有接口成员
-                        return _Members.Concat(BaseInterfaces.SelectMany(i => i.MemberDefinitions)).Concat(_base.Members).ToList();
-                    }
-                    return _Members.Concat(_base.Members).ToList();
-                }
-                else
-                {
-                    return _Members.Select(m => (CSharpMember)m).ToList();
-                }
-
-                //return this.definingType.Members.Select(m =>
-                //    {
-                //        var md = m as MemberDefinitionInfo;
-
-                //        if (md != null)
-                //        {
-                //            // 父类或实现的接口的成员
-                //            if (md.ContainingType != this.definingType)
-                //            {
-                //                return md;
-                //            }
-                //            if (md.ContainingType.IsConstructed)
-                //            {
-                //                return new MemberWithType((ConstructedTypeReference)md.ContainingType, md.MemberIndex);
-                //            }
-                //            return new MemberWithType(this, md.MemberIndex);
-                //        }
-                //        else
-                //        {
-                //            return m;
-                //        }
-                //    }).ToList();
-            }
+            get { return this.definingType.Members.Select(m => (CSharpMember)new MemberWithType(this, m)).ToList(); }
         }
         internal override IList<CSharpMember> MemberDefinitions
         {
-            get { return this.definingType._Members.Select(m => (CSharpMember)new MemberWithType(this, m.MemberIndex)).ToList(); }
+            get { return this.definingType.MemberDefinitions.Select(m => (CSharpMember)new MemberWithType(this, m)).ToList(); }
         }
         public override CSharpAssembly Assembly
         {
@@ -1858,12 +1668,22 @@ namespace EntryBuilder.CodeAnalysis.Semantics
         {
             get
             {
-                return this.DefiningType.TypeParameters;
+                if (typeParameters == null)
+                {
+                    // class MyDictionary<T> : Dictionary<int, T>
+                    // 以上情况typeof(MyDictionary<>).BaseType只有1个形参
+                    var p = definingType.TypeParameters;
+                    typeParameters = new List<CSharpType>(p.Count);
+                    for (int i = 0; i < p.Count; i++)
+                        if (typeArguments[i].IsTypeParameter)
+                            typeParameters.Add(p[i]);
+                }
+                return typeParameters;
             }
         }
         internal ConstructedTypeReference(CSharpType definingType, CSharpType containingType, IList<CSharpType> typeArguments)
         {
-            this.definingType = (TypeDefinitionInfo)definingType;
+            this.definingType = definingType;
             this.containingType = containingType;
             this.typeArguments = typeArguments;
         }
@@ -1954,8 +1774,8 @@ namespace EntryBuilder.CodeAnalysis.Semantics
             bool HasValueTypeConstraint(int index);
             bool HasConstructorConstraint(int index);
         }
-        private readonly TypeDefinitionInfo definingType;
-        private readonly MemberDefinitionInfo definingMember;
+        private readonly CSharpType definingType;
+        private readonly CSharpMember definingMember;
         private readonly int position;
         private readonly TypeParameterInfo.IProvider infoProvider;
         public override CSharpAssembly Assembly
@@ -1976,20 +1796,6 @@ namespace EntryBuilder.CodeAnalysis.Semantics
         public override bool IsContravariant
         {
             get { return infoProvider.IsContravariant(position); }
-        }
-        internal TypeDefinitionInfo DefiningTypeInfo
-        {
-            get
-            {
-                return this.definingType;
-            }
-        }
-        internal MemberDefinitionInfo DefiningMemberInfo
-        {
-            get
-            {
-                return this.definingMember;
-            }
         }
         public override CSharpType DefiningType
         {
@@ -2021,13 +1827,7 @@ namespace EntryBuilder.CodeAnalysis.Semantics
         {
             get { return infoProvider.GetTypeConstraints(position); }
         }
-        public override bool IsTypeParameter
-        {
-            get
-            {
-                return true;
-            }
-        }
+        public override bool IsTypeParameter { get { return true; } }
         public override int TypeParameterPosition
         {
             get
@@ -2071,15 +1871,15 @@ namespace EntryBuilder.CodeAnalysis.Semantics
         {
             get { return BaseClass.MemberDefinitions; }
         }
-        internal TypeParameterInfo(TypeDefinitionInfo definingType, int position, TypeParameterInfo.IProvider infoProvider)
+        internal TypeParameterInfo(CSharpType definingType, int position, TypeParameterInfo.IProvider infoProvider)
         {
             this.definingType = definingType;
             this.position = position;
             this.infoProvider = infoProvider;
         }
-        internal TypeParameterInfo(MemberDefinitionInfo definingMember, int position, TypeParameterInfo.IProvider infoProvider)
+        internal TypeParameterInfo(CSharpMember definingMember, int position, TypeParameterInfo.IProvider infoProvider)
         {
-            this.definingType = definingMember.DefiningType;
+            this.definingType = definingMember.ContainingType;
             this.definingMember = definingMember;
             this.position = position;
             this.infoProvider = infoProvider;
@@ -2102,8 +1902,8 @@ namespace EntryBuilder.CodeAnalysis.Semantics
             {
                 return false;
             }
-            MemberDefinitionInfo memberDefinitionInfo = this.definingMember;
-            MemberDefinitionInfo memberDefinitionInfo2 = other.definingMember;
+            CSharpMember memberDefinitionInfo = this.definingMember;
+            CSharpMember memberDefinitionInfo2 = other.definingMember;
             if (memberDefinitionInfo == null && memberDefinitionInfo2 == null)
             {
                 return this.definingType.Equals(other.definingType) && this.position.Equals(other.position);
@@ -3197,7 +2997,7 @@ namespace EntryBuilder.CodeAnalysis.Semantics
     internal class MemberWithType : CSharpMember, CSharpParameter.IProvider, TypeParameterInfo.IProvider, IEquatable<MemberWithType>
     {
         private readonly ConstructedTypeReference containingType;
-        private readonly int memberIndex;
+        private readonly CSharpMember definingMember;
         private IList<CSharpParameter> parameters;
         private IList<CSharpType> typeParameters;
         public override CSharpType ContainingType
@@ -3207,23 +3007,13 @@ namespace EntryBuilder.CodeAnalysis.Semantics
                 return this.containingType;
             }
         }
-        internal MemberDefinitionInfo DefiningMemberInfo
-        {
-            get
-            {
-                return this.containingType.DefiningTypeInfo._Members[this.memberIndex];
-            }
-        }
         public override CSharpMember DefiningMember
         {
-            get
-            {
-                return this.DefiningMemberInfo;
-            }
+            get { return this.definingMember; }
         }
         public override CSharpType ExplicitInterfaceImplementation
         {
-            get { return DefiningMemberInfo.ExplicitInterfaceImplementation; }
+            get { return DefiningMember.ExplicitInterfaceImplementation; }
         }
         public override CSharpAssembly Assembly
         {
@@ -3497,17 +3287,17 @@ namespace EntryBuilder.CodeAnalysis.Semantics
                     List<CSharpType> array = new List<CSharpType>(count);
                     for (int i = 0; i < count; i++)
                     {
-                        array.Add(new TypeParameterInfo(this.DefiningMemberInfo, i, this));
+                        array.Add(new TypeParameterInfo(this.DefiningMember, i, this));
                     }
                     this.typeParameters = array;
                 }
                 return this.typeParameters;
             }
         }
-        public MemberWithType(ConstructedTypeReference containingType, int memberIndex)
+        public MemberWithType(ConstructedTypeReference containingType, CSharpMember member)
         {
             this.containingType = containingType;
-            this.memberIndex = memberIndex;
+            this.definingMember = member;
         }
         private TypeParameterBinder CreateTypeParameterBinder()
         {
@@ -3519,11 +3309,11 @@ namespace EntryBuilder.CodeAnalysis.Semantics
         }
         public bool Equals(MemberWithType other)
         {
-            return other != null && this.containingType.Equals(other.containingType) && this.memberIndex.Equals(other.memberIndex);
+            return other != null && this.containingType.Equals(other.containingType) && this.definingMember.Equals(other.definingMember);
         }
         public override int GetHashCode()
         {
-            return this.containingType.GetHashCode() + this.memberIndex.GetHashCode();
+            return this.definingMember.GetHashCode();
         }
         Named CSharpParameter.IProvider.GetName(int index)
         {

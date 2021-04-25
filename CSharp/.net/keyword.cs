@@ -409,14 +409,6 @@ using __System.Text;
                 return false;
         return true;
     }
-    public override string ToString()
-    {
-#if !DEBUG
-        return this;
-#else
-        throw new NotImplementedException();
-#endif
-    }
     public override int GetHashCode()
     {
         int num = 5381;
@@ -805,12 +797,12 @@ using __System.Text;
 #endif
     }
 #if !DEBUG
-    //public override string ToString()
-    //{
-    //    return this;
-    //}
+    public override string ToString()
+    {
+        return this;
+    }
 #endif
-    
+
     public static bool IsNullOrEmpty(string value)
     {
         return value == null || value.Length == 0;

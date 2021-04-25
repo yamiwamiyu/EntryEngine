@@ -2084,7 +2084,51 @@ namespace __System
         public abstract bool IsSubclassOf(Type c);
         [ANonOptimize][AInvariant]public abstract bool IsAssignableFrom(Type c);
 
-        [ASystemAPI]public extern static Type GetType(string typeName);
+        public static Type GetType(string name)
+        {
+            return _R.ParseTypeName<Type>(name,
+                (typeName, assemblyName) =>
+                {
+                    SimpleType stype;
+                    if (_R._st.TryGetValue(typeName, out stype))
+                        return stype;
+
+                    CSharpType ctype;
+                    if (!_R._t.TryGetValue(typeName, out ctype))
+                    {
+                        ctype = _R.AllocType(typeName);
+                    }
+
+                    if (ctype == null)
+                    {
+                        stype = new SimpleType(typeName);
+                        _R._st.Add(typeName, stype);
+                        return stype;
+                    }
+
+                    RuntimeType rtype;
+                    if (_R._rt.TryGetValue(ctype, out rtype))
+                        return rtype;
+
+                    rtype = new RuntimeType(ctype);
+                    _R._rt.Add(ctype, rtype);
+                    return rtype;
+                },
+                (t1, tArray) =>
+                {
+                    var rtype = t1 as RuntimeType;
+                    if (rtype == null)
+                        throw new InvalidOperationException("Type.GetType获取的非RuntimeType类型不能构造泛型类型");
+                    return rtype.MakeGenericType(tArray);
+                },
+                (t) =>
+                {
+                    var rtype = t as RuntimeType;
+                    if (rtype == null)
+                        throw new InvalidOperationException("Type.GetType获取的非RuntimeType类型不能构造数组类型");
+                    return rtype.MakeArrayType();
+                });
+        }
 
         [AInvariant]public abstract Type MakeArrayType();
         public abstract Type MakeByRefType();
@@ -2092,7 +2136,6 @@ namespace __System
     }
     [AInvariant]public partial class Activator
     {
-        [ASystemAPI]private static extern object CreateDefault(Type type);
         public static object CreateInstance(Type type, params object[] parameters)
         {
             var constructors = type.GetConstructors();
@@ -2109,7 +2152,7 @@ namespace __System
             if (!hasConstructorFlag)
             {
                 // 应调用默认构造函数构造对象
-                object obj = CreateDefault(type);
+                object obj = _R.CreateObject(type);
                 if (obj != null)
                     return obj;
             }
@@ -2416,8 +2459,8 @@ namespace __System
         public override bool IsClass { get { return type.IsClass; } }
         public override bool IsEnum { get { return type.IsEnum; } }
         public override bool IsGenericParameter { get { return type.IsTypeParameter; } }
-        public override bool IsGenericType { get { return type.IsConstructed || ContainsGenericParameters; } }
-        public override bool IsGenericTypeDefinition { get { return type.DefiningType == null && ContainsGenericParameters; } }
+        public override bool IsGenericType { get { return type.IsConstructed || IsGenericTypeDefinition; } }
+        public override bool IsGenericTypeDefinition { get { return !type.IsConstructed && type.DefiningType == null && ContainsGenericParameters; } }
         public override bool IsInterface { get { return type.IsInterface; } }
         public override bool IsNested { get { return type.DefiningType != null; } }
         public override bool IsNestedAssembly { get { return IsNested && type.IsInternal; } }

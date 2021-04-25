@@ -47,6 +47,7 @@ namespace EntryEngine
                 }
                 else
                 {
+#if DEBUG
                     try
                     {
                         coroutine.Update(gameTime);
@@ -56,6 +57,9 @@ namespace EntryEngine
                         _LOG.Error(ex, "\r\ncoroutine error!");
                         coroutine.Dispose();
                     }
+#else
+                    coroutine.Update(gameTime);
+#endif
                 }
             }
 			lock (coroutines)

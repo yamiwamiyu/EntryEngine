@@ -3,12 +3,14 @@ using EntryBuilder.CodeAnalysis.Semantics;
 using __System;
 using System.Collections.Generic;
 
+/// <summary>程序集反射相关内容</summary>
 [ANonOptimize][AInvariant]static class _R
 {
-    private static Dictionary<string, CSharpType> _t = new Dictionary<string, CSharpType>();
-    private static Dictionary<CSharpType, RuntimeType> _rt = new Dictionary<CSharpType, RuntimeType>();
+    internal static Dictionary<string, CSharpType> _t = new Dictionary<string, CSharpType>();
+    internal static Dictionary<CSharpType, RuntimeType> _rt = new Dictionary<CSharpType, RuntimeType>();
     private static Dictionary<string, CSharpAssembly> _a = new Dictionary<string, CSharpAssembly>();
     private static Dictionary<CSharpAssembly, Assembly> _ra = new Dictionary<CSharpAssembly, Assembly>();
+    internal static Dictionary<string, SimpleType> _st = new Dictionary<string, SimpleType>();
     /* 程序集代码又Rewriter生成
     switch (name)
     {
@@ -74,81 +76,38 @@ using System.Collections.Generic;
     }
     [ANonOptimize][AInvariant]public static CSharpType AllocType(string name)
     {
-        // 缓存
-        CSharpType result;
-        if (_t.TryGetValue(name, out result))
-            return result;
-        int index = name.IndexOf('[', 0);
-        if (index == -1)
-        {
-            index = name.IndexOf(',', 0);
-            if (index != -1)
-                // 去除程序集信息，因为JS代码全在一个程序集中
-                name = name.Substring(0, index);
-            return BuildType(name);
-        }
-        else
-        {
-            string typeName = name.Substring(0, index);
-            CSharpType gTypeDefinition = AllocType(typeName);
-            int index2 = typeName.IndexOf('`', 0);
-            if (index2 != -1)
+        var type = ParseTypeName<CSharpType>(name,
+            (typeName, assemblyName) =>
             {
-                int typeParameterCount = int.Parse(name.Substring(index2 + 1, index - index2 - 1));
-                CSharpType[] typeArguments = new CSharpType[typeParameterCount];
-                int gcount = 1;
-                index += 2;
-                index2 = index;
-                int tai = 0;
-                while (true)
+                CSharpType result;
+                if (!_t.TryGetValue(typeName, out result))
                 {
-                    int end = name.IndexOf(']', index2);
-                    int start = name.IndexOf('[', index2);
-                    if (start != -1 && start < end)
-                    {
-                        // 有其它的泛型类型
-                        gcount++;
-                        index2 = start + 1;
-                        continue;
-                    }
-                    if (gcount > 0)
-                    {
-                        // 其它泛型类型的结束
-                        gcount--;
-                        if (gcount > 0)
-                        {
-                            index2 = end + 1;
-                            continue;
-                        }
-                    }
-                    typeName = name.Substring(index, end - index);
-                    typeArguments[tai++] = AllocType(typeName);
-                    if (tai == typeArguments.Length)
-                    {
-                        // 跳过字符]]
-                        index = end + 2;
-                        break;
-                    }
-                    // 跳过字符：],[
-                    index = end + 3;
-                    index2 = index;
-                    gcount = 1;
+                    result = BuildType(typeName);
                 }
-                gTypeDefinition = CSharpType.CreateConstructedType(gTypeDefinition, gTypeDefinition.ContainingType, typeArguments);
-            }
-            // name[index] == '[' 用于处理 System.Int32[], mscorlib
-            while (index < name.Length && name[index] == '[')
+                return result;
+            },
+            (t1, tArray) =>
             {
-                gTypeDefinition = CSharpType.CreateArray(1, gTypeDefinition);
-                index += 2;
-            }
-            // 缓存
-            _t.Add(name, gTypeDefinition);
-            return gTypeDefinition;
+                if (t1 == null) return t1;
+                return CSharpType.CreateConstructedType(t1, t1.ContainingType, tArray);
+            },
+            (t) =>
+            {
+                if (t == null) return t;
+                return CSharpType.CreateArray(1, t);
+            });
+        if (type != null && !_t.ContainsKey(name))
+        {
+            _t.Add(name, type);
         }
+        return type;
     }
     [ANonOptimize][AInvariant]public static RuntimeType FromType(CSharpType key)
     {
+        if (key == null)
+        {
+            throw new ArgumentNullException();
+        }
         RuntimeType result;
         if (!_rt.TryGetValue(key, out result))
         {
@@ -185,4 +144,88 @@ using System.Collections.Generic;
      * 劣：生成代码多（引用优化和手动添加反射标签，应该也不会太多）
      */
     [ANonOptimize][AInvariant]public extern static object Invoke(CSharpMember member, object obj, object[] args);
+
+    // EntryEngine.Serialize._SERIALIZE
+    public static T ParseTypeName<T>(string name,
+        Func<string, string, T> onParseType,
+        Func<T, T[], T> onGeneric,
+        Func<T, T> onArray)
+    {
+        int index = name.IndexOf('[', 0);
+        if (index == -1)
+        {
+            string[] names = name.Split(',');
+            if (names.Length > 1)
+                return onParseType(names[0], names[1].Substring(1, names[1].Length - 1));
+            else
+                return onParseType(names[0], null);
+        }
+        else
+        {
+            string typeName = name.Substring(0, index);
+            // 追加最后的程序集信息
+            int lastIndex = name.LastIndexOf(']');
+            lastIndex = name.IndexOf(',', lastIndex);
+            string aname = null;
+            if (lastIndex != -1)
+                aname = name.Substring(lastIndex + 2);
+            T type = onParseType(typeName, aname);
+            int index2 = typeName.IndexOf('`', 0);
+            if (index2 != -1)
+            {
+                int typeParameterCount = int.Parse(name.Substring(index2 + 1, index - index2 - 1));
+                T[] typeArguments = new T[typeParameterCount];
+                int gcount = 1;
+                index += 2;
+                index2 = index;
+                int tai = 0;
+                while (true)
+                {
+                    int end = name.IndexOf(']', index2);
+                    int start = name.IndexOf('[', index2);
+                    if (start != -1 && start < end)
+                    {
+                        // 有其它的泛型类型
+                        gcount++;
+                        index2 = start + 1;
+                        continue;
+                    }
+                    if (gcount > 0)
+                    {
+                        // 其它泛型类型的结束
+                        gcount--;
+                        if (gcount > 0)
+                        {
+                            index2 = end + 1;
+                            continue;
+                        }
+                    }
+                    typeName = name.Substring(index, end - index);
+                    typeArguments[tai++] = ParseTypeName(typeName, onParseType, onGeneric, onArray);
+                    if (tai == typeArguments.Length)
+                    {
+                        // 跳过字符]]
+                        index = end + 2;
+                        break;
+                    }
+                    // 跳过字符：],[
+                    index = end + 3;
+                    index2 = index;
+                    gcount = 1;
+                }
+
+                type = onGeneric(type, typeArguments);
+            }
+            // name[index] == '[' 用于处理 System.Int32[], mscorlib
+            while (index < name.Length && name[index] == '[')
+            {
+                type = onArray(type);
+                index += 2;
+            }
+            return type;
+        }
+    }
+
+    /// <summary>根据指定类型创建实例</summary>
+    [ASystemAPI]public extern static object CreateObject(Type type);
 }
