@@ -38,7 +38,7 @@
       <HintPath>..\..\Launch\Server\Cmdline.dll</HintPath>
     </Reference>
     <Reference Include="EntryEngine">
-      <HintPath>..\..\Launch\Server\EntryEngine.dll</HintPath>
+      <HintPath>..\..\EntryEngine.dll</HintPath>
     </Reference>
     <Reference Include="MySql.Data, Version=8.0.16.0, Culture=neutral, PublicKeyToken=c5687fc88969c44d, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>

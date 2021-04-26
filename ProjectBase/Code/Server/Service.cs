@@ -1,9 +1,4 @@
-﻿#if DEBUG
-using ParallelQueue = EntryEngine.Network.ParallelBinaryHttpService;
-#else
-using ParallelQueue = EntryEngine.Network.ParallelJsonHttpService;
-#endif
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -21,37 +16,23 @@ namespace Server
     {
         void LoggerToManager();
         void LoadTable();
-        void Launch(ushort port, string dbconn, string dbname);
-        void FileService(ushort fileServerPort, string relativePath);
+        void SetDatabase(string dbconn, string dbname, bool isRebuild);
+        void Launch(ushort port);
     }
     partial class Service : ProxyHttpAsync, ICmd
     {
         ParallelRouter<HttpListenerContext> router = new ParallelRouter<HttpListenerContext>();
-        ParallelQueue[] nonLogin = new ParallelQueue[8];
-        ParallelQueue[] doneLogin = new ParallelQueue[8];
+        ParallelJsonHttpService[] nonLogin = new ParallelJsonHttpService[8];
+        ParallelJsonHttpService[] doneLogin = new ParallelJsonHttpService[8];
 
-        protected override Link InternalAccept(System.Net.HttpListenerContext context)
+        protected override Link InternalAccept(HttpListenerContext context)
         {
-            throw new NotImplementedException();
+            router.Route(context);
+            return null;
         }
         protected override IEnumerator<LoginResult> Login(Link link)
         {
             throw new NotImplementedException();
-        }
-        protected override Link Accept()
-        {
-            HttpListenerContext[] requests;
-            lock (Contexts)
-            {
-                requests = Contexts.ToArray();
-                Contexts.Clear();
-            }
-
-            // 分配异步线程处理请求
-            for (int i = 0; i < requests.Length; i++)
-                router.Route(requests[i]);
-
-            return null;
         }
         protected override void OnUpdate(GameTime time)
         {
@@ -76,23 +57,44 @@ namespace Server
             //_CS.Load(_IO.ReadText("Tables\\CS.xml"));
             //_LOG.Info("加载服务端常量表完成");
         }
-        void ICmd.Launch(ushort port, string dbconn, string dbname)
+        void ICmd.SetDatabase(string dbconn, string dbname, bool isRebuild)
         {
             // 设置数据库
             _DB.IsDropColumn = true;
             _DB.DatabaseName = dbname;
             _DB._DAO = new ConnectionPool(new MYSQL_DATABASE());
-            _DB._DAO.ConnectionString = dbconn;
+            if (isRebuild)
+            {
+                _DB.IsDropColumn = true;
+                _DB._DAO.ConnectionString = dbconn;
+            }
+            else
+            {
+                _DB._DAO.ConnectionString = string.Format("{0}Database={1};", dbconn, dbname);
+                _DB._DAO.OnTestConnection -= _DB.UPDATE_DATABASE_STRUCTURE;
+            }
             _DB._DAO.TestConnection();
+            _LOG.Info("设置数据库：{0} 连接字符串：{1}", dbname, dbconn);
+        }
+        void ICmd.Launch(ushort port)
+        {
+            string prefix;
+            if (port == 80)
+                prefix = string.Format("http://*/Action/");
+            else
+                prefix = string.Format("http://*:{0}/Action/", port);
 
-            this.RegistServeiceUriPrefix(string.Format("http://*:{0}/Action/", port));
-            this.Initialize(System.Net.IPAddress.Loopback, port);
+            _LOG.Info("Lauching \"{0}\"", prefix);
+
+            this.RegistServeiceUriPrefix(prefix);
+            this.Initialize(IPAddress.Loopback, port);
 
             {
                 // 处理登录和注册
                 for (int i = 0; i < nonLogin.Length; i++)
                 {
-                    nonLogin[i] = new ParallelQueue();
+                    nonLogin[i] = new ParallelJsonHttpService();
+                    var stubs = GetStubs(null);
                     nonLogin[i].HotFixAgent(GetStubs);
                 }
                 router.AddRouter(c =>
@@ -113,10 +115,10 @@ namespace Server
             }
             {
                 // 处理登录后的请求
-                doneLogin = new ParallelQueue[8];
+                doneLogin = new ParallelJsonHttpService[8];
                 for (int i = 0; i < doneLogin.Length; i++)
                 {
-                    doneLogin[i] = new ParallelQueue();
+                    doneLogin[i] = new ParallelJsonHttpService();
                     doneLogin[i].HotFixAgent(GetStubs);
                 }
                 router.AddRouter(c =>
@@ -137,15 +139,9 @@ namespace Server
             _LOG.Write(255, string.Empty);
         }
         public static
-#if DEBUG
-            Stub[]
-#else
             StubHttp[]
-#endif
             GetStubs(Func<HttpListenerContext> getContext)
         {
-            Serializable.RecognitionChildType = false;
-
             var impl1 = new ImplProtocol1();
             Protocol1Stub _p1 = new Protocol1Stub(impl1);
 
@@ -157,49 +153,13 @@ namespace Server
                 return null;
             };
 
-#if DEBUG
-            Stub[]
-#else
             StubHttp[]
-#endif
                 stubs = 
                 { 
                     _p1, 
                     _p2 
                 };
             return stubs;
-        }
-        FileService fileService;
-        void ICmd.FileService(ushort fileServerPort, string relativePath)
-        {
-            // 不想配置IIS但需要文件下载服务时使用的文件服务器
-            if (fileServerPort != 0)
-            {
-                if (fileService == null)
-                {
-                    fileService = new FileService();
-                    fileService.Start(fileServerPort);
-                }
-                else
-                {
-                    if (fileService.Port != fileServerPort)
-                    {
-                        fileService.Stop();
-                        fileService.Start(fileServerPort);
-                    }
-                }
-                fileService.LocalPath = relativePath;
-            }
-            else
-            {
-                if (fileService != null)
-                {
-                    fileService.Stop();
-                    fileService = null;
-                }
-            }
-            _IO.RootDirectory = relativePath;
-            _LOG.Info("设置文件系统路径: {0}", Path.GetFullPath(relativePath));
         }
     }
     public class StubBase

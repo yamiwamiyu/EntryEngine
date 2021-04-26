@@ -13,11 +13,13 @@ interface _Protocol2
 }
 public class CBProtocol2_TestLogin : IDisposable
 {
-    private StubHttp __link;
+    internal HttpListenerContext __context { get; private set; }
+    internal StubHttp __link { get; private set; }
     internal bool IsCallback { get; private set; }
     public CBProtocol2_TestLogin(StubHttp link)
     {
         this.__link = link;
+        this.__context = link.Context;
     }
     public void Callback(T_PLAYER obj) // INDEX = 0
     {
@@ -26,7 +28,7 @@ public class CBProtocol2_TestLogin : IDisposable
         #if DEBUG
         _LOG.Debug("CBProtocol2_TestLogin {0}", __ret);
         #endif
-        __link.Response(__ret);
+        __link.Response(__context, __ret);
         IsCallback = true;
     }
     public void Error(int ret, string msg)
@@ -36,7 +38,7 @@ public class CBProtocol2_TestLogin : IDisposable
         #if DEBUG
         _LOG.Debug("CBProtocol2_TestLogin Error ret={0} msg={1}", ret, msg);
         #endif
-        __link.Response(__ret);
+        __link.Response(__context, __ret);
         IsCallback = true;
     }
     public void Dispose()

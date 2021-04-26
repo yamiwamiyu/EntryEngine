@@ -31,8 +31,9 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="EntryEngine">
-      <HintPath>..\..\Launch\Server\EntryEngine.dll</HintPath>
+    <Reference Include="EntryEngine, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\EntryEngine.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
@@ -53,7 +54,7 @@ $(ProjectDir)..\..\EntryBuilder.exe BuildProtocolAgentHttp $(ProjectDir)..\Clien
 $(ProjectDir)..\..\EntryBuilder.exe BuildProtocolAgentHttp $(ProjectDir)..\Client\Client\ $(ProjectDir)..\Server\ $(TargetPath)\Protocol2 0
 
 ::生成数据库
-$(ProjectDir)..\..\..\EntryBuilder.exe BuildDatabaseMysql $(TargetPath) Server._DB $(ProjectDir)..\Server\_DB.cs "" "" true</PostBuildEvent>
+$(ProjectDir)..\..\EntryBuilder.exe BuildDatabaseMysql $(TargetPath) Server._DB $(ProjectDir)..\Server\_DB.cs "" "" true</PostBuildEvent>
   </PropertyGroup>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.

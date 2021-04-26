@@ -15,11 +15,13 @@ interface _Protocol1
 }
 public class CBProtocol1_PlayerExists : IDisposable
 {
-    private StubHttp __link;
+    internal HttpListenerContext __context { get; private set; }
+    internal StubHttp __link { get; private set; }
     internal bool IsCallback { get; private set; }
     public CBProtocol1_PlayerExists(StubHttp link)
     {
         this.__link = link;
+        this.__context = link.Context;
     }
     public void Callback(bool obj) // INDEX = 0
     {
@@ -28,7 +30,7 @@ public class CBProtocol1_PlayerExists : IDisposable
         #if DEBUG
         _LOG.Debug("CBProtocol1_PlayerExists {0}", __ret);
         #endif
-        __link.Response(__ret);
+        __link.Response(__context, __ret);
         IsCallback = true;
     }
     public void Error(int ret, string msg)
@@ -38,7 +40,7 @@ public class CBProtocol1_PlayerExists : IDisposable
         #if DEBUG
         _LOG.Debug("CBProtocol1_PlayerExists Error ret={0} msg={1}", ret, msg);
         #endif
-        __link.Response(__ret);
+        __link.Response(__context, __ret);
         IsCallback = true;
     }
     public void Dispose()
@@ -48,11 +50,13 @@ public class CBProtocol1_PlayerExists : IDisposable
 }
 public class CBProtocol1_Register : IDisposable
 {
-    private StubHttp __link;
+    internal HttpListenerContext __context { get; private set; }
+    internal StubHttp __link { get; private set; }
     internal bool IsCallback { get; private set; }
     public CBProtocol1_Register(StubHttp link)
     {
         this.__link = link;
+        this.__context = link.Context;
     }
     public void Callback(T_PLAYER obj) // INDEX = 1
     {
@@ -61,7 +65,7 @@ public class CBProtocol1_Register : IDisposable
         #if DEBUG
         _LOG.Debug("CBProtocol1_Register {0}", __ret);
         #endif
-        __link.Response(__ret);
+        __link.Response(__context, __ret);
         IsCallback = true;
     }
     public void Error(int ret, string msg)
@@ -71,7 +75,7 @@ public class CBProtocol1_Register : IDisposable
         #if DEBUG
         _LOG.Debug("CBProtocol1_Register Error ret={0} msg={1}", ret, msg);
         #endif
-        __link.Response(__ret);
+        __link.Response(__context, __ret);
         IsCallback = true;
     }
     public void Dispose()
@@ -81,11 +85,13 @@ public class CBProtocol1_Register : IDisposable
 }
 public class CBProtocol1_Login : IDisposable
 {
-    private StubHttp __link;
+    internal HttpListenerContext __context { get; private set; }
+    internal StubHttp __link { get; private set; }
     internal bool IsCallback { get; private set; }
     public CBProtocol1_Login(StubHttp link)
     {
         this.__link = link;
+        this.__context = link.Context;
     }
     public void Callback(T_PLAYER obj) // INDEX = 2
     {
@@ -94,7 +100,7 @@ public class CBProtocol1_Login : IDisposable
         #if DEBUG
         _LOG.Debug("CBProtocol1_Login {0}", __ret);
         #endif
-        __link.Response(__ret);
+        __link.Response(__context, __ret);
         IsCallback = true;
     }
     public void Error(int ret, string msg)
@@ -104,7 +110,7 @@ public class CBProtocol1_Login : IDisposable
         #if DEBUG
         _LOG.Debug("CBProtocol1_Login Error ret={0} msg={1}", ret, msg);
         #endif
-        __link.Response(__ret);
+        __link.Response(__context, __ret);
         IsCallback = true;
     }
     public void Dispose()

@@ -42,6 +42,39 @@ namespace Server
             return conn;
         }
     }
+    public class MYSQL_TABLE_COLUMN
+    {
+        public string COLUMN_NAME;
+        public string COLUMN_KEY;
+        public string EXTRA;
+        public string DATA_TYPE;
+        public bool IsPrimary { get { return COLUMN_KEY == "PRI"; } }
+        public bool IsIndex { get { return COLUMN_KEY == "MUL"; } }
+        public bool IsUnique { get { return COLUMN_KEY == "UNI"; } }
+        public bool IsIdentity { get { return EXTRA == "auto_increment"; } }
+    }
+    public class MASTER_STATUS
+    {
+        public string File;
+        public int Position;
+        public string Binlog_Do_DB;
+    }
+    public class SLAVE_STATUS
+    {
+        public string Master_Host;
+        public string Master_User;
+        public int Master_Port;
+        public string Master_Log_File;
+        public int Read_Master_Log_Pos;
+        public string Slave_IO_Running;
+        public string Slave_SQL_Running;
+        public string Replicate_Do_DB;
+        public string Last_Error;
+        public int Exec_Master_Log_Pos;
+        public int Master_Server_Id;
+        public bool IsRunning { get { return Slave_IO_Running == "Yes" && Slave_SQL_Running == "Yes"; } }
+        public bool IsSynchronous { get { return Read_Master_Log_Pos == Exec_Master_Log_Pos; } }
+    }
     public static partial class _DB
     {
         public static bool IsDropColumn;
@@ -144,6 +177,7 @@ namespace Server
             }
             reader.Close();
             __noneChangePrimary = true;
+            __noneChangePrimary &= (__columns.TryGetValue("ID", out __value) && __value.IsPrimary);
             if (!__noneChangePrimary && __hasPrimary)
             {
                 var pk = __columns.Values.FirstOrDefault(f => f.IsPrimary);
@@ -153,7 +187,7 @@ namespace Server
             }
             if (__columns.TryGetValue("ID", out __value))
             {
-                builder.AppendLine("ALTER TABLE `T_PLAYER` CHANGE COLUMN `ID` `ID` INT AUTO_INCREMENT;");
+                builder.AppendLine("ALTER TABLE `T_PLAYER` CHANGE COLUMN `ID` `ID` INT" + (__value.IsPrimary ? "" : " PRIMARY KEY") + " AUTO_INCREMENT;");
                 if (__value.IsIndex || __value.IsUnique)
                 {
                     builder.AppendLine("ALTER TABLE T_PLAYER DROP INDEX `{0}`;", __value.COLUMN_NAME);
@@ -318,6 +352,7 @@ namespace Server
             }
             reader.Close();
             __noneChangePrimary = true;
+            __noneChangePrimary &= (__columns.TryGetValue("ID", out __value) && __value.IsPrimary);
             if (!__noneChangePrimary && __hasPrimary)
             {
                 var pk = __columns.Values.FirstOrDefault(f => f.IsPrimary);
@@ -327,7 +362,7 @@ namespace Server
             }
             if (__columns.TryGetValue("ID", out __value))
             {
-                builder.AppendLine("ALTER TABLE `T_OPLog` CHANGE COLUMN `ID` `ID` INT AUTO_INCREMENT;");
+                builder.AppendLine("ALTER TABLE `T_OPLog` CHANGE COLUMN `ID` `ID` INT" + (__value.IsPrimary ? "" : " PRIMARY KEY") + " AUTO_INCREMENT;");
                 if (__value.IsIndex || __value.IsUnique)
                 {
                     builder.AppendLine("ALTER TABLE T_OPLog DROP INDEX `{0}`;", __value.COLUMN_NAME);
@@ -643,19 +678,19 @@ namespace Server
             }
             #endregion
         }
-        public static void DeleteForeignKey_T_PLAYER_ID(int target)
+        public static int DeleteForeignKey_T_PLAYER_ID(int target)
         {
             StringBuilder builder = new StringBuilder();
             builder.AppendLine("DELETE FROM `T_PLAYER` WHERE `ID` = @p0;");
             builder.AppendLine("DELETE FROM `T_OPLog` WHERE `PID` = @p0;");
-            _DAO.ExecuteNonQuery(builder.ToString(), target);
+            return _DAO.ExecuteNonQuery(builder.ToString(), target);
         }
-        public static void UpdateForeignKey_T_PLAYER_ID(int origin, int target)
+        public static int UpdateForeignKey_T_PLAYER_ID(int origin, int target)
         {
             StringBuilder builder = new StringBuilder();
             builder.AppendLine("UPDATE `T_PLAYER` SET `ID` = @p0 WHERE `ID` = @p1;");
             builder.AppendLine("UPDATE `T_OPLog` SET `PID` = @p0 WHERE `PID` = @p1;");
-            _DAO.ExecuteNonQuery(builder.ToString(), target, origin);
+            return _DAO.ExecuteNonQuery(builder.ToString(), target, origin);
         }
         public static void UpdateIdentityKey_T_PLAYER_ID(ref int start)
         {
@@ -729,6 +764,14 @@ namespace Server
             {
                 return _DATABASE.ReadObject<T_PLAYER>(reader, offset, fieldCount);
             }
+            public static void MultiReadPrepare(IDataReader reader, int offset, int fieldCount, out List<PropertyInfo> properties, out List<FieldInfo> fields, ref int[] indices)
+            {
+                _DATABASE.MultiReadPrepare(reader, typeof(T_PLAYER), offset, fieldCount, out properties, out fields, ref indices);
+            }
+            public static T_PLAYER MultiRead(IDataReader reader, int offset, int fieldCount, List<PropertyInfo> properties, List<FieldInfo> fields, int[] indices)
+            {
+                return _DATABASE.MultiRead<T_PLAYER>(reader, offset, fieldCount, properties, fields, indices);
+            }
             public static void GetInsertSQL(T_PLAYER target, StringBuilder builder, List<object> values)
             {
                 int index = values.Count;
@@ -752,12 +795,13 @@ namespace Server
                 List<object> values = new List<object>(7);
                 GetInsertSQL(target, builder, values);
                 builder.Append("SELECT LAST_INSERT_ID();");
-                return _DAO.SelectValue<int>(builder.ToString(), values.ToArray());
+                target.ID = _DAO.SelectValue<int>(builder.ToString(), values.ToArray());
+                return target.ID;
             }
             public static void GetDeleteSQL(int ID, StringBuilder builder, List<object> values)
             {
                 int index = values.Count;
-                builder.AppendFormat("DELETE FROM `T_PLAYER` WHERE `ID` = @p{0}", index++);
+                builder.AppendFormat("DELETE FROM `T_PLAYER` WHERE `ID` = @p{0};", index++);
                 values.Add(ID);
             }
             public static int Delete(int ID)
@@ -771,34 +815,34 @@ namespace Server
             public static void GetUpdateSQL(T_PLAYER target, string condition, StringBuilder builder, List<object> values, params ET_PLAYER[] fields)
             {
                 int index = values.Count;
-                if (fields.Length == 0) fields = FIELD_UPDATE;
+                bool all = fields.Length == 0 || fields == FIELD_UPDATE;
                 builder.Append("UPDATE `T_PLAYER` SET");
-                if (fields.Contains(ET_PLAYER.Name))
+                if (all || fields.Contains(ET_PLAYER.Name))
                 {
                     builder.AppendFormat(" `Name` = @p{0},", index++);
                     values.Add(target.Name);
                 }
-                if (fields.Contains(ET_PLAYER.Password))
+                if (all || fields.Contains(ET_PLAYER.Password))
                 {
                     builder.AppendFormat(" `Password` = @p{0},", index++);
                     values.Add(target.Password);
                 }
-                if (fields.Contains(ET_PLAYER.RegisterDate))
+                if (all || fields.Contains(ET_PLAYER.RegisterDate))
                 {
                     builder.AppendFormat(" `RegisterDate` = @p{0},", index++);
                     values.Add(target.RegisterDate);
                 }
-                if (fields.Contains(ET_PLAYER.Platform))
+                if (all || fields.Contains(ET_PLAYER.Platform))
                 {
                     builder.AppendFormat(" `Platform` = @p{0},", index++);
                     values.Add(target.Platform);
                 }
-                if (fields.Contains(ET_PLAYER.Token))
+                if (all || fields.Contains(ET_PLAYER.Token))
                 {
                     builder.AppendFormat(" `Token` = @p{0},", index++);
                     values.Add(target.Token);
                 }
-                if (fields.Contains(ET_PLAYER.LastLoginTime))
+                if (all || fields.Contains(ET_PLAYER.LastLoginTime))
                 {
                     builder.AppendFormat(" `LastLoginTime` = @p{0},", index++);
                     values.Add(target.LastLoginTime);
@@ -849,7 +893,12 @@ namespace Server
             {
                 StringBuilder builder = GetSelectSQL(fields);
                 builder.Append(" WHERE `ID` = @p0;");
-                return _DAO.SelectObject<T_PLAYER>(builder.ToString(), __ID);
+                var ret = _DAO.SelectObject<T_PLAYER>(builder.ToString(), __ID);
+                if (ret != default(T_PLAYER))
+                {
+                    ret.ID = __ID;
+                }
+                return ret;
             }
             public static T_PLAYER Select(ET_PLAYER[] fields, string condition, params object[] param)
             {
@@ -857,6 +906,14 @@ namespace Server
                 if (!string.IsNullOrEmpty(condition)) builder.Append(" {0}", condition);
                 builder.Append(';');
                 return _DAO.SelectObject<T_PLAYER>(builder.ToString(), param);
+            }
+            public static bool Exists(int __ID)
+            {
+                return _DAO.ExecuteScalar<bool>("SELECT EXISTS(SELECT 1 FROM `T_PLAYER` WHERE `ID` = @p0)", __ID);
+            }
+            public static bool Exists2(string condition, params object[] param)
+            {
+                return _DAO.ExecuteScalar<bool>(string.Format("SELECT EXISTS(SELECT 1 FROM `T_PLAYER` {0})", condition), param);
             }
             public static List<T_PLAYER> SelectMultiple(ET_PLAYER[] fields, string condition, params object[] param)
             {
@@ -882,7 +939,7 @@ namespace Server
             }
             public static PagedModel<T> SelectPages<T>(string __where, string selectSQL, string conditionAfterWhere, int page, int pageSize, params object[] param) where T : new()
             {
-                return _DAO.SelectPages<T>("SELECT count(`T_PLAYER`.`ID`) FROM `T_PLAYER`", __where, selectSQL, conditionAfterWhere, page, pageSize, param);
+                return _DB.SelectPages<T>(_DAO, "SELECT count(`T_PLAYER`.`ID`) FROM `T_PLAYER`", __where, selectSQL, conditionAfterWhere, page, pageSize, param);
             }
         }
         public partial class _T_OPLog : T_OPLog
@@ -913,6 +970,14 @@ namespace Server
             {
                 return _DATABASE.ReadObject<T_OPLog>(reader, offset, fieldCount);
             }
+            public static void MultiReadPrepare(IDataReader reader, int offset, int fieldCount, out List<PropertyInfo> properties, out List<FieldInfo> fields, ref int[] indices)
+            {
+                _DATABASE.MultiReadPrepare(reader, typeof(T_OPLog), offset, fieldCount, out properties, out fields, ref indices);
+            }
+            public static T_OPLog MultiRead(IDataReader reader, int offset, int fieldCount, List<PropertyInfo> properties, List<FieldInfo> fields, int[] indices)
+            {
+                return _DATABASE.MultiRead<T_OPLog>(reader, offset, fieldCount, properties, fields, indices);
+            }
             public static void GetInsertSQL(T_OPLog target, StringBuilder builder, List<object> values)
             {
                 int index = values.Count;
@@ -937,12 +1002,13 @@ namespace Server
                 List<object> values = new List<object>(8);
                 GetInsertSQL(target, builder, values);
                 builder.Append("SELECT LAST_INSERT_ID();");
-                return _DAO.SelectValue<int>(builder.ToString(), values.ToArray());
+                target.ID = _DAO.SelectValue<int>(builder.ToString(), values.ToArray());
+                return target.ID;
             }
             public static void GetDeleteSQL(int ID, StringBuilder builder, List<object> values)
             {
                 int index = values.Count;
-                builder.AppendFormat("DELETE FROM `T_OPLog` WHERE `ID` = @p{0}", index++);
+                builder.AppendFormat("DELETE FROM `T_OPLog` WHERE `ID` = @p{0};", index++);
                 values.Add(ID);
             }
             public static int Delete(int ID)
@@ -968,39 +1034,39 @@ namespace Server
             public static void GetUpdateSQL(T_OPLog target, string condition, StringBuilder builder, List<object> values, params ET_OPLog[] fields)
             {
                 int index = values.Count;
-                if (fields.Length == 0) fields = FIELD_UPDATE;
+                bool all = fields.Length == 0 || fields == FIELD_UPDATE;
                 builder.Append("UPDATE `T_OPLog` SET");
-                if (fields.Contains(ET_OPLog.PID))
+                if (all || fields.Contains(ET_OPLog.PID))
                 {
                     builder.AppendFormat(" `PID` = @p{0},", index++);
                     values.Add(target.PID);
                 }
-                if (fields.Contains(ET_OPLog.Operation))
+                if (all || fields.Contains(ET_OPLog.Operation))
                 {
                     builder.AppendFormat(" `Operation` = @p{0},", index++);
                     values.Add(target.Operation);
                 }
-                if (fields.Contains(ET_OPLog.Time))
+                if (all || fields.Contains(ET_OPLog.Time))
                 {
                     builder.AppendFormat(" `Time` = @p{0},", index++);
                     values.Add(target.Time);
                 }
-                if (fields.Contains(ET_OPLog.Way))
+                if (all || fields.Contains(ET_OPLog.Way))
                 {
                     builder.AppendFormat(" `Way` = @p{0},", index++);
                     values.Add(target.Way);
                 }
-                if (fields.Contains(ET_OPLog.Sign))
+                if (all || fields.Contains(ET_OPLog.Sign))
                 {
                     builder.AppendFormat(" `Sign` = @p{0},", index++);
                     values.Add(target.Sign);
                 }
-                if (fields.Contains(ET_OPLog.Statistic))
+                if (all || fields.Contains(ET_OPLog.Statistic))
                 {
                     builder.AppendFormat(" `Statistic` = @p{0},", index++);
                     values.Add(target.Statistic);
                 }
-                if (fields.Contains(ET_OPLog.Detail))
+                if (all || fields.Contains(ET_OPLog.Detail))
                 {
                     builder.AppendFormat(" `Detail` = @p{0},", index++);
                     values.Add(target.Detail);
@@ -1051,7 +1117,12 @@ namespace Server
             {
                 StringBuilder builder = GetSelectSQL(fields);
                 builder.Append(" WHERE `ID` = @p0;");
-                return _DAO.SelectObject<T_OPLog>(builder.ToString(), __ID);
+                var ret = _DAO.SelectObject<T_OPLog>(builder.ToString(), __ID);
+                if (ret != default(T_OPLog))
+                {
+                    ret.ID = __ID;
+                }
+                return ret;
             }
             public static T_OPLog Select(ET_OPLog[] fields, string condition, params object[] param)
             {
@@ -1059,6 +1130,14 @@ namespace Server
                 if (!string.IsNullOrEmpty(condition)) builder.Append(" {0}", condition);
                 builder.Append(';');
                 return _DAO.SelectObject<T_OPLog>(builder.ToString(), param);
+            }
+            public static bool Exists(int __ID)
+            {
+                return _DAO.ExecuteScalar<bool>("SELECT EXISTS(SELECT 1 FROM `T_OPLog` WHERE `ID` = @p0)", __ID);
+            }
+            public static bool Exists2(string condition, params object[] param)
+            {
+                return _DAO.ExecuteScalar<bool>(string.Format("SELECT EXISTS(SELECT 1 FROM `T_OPLog` {0})", condition), param);
             }
             public static List<T_OPLog> SelectMultiple(ET_OPLog[] fields, string condition, params object[] param)
             {
@@ -1203,13 +1282,12 @@ namespace Server
                 if (param.Length == 0) return _DAO.SelectObjects<T_OPLog>(builder.ToString(), PID, Operation, Way, Sign);
                 else return _DAO.SelectObjects<T_OPLog>(builder.ToString(), param.Add(PID, Operation, Way, Sign));
             }
-            public static List<JoinT_OPLog> SelectJoin(ET_OPLog[] fT_OPLog, ET_PLAYER[] fPID, string condition, params object[] param)
+            public static StringBuilder GetSelectJoinSQL(ref ET_OPLog[] fT_OPLog, ref ET_PLAYER[] fPID)
             {
                 StringBuilder builder = new StringBuilder();
                 builder.Append("SELECT ");
                 _T_OPLog.GetSelectField("t0", builder, fT_OPLog);
                 if (fT_OPLog == null || fT_OPLog.Length == 0) fT_OPLog = FIELD_ALL;
-                List<JoinT_OPLog> results = new List<JoinT_OPLog>();
                 if (fPID != null)
                 {
                     builder.Append(", ");
@@ -1218,26 +1296,52 @@ namespace Server
                 }
                 builder.Append(" FROM `T_OPLog` as t0");
                 if (fPID != null) builder.Append(" LEFT JOIN `T_PLAYER` as t1 ON (t0.PID = t1.ID)");
-                if (!string.IsNullOrEmpty(condition)) builder.Append(" {0}", condition);
-                builder.Append(';');
-                _DAO.ExecuteReader((reader) =>
+                return builder;
+            }
+            public static void SelectJoinRead(IDataReader reader, List<JoinT_OPLog> list, ET_OPLog[] fT_OPLog, ET_PLAYER[] fPID)
+            {
+                int offset = 0;
+                int[] indices = new int[reader.FieldCount];
+                List<PropertyInfo> _pT_OPLog;
+                List<FieldInfo> _fT_OPLog;
+                _T_OPLog.MultiReadPrepare(reader, 0, fT_OPLog.Length, out _pT_OPLog, out _fT_OPLog, ref indices);
+                offset = fT_OPLog.Length;
+                List<PropertyInfo> _pPID = null;
+                List<FieldInfo> _fPID = null;
+                if (fPID != null)
                 {
-                    int offset;
-                    while (reader.Read())
+                    _T_PLAYER.MultiReadPrepare(reader, offset, fPID.Length, out _pPID, out _fPID, ref indices);
+                    offset += fPID.Length;
+                }
+                while (reader.Read())
+                {
+                    JoinT_OPLog join = new JoinT_OPLog();
+                    list.Add(join);
+                    join.T_OPLog = _T_OPLog.MultiRead(reader, 0, fT_OPLog.Length, _pT_OPLog, _fT_OPLog, indices);
+                    offset = fT_OPLog.Length;
+                    if (fPID != null)
                     {
-                        JoinT_OPLog join = new JoinT_OPLog();
-                        results.Add(join);
-                        join.T_OPLog = _T_OPLog.Read(reader, 0, fT_OPLog.Length);
-                        offset = fT_OPLog.Length;
-                        if (fPID != null)
-                        {
-                            join.PID = _T_PLAYER.Read(reader, offset, fPID.Length);
-                            offset += fPID.Length;
-                        }
+                        join.PID = _T_PLAYER.MultiRead(reader, offset, fPID.Length, _pPID, _fPID, indices);
+                        offset += fPID.Length;
                     }
                 }
-                , builder.ToString(), param);
+            }
+            public static List<JoinT_OPLog> SelectJoin(ET_OPLog[] fT_OPLog, ET_PLAYER[] fPID, string condition, params object[] param)
+            {
+                StringBuilder builder = GetSelectJoinSQL(ref fT_OPLog, ref fPID);
+                if (!string.IsNullOrEmpty(condition)) builder.Append(" {0}", condition);
+                builder.Append(';');
+                List<JoinT_OPLog> results = new List<JoinT_OPLog>();
+                _DAO.ExecuteReader((reader) => SelectJoinRead(reader, results, fT_OPLog, fPID), builder.ToString(), param);
                 return results;
+            }
+            public static PagedModel<JoinT_OPLog> SelectJoinPages(ET_OPLog[] fT_OPLog, ET_PLAYER[] fPID, string __where, string conditionAfterWhere, int page, int pageSize, params object[] param)
+            {
+                StringBuilder builder = GetSelectJoinSQL(ref fT_OPLog, ref fPID);
+                StringBuilder builder2 = new StringBuilder();
+                builder2.Append("SELECT count(t0.`ID`) FROM `T_OPLog` as t0");
+                if (fPID != null) builder2.Append(" LEFT JOIN `T_PLAYER` as t1 ON (t0.PID = t1.ID)");
+                return _DB.SelectPages<JoinT_OPLog>(_DAO, builder2.ToString(), __where, builder.ToString(), conditionAfterWhere, page, pageSize, (reader, list) => SelectJoinRead(reader, list, fT_OPLog, fPID), param);
             }
             public static PagedModel<T_OPLog> SelectPages(string __where, ET_OPLog[] fields, string conditionAfterWhere, int page, int pageSize, params object[] param)
             {
@@ -1246,8 +1350,83 @@ namespace Server
             }
             public static PagedModel<T> SelectPages<T>(string __where, string selectSQL, string conditionAfterWhere, int page, int pageSize, params object[] param) where T : new()
             {
-                return _DAO.SelectPages<T>("SELECT count(`T_OPLog`.`ID`) FROM `T_OPLog`", __where, selectSQL, conditionAfterWhere, page, pageSize, param);
+                return _DB.SelectPages<T>(_DAO, "SELECT count(`T_OPLog`.`ID`) FROM `T_OPLog`", __where, selectSQL, conditionAfterWhere, page, pageSize, param);
             }
+        }
+        public static PagedModel<T> SelectPages<T>(_DATABASE.Database db, string selectCountSQL, string __where, string selectSQL, string conditionAfterWhere, int page, int pageSize, params object[] param) where T : new()
+        {
+            return SelectPages(db, selectCountSQL, __where, selectSQL, conditionAfterWhere, page, pageSize, new Action<IDataReader, List<T>>((reader, list) => { while (reader.Read()) list.Add(_DATABASE.ReadObject<T>(reader, 0, reader.FieldCount)); }), param);
+        }
+        public static PagedModel<T> SelectPages<T>(_DATABASE.Database db, string selectCountSQL, string __where, string selectSQL, string conditionAfterWhere, int page, int pageSize, Action<IDataReader, List<T>> read, params object[] param)
+        {
+            StringBuilder builder = new StringBuilder();
+            builder.AppendLine("{0} {1};", selectCountSQL, __where);
+            builder.AppendLine("{0} {1} {2} LIMIT @p{3},@p{4};", selectSQL, __where, conditionAfterWhere, param.Length, param.Length + 1);
+            object[] __param = new object[param.Length + 2];
+            Array.Copy(param, __param, param.Length);
+            __param[param.Length] = page * pageSize;
+            __param[param.Length + 1] = pageSize;
+            PagedModel<T> result = new PagedModel<T>();
+            result.Page = page;
+            result.PageSize = pageSize;
+            db.ExecuteReader((reader) =>
+            {
+                reader.Read();
+                result.Count = (int)(long)reader[0];
+                result.Models = new List<T>();
+                reader.NextResult();
+                read(reader, result.Models);
+            }
+            , builder.ToString(), __param);
+            return result;
+        }
+        public static void MasterSlave(string masterConnString, string slaveConnStrings)
+        {
+            Dictionary<string, string> dic = _DATABASE.ParseConnectionString(masterConnString, true);
+            string host = dic["server"];
+            string port = dic["port"];
+            string user = dic["user"];
+            string password = dic["password"];
+            MASTER_STATUS masterStatus;
+            using (MYSQL_DATABASE master = new MYSQL_DATABASE())
+            {
+                master.ConnectionString = masterConnString;
+                master.TestConnection();
+                masterStatus = master.SelectObject<MASTER_STATUS>("SHOW MASTER STATUS");
+            }
+            string user2 = null;
+            string password2 = null;
+            StringBuilder builder = new StringBuilder();
+            builder.AppendLine("stream {");
+            builder.AppendFormat("    upstream {0} {{", masterStatus.Binlog_Do_DB);
+            builder.AppendLine();
+            string[] slaves = slaveConnStrings.Split(',');
+            for (int i = 0; i < slaves.Length; i++)
+            {
+                using (MYSQL_DATABASE slave = new MYSQL_DATABASE())
+                {
+                    var dic2 = _DATABASE.ParseConnectionString(slaves[i], true);
+                    if (user2 == null) user2 = dic2["user"];
+                    else if (user2 != dic2["user"]) throw new InvalidOperationException("从库作为分布式读库时登录用户名必须一致");
+                    if (password2 == null) password2 = dic2["password"];
+                    else if (password2 != dic2["password"]) throw new InvalidOperationException("从库作为分布式读库时登录密码必须一致");
+                    builder.AppendLine("        server {0}:{1};", dic2["server"], dic2["port"]);
+                    slave.ConnectionString = slaves[i];
+                    slave.TestConnection();
+                    var slaveStatus = slave.SelectObject<SLAVE_STATUS>("SHOW SLAVE STATUS");
+                    if (slaveStatus == null || slaveStatus.IsRunning) continue;
+                    slave.ExecuteNonQuery("CHANGE MASTER TO MASTER_HOST=@p0,MASTER_PORT=@p1,MASTER_USER=@p2,MASTER_PASSWORD=@p3,MASTER_LOG_FILE=@p4,MASTER_LOG_POS=@p5;", host, port, user, password, masterStatus.File, masterStatus.Position);
+                }
+            }
+            builder.AppendLine("    }");
+            builder.AppendLine("    server {");
+            builder.AppendLine("        listen nginxport;");
+            builder.AppendLine("        proxy_pass {0};", masterStatus.Binlog_Do_DB);
+            builder.AppendLine("    }");
+            builder.AppendLine("}");
+            _LOG.Debug("Nginx配置文件代码\r\n{0}", builder.ToString());
+            _LOG.Debug("服务器启动的主从数据库连接字符串配置命令");
+            _LOG.Info("\"Server={0};Port={1};User={2};Password={3}; {4} Server=nginxip;Port=nginxport;User={5};Password={6};\"", host, port, user, password, masterStatus.Binlog_Do_DB, user2, password2);
         }
     }
 }
