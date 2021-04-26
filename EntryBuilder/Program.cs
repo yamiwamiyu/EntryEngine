@@ -517,7 +517,7 @@ namespace EntryBuilder
             //}
 
             //PublishToPC(@"D:\Project\xss\xss\Launch\Client", @"D:\Project\xss\xss\Launch\Client");
-            PublishToWebGL(@"C:\Yamiwamiyu\Project\EntryEngineGit\trunk\", @"C:\Yamiwamiyu\Project\ChamberH5New\Code\Client", "", @"C:\Yamiwamiyu\Project\ChamberH5New\Publish\WebGL\index.html", false, 1);
+            //PublishToWebGL(@"C:\Yamiwamiyu\Project\EntryEngineGit\trunk\", @"C:\Yamiwamiyu\Project\ChamberH5New\Code\Client", "", @"C:\Yamiwamiyu\Project\ChamberH5New\Publish\WebGL\index.html", false, 1);
             //PublishToWebGL(@"C:\Yamiwamiyu\Project\EntryEngineGit\trunk\", @"C:\Yamiwamiyu\Project\IslandChronicle\Code\Client", "", @"C:\Yamiwamiyu\Project\ChamberH5New\Publish\WebGL\index.html", false, 1);
             //BuildTableTranslate("", "");
             //BuildDatabaseMysql(@"C:\Yamiwamiyu\Project\YMHY\Code\Protocol\Protocol\bin\Release\Protocol.dll", "Server._DB", @"C:\Yamiwamiyu\Project\YMHY\Code\Server\Server\_DB.design.cs", "", "", false);
@@ -1697,6 +1697,15 @@ namespace EntryBuilder
                         }
                     });
                 });
+            }
+
+            public void Save(Type type, string outputClientPath, string outputServerPath)
+            {
+                string clientFile = Path.Combine(outputClientPath, type.Name + "Proxy.js");
+                string serverFile = Path.Combine(outputServerPath, type.Name + "Stub.cs");
+                SaveCode(clientFile, builder);
+                SaveCode(serverFile, server);
+                Console.WriteLine("生成协议类型{0}完成", type.FullName);
             }
         }
         class ProtocolHttp : ProtocolDefault
@@ -4964,24 +4973,27 @@ namespace EntryBuilder
             Action<Type> build;
             switch (csharp0jsM1wsM2js3ws4)
             {
+                case 0:
+                    #region C#
+                    build = (type) =>
+                    {
+                        ProtocolHttp writer = new ProtocolHttp();
+                        writer.Write(type);
+                        writer.Save(type, outputClientPath, outputServerPath);
+                    };
+                    #endregion
+                    break;
+
                 case 1:
                 case 3:
                     #region JS
                     build = (type) =>
                     {
-                        //ProtocolHttp writer = new ProtocolHttp();
-                        //writer.Write(type);
-
-                        ProtocolHttpJS jsWriter = new ProtocolHttpJS();
+                        ProtocolHttpJS writer = new ProtocolHttpJS();
                         if (csharp0jsM1wsM2js3ws4 == 1)
-                            jsWriter.IsModule = true;
-                        jsWriter.Write(type);
-
-                        string clientFile = Path.Combine(outputClientPath, type.Name + "Proxy.js");
-                        string serverFile = Path.Combine(outputServerPath, type.Name + "Stub.cs");
-                        SaveCode(clientFile, jsWriter.builder);
-                        SaveCode(serverFile, jsWriter.server);
-                        Console.WriteLine("生成协议类型{0}完成", type.FullName);
+                            writer.IsModule = true;
+                        writer.Write(type);
+                        writer.Save(type, outputClientPath, outputServerPath);
                     };
                     #endregion
                     break;
@@ -4995,12 +5007,7 @@ namespace EntryBuilder
                         if (csharp0jsM1wsM2js3ws4 == 2)
                             writer.IsModule = true;
                         writer.Write(type);
-
-                        string clientFile = Path.Combine(outputClientPath, type.Name + "Proxy.js");
-                        string serverFile = Path.Combine(outputServerPath, type.Name + "Stub.cs");
-                        SaveCode(clientFile, writer.builder);
-                        SaveCode(serverFile, writer.server);
-                        Console.WriteLine("生成协议类型{0}完成", type.FullName);
+                        writer.Save(type, outputClientPath, outputServerPath);
                     };
                     #endregion
                     break;

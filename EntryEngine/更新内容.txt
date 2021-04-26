@@ -1,4 +1,9 @@
-﻿2020/04/25
+﻿2020/04/26
+1. ParticleEmitter.Flow由List改为数组，方便JS进行反射
+2. ByteRefWriter和ByteRefReader改为引用仅支持对象引用，不支持数组
+*. 粒子编辑器之前编辑的粒子均不再被支持，ParticleEmitter[]的读写不再支持引用
+
+2020/04/25
 1. 优化生成JS反射代码的逻辑和API
 2. ParticleEmitter.Flow由List改为数组，方便JS进行反射
 3. 修复CSharpType一些底层方法BUG

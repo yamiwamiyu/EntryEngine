@@ -91,7 +91,7 @@ namespace EntryEngine.Unity
             {
                 using (WWW www = Load(file))
                 {
-                    return ReadPreambleText(www.bytes, IOEncoding);
+                    return _IO.ReadPreambleText(www.bytes, IOEncoding);
                     //return ReadPreambleText(www.text, Encoding);
                     //return www.text;
                 }

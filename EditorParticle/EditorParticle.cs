@@ -60,7 +60,7 @@ public partial class EditorParticle : SceneEditorEntry
 
         public ParticleEmitter Emitter;
 
-        public FLOW() : this(new ParticleEmitter() { Flow = new ParticleStream[0] } )
+        public FLOW() : this(new ParticleEmitter() { Flow = new ParticleStream[0] })
         {
         }
         public FLOW(ParticleEmitter emitter)
@@ -163,7 +163,9 @@ public partial class EditorParticle : SceneEditorEntry
             while (temp.Parent != null && temp.Parent != _this.PViewPF)
                 temp = temp.Parent;
             FLOW top = temp as FLOW;
-            RefreshParticleStream(top);
+            List<ParticleStream> list = new List<ParticleStream>();
+            RefreshParticleStream(top, list);
+            Emitter.Flow = list.ToArray();
         }
 
         static void DrawLine(UIElement sender, GRAPHICS sb, Entry e)
@@ -199,7 +201,7 @@ public partial class EditorParticle : SceneEditorEntry
                 current = max + 1;
             return current;
         }
-        static byte RefreshParticleStream(FLOW flow)
+        static byte RefreshParticleStream(FLOW flow, List<ParticleStream> list)
         {
             byte count = 0;
             for (int i = 0; i < flow.Childs.Count; i++)
@@ -207,10 +209,10 @@ public partial class EditorParticle : SceneEditorEntry
                 var child = flow.Childs[i];
                 child.Y = 30 * i;
                 var stream = (ParticleStream)child.Tag;
-                ((CheckBox)child).Text = flow.Emitter.Flow.Length.ToString();
+                ((CheckBox)child).Text = list.Count.ToString();
                 //((CheckBox)child).Text = "255";
                 stream.Child = 0;
-                flow.Emitter.Flow[i] = stream;
+                list.Add(stream);
 
                 if (child.ChildCount > 2)
                 {
@@ -218,7 +220,7 @@ public partial class EditorParticle : SceneEditorEntry
                     if (next.ChildCount > 255)
                         throw new ArgumentOutOfRangeException("Child's count over the max value.");
                     next.X = child.Parent.Width - child.X + child.Parent.Width * (SetChildPos(child, i) - 1);
-                    stream.Child += RefreshParticleStream(next);
+                    stream.Child += RefreshParticleStream(next, list);
                     count += stream.Child;
                 }
                 else
@@ -770,7 +772,7 @@ public partial class EditorParticle : SceneEditorEntry
             ONew op = new ONew();
             op.Flow = flow;
             op.Index = 0;
-            op.Stream = emitters[i].Flow;
+            op.Stream = emitters[i].Flow.ToArray();
             emitters[i].Flow = new ParticleStream[0];
 
             ODelete add = new ODelete();
@@ -982,7 +984,7 @@ public partial class EditorParticle : SceneEditorEntry
                 {
                     UIElement target = UIElement.FindChildPriority(PViewPF, ui => ui == flow || ui == selectedUI, ui => ui != PViewPF && ui.Name != null && ui.IsHover);
                     ONew operation = new ONew();
-                    operation.Stream = flow.Emitter.Flow;
+                    operation.Stream = flow.Emitter.Flow.ToArray();
                     if (target != null)
                     {
                         // 新建粒子流到目标处

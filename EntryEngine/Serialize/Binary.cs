@@ -481,73 +481,54 @@ namespace EntryEngine.Serialize
                 {
                     WriteArray((Array)value, type.GetElementType());
                 }
-                //else if (type.Equals(COLLECTION))
-                //{
-                //    WriteCollection((ICollection)value, null);
-                //}
+                else if (type.IsNullable())
+                {
+                    WriteNullable(value);
+                }
                 else
                 {
-                    if (type.IsClass || type.IsInterface)
-                    {
-                        if (value == null && !type.IsStatic())
-                        {
-                            Write(false);
-                            return;
-                        }
-                        else if (Setting.IsAbstractType(value, ref type))
-                        {
-                            Write((byte)2);
-                            //Write(value.GetType().AssemblyQualifiedName);
-                            Write(type.SimpleAQName());
-                            // object类型的基本数据
-                            if (WriteSupportiveType(type, value))
-                                return;
-                        }
-                        else
-                        {
-                            Write(true);
-                        }
-                    }
-                    Setting.SerializeField(type,
-                        field =>
-                        {
-                            WriteObject(field.GetValue(value), field.FieldType);
-                        });
-                    if (Setting.Property)
-                    {
-                        Setting.SerializeProperty(type,
-                            property =>
-                            {
-                                WriteObject(property.GetValue(value, _SERIALIZE.EmptyObjects), property.PropertyType);
-                            });
-                    }
+                    WriteClassObject(value, type);
                 }
             }
         }
-        //public void WriteCollection(ICollection collection, Type elementType)
-        //{
-        //    if (collection == null)
-        //    {
-        //        Write(-1);
-        //    }
-        //    else
-        //    {
-        //        Write(collection.Count);
-        //        foreach (var item in collection)
-        //        {
-        //            if (elementType == null)
-        //            {
-        //                if (item == null)
-        //                    throw new ArgumentException("Collection的元素类型未知的情况下元素不能为null");
-        //                elementType = item.GetType();
-        //            }
-        //            WriteObject(item, item == null ? elementType : item.GetType());
-        //        }
-        //    }
-        //}
-        //public void WriteArray(Array array)
-        //{
-        //}
+        /// <summary>写入class, interface, struct</summary>
+        protected virtual void WriteClassObject(object value, Type type)
+        {
+            if (type.IsClass || type.IsInterface)
+            {
+                if (value == null && !type.IsStatic())
+                {
+                    Write(false);
+                    return;
+                }
+                else if (Setting.IsAbstractType(value, ref type))
+                {
+                    Write((byte)2);
+                    //Write(value.GetType().AssemblyQualifiedName);
+                    Write(type.SimpleAQName());
+                    // object类型的基本数据
+                    if (WriteSupportiveType(type, value))
+                        return;
+                }
+                else
+                {
+                    Write(true);
+                }
+            }
+            Setting.SerializeField(type,
+                field =>
+                {
+                    WriteObject(field.GetValue(value), field.FieldType);
+                });
+            if (Setting.Property)
+            {
+                Setting.SerializeProperty(type,
+                    property =>
+                    {
+                        WriteObject(property.GetValue(value, _SERIALIZE.EmptyObjects), property.PropertyType);
+                    });
+            }
+        }
         public void WriteArray<T>(T[] array)
         {
             if (array == null)
@@ -628,6 +609,18 @@ namespace EntryEngine.Serialize
             if (hasValue)
             {
                 this.WriteObject(value.Value);
+            }
+        }
+        public void WriteNullable(object value)
+        {
+            if (value == null)
+            {
+                Write(false);
+            }
+            else
+            {
+                Write(true);
+                WriteObject(value);
             }
         }
         public void Write(bool value)
@@ -1466,9 +1459,14 @@ namespace EntryEngine.Serialize
             else
             {
                 int supportive = Array.IndexOf(SupportiveTypes, type);
+                Type nullableType;
                 if (supportive != -1)
                 {
                     return ReadSupportiveType(supportive);
+                }
+                else if (type.IsNullable(out nullableType))
+                {
+                    return ReadNullable(nullableType);
                 }
                 else if (type.IsArray)
                 {
@@ -1478,15 +1476,6 @@ namespace EntryEngine.Serialize
                 }
                 else
                 {
-                    // 这样虽然简便，但对于JS方法不能重名，这里不好生成反射，所以改成以上方法
-                    //MethodInfo method = GetType().GetMethod("Read", new Type[] { type.MakeByRefType() });
-                    //if (method != null)
-                    //{
-                    //    object[] value = new object[1];
-                    //    method.Invoke(this, value);
-                    //    return value[0];
-                    //}
-                    //else
                     MethodInfo method;
                     if (type.IsGenericType && genericMethods.TryGetValue(type.GetGenericTypeDefinition(), out method))
                     {
@@ -1497,58 +1486,62 @@ namespace EntryEngine.Serialize
                     }
                     else
                     {
-                        if (type.IsClass || type.IsInterface)
-                        {
-                            byte hasValue;
-                            Read(out hasValue);
-                            if (hasValue == 0)
-                            {
-                                return null;
-                            }
-                            else if (hasValue == 2)
-                            {
-                                string typeName;
-                                Read(out typeName);
-                                Type _type = _SERIALIZE.LoadSimpleAQName(typeName);
-                                if (_type != null)
-                                {
-                                    type = _type;
-                                    supportive = Array.IndexOf(SupportiveTypes, type);
-                                    if (supportive != -1)
-                                    {
-                                        return ReadSupportiveType(supportive);
-                                    }
-                                }
-                            }
-                        }
-                        object value;
-                        if (type.IsStatic())
-                        {
-                            value = null;
-                        }
-                        else
-                        {
-                            value = Activator.CreateInstance(type);
-                            if (value == null)
-                                throw new NotImplementedException(string.Format("can not create instance of {0}", type.FullName));
-                        }
-                        Setting.SerializeField(type,
-                            field =>
-                            {
-                                field.SetValue(value, ReadObject(field.FieldType));
-                            });
-                        if (Setting.Property)
-                        {
-                            Setting.SerializeProperty(type,
-                                property =>
-                                {
-                                    property.SetValue(value, ReadObject(property.PropertyType), _SERIALIZE.EmptyObjects);
-                                });
-                        }
-                        return value;
+                        return ReadClassObject(type);
                     }
                 }
             }
+        }
+        protected virtual object ReadClassObject(Type type)
+        {
+            if (type.IsClass || type.IsInterface)
+            {
+                byte hasValue;
+                Read(out hasValue);
+                if (hasValue == 0)
+                {
+                    return null;
+                }
+                else if (hasValue == 2)
+                {
+                    string typeName;
+                    Read(out typeName);
+                    Type _type = _SERIALIZE.LoadSimpleAQName(typeName);
+                    if (_type != null)
+                    {
+                        type = _type;
+                        int supportive = Array.IndexOf(SupportiveTypes, type);
+                        if (supportive != -1)
+                        {
+                            return ReadSupportiveType(supportive);
+                        }
+                    }
+                }
+            }
+            object value;
+            if (type.IsStatic())
+            {
+                value = null;
+            }
+            else
+            {
+                value = Activator.CreateInstance(type);
+                if (value == null)
+                    throw new NotImplementedException(string.Format("can not create instance of {0}", type.FullName));
+            }
+            Setting.SerializeField(type,
+                field =>
+                {
+                    field.SetValue(value, ReadObject(field.FieldType));
+                });
+            if (Setting.Property)
+            {
+                Setting.SerializeProperty(type,
+                    property =>
+                    {
+                        property.SetValue(value, ReadObject(property.PropertyType), _SERIALIZE.EmptyObjects);
+                    });
+            }
+            return value;
         }
         /// <summary>
         /// 元素类型（非数组类型）
@@ -1654,6 +1647,19 @@ namespace EntryEngine.Serialize
             else
             {
                 value = null;
+            }
+        }
+        public object ReadNullable(Type type)
+        {
+            bool hasValue;
+            Read(out hasValue);
+            if (hasValue)
+            {
+                return ReadObject(type);
+            }
+            else
+            {
+                return false;
             }
         }
         //public void Read<T>(out Nullable<T>[] array) where T : struct
@@ -2154,7 +2160,7 @@ namespace EntryEngine.Serialize
         }
     }
 
-    /// <summary>支持的引用：对象，对象数组</summary>
+    /// <summary>支持的引用：对象</summary>
 	public class ByteRefWriter : IWriter
 	{
         class INNER_WRITER : ByteWriter
@@ -2213,113 +2219,68 @@ namespace EntryEngine.Serialize
                         if (PARENT.onSerialize[i](PARENT, value, type))
                             return;
                 }
-                //if (PARENT.OnSerialize != null)
-                //{
-                //    var list = PARENT.OnSerialize.GetInvocationList();
-                //    if (list.Length == 1)
-                //    {
-                //        if (PARENT.OnSerialize(PARENT, value, type))
-                //            return;
-                //    }
-                //    else
-                //    {
-                //        for (int i = 0; i < list.Length; i++)
-                //            if (((Func<ByteRefWriter, object, Type, bool>)list[i])(PARENT, value, type))
-                //                return;
-                //    }
-                //}
-                //if (PARENT.OnSerialize != null && PARENT.OnSerialize(PARENT, value, type))
-                //    return;
 
-                MethodInfo method;
-                if (type.IsGenericType && genericMethods.TryGetValue(type.GetGenericTypeDefinition(), out method))
+                base.WriteObject(value, type);
+            }
+            protected override void WriteClassObject(object value, Type type)
+            {
+                if (type.IsClass || type.IsInterface)
                 {
-                    method = method.MakeGenericMethod(type.GetGenericArguments());
-                    method.Invoke(this, new object[] { value });
-                }
-                else
-                {
-                    if (type.IsEnum)
+                    int refIndex = WriteRef(value);
+                    if (refIndex == -1)
                     {
-                        WriteObject(value, Enum.GetUnderlyingType(type));
-                    }
-                    else if (WriteSupportiveType(type, value))
-                    {
-                    }
-                    else if (type.IsArray)
-                    {
-                        int refIndex = WriteRef(value);
-                        if (refIndex == -1)
+                        if (value == null && !type.IsStatic())
                         {
-                            Write(false);
-                            WriteArray((Array)value, type.GetElementType());
+                            Write(-1);
+                            return;
+                        }
+                        else if (Setting.IsAbstractType(value, ref type))
+                        {
+                            if (index == 0)
+                            {
+                                // 防止和引用的0冲突
+                                Write(-3);
+                            }
+                            else
+                            {
+                                Write(-index);
+                            }
+                            //Write(type.AssemblyQualifiedName);
+                            Write(type.SimpleAQName());
                         }
                         else
                         {
-                            Write(true);
-                            Write(refIndex);
+                            Write(index);
                         }
                     }
                     else
                     {
-                        if (type.IsClass || type.IsInterface)
-                        {
-                            int refIndex = WriteRef(value);
-                            if (refIndex == -1)
-                            {
-                                if (value == null && !type.IsStatic())
-                                {
-                                    Write(-1);
-                                    return;
-                                }
-                                else if (Setting.IsAbstractType(value, ref type))
-                                {
-                                    if (index == 0)
-                                    {
-                                        // 防止和引用的0冲突
-                                        Write(-3);
-                                    }
-                                    else
-                                    {
-                                        Write(-index);
-                                    }
-                                    Write(type.AssemblyQualifiedName);
-                                    //Write(type.SimpleAQName());
-                                }
-                                else
-                                {
-                                    Write(index);
-                                }
-                            }
-                            else
-                            {
-                                Write(refIndex);
-                                return;
-                            }
-                        }
-                        else
-                        {
-                            // 对结构也写入4字节索引，当结构体丢失时可以正确解读丢失结构体类型的数据
-                            Write(-2);
-                        }
-                        Setting.SerializeField(type,
-                            field =>
-                            {
-                                WriteKey(field.Name, field.FieldType);
-                                WriteObject(field.GetValue(value), field.FieldType);
-                            });
-                        if (Setting.Property)
-                        {
-                            Setting.SerializeProperty(type,
-                                property =>
-                                {
-                                    WriteKey(property.Name, property.PropertyType);
-                                    WriteObject(property.GetValue(value, _SERIALIZE.EmptyObjects), property.PropertyType);
-                                });
-                        }
-                        Write((byte)0);
+                        Write(refIndex);
+                        return;
                     }
                 }
+                else
+                {
+                    // 对结构也写入4字节索引，当结构体丢失时可以正确解读丢失结构体类型的数据
+                    Write(-2);
+                }
+                Setting.SerializeField(type,
+                    field =>
+                    {
+                        WriteKey(field.Name, field.FieldType);
+                        WriteObject(field.GetValue(value), field.FieldType);
+                    });
+                if (Setting.Property)
+                {
+                    Setting.SerializeProperty(type,
+                        property =>
+                        {
+                            WriteKey(property.Name, property.PropertyType);
+                            WriteObject(property.GetValue(value, _SERIALIZE.EmptyObjects), property.PropertyType);
+                        });
+                }
+                // 字段名的长度0，代表没有需要写入的字段了
+                Write((byte)0);
             }
         }
 
@@ -2478,78 +2439,16 @@ namespace EntryEngine.Serialize
                             return _read(PARENT);
                     }
                 }
-                //if (PARENT.OnDeserialize != null)
-                //{
-                //    var list = PARENT.OnDeserialize.GetInvocationList();
-                //    Func<ByteRefReader, object> _read = null;
-                //    if (list.Length == 1)
-                //        _read = PARENT.OnDeserialize(type);
-                //    else
-                //    {
-                //        for (int i = 0; i < list.Length; i++)
-                //        {
-                //            _read = ((Func<Type, Func<ByteRefReader, object>>)list[i])(type);
-                //            if (_read != null)
-                //                break;
-                //        }
-                //    }
-                //    // 以上方法主要GetInvocationList费时
-                //    //var _read = PARENT.OnDeserialize(type);
-                //    if (_read != null)
-                //        return _read(PARENT);
-                //}
 
-                if (type.IsEnum)
-                {
-                    return ReadObject(Enum.GetUnderlyingType(type));
-                }
-                else
-                {
-                    int supportive = Array.IndexOf(SupportiveTypes, type);
-                    if (supportive != -1)
-                    {
-                        return ReadSupportiveType(supportive);
-                    }
-                    else if (type.IsArray)
-                    {
-                        bool hasRef;
-                        Read(out hasRef);
-                        if (hasRef)
-                        {
-                            int refIndex;
-                            Read(out refIndex);
-                            return objs[refIndex];
-                        }
-                        else
-                        {
-                            Array array;
-                            ReadArray(out array, type.GetElementType());
-                            return array;
-                        }
-                    }
-                    else
-                    {
-                        MethodInfo method;
-                        if (type.IsGenericType && genericMethods.TryGetValue(type.GetGenericTypeDefinition(), out method))
-                        {
-                            // todo: 读取数组和基类不一样，需要先读取一个bool值（未知解决与否）
-
-                            object[] value = new object[1];
-                            method = method.MakeGenericMethod(type.GetGenericArguments());
-                            method.Invoke(this, value);
-                            return value[0];
-                        }
-                        else
-                        {
-                            object value;
-                            if (ReadObject(out value, ref type))
-                                return value;
-                            ReadTo(type, value);
-                            return value;
-                        }
-                    }
-                }
-                //return InternalReadObject(type, null);
+                return base.ReadObject(type);
+            }
+            protected override object ReadClassObject(Type type)
+            {
+                object value;
+                if (ReadObject(out value, ref type))
+                    return value;
+                ReadTo(type, value);
+                return value;
             }
             private bool TryReadReference(out object value)
             {
