@@ -32,8 +32,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="EntryEngine">
-      <HintPath>..\..\EntryEngine.dll</HintPath>
-      <Private>False</Private>
+      <HintPath>..\..\..\Launch\Server\EntryEngine.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />

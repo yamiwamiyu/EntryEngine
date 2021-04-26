@@ -34,18 +34,15 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="Cmdline, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\Cmdline.dll</HintPath>
-      <Private>False</Private>
+    <Reference Include="Cmdline">
+      <HintPath>..\..\Launch\Server\Cmdline.dll</HintPath>
     </Reference>
     <Reference Include="EntryEngine">
-      <HintPath>..\..\EntryEngine.dll</HintPath>
-      <Private>False</Private>
+      <HintPath>..\..\Launch\Server\EntryEngine.dll</HintPath>
     </Reference>
     <Reference Include="MySql.Data, Version=8.0.16.0, Culture=neutral, PublicKeyToken=c5687fc88969c44d, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\MySql.Data.dll</HintPath>
+      <HintPath>..\..\Launch\Server\MySql.Data.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
@@ -62,13 +59,13 @@
     <Compile Include="_DB.cs" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\Protocol\Protocol\Protocol.csproj">
+    <None Include="EntryEngine服务端开发教程.docx" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Protocol\Protocol.csproj">
       <Project>{CCE040B5-14CB-4A7C-8150-2F11951EEED6}</Project>
       <Name>Protocol %28Protocol\Protocol%29</Name>
     </ProjectReference>
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="EntryEngine服务端开发教程.docx" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

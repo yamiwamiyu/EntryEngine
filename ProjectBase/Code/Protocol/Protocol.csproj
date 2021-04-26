@@ -32,8 +32,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="EntryEngine">
-      <HintPath>..\..\EntryEngine.dll</HintPath>
-      <Private>False</Private>
+      <HintPath>..\..\Launch\Server\EntryEngine.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
@@ -49,24 +48,12 @@
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
-    <PostBuildEvent>IF NOT $(ConfigurationName) == Debug GOTO end
-
-:: 生成二进制交互协议
-$(ProjectDir)..\..\..\EntryBuilder.exe BuildProtocolAgentBinary $(ProjectDir)..\..\Server\Test\ $(ProjectDir)..\..\Server\Server\ $(TargetPath)\Protocol1
-$(ProjectDir)..\..\..\EntryBuilder.exe BuildProtocolAgentBinary $(ProjectDir)..\..\Server\Test\ $(ProjectDir)..\..\Server\Server\ $(TargetPath)\Protocol2
-
-:end
-
-IF $(ConfigurationName) == Debug GOTO end
-
-:: 生成HTTP交互协议
-$(ProjectDir)..\..\..\EntryBuilder.exe BuildProtocolAgentHttp $(ProjectDir)..\..\Client\ $(ProjectDir)..\..\Server\Server\ $(TargetPath)\Protocol1 1
-$(ProjectDir)..\..\..\EntryBuilder.exe BuildProtocolAgentHttp $(ProjectDir)..\..\Client\ $(ProjectDir)..\..\Server\Server\ $(TargetPath)\Protocol2 1
-
-:end
+    <PostBuildEvent>:: 生成HTTP交互协议
+$(ProjectDir)..\..\EntryBuilder.exe BuildProtocolAgentHttp $(ProjectDir)..\Client\Client\ $(ProjectDir)..\Server\ $(TargetPath)\Protocol1 0
+$(ProjectDir)..\..\EntryBuilder.exe BuildProtocolAgentHttp $(ProjectDir)..\Client\Client\ $(ProjectDir)..\Server\ $(TargetPath)\Protocol2 0
 
 ::生成数据库
-$(ProjectDir)..\..\..\EntryBuilder.exe BuildDatabaseMysql $(TargetPath) Server._DB $(ProjectDir)..\..\Server\Server\_DB.cs "" "" true</PostBuildEvent>
+$(ProjectDir)..\..\..\EntryBuilder.exe BuildDatabaseMysql $(TargetPath) Server._DB $(ProjectDir)..\Server\_DB.cs "" "" true</PostBuildEvent>
   </PropertyGroup>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.

@@ -35,6 +35,13 @@
             <param name="list">要切换的集合</param>
             <param name="order">切换的顺序</param>
         </member>
+        <member name="M:EntryEngine.Utility.Shuffle``1(System.Collections.Generic.IList{``0},EntryEngine._RANDOM.Random,System.Int32,System.Int32)">
+            <summary>对数组里的对象进行洗牌交换位置</summary>
+            <param name="array">要洗牌的数组</param>
+            <param name="random">随机种子</param>
+            <param name="startIndex">洗牌起始索引（随机包含）</param>
+            <param name="endIndex">洗牌结束索引（随机不包含）</param>
+        </member>
         <member name="M:EntryEngine.Utility.SortQuit``1(System.Collections.Generic.IList{``0},System.Int32,System.Int32,System.Boolean,System.Func{``0,System.Int32})">
             <summary>
             快速排序
@@ -254,12 +261,6 @@
             <typeparam name="U">过场场景类型</typeparam>
             <returns>主场景</returns>
         </member>
-        <member name="F:EntryEngine.Serialize.Serializable.RecognitionChildType">
-            <summary>
-            <para>true: value.GetType() != type时，则将序列化value.GetType()的类型名以便反序列化</para>
-            <para>false: 数据库自动生成的数据表子类型可能直接用于传输，此时序列化类型名将加大传输数据量</para>
-            </summary>
-        </member>
         <member name="T:EntryEngine.ITypist">
             <summary>
             只有实现此接口的对象允许使用文本输入设备
@@ -316,6 +317,14 @@
         <member name="F:EntryEngine.Serialize.Binary.Long52Bit">
             <summary>Long类型采用52位长度</summary>
         </member>
+        <member name="M:EntryEngine.Serialize.Binary.SupportGenericType(System.Type)">
+            <summary>检测类型是否是可支持的泛型类型</summary>
+            <param name="type">检测的类型</param>
+            <returns>-1: 不支持 / 否则: 支持</returns>
+        </member>
+        <member name="M:EntryEngine.Serialize.ByteWriter.WriteClassObject(System.Object,System.Type)">
+            <summary>写入class, interface, struct</summary>
+        </member>
         <member name="M:EntryEngine.Serialize.ByteReader.ReadArray(System.Array@,System.Type)">
             <summary>
             元素类型（非数组类型）
@@ -324,7 +333,7 @@
             <param name="type">数组元素类型，int[]则传typeof(int)</param>
         </member>
         <member name="T:EntryEngine.Serialize.ByteRefWriter">
-            <summary>支持的引用：对象，对象数组</summary>
+            <summary>支持的引用：对象</summary>
         </member>
         <member name="F:EntryEngine.Serialize.ByteRefWriter.onSerialize">
             <summary>自定义类型序列化，若进行了序列化，应该返回true</summary>
@@ -338,6 +347,9 @@
             <para>等于0. 不关心心跳</para>
             <para>小于0. 到时间(绝对值)会直接视为断线（抛出ExceptionHeartbeatStop异常）</para>
             </summary>
+        </member>
+        <member name="F:EntryEngine.Network.ProtocolCall.JO">
+            <summary>Json Object String</summary>
         </member>
         <member name="F:EntryEngine.Network.LinkHttpRequest.KeepAlive">
             <summary>保持一个给服务端用于推送消息的长连接时间，小于等于0则不保持长连接</summary>
@@ -381,14 +393,23 @@
         <member name="E:EntryEngine.Network.HttpRequestPost.OnError">
             <summary>异步</summary>
         </member>
-        <member name="M:EntryEngine.Network._DATABASE.UpdateCascadeParentID(System.Collections.Generic.IEnumerable{EntryEngine.Network.IInnerCascade},System.Int32,System.Int32)">
-            <summary>级联父级更换</summary>
-            <param name="items">完整级联列表，包含所有级别</param>
-            <param name="id">要改的目标层级</param>
-            <param name="newParentID">新的父级</param>
+        <member name="M:EntryEngine.Network._DATABASE.MultiReadPrepare(System.Data.IDataReader,System.Type,System.Int32,System.Int32,System.Collections.Generic.List{System.Reflection.PropertyInfo}@,System.Collections.Generic.List{System.Reflection.FieldInfo}@,System.Int32[]@)">
+            <summary>连续读取多个对象时，一次性把属性和字段都准备好，加速反射效率</summary>
+            <param name="indices">0:不需要读取 / 负数:-(属性的索引+1) / 正数:字段的索引+1</param>
+        </member>
+        <member name="M:EntryEngine.Network._DATABASE.MultiRead(System.Data.IDataReader,System.Int32,System.Int32,System.Object,System.Collections.Generic.List{System.Reflection.PropertyInfo},System.Collections.Generic.List{System.Reflection.FieldInfo},System.Int32[])">
+            <summary>使用MultiReadPrepare准备好的参数，快速读取一个对象</summary>
+            <param name="properties">MultiReadPrepare的输出参数</param>
+            <param name="fields">MultiReadPrepare的输出参数</param>
+            <param name="indices">MultiReadPrepare的输出参数</param>
         </member>
         <member name="M:EntryEngine.Network._DATABASE.Database.CreateConnection">
             <summary>已打开可使用的数据库连接</summary>
+        </member>
+        <member name="M:EntryEngine.Network._DATABASE.Database.SelectPaged``1(System.String,System.Int32,System.Int32,System.Object[])">
+            <summary>分页查询</summary>
+            <param name="pageIndex">从0开始的分页，小于0则查询全部</param>
+            <param name="pageSize">一页的条数</param>
         </member>
         <member name="M:EntryEngine.Game.BAG`1.Add(System.Int32,System.Int32,`0@)">
             <summary>数量变化，正数直接加，负数检查数量后减</summary>
@@ -400,7 +421,7 @@
         <member name="M:EntryEngine.Game.BAG`1.Update(System.Int32,System.Int32)">
             <summary>数量变成</summary>
         </member>
-        <member name="M:EntryEngine.Game.BAG`1.Save(System.Collections.Generic.List{EntryEngine.Game.BAG_PACKAGE},System.Int32)">
+        <member name="M:EntryEngine.Game.BAG`1.Save(System.Collections.Generic.List{EntryEngine.Game.BAG_PACKAGE},System.Int32,System.Text.StringBuilder,System.Collections.Generic.List{System.Object})">
             <summary>保存数据变动</summary>
             <param name="output">SQL数据包，包括语句和参数</param>
             <param name="batchLength">分批打包的sql语句长度，超过长度则分批，-1则不分批</param>
@@ -408,6 +429,12 @@
         </member>
         <member name="T:EntryEngine.Game.ITEM">
             <summary>掉落权重变化在_MATH.WeightVary</summary>
+        </member>
+        <member name="M:EntryEngine.Game.ITEM.Integration(System.Collections.Generic.Dictionary{System.Int32,System.Int32},EntryEngine.Game.ITEM)">
+            <summary>整合道具到字典中；新增道具或者添加数量</summary>
+        </member>
+        <member name="M:EntryEngine.Game.ITEM.Integration(System.Collections.Generic.Dictionary{System.Int32,System.Int32},EntryEngine.Game.ITEM[])">
+            <summary>整合道具到字典中；新增道具或者添加数量</summary>
         </member>
         <member name="M:EntryEngine.Game.ITEM.Drop(System.Collections.Generic.IEnumerable{EntryEngine.Game.IDrop},EntryEngine._RANDOM.Random,EntryEngine.Game.DROP[])">
             <summary>掉落列表中掉落道具</summary>
@@ -427,18 +454,25 @@
             </summary>
             <returns>0~95</returns>
         </member>
+        <member name="M:EntryEngine.Network._NETWORK.OrayHostNameIPUpdate(System.String,System.String,System.String,System.String@)">
+            <summary>更新花生壳域名绑定的外网IP</summary>
+            <param name="username">花生壳账号名</param>
+            <param name="password">花生壳密码</param>
+            <param name="hostname">花生壳域名</param>
+            <param name="result">成功时返回IP，否则参见http://service.oray.com/question/3820.html</param>
+            <returns>是否更新成功</returns>
+        </member>
         <member name="F:EntryEngine._MATH.DIVIDE_BY_1">
             <summary>1 ~ 2048的倒数(reciprocal)</summary>
         </member>
+        <member name="M:EntryEngine._MATH.Floor(System.Single)">
+            <summary>小于浮点数的最大整数</summary>
+        </member>
         <member name="M:EntryEngine._MATH.Ceiling(System.Single)">
-            <summary>
-            大于浮点数的最小整数
-            </summary>
+            <summary>大于浮点数的最小整数</summary>
         </member>
         <member name="M:EntryEngine._MATH.Round(System.Single)">
-            <summary>
-            四舍五入的整数
-            </summary>
+            <summary>四舍五入的整数</summary>
         </member>
         <member name="M:EntryEngine._MATH.Clamp(System.Single,System.Single,System.Single)">
             <summary>
@@ -882,13 +916,83 @@
             用于所有序列化的默认设置
             </summary>
         </member>
+        <member name="T:EntryEngine.Serialize.ESerializeType">
+            <summary>
+            序列化时会遇到抽象类型或object类型的字段
+            若不记录当时的类型，反序列化时将无法正确还原序列化时的对象
+            </summary>
+        </member>
+        <member name="F:EntryEngine.Serialize.ESerializeType.SerializeType">
+            <summary>
+            <para>序列化类型</para>
+            <para>序列化子类型字段</para>
+            <para>使用场景：字段是父类型，对象是子类型时，例如字段类型是object</para>
+            <para>多用于前后端都是C#且使用EntryEngine的情况，否则解析不了子类型</para>
+            </summary>
+        </member>
+        <member name="F:EntryEngine.Serialize.ESerializeType.Child">
+            <summary>
+            <para>不序列化类型</para>
+            <para>序列化子类型字段</para>
+            <para>使用场景：字段是父类型，对象是子类型时，例如字段类型是object</para>
+            <para>多用于后端接口使用，直接将子类型字段发送给前端，不用考虑自己反序列化</para>
+            </summary>
+        </member>
+        <member name="F:EntryEngine.Serialize.ESerializeType.None">
+            <summary>
+            <para>不序列化类型</para>
+            <para>不序列化子类型字段</para>
+            <para>使用场景：数据库字段为string[]，生成数据库表对应子类型字段类型为string，用Json字符串存储</para>
+            <para>此时对于后端接口传输时，应用父类型的原始类型string[]做传输</para>
+            </summary>
+        </member>
         <member name="T:EntryEngine.Serialize._SERIALIZE">
             <summary>
             1. StringBuilder.AppendLine() { Append(Environment.NewLine); }: .net = \r\n, mono = \n
             </summary>
         </member>
+        <member name="F:EntryEngine.Serialize._SERIALIZE.VARIABLE_NAME">
+            <summary>变量名不能使用的字符</summary>
+        </member>
+        <member name="F:EntryEngine.Serialize._SERIALIZE.Keywords">
+            <summary>变量名不能使用的C#关键字</summary>
+        </member>
+        <member name="M:EntryEngine.Serialize._SERIALIZE.IsVariableName(System.String)">
+            <summary>是否是合法的变量名</summary>
+        </member>
         <member name="M:EntryEngine.Serialize._SERIALIZE.SimpleAQName(System.Type)">
             <summary>短AQ名在加密方式加载下的程序集中还是未能通过Type.GetType获得类型</summary>
+        </member>
+        <member name="M:EntryEngine.Serialize._SERIALIZE.ParseTypeName``1(System.String,System.Func{System.String,System.String,``0},System.Func{``0,``0[],``0},System.Func{``0,``0})">
+            <summary>解析类型全名称</summary>
+            <param name="name">类型全名称</param>
+            <param name="onParseType">例如System.Int32, mscorlib，根据类型名System.Int32和程序集名mscorlib构造类型T</param>
+            <param name="onGeneric">构造泛型类型</param>
+            <param name="onArray">构造数组类型</param>
+        </member>
+        <member name="T:EntryEngine.Network.AcceptLimit">
+            <summary>请求限制</summary>
+        </member>
+        <member name="F:EntryEngine.Network.AcceptLimit.LimitIP">
+            <summary>允许请求的IP，null代表不限制IP，匹配规则为{0}%</summary>
+        </member>
+        <member name="F:EntryEngine.Network.AcceptLimit.LimitPort">
+            <summary>允许请求的端口，0代表不限制端口</summary>
+        </member>
+        <member name="M:EntryEngine.Network.AcceptLimit.Permit(System.Net.IPEndPoint)">
+            <summary>是否允许终端访问，true代表可以访问</summary>
+        </member>
+        <member name="T:EntryEngine.Network.AcceptBlock">
+            <summary>请求封禁</summary>
+        </member>
+        <member name="F:EntryEngine.Network.AcceptBlock.BlockTime">
+            <summary>开始封禁时间</summary>
+        </member>
+        <member name="F:EntryEngine.Network.AcceptBlock.BlockDuration">
+            <summary>封禁时长，0代表永久</summary>
+        </member>
+        <member name="F:EntryEngine.Network.AcceptBlock.Reason">
+            <summary>封禁原因</summary>
         </member>
         <member name="F:EntryEngine.Network.LoginResult.Agent">
             <summary>
@@ -929,9 +1033,6 @@
             <summary>连接验证包超时(ms)</summary>
         </member>
         <member name="F:EntryEngine.Network.Proxy.PermitSameIPLinkPerSecord">
-            <summary>限定每秒允许同一个IP的接入数</summary>
-        </member>
-        <member name="F:EntryEngine.Network.Proxy.SameIPLinkPerSecondBlock">
             <summary>限定每秒允许同一个IP的接入数，超过则禁止该IP登录</summary>
         </member>
         <member name="F:EntryEngine.Network.Proxy.PermitAcceptTimeout">
@@ -950,14 +1051,58 @@
             <para>小于0. 到时间(绝对值)会直接视为断线</para>
             </summary>
         </member>
+        <member name="M:EntryEngine.Network.Proxy.Block(System.String,System.TimeSpan,System.String[])">
+            <summary>封禁IP的请求</summary>
+            <param name="reason">封禁原因</param>
+            <param name="duration">封禁时长，0代表永久</param>
+            <param name="address">可以是192.168</param>
+        </member>
+        <member name="F:EntryEngine.Network.ProxyHttpAsync.PermitSameIPHandlePerSecord">
+            <summary>限定每秒允许同一个接口的接入数，超过则禁止该IP登录</summary>
+        </member>
         <member name="F:EntryEngine.Network.LinkHttpResponseShort.MAX_PUSH_CACHE_SIZE">
             <summary>由于短连接的特性，未能由服务器主动推送出去的数据将会被缓存，超过此尺寸时，缓存将被清空，负数则允许无限增大</summary>
+        </member>
+        <member name="P:EntryEngine.Network.FileUpload.File">
+            <summary>文件流</summary>
         </member>
         <member name="F:EntryEngine.Network.AgentHttp.OnReset">
             <summary>一次OnProtocol处理完一个请求时触发</summary>
         </member>
+        <member name="F:EntryEngine.Network.AgentHttp.parameters">
+            <summary>当前请求的表单参数</summary>
+        </member>
+        <member name="F:EntryEngine.Network.AgentHttp.files">
+            <summary>当前请求的上传文件</summary>
+        </member>
+        <member name="M:EntryEngine.Network.AgentHttp.ParsePostParam">
+            <summary>解析PostBody中的所有参数，文件内容；参数在parameters中，文件在files中</summary>
+        </member>
+        <member name="M:EntryEngine.Network.AgentHttp.MultipartReader.Flush">
+            <summary>将Buffer积累读取的数据读截取掉</summary>
+        </member>
+        <member name="P:EntryEngine.Network.AgentHttp.MultipartReader.SignedIndex">
+            <summary>查找Sign的索引</summary>
+        </member>
+        <member name="F:EntryEngine.Network.FileService.OnDownload">
+            <summary>收到请求后，返回下载的完整路径，返回null则使用LocalPath进行下载，返回""则不下载</summary>
+        </member>
+        <member name="P:EntryEngine.Network.FileService.BigFileSize">
+            <summary>
+            <para>文件尺寸超过这个值时属于大文件</para>
+            <para>大文件将不使用缓存</para>
+            <para>大文件的下载将使用文件流的形式进行文件传输</para>
+            </summary>
+        </member>
         <member name="M:EntryEngine.Network.ParallelRouter`1.AddRouter(System.Func{`0,System.Int32},EntryEngine.Network.ParallelQueue{`0}[])">
             <param name="getToken">返回值必须大于等于0时分配工作队列，相同的返回值会分配到相同的工作队列；返回值小于0时不工作</param>
+        </member>
+        <member name="M:EntryEngine.Network.ParallelRouter`1.AddRouter(System.Func{`0,System.Boolean},EntryEngine.Network.ParallelQueue{`0})">
+            <summary>队列工作，用于例如注册接口，检测之前是否有A账号，之后又要插入A账号，若并行处理则可能会插入多个相同账号</summary>
+            <param name="getToken">true:工作 / false:不工作</param>
+        </member>
+        <member name="M:EntryEngine.Network.ParallelRouter`1.AddRouter(System.Action{`0})">
+            <summary>不用队列处理协议，但参与路由；适合快速响应的同步处理</summary>
         </member>
         <member name="F:EntryEngine.Network.ParallelQueue`1.tokenJobs">
             <summary>key:某个角色 / value:工作数量</summary>
@@ -1306,9 +1451,7 @@
             </summary>
         </member>
         <member name="M:EntryEngine.ANIMATION.NextFrame">
-            <summary>
-            下一帧
-            </summary>
+            <summary>下一帧</summary>
             <returns>序列动画是否播放完毕</returns>
         </member>
         <member name="M:EntryEngine.ANIMATION.Play(System.String)">
@@ -1513,6 +1656,39 @@
             <para>JOIN ON playerinfo ON (TABLE.uid = playerinfo.uid) WHERE level > 10</para>
             </summary>
         </member>
+        <member name="M:EntryEngine.Network.AsyncThread.SyncExecute(System.Action)">
+            <summary>阻塞当前线程，直到异步把指定的操作执行完成</summary>
+            <param name="action">方法将在异步上执行</param>
+        </member>
+        <member name="M:EntryEngine.Network.AsyncThread.SyncExecute(System.Func{System.Boolean},System.Int32)">
+            <summary>阻塞当前线程，直到异步把指定的操作执行完成</summary>
+            <param name="func">方法将在异步上执行，返回true代表执行完毕，请不要阻塞线程，否则等待超时将无效</param>
+            <param name="timeout">等待超时时间，单位毫秒，负数时则永不超时，超时将抛出TimeoutException</param>
+        </member>
+        <member name="T:EntryEngine.Network.PagedModel`1">
+            <summary>翻页数据模型</summary>
+        </member>
+        <member name="T:EntryEngine.Network.InnerCascade">
+            <summary>内部级联的树状关系，例如分类和二级分类，账号和邀请账号等</summary>
+        </member>
+        <member name="F:EntryEngine.Network.InnerCascade.Parents">
+            <summary>父类的级联数组，格式为0,1,2，越靠前计别越高</summary>
+        </member>
+        <member name="M:EntryEngine.Network.InnerCascade.UpdateCascadeParentID(System.Collections.Generic.IEnumerable{EntryEngine.Network.InnerCascade},System.Int32,System.Int32)">
+            <summary>级联父级更换</summary>
+            <param name="items">完整级联列表，包含所有级别</param>
+            <param name="id">要改的目标层级</param>
+            <param name="newParentID">新的父级</param>
+        </member>
+        <member name="F:EntryEngine.Network.InnerCascade.EModifiedFlag.None">
+            <summary>没有修改</summary>
+        </member>
+        <member name="F:EntryEngine.Network.InnerCascade.EModifiedFlag.Parents">
+            <summary>修改了Parents</summary>
+        </member>
+        <member name="F:EntryEngine.Network.InnerCascade.EModifiedFlag.ParentID">
+            <summary>修改了ParentID</summary>
+        </member>
         <member name="F:EntryEngine.Network.EIndex.Index">
             <summary>
             索引：用于查询
@@ -1538,14 +1714,444 @@
         <member name="T:EntryEngine.Network.IgnoreAttribute">
             <summary>数据库不生成标记此特性的字段</summary>
         </member>
-        <member name="T:EntryEngine.Network.PagedModel`1">
-            <summary>翻页数据模型</summary>
+        <member name="P:EntryEngine.Database.MDBClient.MDBConnection.ConnectionTimeout">
+            <summary>等待连接打开的时间（以秒为单位）。默认值为 15 秒。</summary>
         </member>
-        <member name="T:EntryEngine.Network.IInnerCascade">
-            <summary>内部级联的树状关系，例如分类和二级分类，账号和邀请账号等</summary>
+        <member name="P:EntryEngine.Database.MDBClient.MDBConnection.ConnectionString">
+            <summary>仅支持server,port,user,password,database
+            <para>若是本地数据库服务，设置server为127.0.0.1或localhost即可</para>
+            </summary>
         </member>
-        <member name="P:EntryEngine.Network.IInnerCascade.Parents">
-            <summary>父类的级联数组，格式为0,1,2，越靠前计别越高</summary>
+        <member name="F:EntryEngine.Database.ByteObject.Byte">
+            <summary>字节用于传输</summary>
+        </member>
+        <member name="P:EntryEngine.Database.ByteObject.Object">
+            <summary>对象数据用于正常操作</summary>
+        </member>
+        <member name="F:EntryEngine.Database.SQLResult.RecordsAffected">
+            <summary>已更改、插入或删除的行数；如果没有任何行受到影响或语句失败，则为 0；-1 表示 SELECT 语句</summary>
+        </member>
+        <member name="F:EntryEngine.Database.SQLResult.RecordsChanged">
+            <summary>更新时实际改变了的行数，插入或删除和RecordsAffected一样</summary>
+        </member>
+        <member name="F:EntryEngine.Database.SQLResult.TotalRows">
+            <summary>查询语句结果集的行数</summary>
+        </member>
+        <member name="F:EntryEngine.Database.SQLResult.Columns">
+            <summary>结果视图的列</summary>
+        </member>
+        <member name="P:EntryEngine.Database.SQLResult.Cached">
+            <summary>是否已经是缓存的，若已经缓存则不再重复加入缓存</summary>
+        </member>
+        <member name="M:EntryEngine.Database._MDB.GetPritimiveTypeSize(EntryEngine.Database.EPrimitiveType,System.Int32)">
+            <summary>获取数据长度</summary>
+            <param name="type">不包含String类型的基础类型</param>
+            <param name="arraySize">-1. 非数组 / >=0. 数组长度</param>
+            <returns></returns>
+        </member>
+        <member name="M:EntryEngine.Database._MDB.GetStringSize(System.String)">
+            <summary>第一位1代表不为空，后面的数据用unicode编码</summary>
+        </member>
+        <member name="F:EntryEngine.Database.MDB.MDBManager.LocalBridge">
+            <summary>抛出给DataTunnleLocal使用的实例</summary>
+        </member>
+        <member name="M:EntryEngine.Database.MDB.MDBManager.DBLoad">
+            <summary>加载数据库</summary>
+        </member>
+        <member name="T:EntryEngine.Database.MDB.MDBService">
+            <summary>数据库服务</summary>
+        </member>
+        <member name="T:EntryEngine.Database.MDB.EAdministrativeRole">
+            <summary>数据库服务管理权限</summary>
+        </member>
+        <member name="T:EntryEngine.Database.MDB.EPrevilege">
+            <summary>数据库操作权限</summary>
+        </member>
+        <member name="T:EntryEngine.Database.MDB.MDBAccount">
+            <summary>数据库管理员账号</summary>
+        </member>
+        <member name="T:EntryEngine.Database.MDB.MDBDatabase">
+            <summary>数据库</summary>
+        </member>
+        <member name="F:EntryEngine.Database.MDB.MDBDatabase.Name">
+            <summary>数据库名</summary>
+        </member>
+        <member name="T:EntryEngine.Database.MDB.MDBTable">
+            <summary>数据表</summary>
+        </member>
+        <member name="F:EntryEngine.Database.MDB.MDBTable.SUFFIX">
+            <summary>记录了数据表内容的文件后缀</summary>
+        </member>
+        <member name="F:EntryEngine.Database.MDB.MDBTable.Name">
+            <summary>表名</summary>
+        </member>
+        <member name="F:EntryEngine.Database.MDB.MDBTable.Comments">
+            <summary>备注</summary>
+        </member>
+        <member name="F:EntryEngine.Database.MDB.MDBTable.Count">
+            <summary>表中现存数据的行数（不包括被删除的）</summary>
+        </member>
+        <member name="F:EntryEngine.Database.MDB.MDBTable.Row">
+            <summary>表中总共数据的行数（包括被删除的）</summary>
+        </member>
+        <member name="T:EntryEngine.Database.MDB.MDBColumn">
+            <summary>数据表的列</summary>
+        </member>
+        <member name="F:EntryEngine.Database.MDB.MDBColumn.Name">
+            <summary>列名</summary>
+        </member>
+        <member name="F:EntryEngine.Database.MDB.MDBColumn.Comments">
+            <summary>备注</summary>
+        </member>
+        <member name="F:EntryEngine.Database.MDB.MDBColumn.Type">
+            <summary>字段类型</summary>
+        </member>
+        <member name="F:EntryEngine.Database.MDB.MDBColumn.Default">
+            <summary>默认值的表达式</summary>
+        </member>
+        <member name="F:EntryEngine.Database.MDB.MDBColumn.Index">
+            <summary>索引，复合索引按照多个单索引处理</summary>
+        </member>
+        <member name="T:EntryEngine.Database.MDB.MDBIndex">
+            <summary>数据表的索引</summary>
+        </member>
+        <member name="F:EntryEngine.Database.MDB.MDBIndex.Type">
+            <summary>索引类型</summary>
+        </member>
+        <member name="F:EntryEngine.Database.MDB.MDBIndex.Identity">
+            <summary>自增键当前的值</summary>
+        </member>
+        <member name="P:EntryEngine.Database.MDB.DataFile.RowIndex">
+            <summary>文件流当前行号</summary>
+        </member>
+        <member name="P:EntryEngine.Database.MDB.DataFile.Count">
+            <summary>数据总行数</summary>
+        </member>
+        <member name="T:EntryEngine.Database.MDB.DataWriterFile">
+            <summary>
+            文件流效率测试(FileStream.Seek)，测试类型int
+            1. Seek指定位置，仅读取需要的数据
+               (1). 占用内存小
+               (2). 文件流顺序读取时速度较快，约为随机位置读取的1.25~6倍(根据)，10000次随机位置读取时间约200ms
+                    顺序情况下，SeekOrigin.Begin和SeekOrigin.Current效果一样，对需要Seek的位置进行顺序排序，10000次随机位置读取时间约160ms
+            2. Seek起始位置，读取直到结束位置中的所有数据（有不需要数据）
+               (1). 临时占用内存大
+               (2). 相同时间，可以读取的数据量为前者的2000倍，即200ms可以读取2000万条数据
+            所以需要根据查询数据的耗时来选择性采用读取方式
+            </summary>
+        </member>
+        <member name="T:EntryEngine.Database.MDB.EIndexAttribute">
+            <summary>索引的特性</summary>
+        </member>
+        <member name="F:EntryEngine.Database.MDB.EIndexAttribute.Unique">
+            <summary>索引值唯一</summary>
+        </member>
+        <member name="F:EntryEngine.Database.MDB.EIndexAttribute.Fixed">
+            <summary>字符串长度固定，例如手机号</summary>
+        </member>
+        <member name="F:EntryEngine.Database.MDB.Indexable`1.Hit">
+            <summary>
+            使用索引时，需要做一个比较复杂度排序
+            <para>例如一个Time > '2020-08-24' OR Name LIKE '李%'的筛选</para>
+            <para>Time和Name都有索引</para>
+            <para>此时'>'和'LIKE'，比较复杂度应该是'>'较小，优先选用Time索引筛选数据</para>
+            <para>Time索引筛选到的数据，Hit置为true</para>
+            <para>之后筛选Name时，已经Hit的对象就不需要做LIKE判断了，可以加快筛选速度</para>
+            <para>其次就是AND和OR的区别</para>
+            <para>本例中如果是AND条件，可以通过!Hit跳过LIKE判断</para>
+            </summary>
+        </member>
+        <member name="M:EntryEngine.Database.MDB.Syntax.SyntaxNode.CheckSyntax(System.Boolean,System.String)">
+            <summary>检查语法错误</summary>
+            <param name="__throw">true则抛出异常</param>
+            <param name="message">异常信息</param>
+        </member>
+        <member name="M:EntryEngine.Database.MDB.Syntax.SyntaxNode.Equals(EntryEngine.Database.MDB.Syntax.SyntaxNode)">
+            <summary>用于将语法树找到执行器缓存</summary>
+        </member>
+        <member name="T:EntryEngine.Database.MDB.Syntax.INSERT">
+            <summary>
+            Insert语句
+            <para>INSERT [INTO] TABLE[(Field1, Field2... Field)] VALUES</para>
+            <para>INSERT [INTO] TABLE[(Field1, Field2... Field)] SELECT</para>
+            </summary>
+        </member>
+        <member name="F:EntryEngine.Database.MDB.Syntax.INSERT.IsReplace">
+            <summary>REPLACE INTO</summary>
+        </member>
+        <member name="F:EntryEngine.Database.MDB.Syntax.INSERT.Table">
+            <summary>要插入的数据表</summary>
+        </member>
+        <member name="F:EntryEngine.Database.MDB.Syntax.INSERT.Fields">
+            <summary>要插入的列名，空集合则全部插入，考虑将字段移入Table中</summary>
+        </member>
+        <member name="F:EntryEngine.Database.MDB.Syntax.INSERT.Values">
+            <summary>要插入的值</summary>
+        </member>
+        <member name="P:EntryEngine.Database.MDB.Syntax.INSERT.IsSelect">
+            <summary>通过查询已有表插入多条数据</summary>
+        </member>
+        <member name="T:EntryEngine.Database.MDB.Syntax.TRUNCATE">
+            <summary>TRUNCATE [TABLE] TABLE</summary>
+        </member>
+        <member name="F:EntryEngine.Database.MDB.Syntax.SELECT.Values">
+            <summary>查询的 常量，函数，[表名].[字段名]|*，子查询 等等</summary>
+        </member>
+        <member name="F:EntryEngine.Database.MDB.Syntax.SELECT.From">
+            <summary>查询的表，可能是join，也可能没有(例如select 1,2)</summary>
+        </member>
+        <member name="F:EntryEngine.Database.MDB.Syntax.SELECT.Where">
+            <summary>where条件，可能没有</summary>
+        </member>
+        <member name="F:EntryEngine.Database.MDB.Syntax.SELECT.GroupBy">
+            <summary>group by字段，可能没有</summary>
+        </member>
+        <member name="F:EntryEngine.Database.MDB.Syntax.SELECT.Having">
+            <summary>having条件，可能没有（可以不需要group by单独存在）</summary>
+        </member>
+        <member name="F:EntryEngine.Database.MDB.Syntax.SELECT.OrderBy">
+            <summary>group by字段，可能没有</summary>
+        </member>
+        <member name="F:EntryEngine.Database.MDB.Syntax.SELECT.Limit">
+            <summary>分页，可能没有</summary>
+        </member>
+        <member name="F:EntryEngine.Database.MDB.Syntax.SELECT.Union">
+            <summary>union查询，可能没有</summary>
+        </member>
+        <member name="M:EntryEngine.Database.MDB.Syntax.SELECT.ToString">
+            <summary>子查询的别名，可能没有</summary>
+        </member>
+        <member name="M:EntryEngine.Database.MDB.Syntax.SELECT.IsSelect(EntryEngine.Database.MDB.Syntax.SyntaxNode)">
+            <summary>判断语法是不是查询或子查询</summary>
+        </member>
+        <member name="F:EntryEngine.Database.MDB.Syntax.JOIN.On">
+            <summary>
+            on条件，inner join时可以为空，为空时左表*右表
+            <para>左右连都不能为空，可以是on(true)，此时速度极慢</para>
+            <para>inner join做笛卡尔乘积时，左表先显示全部行，右表显示第一行</para>
+            </summary>
+        </member>
+        <member name="F:EntryEngine.Database.MDB.Syntax.ORDERBY.DESC">
+            <summary>排序顺序，true降序，false升序</summary>
+        </member>
+        <member name="F:EntryEngine.Database.MDB.Syntax.LIMIT.Start">
+            <summary>第几条数据开始</summary>
+        </member>
+        <member name="F:EntryEngine.Database.MDB.Syntax.LIMIT.Count">
+            <summary>查询几条数据</summary>
+        </member>
+        <member name="M:EntryEngine.Database.MDB.Syntax.LIMIT.CheckSyntax(EntryEngine.Database.MDB.Syntax.SyntaxNode)">
+            <summary>检查语法节点是否是合法的limit参数</summary>
+        </member>
+        <member name="F:EntryEngine.Database.MDB.Syntax.UNION.IsUnionAll">
+            <summary>
+            是否是union all，否的化会去重全部一样的数据
+            <para>1 union all 1之后会有2行1，但是再union 2之后，两个1任然会被去重</para>
+            </summary>
+        </member>
+        <member name="F:EntryEngine.Database.MDB.Syntax.UNION.Select">
+            <summary>union的子查询</summary>
+        </member>
+        <member name="M:EntryEngine.Database.MDB.Syntax.UNION.CheckSyntax(EntryEngine.Database.MDB.Syntax.SyntaxNode)">
+            <summary>检查语法节点是否是合法Select语句(带limit的查询语句在union时需要加上'()')</summary>
+        </member>
+        <member name="T:EntryEngine.Database.MDB.Syntax.PrimitiveValue">
+            <summary>常量值</summary>
+        </member>
+        <member name="F:EntryEngine.Database.MDB.Syntax.EUnaryOperator.Not">
+            <summary>!a</summary>
+        </member>
+        <member name="F:EntryEngine.Database.MDB.Syntax.EUnaryOperator.BitNot">
+            <summary>~a</summary>
+        </member>
+        <member name="F:EntryEngine.Database.MDB.Syntax.EUnaryOperator.Minus">
+            <summary>-a</summary>
+        </member>
+        <member name="F:EntryEngine.Database.MDB.Syntax.EUnaryOperator.Plus">
+            <summary>+a</summary>
+        </member>
+        <member name="T:EntryEngine.Database.MDB.Syntax.UnaryOperator">
+            <summary>一元运算符</summary>
+        </member>
+        <member name="T:EntryEngine.Database.MDB.Syntax.Parenthesized">
+            <summary>()</summary>
+        </member>
+        <member name="T:EntryEngine.Database.MDB.Syntax.BETWEEN">
+            <summary>between and</summary>
+        </member>
+        <member name="T:EntryEngine.Database.MDB.Syntax.CASE">
+            <summary>
+            相当于switch的case，用法有以下两种
+            <para>用法1(switch): case 表达式 when 表达式的值 then 结果值</para>
+            <para>用法2(if)：case when 表达式 then 结果值</para>
+            </summary>
+        </member>
+        <member name="T:EntryEngine.Database.MDB.Syntax.DISTINCT">
+            <summary>distinct exp | distinct(exp)</summary>
+        </member>
+        <member name="F:EntryEngine.Database.MDB.Syntax.FunctionPN.Functions">
+            <summary>数据库内置方法，key为方法名，value是方法的参数个数，例如sum，就是key=sum,value=1</summary>
+        </member>
+        <member name="F:EntryEngine.Database.MDB.Syntax.FunctionPN.Function">
+            <summary>方法名</summary>
+        </member>
+        <member name="F:EntryEngine.Database.MDB.Syntax.EBinaryOperator.Multiply">
+            <summary>left * right</summary>
+        </member>
+        <member name="F:EntryEngine.Database.MDB.Syntax.EBinaryOperator.Division">
+            <summary>left / right</summary>
+        </member>
+        <member name="F:EntryEngine.Database.MDB.Syntax.EBinaryOperator.Modulus">
+            <summary>left % right</summary>
+        </member>
+        <member name="F:EntryEngine.Database.MDB.Syntax.EBinaryOperator.Addition">
+            <summary>left + right</summary>
+        </member>
+        <member name="F:EntryEngine.Database.MDB.Syntax.EBinaryOperator.Subtraction">
+            <summary>left - right</summary>
+        </member>
+        <member name="F:EntryEngine.Database.MDB.Syntax.EBinaryOperator.ShiftRight">
+            <summary>left >> right</summary>
+        </member>
+        <member name="F:EntryEngine.Database.MDB.Syntax.EBinaryOperator.GreaterThan">
+            <summary>left > right</summary>
+        </member>
+        <member name="F:EntryEngine.Database.MDB.Syntax.EBinaryOperator.GreaterThanOrEqual">
+            <summary>left >= right</summary>
+        </member>
+        <member name="F:EntryEngine.Database.MDB.Syntax.EBinaryOperator.Equality">
+            <summary>left == right</summary>
+        </member>
+        <member name="F:EntryEngine.Database.MDB.Syntax.EBinaryOperator.Inequality">
+            <summary>left != right</summary>
+        </member>
+        <member name="F:EntryEngine.Database.MDB.Syntax.EBinaryOperator.ExclusiveOr">
+            <summary>left ^ right</summary>
+        </member>
+        <member name="F:EntryEngine.Database.MDB.Syntax.EBinaryOperator.BitwiseOr">
+            <summary>left | right</summary>
+        </member>
+        <member name="F:EntryEngine.Database.MDB.Syntax.EBinaryOperator.ConditionalOr">
+            <summary>left || right</summary>
+        </member>
+        <member name="T:EntryEngine.Database.MDB.Syntax.BinaryOperator">
+            <summary>二元运算符</summary>
+        </member>
+        <member name="F:EntryEngine.Database.MDB.Syntax.IN.Values">
+            <summary>可以是常量，参数，子查询</summary>
+        </member>
+        <member name="T:EntryEngine.Database.MDB.Syntax.LIKE">
+            <summary>
+            模糊匹配规则
+            <para>1. 默认不区分大小写，需要区分时，需要在LIKE后增加BINARY，例如LIKE BINARY 'Aa%'</para>
+            <para>2. %代表任意字符</para>
+            <para>3. _代表任一字符</para>
+            <para>4. 特殊字符转义\% \_ \\\\</para>
+            </summary>
+        </member>
+        <member name="T:EntryEngine.Database.MDB.Syntax.IS">
+            <summary>is仅由于is null或者is not null的情况</summary>
+        </member>
+        <member name="T:EntryEngine.Database.MDB.Syntax.ECommentSign">
+            <summary>注释类型</summary>
+        </member>
+        <member name="F:EntryEngine.Database.MDB.Syntax.ECommentSign.Charp">
+            <summary>#</summary>
+        </member>
+        <member name="F:EntryEngine.Database.MDB.Syntax.ECommentSign.Rod">
+            <summary>-- </summary>
+        </member>
+        <member name="F:EntryEngine.Database.MDB.Syntax.ECommentSign.Star">
+            <summary>/*，注释中再包含/*，也只认第一个*/作为结束</summary>
+        </member>
+        <member name="T:EntryEngine.Database.MDB.Syntax.COMMENT">
+            <summary>注释</summary>
+        </member>
+        <member name="T:EntryEngine.Database.MDB.Syntax.FieldWithTable">
+            <summary>`TableName`.`FieldName` [AS Alias]</summary>
+        </member>
+        <member name="F:EntryEngine.Database.MDB.Syntax.FieldWithTable.Table">
+            <summary>表名，可能为空</summary>
+        </member>
+        <member name="P:EntryEngine.Database.MDB.Syntax.FieldWithTable.IsAll">
+            <summary>*</summary>
+        </member>
+        <member name="T:EntryEngine.Database.MDB.Syntax.FieldParameter">
+            <summary>@p0</summary>
+        </member>
+        <member name="M:EntryEngine.Database.MDB.Semantics.SyntaxExecutor.CheckSyntax(System.Boolean,System.String,System.Object[])">
+            <summary>检查语法错误</summary>
+            <param name="__throw">true则抛出异常</param>
+            <param name="message">异常信息</param>
+        </member>
+        <member name="F:EntryEngine.Database.MDB.Semantics.SyntaxExecutor.ExecutorCacheBySQL">
+            <summary>例如select * from t_test</summary>
+        </member>
+        <member name="F:EntryEngine.Database.MDB.Semantics.SyntaxExecutor.ExecutorCacheBySyntax">
+            <summary>1. 例如select * from t_test = select c1, c2, c3 from t_test
+            2. 或者select * from t_test = select \n * \n from \n t_test
+            </summary>
+        </member>
+        <member name="F:EntryEngine.Database.MDB.Semantics.SyntaxExecutor.ResultCache">
+            <summary>缓存 = (执行器 + 参数).执行结果</summary>
+        </member>
+        <member name="T:EntryEngine.Database.MDB.Semantics.SyntaxExecutor.ExecutorValue.Constant">
+            <summary>常量</summary>
+        </member>
+        <member name="M:EntryEngine.Database.MDB.Semantics.Executor.Clone">
+            <summary>克隆内部其它信息，不需要克隆参数</summary>
+        </member>
+        <member name="F:EntryEngine.Database.MDB.Semantics.SyntaxExecutor.ExecutorInsert.Insert.Values">
+            <summary>插入数据为多行多列，第一个List代表行，第二个List代表列</summary>
+        </member>
+        <member name="T:EntryEngine.Database.MDB.Semantics.SyntaxExecutor.ExecutorSelect.View">
+            <summary>视图，查询语句生成的临时表</summary>
+        </member>
+        <member name="T:EntryEngine.Database.Refactoring.SQL_PARSER">
+            <summary>SQL语句解析器，生成内存中可执行的语法树，带参数的生成缓存，语句执行结果生成缓存</summary>
+        </member>
+        <member name="F:EntryEngine.Database.Refactoring.SQL_PARSER.r">
+            <summary>字符串已经转为小写</summary>
+        </member>
+        <member name="F:EntryEngine.Database.Refactoring.SQL_PARSER.r2">
+            <summary>字符串保留原样，主要用于读取名字等大小写敏感的字段</summary>
+        </member>
+        <member name="M:EntryEngine.Database.Refactoring.SQL_PARSER.SyncR2(System.Action{EntryEngine.Serialize.StringStreamReader})">
+            <summary>r2同步r的位置，使用r2进行操作，之后r再同步回r2的位置，适合需要读取大小写敏感的内容时使用</summary>
+        </member>
+        <member name="M:EntryEngine.Database.Refactoring.SQL_PARSER.CheckSyntax(System.Boolean,System.String)">
+            <summary>检查语法错误</summary>
+            <param name="__throw">true则抛出异常</param>
+            <param name="message">异常信息</param>
+        </member>
+        <member name="M:EntryEngine.Database.Refactoring.SQL_WRITER.Visit(EntryEngine.Database.Refactoring.SQL_PARSER)">
+            <summary>访问整个解析器解析出来的所有语法树</summary>
+        </member>
+        <member name="F:EntryEngine.Database.Refactoring.MySQL.ParserMySQL.WORD_BREAK2">
+            <summary>表名.字段名 的'.'专用</summary>
+        </member>
+        <member name="M:EntryEngine.Database.Refactoring.MySQL.ParserMySQL.ParseExpressionFront">
+            <summary>一元表达式，即只有一个参数，例如-5,sum(a)</summary>
+        </member>
+        <member name="M:EntryEngine.Database.Refactoring.MySQL.ParserMySQL.ParseExpressionBack(EntryEngine.Database.MDB.Syntax.SyntaxNode)">
+            <summary>二元表达式，即需要两个参数，例如1+2,str like '%a%'</summary>
+        </member>
+        <member name="M:EntryEngine.Database.Refactoring.MySQL.ParserMySQL.ParseSelectField">
+            <summary>查询的字段，[`Table`.]`Field` [AS Alias]</summary>
+            <param name="canWithAlias">基本只有from|join|select后面的"表"|"字段"可以有别名</param>
+        </member>
+        <member name="M:EntryEngine.Database.Refactoring.MySQL.ParserMySQL.ParseFunctionP1``1">
+            <summary>一个参数的方法，例如sum,count等聚合函数</summary>
+        </member>
+        <member name="M:EntryEngine.Database.Refactoring.MySQL.ParserMySQL.ParseFunctionPN(System.String,System.Int32)">
+            <summary>多个参数的方法，例如if等</summary>
+            <param name="count">具体参数的个数，-1代表可以无数个</param>
+        </member>
+        <member name="M:EntryEngine.Database.Refactoring.MySQL.ParserMySQL.ParseFromTable">
+            <summary>解析from或join后面的表，可以是表名或子查询</summary>
+        </member>
+        <member name="M:EntryEngine.Database.Refactoring.MySQL.ParserMySQL.ParseAS(EntryEngine.Database.MDB.Syntax.SyntaxNode)">
+            <summary>只有子查询，select，from|join后面会有as别名</summary>
         </member>
         <member name="T:EntryEngine.UI.STextHint">
             <summary>屏幕中央弹出提示文字，常用于提示错误信息</summary>
@@ -1728,6 +2334,16 @@
             <param name="visitable">节点是否可以访问</param>
             <returns>指定节点广度周围的节点（包含指定节点）</returns>
         </member>
+        <member name="M:EntryEngine.GameTime.Still">
+            <summary>保持上一帧的时间</summary>
+        </member>
+        <member name="M:EntryEngine.GameTime.Elapse(System.DateTime)">
+            <summary>指定时间经过一帧</summary>
+            <param name="now">当前帧的时间</param>
+        </member>
+        <member name="M:EntryEngine.GameTime.Elapse">
+            <summary>实时时间经过一帧</summary>
+        </member>
         <member name="P:EntryEngine.GameTime.FrameID">
             <summary>不断累加的帧ID</summary>
         </member>
@@ -1885,6 +2501,72 @@
             整个池能放满PoolSize堆时溢出
             </summary>
         </member>
+        <member name="T:EntryEngine.AVLTreeBase`1">
+            <summary>
+            平衡二叉树
+            扩展应用: B+Tree
+              节点类型又为一个平衡二叉树（一个节点也叫页），树里的数据一次性通过文件读取到内存，内存数据主要是数据的主键
+              硬盘读取数据最小单位也是一页，一页大小为16kb，所以B+Tree的页也可以设置为16kb
+            </summary>
+        </member>
+        <member name="M:EntryEngine.AVLTreeBase`1.Find(`0)">
+            <summary>查找元素</summary>
+            <param name="item">要查找的目标</param>
+            <returns>查找结果</returns>
+        </member>
+        <member name="M:EntryEngine.AVLTreeBase`1.SetSortedValuesASC(System.Collections.Generic.IList{`0})">
+            <summary>将已经升序排好序的对象快速插入以构建树</summary>
+        </member>
+        <member name="M:EntryEngine.AVLTreeBase`1.SetSortedValuesDESC(System.Collections.Generic.IList{`0})">
+            <summary>将已经降序排好序的对象快速插入以构建树</summary>
+        </member>
+        <member name="M:EntryEngine.AVLTreeBase`1.Insert(`0)">
+            <summary>可以添加重复键的节点</summary>
+            <param name="item">item算出来的键一样，值不一样则插入，否则将调用Update</param>
+        </member>
+        <member name="M:EntryEngine.AVLTreeBase`1.ToBalance(EntryEngine.AVLTreeBase{`0}.AVLTreeNode,EntryEngine.AVLTreeBase{`0}.AVLTreeNode,EntryEngine.AVLTreeBase{`0}.AVLTreeNode,EntryEngine.AVLTreeBase{`0}.AVLTreeNode)">
+            <summary>通过旋转让树保持平衡</summary>
+            <param name="gparent">失衡节点</param>
+        </member>
+        <member name="M:EntryEngine.AVLTreeBase`1.FindInsert(`0,EntryEngine.AVLTreeBase{`0}.AVLTreeNode)">
+            <summary>插入时找到了相应的节点，默认替换节点</summary>
+            <param name="item">要插入的键</param>
+            <param name="node">找到的节点</param>
+        </member>
+        <member name="M:EntryEngine.AVLTreeBase`1.Update(`0)">
+            <summary>更新节点的键，请求重新排序</summary>
+        </member>
+        <member name="M:EntryEngine.AVLTreeBase`1.DeleteNode(EntryEngine.AVLTreeBase{`0}.AVLTreeVisitor)">
+            <summary>
+            删除节点，有些情况不需要通过旋转来保持树平衡
+            <para>不需要平衡</para>
+            <para>1. 对于同值单一节点</para>
+            <para>2. 删除节点的左右树枝平衡（非叶子节点），即删除完后，无论左还是右代替其原位置，整棵树高度不变</para>
+            <para>需要平衡</para>
+            <para>1. 短边删除，导致父级直接失衡</para>
+            <para>2. 长边删除，父级虽然平衡，但整条边可能变短，引起上层的不平衡</para>
+            </summary>
+            <returns>是否需要通过旋转保持平衡</returns>
+        </member>
+        <member name="F:EntryEngine.AVLTreeBase`1.AVLTreeVisitor.Path">
+            <summary>Find时经过的路径，可以节约AVLTreeNode.Parent的内存</summary>
+        </member>
+        <member name="F:EntryEngine.AVLTreeBase`1.AVLTreeVisitor.Length">
+            <summary>路径长度</summary>
+        </member>
+        <member name="F:EntryEngine.AVLTreeBase`1.AVLTreeVisitor.Flag">
+            <summary>0. 找到了目标 / -1. 最后往左没找到目标 / 1. 最后往右没找到目标</summary>
+        </member>
+        <member name="P:EntryEngine.AVLTreeBase`1.AVLTreeVisitor.Target">
+            <summary>寻找到的目标</summary>
+        </member>
+        <member name="F:EntryEngine.AVLTreeBase`1.AVLTreeNodeList.Same">
+            <summary>相同键的元素</summary>
+        </member>
+        <member name="M:EntryEngine.AVLTree`1.SetSameElementList(System.Func{System.Collections.Generic.ICollection{`0}})">
+            <summary>相同键的元素将用集合来存储，这里指定使用哪种集合类（只能指定一次）</summary>
+            <param name="func">返回集合的新实例</param>
+        </member>
         <member name="T:EntryEngine.CorDelegate">
             <summary>自定义委托完成协程</summary>
         </member>
@@ -1930,6 +2612,12 @@
         <member name="F:EntryEngine.PSSpeedCheck.Speed">
             <summary>每秒移动的像素</summary>
         </member>
+        <member name="F:EntryEngine.Particle.AbsolutePosition">
+            <summary>绝对坐标，不会跟随粒子系统位移，但会跟随粒子系统的其它矩阵变化</summary>
+        </member>
+        <member name="F:EntryEngine.Particle.PosMode">
+            <summary>0: 相对坐标 1: 绝对坐标尚未确定坐标 2: 绝对坐标已确定坐标</summary>
+        </member>
         <member name="P:EntryEngine.Particle.Direction">
             <summary>力的方向（角度）</summary>
         </member>
@@ -1956,6 +2644,9 @@
         </member>
         <member name="F:EntryEngine.Serialize.JsonReader.EJson.VALUE">
             <summary>Value</summary>
+        </member>
+        <member name="M:EntryEngine.Serialize.JsonObject.ToClassCode(System.String,System.Boolean)">
+            <summary>转换成类型代码，免得自己写实体类</summary>
         </member>
     </members>
 </doc>

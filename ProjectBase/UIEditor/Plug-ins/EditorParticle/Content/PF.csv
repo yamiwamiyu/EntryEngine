@@ -4,6 +4,7 @@
 "EntryEngine.PBByTime, EntryEngine",9,1,50
 "EntryEngine.PSSkip, EntryEngine",75,2,91
 "EntryEngine.PSLifecycle, EntryEngine",10,2,51
+"EntryEngine.PSFont, EntryEngine",122,2,123
 "EntryEngine.PSTex, EntryEngine",11,2,52
 "EntryEngine.PSTexClone, EntryEngine",12,2,53
 "EntryEngine.PSPosPoint, EntryEngine",13,2,54
@@ -29,3 +30,4 @@
 "EntryEngine.PSRotateAdd, EntryEngine",116,0,104
 "EntryEngine.PSRotationForward, EntryEngine",89,0,105
 "EntryEngine.PSColorAdd, EntryEngine",114,0,115
+"EntryEngine.PSWind, EntryEngine",119,0,118
