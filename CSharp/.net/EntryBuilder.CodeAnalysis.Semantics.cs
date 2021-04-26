@@ -823,6 +823,8 @@ namespace EntryBuilder.CodeAnalysis.Semantics
             type = GetDefinitionType(type);
 
             StringBuilder builder = new StringBuilder();
+
+            // 命名空间
             CSharpNamespace ns = type.ContainingNamespace;
             if (ns != null)
             {
@@ -833,43 +835,62 @@ namespace EntryBuilder.CodeAnalysis.Semantics
                     builder.Append(".");
                 }
             }
+
+            // 泛型形参的总数量
+            int gcount = 0;
             int count = 0;
             CSharpType parent = type.ContainingType;
             for (; parent != null; count++)
                 parent = parent.ContainingType;
             // 栈方式追加内部类的外层类
-            for (int i = count; i > 0; i--)
+            // 例如TimeLine<int>.TimeKeyFrame
+            // 结果是TimeLine^1+TimeKeyFrame[[int]]
+            for (int i = count; i >= 0; i--)
             {
                 parent = type;
                 for (int j = 0; j < i; j++)
                     parent = parent.ContainingType;
-                builder.Append(parent.Name);
-                builder.Append("+");
-            }
-            builder.Append(type.Name.Name);
-            if (tempType.TypeParametersCount > 0)
-            {
-#if DEBUG
-                // 生成反射信息时，泛型类型的名字已经将^1生成进去了
-                builder.Append("`");
-                // 泛型个数
-                builder.Append(tempType.TypeParametersCount);
-#endif
-                if (tempType.IsConstructed)
+                builder.Append(parent.Name.Name);
+                while (parent.IsConstructed)
+                    parent = parent.DefiningType;
+                // 泛型形参数量
+                int pcount = parent.TypeParametersCount;
+                if (pcount > 0)
                 {
-                    // 泛型参数
-                    var typeArguments = tempType.TypeArguments;
-                    builder.Append("[");
-                    for (int i = 0, n = typeArguments.Count - 1; i <= n; i++)
+                    builder.Append("^" + pcount);
+                    gcount += pcount;
+                }
+                if (i != 0)
+                    builder.Append("+");
+            }
+            // 泛型实参
+            // class T1<T> { class T2<U> { } }
+            // T1<int>.T2<int>的名字是T1^1+T2^1[[int],[int]]
+            // 会将多个单个泛型的类型，汇总到最终的一个泛型类型数组中
+            if (tempType.IsConstructed)
+            {
+                builder.Append("[");
+                // 栈方式追加泛型实参类
+                for (int i = count; i >= 0; i--)
+                {
+                    parent = type;
+                    for (int j = 0; j < i; j++)
+                        parent = parent.ContainingType;
+                    if (!type.IsConstructed) continue;
+                    var typeArguments = parent.TypeArguments;
+                    for (int k = 0; k < typeArguments.Count; k++)
                     {
                         builder.Append("[");
-                        builder.Append(GetRuntimeTypeName(typeArguments[i]));
+                        builder.Append(GetRuntimeTypeName(typeArguments[k]));
                         builder.Append("]");
-                        if (i != n)
+                        gcount--;
+                        if (count > 0)
                             builder.Append(", ");
                     }
-                    builder.Append("]");
+                    if (i != 0)
+                        builder.Append("+");
                 }
+                builder.Append("]");
             }
             if (tempType.IsArray)
             {

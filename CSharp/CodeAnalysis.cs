@@ -6482,6 +6482,9 @@ namespace EntryBuilder.CodeAnalysis.Refactoring
         }
         void WriteReflectionInfo(string specialTypeName, bool constructed)
         {
+            if (DefiningType.Name.Name == "TimeKeyFrame1")
+            {
+            }
             //if (reflexibleTypes.Contains(DefiningType))
             {
                 if (constructed && DefiningType.TypeParametersCount > 0)
@@ -9100,30 +9103,30 @@ namespace EntryBuilder.CodeAnalysis.Refactoring
             else
                 return "null";
         }
-        internal static string GetTypeName(CSharpType t, bool full = true)
+        internal static string GetTypeName(CSharpType type, bool full = true)
         {
-            if (t == null)
+            if (type == null)
                 return null;
 
-            if (t.ContainingType == null && !t.IsConstructed)
+            if (type.ContainingType == null && !type.IsConstructed)
             {
                 // 数组类型 reader.ReadObject<Piece[]>() => reader.ReadObject(___Array(Piece))()
-                if (t.IsArray)
+                if (type.IsArray)
                 {
-                    return string.Format("$array({0})", GetTypeName(t.ElementType));
+                    return string.Format("$array({0})", GetTypeName(type.ElementType));
                     //return string.Format("___Array({0})", GetTypeName(t.ElementType));
                 }
-                else if (t.TypeParametersCount > 0)
+                else if (type.TypeParametersCount > 0)
+                //else if (t.TypeArguments.Count > 0)
                 {
                     // 泛型定义类型
                     return GENERIC_NAME;
                 }
-                return t.Name.Name;
+                return type.Name.Name;
             }
 
             StringBuilder builder = new StringBuilder();
             Stack<string> names = new Stack<string>();
-            var type = t;
             while (type != null)
             {
                 // 父类型 | 泛型
@@ -9131,7 +9134,10 @@ namespace EntryBuilder.CodeAnalysis.Refactoring
                 int n = typeArguments.Count - 1;
                 if (n >= 0)
                     builder.Append("(");
-                builder.Append(type.Name.Name);
+                if (names.Count == 0)
+                    builder.Append(type.Name.Name);
+                else
+                    builder.Append(GetTypeName(type, false));
                 if (n >= 0)
                 {
                     builder.Append("(");
