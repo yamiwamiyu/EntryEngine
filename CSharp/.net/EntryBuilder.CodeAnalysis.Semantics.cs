@@ -867,7 +867,7 @@ namespace EntryBuilder.CodeAnalysis.Semantics
             // class T1<T> { class T2<U> { } }
             // T1<int>.T2<int>的名字是T1^1+T2^1[[int],[int]]
             // 会将多个单个泛型的类型，汇总到最终的一个泛型类型数组中
-            if (tempType.IsConstructed)
+            if (gcount > 0)
             {
                 builder.Append("[");
                 // 栈方式追加泛型实参类
@@ -887,8 +887,6 @@ namespace EntryBuilder.CodeAnalysis.Semantics
                         if (count > 0)
                             builder.Append(", ");
                     }
-                    if (i != 0)
-                        builder.Append("+");
                 }
                 builder.Append("]");
             }

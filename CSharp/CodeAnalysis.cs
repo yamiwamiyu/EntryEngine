@@ -6482,32 +6482,63 @@ namespace EntryBuilder.CodeAnalysis.Refactoring
         }
         void WriteReflectionInfo(string specialTypeName, bool constructed)
         {
+            // Timeline<T>.TimeKeyFrame -> Timeline^1+TimeKeyFrame[[T]]
+            // 不一定自己是泛型，可能父类就是泛型
             if (DefiningType.Name.Name == "TimeKeyFrame1")
             {
             }
-            //if (reflexibleTypes.Contains(DefiningType))
+
+            var type = DefiningType;
+            // 泛型形参的总数量
+            int gcount = 0;
+            int count = 0;
+            CSharpType parent = type.ContainingType;
+            for (; parent != null; count++)
+                parent = parent.ContainingType;
+            // 栈方式追加内部类的外层类
+            // 例如TimeLine<int>.TimeKeyFrame
+            // 结果是TimeLine^1+TimeKeyFrame[[int]]
+            for (int i = count; i >= 0; i--)
             {
-                if (constructed && DefiningType.TypeParametersCount > 0)
+                parent = type;
+                for (int j = 0; j < i; j++)
+                    parent = parent.ContainingType;
+                while (parent.IsConstructed)
+                    parent = parent.DefiningType;
+                // 泛型形参数量
+                int pcount = parent.TypeParametersCount;
+                if (pcount > 0)
+                    gcount += pcount;
+            }
+            // 泛型实参
+            // class T1<T> { class T2<U> { } }
+            // T1<int>.T2<int>的名字是T1^1+T2^1[[int],[int]]
+            // 会将多个单个泛型的类型，汇总到最终的一个泛型类型数组中
+            if (type.ContainingType != null && gcount > 0)
+            {
+                builder.Append("{0}.{1}2 = function(){{ return {2}.{1} + \"[[\" + ", TypeName, TYPE_NAME, ParentTypeName);
+                // 栈方式追加泛型实参类
+                for (int i = count; i >= 0; i--)
                 {
-                    builder.Append("{0}.{1}2 = function(){{ return {2}.{1} + ", TypeName, TYPE_NAME, ParentTypeName);
-                    //builder.Append("{0}.{1} = {2}.{1} + ", TypeName, TYPE_NAME, ParentTypeName);
-                    // IList^1[----]
-                    builder.Append("\"[[\" + ");
-                    var types = DefiningType.TypeParameters;
-                    for (int i = 0, n = types.Count - 1; i <= n; i++)
+                    parent = type;
+                    for (int j = 0; j < i; j++)
+                        parent = parent.ContainingType;
+                    int pcount = parent.TypeParametersCount;
+                    if (pcount == 0) continue;
+                    var typeParameters = parent.TypeParameters;
+                    for (int k = 0; k < typeParameters.Count; k++)
                     {
-                        builder.Append("CSharpType.GetRuntimeTypeName({1}({0}).type)", types[i].Name.Name, TYPE_OF);
-                        if (i != n)
-                        {
+                        builder.Append("CSharpType.GetRuntimeTypeName({1}({0}).type)", GetTypeName(typeParameters[k]), TYPE_OF);
+                        gcount--;
+                        if (count > 0)
                             builder.Append(" + \"],[\" + ");
-                        }
                     }
-                    builder.AppendLine(" + \"]]\"; };");
                 }
-                else
-                {
-                    builder.AppendLine("{0}.{1} = \"{2}{3}\";", TypeName, TYPE_NAME, GetRenamedRuntimeTypeName(DefiningType), specialTypeName);
-                }
+                builder.AppendLine(" + \"]]\"; };");
+            }
+            else
+            {
+                builder.AppendLine("{0}.{1} = \"{2}\";", TypeName, TYPE_NAME, GetRenamedRuntimeTypeName(DefiningType));
             }
         }
         protected override void VisitTypeObject(DefineType type)
