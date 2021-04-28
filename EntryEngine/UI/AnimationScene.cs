@@ -492,7 +492,10 @@ namespace EntryEngine.UI
     /// <summary>提示框</summary>
     public class STip : UIScene
     {
-        private Dictionary<UIElement, Func<string>> tips = new Dictionary<UIElement, Func<string>>();
+        /// <summary>设置唯一控件，另外有这个控件，会把字符串替换掉</summary>
+        public Dictionary<UIElement, Func<string>> Tips = new Dictionary<UIElement, Func<string>>();
+        /// <summary>设置唯一字符串，另外有这个字符串，会把UI控件替换掉</summary>
+        public Dictionary<string, UIElement> Tips2 = new Dictionary<string, UIElement>();
         public Label Label;
         public TEXTURE BG;
         public float MaxWidth = 400;
@@ -509,51 +512,66 @@ namespace EntryEngine.UI
             Add(Label);
         }
 
+        /// <summary>设置唯一控件，另外有这个控件，会把字符串替换掉</summary>
         public void SetTip(UIElement element, string text)
         {
-            tips[element] = () => text;
+            Tips[element] = () => text;
         }
+        /// <summary>设置唯一控件，另外有这个控件，会把字符串替换掉</summary>
         public void SetTip(UIElement element, Func<string> getText)
         {
-            tips[element] = getText;
+            Tips[element] = getText;
         }
         public void ClearTips()
         {
-            tips.Clear();
+            Tips.Clear();
+        }
+        /// <summary>设置唯一字符串，另外有这个字符串，会把UI控件替换掉</summary>
+        public void SetTip(string value, UIElement e)
+        {
+            Tips2[value] = e;
         }
 
+        private void ShowTip(string value)
+        {
+            Label.Visible = true;
+            Label.Text = value;
+            var size = Label.TextContentSize;
+            if (size.X > MaxWidth)
+            {
+                Label.Width = MaxWidth;
+                Label.ResetDisplay();
+                size = Label.TextContentSize;
+            }
+            else
+                Label.Width = 0;
+
+            var position = __INPUT.PointerPosition;
+            var graphics = __GRAPHICS.GraphicsSize;
+            if (position.X + size.X > graphics.X)
+                position.X -= size.X;
+            else
+                position.X += 10;
+            if (position.Y + size.Y > graphics.Y)
+                position.Y -= size.Y;
+            Location = position;
+        }
         protected override void InternalEvent(EntryEngine.Entry e)
         {
             base.InternalEvent(e);
 
             Label.Visible = false;
-            foreach (var item in tips)
+            foreach (var item in Tips)
             {
-                if (item.Key.IsHover)
-                {
-                    Label.Visible = true;
-                    Label.Text = item.Value();
-                    var size = Label.TextContentSize;
-                    if (size.X > MaxWidth)
-                    {
-                        Label.Width = MaxWidth;
-                        Label.ResetDisplay();
-                        size = Label.TextContentSize;
-                    }
-                    else
-                        Label.Width = 0;
-
-                    var position = __INPUT.PointerPosition;
-                    var graphics = __GRAPHICS.GraphicsSize;
-                    if (position.X + size.X > graphics.X)
-                        position.X -= size.X;
-                    else
-                        position.X += 10;
-                    if (position.Y + size.Y > graphics.Y)
-                        position.Y -= size.Y;
-                    Location = position;
-                    break;
-                }
+                if (!item.Key.IsHover) continue;
+                ShowTip(item.Value());
+                break;
+            }
+            foreach (var item in Tips2)
+            {
+                if (!item.Value.IsHover) continue;
+                ShowTip(item.Key);
+                break;
             }
 
             Background = Label.Visible ? BG : null;
