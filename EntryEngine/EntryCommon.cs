@@ -3559,30 +3559,20 @@ namespace EntryEngine
         }
         public void AddComplementFrame(float time, T value)
         {
-            //Type type = Type.GetType("EntryEngine.KF" + typeof(T).Name);
-            //if (type == null)
-            //{
-            //    AddFixedFrame(time, value);
-            //}
-            //else
-            //{
-            //    KeyFrame<T> key = (KeyFrame<T>)Activator.CreateInstance(type);
-            //    key.Value = value;
-            //    AddKeyFrame(time, key);
-            //}
+            Type type = typeof(T);
             KeyFrame<T> key;
-            if (value is byte) key = new KFByte() as KeyFrame<T>;
-            else if (value is sbyte) key = new KFSByte() as KeyFrame<T>;
-            else if (value is ushort) key = new KFUInt16() as KeyFrame<T>;
-            else if (value is short) key = new KFInt16() as KeyFrame<T>;
-            else if (value is uint) key = new KFUInt32() as KeyFrame<T>;
-            else if (value is int) key = new KFInt32() as KeyFrame<T>;
-            else if (value is float) key = new KFSingle() as KeyFrame<T>;
-            else if (value is double) key = new KFDouble() as KeyFrame<T>;
-            else if (value is ulong) key = new KFUInt64() as KeyFrame<T>;
-            else if (value is long) key = new KFInt64() as KeyFrame<T>;
-            else if (value is TimeSpan) key = new KFTimeSpan() as KeyFrame<T>;
-            else if (value is DateTime) key = new KFDateTime() as KeyFrame<T>;
+            if (type == typeof(byte)) key = new KFByte() as KeyFrame<T>;
+            else if (type == typeof(sbyte)) key = new KFSByte() as KeyFrame<T>;
+            else if (type == typeof(ushort)) key = new KFUInt16() as KeyFrame<T>;
+            else if (type == typeof(short)) key = new KFInt16() as KeyFrame<T>;
+            else if (type == typeof(uint)) key = new KFUInt32() as KeyFrame<T>;
+            else if (type == typeof(int)) key = new KFInt32() as KeyFrame<T>;
+            else if (type == typeof(float)) key = new KFSingle() as KeyFrame<T>;
+            else if (type == typeof(double)) key = new KFDouble() as KeyFrame<T>;
+            else if (type == typeof(ulong)) key = new KFUInt64() as KeyFrame<T>;
+            else if (type == typeof(long)) key = new KFInt64() as KeyFrame<T>;
+            else if (type == typeof(TimeSpan)) key = new KFTimeSpan() as KeyFrame<T>;
+            else if (type == typeof(DateTime)) key = new KFDateTime() as KeyFrame<T>;
             else
             {
                 AddFixedFrame(time, value);

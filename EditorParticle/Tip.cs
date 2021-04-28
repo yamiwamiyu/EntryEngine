@@ -10,6 +10,7 @@ class Tip : UIScene
     const float MAX_WIDTH = 400;
 
     private Dictionary<UIElement, Func<string>> tips = new Dictionary<UIElement, Func<string>>();
+    private Dictionary<string, UIElement> tips2 = new Dictionary<string, UIElement>();
     private Label label = new Label();
     private TEXTURE bg;
 
@@ -36,7 +37,36 @@ class Tip : UIScene
     {
         tips[element] = getText;
     }
+    /// <summary>设置唯一字符串，另外有这个字符串，会把UI控件替换掉</summary>
+    public void SetTip(string value, UIElement e)
+    {
+        tips2[value] = e;
+    }
 
+    private void ShowTip(string value)
+    {
+        label.Visible = true;
+        label.Text = value;
+        var size = label.TextContentSize;
+        if (size.X > MAX_WIDTH)
+        {
+            label.Width = MAX_WIDTH;
+            label.ResetDisplay();
+            size = label.TextContentSize;
+        }
+        else
+            label.Width = 0;
+
+        var position = __INPUT.PointerPosition;
+        var graphics = __GRAPHICS.GraphicsSize;
+        if (position.X + size.X > graphics.X)
+            position.X -= size.X;
+        else
+            position.X += 10;
+        if (position.Y + size.Y > graphics.Y)
+            position.Y -= size.Y;
+        Location = position;
+    }
     protected override void InternalEvent(EntryEngine.Entry e)
     {
         base.InternalEvent(e);
@@ -46,29 +76,15 @@ class Tip : UIScene
         {
             if (item.Key.IsHover)
             {
-                label.Visible = true;
-                label.Text = item.Value();
-                var size = label.TextContentSize;
-                if (size.X > MAX_WIDTH)
-                {
-                    label.Width = MAX_WIDTH;
-                    label.ResetDisplay();
-                    size = label.TextContentSize;
-                }
-                else
-                    label.Width = 0;
-
-                var position = __INPUT.PointerPosition;
-                var graphics = __GRAPHICS.GraphicsSize;
-                if (position.X + size.X > graphics.X)
-                    position.X -= size.X;
-                else
-                    position.X += 10;
-                if (position.Y + size.Y > graphics.Y)
-                    position.Y -= size.Y;
-                Location = position;
+                ShowTip(item.Value());
                 break;
             }
+        }
+        foreach (var item in tips2)
+        {
+            if (!item.Value.IsHover) continue;
+            ShowTip(item.Key);
+            break;
         }
 
         Background = label.Visible ? bg : null;

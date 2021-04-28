@@ -1414,18 +1414,23 @@ namespace EntryEngine.Serialize
     {
         public static readonly string Name = typeof(ASerializedP).Name;
     }
+    /// <summary>编辑器里反射编辑字段时的字段名别名和注释</summary>
 	[AttributeUsage(AttributeTargets.All)]
 	public class ASummary : Attribute
 	{
-		public string Note
-		{
-			get;
-			private set;
-		}
+        /// <summary>字段昵称</summary>
+        public string FieldName { get; private set; }
+        /// <summary>字段注释</summary>
+        public string Note { get; private set; }
 		public ASummary(string note)
 		{
 			this.Note = note;
 		}
+        public ASummary(string field, string note)
+        {
+            this.FieldName = field;
+            this.Note = note;
+        }
 	}
 
 	public static class Config<T> where T : class, new()

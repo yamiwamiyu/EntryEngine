@@ -7,7 +7,10 @@ using EntryEngine.Serialize;
 
 public partial class SPF : UIScene
 {
-    public PF PF;
+    //public PF PF;
+    /// <summary>ParticleStreamType打的特性注释</summary>
+    public ASummaryP Summary;
+    public Type ParticleStreamType;
     public string File;
     public ParticleStream[] Preview;
 
@@ -23,6 +26,7 @@ public partial class SPF : UIScene
 
     public ParticleStream GetParticleStream()
     {
-        return (ParticleStream)Activator.CreateInstance(_SERIALIZE.LoadSimpleAQName(PF.TypeName));
+        //return (ParticleStream)Activator.CreateInstance(_SERIALIZE.LoadSimpleAQName(PF.TypeName));
+        return (ParticleStream)Activator.CreateInstance(ParticleStreamType);
     }
 }

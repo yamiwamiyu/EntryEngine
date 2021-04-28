@@ -1,4 +1,8 @@
-﻿2020/04/26
+﻿2020/04/28
+1. 增加粒子流注释
+2. 修改粒子编辑器，改用注释显示界面
+
+2020/04/26
 1. ParticleEmitter.Flow由List改为数组，方便JS进行反射
 2. ByteRefWriter和ByteRefReader改为引用仅支持对象引用，不支持数组
 *. 粒子编辑器之前编辑的粒子均不再被支持，ParticleEmitter[]的读写不再支持引用

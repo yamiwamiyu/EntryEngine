@@ -7,6 +7,7 @@ using EntryEngine;
 using EntryEngine.Serialize;
 using System.IO;
 using EntryEngine.UI;
+using System.Reflection;
 
 #region data structures
 
@@ -37,9 +38,10 @@ public partial class EditorParticle : SceneEditorEntry
     const string CONSTANT = "C.xml";
     public static COLOR[] TypeColors =
         {
-            new COLOR(0, 0, 255, 255),
+            // 出生
             new COLOR(0, 255, 0, 255),
             new COLOR(255, 0, 0, 255),
+            new COLOR(0, 0, 255, 255),
             new COLOR(0, 255, 255, 255),
             new COLOR(255, 255, 0, 255),
             // 项目内已编辑好的粒子系统
@@ -97,8 +99,10 @@ public partial class EditorParticle : SceneEditorEntry
             for (int i = 0; i < streams.Count; i++)
             {
                 var stream = streams[i];
+                var stype = stream.GetType();
                 var key = stream.GetType().FullName;
-                var item = _TABLE._PF.FirstOrDefault(pf => pf.TypeName.StartsWith(key));
+                //var item = _TABLE._PF.FirstOrDefault(pf => pf.TypeName.StartsWith(key));
+                var item = (SPF)((EditorParticle)EditorParticle.Instance).PViewPreview.FirstOrDefault(p => ((SPF)p).ParticleStreamType == stype);
 
                 CheckBox container = new CheckBox();
                 container.Name = FLOW_NAME;
@@ -125,7 +129,7 @@ public partial class EditorParticle : SceneEditorEntry
                 type.Width = 26;
                 type.Height = 26;
                 type.Texture = TEXTURE.Pixel;
-                type.Color = EditorParticle.TypeColors[item.Type];
+                type.Color = EditorParticle.TypeColors[(int)item.Summary.Type];
 
                 Label label = new Label();
                 label.X = 32;
@@ -133,7 +137,7 @@ public partial class EditorParticle : SceneEditorEntry
                 label.Width = 136;
                 label.Height = 26;
                 label.UIText.TextAlignment = EPivot.MiddleLeft;
-                label.Text = item.Name;
+                label.Text = item.Summary.FieldName;
 
                 container.Add(type);
                 container.Add(label);
@@ -430,7 +434,7 @@ public partial class EditorParticle : SceneEditorEntry
         EditorVariable.CONTENT = Content;
         EditorVariable.GENERATOR.Generate = Generate;
         EditorVariable.GENERATOR.OnGenerated += GENERATOR_OnGenerated;
-        EditorCommon.WIDTH = 80;
+        EditorCommon.WIDTH = 120;
 
         #region public fields
 
@@ -460,15 +464,34 @@ public partial class EditorParticle : SceneEditorEntry
         //PViewPF.BackgroundFull = Content.Load<TEXTURE>("New.jpg");
         //PViewPF.Color = new COLOR(32, 64, 64, 255);
         int row = 0;
-        foreach (var item in _TABLE._PF)
+        //foreach (var item in _TABLE._PF)
+        //{
+        //    SPF spf = new SPF();
+        //    spf.PF = item;
+        //    spf.X = spf.Width * (row / 4);
+        //    spf.Y = spf.Height * (row % 4);
+        //    spf.TBFlowType.Texture = TEXTURE.Pixel;
+        //    spf.TBFlowType.Color = TypeColors[item.Type];
+        //    spf.BFlowName.Text = item.Name;
+        //    this.PViewPreview.Add(spf);
+        //    row++;
+        //}
+        var types = Assembly.GetAssembly(typeof(ASummary)).GetTypes().Where(t => !t.IsAbstract && t.Is(typeof(ParticleStream)));
+        foreach (var item in types)
         {
             SPF spf = new SPF();
-            spf.PF = item;
+            //spf.PF = item;
+            spf.ParticleStreamType = item;
+            var summary = item.GetCustomAttributes(typeof(ASummaryP), false);
+            spf.Summary = (ASummaryP)summary[0];
             spf.X = spf.Width * (row / 4);
             spf.Y = spf.Height * (row % 4);
             spf.TBFlowType.Texture = TEXTURE.Pixel;
-            spf.TBFlowType.Color = TypeColors[item.Type];
-            spf.BFlowName.Text = item.Name;
+            spf.TBFlowType.Color = TypeColors[(int)spf.Summary.Type];
+            if (spf.Summary != null && !string.IsNullOrEmpty(spf.Summary.FieldName))
+                spf.BFlowName.Text = spf.Summary.FieldName;
+            else
+                spf.BFlowName.Text = item.Name;
             this.PViewPreview.Add(spf);
             row++;
         }
@@ -626,7 +649,19 @@ public partial class EditorParticle : SceneEditorEntry
         ev.ValueChanged += editor_ValueChanged;
         ev.ContentSizeChanged += ReLayout;
         EditorCommon editor = new EditorCommon(ev);
-        editor.Text = variable.VariableName;
+        var summary = variable.MemberInfo.GetCustomAttributes(typeof(ASummary), true);
+        if (summary.Length == 0)
+            editor.Text = variable.VariableName;
+        else
+        {
+            ASummary a = (ASummary)summary[0];
+            if (!string.IsNullOrEmpty(a.FieldName))
+                editor.Text = a.FieldName;
+            else
+                editor.Text = variable.VariableName;
+            if (!string.IsNullOrEmpty(a.Note))
+                Entry.GetScene<Tip>().SetTip(a.Note, editor);
+        }
     }
 
     void Redo()
@@ -833,7 +868,11 @@ public partial class EditorParticle : SceneEditorEntry
         foreach (SPF item in PViewPreview)
         {
             if (item.Preview == null)
-                tip.SetTip(item, item.PF.Explain);
+            {
+                //tip.SetTip(item, item.PF.Explain);
+                if (item.Summary != null && !string.IsNullOrEmpty(item.Summary.Note))
+                    tip.SetTip(item, item.Summary.Note);
+            }
             else
                 tip.SetTip(item, string.Format(_TABLE._TEXTByKey[TEXT.ETEXTKey.Preview].Value, item.File));
         }
@@ -878,8 +917,11 @@ public partial class EditorParticle : SceneEditorEntry
         }
         else if (__INPUT.Keyboard.IsClick(PCKeys.D))
         {
-            bgDisplay.Dispose();
-            bgDisplay = null;
+            if (bgDisplay != null)
+            {
+                bgDisplay.Dispose();
+                bgDisplay = null;
+            }
         }
         else if (__INPUT.Keyboard.IsClick(PCKeys.Space))
         {
