@@ -305,7 +305,7 @@ namespace EntryEngine
         {
             UIElement.__PrevHandledElement = UIElement.__HandledElement;
             UIElement.__HandledElement = null;
-            //if (IPlatform.IsActive)
+            if (IPlatform.IsActive)
                 InputUpdate();
             if (AUDIO != null)
                 AUDIO.Update(GameTime);
@@ -4264,6 +4264,8 @@ namespace EntryEngine
         public virtual void Update(GameTime time)
         {
         }
+        /// <summary>图片自定义自身的绘制方式</summary>
+        /// <returns>true: 自己已经绘制了，不需要画布进行绘制</returns>
         protected internal virtual bool Draw(GRAPHICS graphics, ref SpriteVertex vertex) { return false; }
 
         public static TEXTURE GetDrawableTexture(TEXTURE texture)
