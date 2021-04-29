@@ -7505,6 +7505,8 @@ namespace EntryEngine
     }
     public struct BoundingBox
     {
+        public static readonly BoundingBox Empty = new BoundingBox();
+
         public float Left;
         public float Top;
         public float Right;

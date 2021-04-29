@@ -1815,6 +1815,7 @@ namespace EntryEngine.UI
             clip.Height = clip.Height - clip.Y;
             return clip;
         }
+        /// <summary>计算子控件的区域</summary>
         protected static RECT DefaultChildClip(UIElement child)
         {
             if (!child.Visible)
@@ -1837,11 +1838,11 @@ namespace EntryEngine.UI
                 }
                 if (clip.Right > rect.Width)
                 {
-                    rect.Width = clip.Right;
+                    rect.Width = clip.Width;
                 }
                 if (clip.Bottom > rect.Height)
                 {
-                    rect.Height = clip.Bottom;
+                    rect.Height = clip.Height;
                 }
             }
             return rect;
