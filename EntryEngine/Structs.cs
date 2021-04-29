@@ -8,6 +8,7 @@ using EntryEngine.UI;
 
 namespace EntryEngine
 {
+    /// <summary>二维向量</summary>
     [AReflexible]public struct VECTOR2 : IEquatable<VECTOR2>
     {
         public float X;
@@ -847,6 +848,7 @@ namespace EntryEngine
         //    return value1;
         //}
     }
+    /// <summary>三维向量</summary>
     public struct VECTOR3 : IEquatable<VECTOR3>
     {
         public float X;
@@ -2810,6 +2812,7 @@ namespace EntryEngine
             return result;
         }
     }
+    /// <summary>三维矩阵变换</summary>
     public struct MATRIX : IEquatable<MATRIX>
     {
         private struct CanonicalBasis
@@ -5098,6 +5101,7 @@ namespace EntryEngine
             return result;
         }
     }
+    /// <summary>二维矩阵变换</summary>
     public struct MATRIX2x3 : IEquatable<MATRIX2x3>
     {
 		public static byte ACCURACY = 3;

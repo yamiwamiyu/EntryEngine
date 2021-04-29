@@ -9,9 +9,7 @@ namespace EntryEngine
 {
 	public static partial class __GRAPHICS
 	{
-		/// <summary>
-		/// 视口适配：计算画布要在屏幕内显示时的缩放和平移量
-		/// </summary>
+        /// <summary>视口适配：计算画布要在屏幕内显示时的缩放和平移量</summary>
 		/// <param name="graphics">画布尺寸</param>
 		/// <param name="screen">屏幕尺寸</param>
 		/// <param name="scale">缩放值</param>
@@ -33,27 +31,26 @@ namespace EntryEngine
 				offset.Y = (screen.Y - scaleG / scaleS * screen.Y) / 2f;
 			}
 		}
-		/// <summary>
-		/// 景深公式
+        /// <summary>景深公式
 		/// (远景-屏幕)/(焦距-屏幕)*偏移值
 		/// 宽高要分别计算
 		/// </summary>
 		/// <param name="faraway">远景尺寸</param>
 		/// <param name="near">聚焦深度的尺寸，例如一张完整地图4000x2000</param>
         /// <param name="offset">聚焦深度的偏移值，例如地图向左偏移1000,向上偏移200，即-1000,-200</param>
-		/// <param name="screen">屏幕尺寸，单屏尺寸，也可以理解为画布尺寸</param>
+        /// <param name="graphics">画布尺寸，单屏尺寸</param>
         /// <returns>远景偏移值</returns>
-		public static VECTOR2 ViewDepth(VECTOR2 faraway, VECTOR2 near, VECTOR2 offset, VECTOR2 screen)
+		public static VECTOR2 ViewDepth(VECTOR2 faraway, VECTOR2 near, VECTOR2 offset, VECTOR2 graphics)
 		{
 			VECTOR2 output = new VECTOR2();
-			if (near.X == screen.X)
+			if (near.X == graphics.X)
 				output.X = offset.X;
 			else
-				output.X = (faraway.X - screen.X) / (near.X - screen.X) * offset.X;
-			if (near.Y == screen.Y)
+				output.X = (faraway.X - graphics.X) / (near.X - graphics.X) * offset.X;
+			if (near.Y == graphics.Y)
 				output.Y = offset.Y;
 			else
-				output.Y = (faraway.Y - screen.Y) / (near.Y - screen.Y) * offset.Y;
+				output.Y = (faraway.Y - graphics.Y) / (near.Y - graphics.Y) * offset.Y;
 			return output;
 		}
 		/// <summary>

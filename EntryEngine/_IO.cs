@@ -81,6 +81,7 @@ namespace EntryEngine
             return result;
         }
     }
+    /// <summary>IO操作</summary>
     public static partial class _IO
     {
         [ADefaultValue(typeof(iO))]
@@ -90,6 +91,7 @@ namespace EntryEngine
             private Encoding ioEncoding = Encoding.UTF8;
             public event ActionRef<byte[]> OnReadByte;
 
+            /// <summary>加载文字内容的编码</summary>
             public Encoding IOEncoding
             {
                 get { return ioEncoding; }
@@ -100,6 +102,7 @@ namespace EntryEngine
                     ioEncoding = value;
                 }
             }
+            /// <summary>根目录</summary>
             public virtual string RootDirectory
             {
                 get;
@@ -130,30 +133,37 @@ namespace EntryEngine
                 file = file.Replace(SPLIT, '/');
                 return file;
             }
+            /// <summary>向IO读取文字内容</summary>
             public string ReadText(string file)
             {
                 return _ReadText(BuildPath(file));
             }
+            /// <summary>向IO读取二进制内容</summary>
             public byte[] ReadByte(string file)
             {
                 return _OnReadByte(_ReadByte(BuildPath(file)));
             }
+            /// <summary>向IO异步读取二进制内容</summary>
             public AsyncReadFile ReadAsync(string file)
             {
                 return _ReadAsync(BuildPath(file));
             }
+            /// <summary>将二进制内容转换成文字内容</summary>
             public string ReadPreambleText(byte[] bytes)
             {
                 return _IO.ReadPreambleText(bytes, ioEncoding);
             }
+            /// <summary>向IO写入文字内容</summary>
             public void WriteText(string file, string content)
             {
                 WriteText(file, content, ioEncoding);
             }
+            /// <summary>向IO写入文字内容</summary>
             public void WriteText(string file, string content, Encoding encoding)
             {
                 _WriteText(BuildPath(file), content, encoding);
             }
+            /// <summary>向IO写入二进制内容</summary>
             public void WriteByte(string file, byte[] content)
             {
                 _WriteByte(BuildPath(file), content);

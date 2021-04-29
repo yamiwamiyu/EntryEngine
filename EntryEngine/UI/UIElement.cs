@@ -550,6 +550,7 @@ namespace EntryEngine.UI
         {
             get { return world; }
         }
+        /// <summary>当前控件所在场景</summary>
         public UIScene Scene
         {
             get
@@ -574,6 +575,7 @@ namespace EntryEngine.UI
                 }
             }
         }
+        /// <summary>当前控件所在顶级场景</summary>
         public UIScene SceneIsRunning
         {
             get
@@ -590,15 +592,18 @@ namespace EntryEngine.UI
                 }
             }
         }
+        /// <summary>控件是否能拥有焦点</summary>
         public virtual bool CanFocused
         {
             get { return false; }
         }
+        /// <summary>控件当前是否有焦点</summary>
         public bool Focused
         {
             get { return FocusedElement == this; }
             set { SetFocus(value); }
         }
+        /// <summary>相对当前控件，下一个获取焦点的控件</summary>
         public UIElement NextFocusedElement
         {
             get
@@ -659,6 +664,7 @@ namespace EntryEngine.UI
             }
         }
 
+        /// <summary>控件所在横坐标</summary>
         public float X
         {
             get { return clip.X; }
@@ -671,6 +677,7 @@ namespace EntryEngine.UI
                 }
             }
         }
+        /// <summary>控件所在纵坐标</summary>
         public float Y
         {
             get { return clip.Y; }
@@ -683,6 +690,7 @@ namespace EntryEngine.UI
                 }
             }
         }
+        /// <summary>控件所在坐标</summary>
         public VECTOR2 Location
         {
             get { return new VECTOR2(X, Y); }
@@ -692,6 +700,7 @@ namespace EntryEngine.UI
                 Y = value.Y;
             }
         }
+        /// <summary>控件宽，0代表自动</summary>
         public virtual float Width
         {
             get { return Clip.Width; }
@@ -708,6 +717,7 @@ namespace EntryEngine.UI
                 UpdateWidth(width, this.Width);
             }
         }
+        /// <summary>控件高，0代表自动</summary>
         public virtual float Height
         {
             get { return Clip.Height; }
@@ -724,6 +734,7 @@ namespace EntryEngine.UI
                 UpdateHeight(height, this.Height);
             }
         }
+        /// <summary>控件尺寸</summary>
         public VECTOR2 Size
         {
             get { return new VECTOR2(Width, Height); }
@@ -733,6 +744,7 @@ namespace EntryEngine.UI
                 Height = value.Y;
             }
         }
+        /// <summary>控件所在区域</summary>
         public RECT Clip
         {
             get
@@ -774,10 +786,27 @@ namespace EntryEngine.UI
                 Height = value.Height;
             }
         }
+        /// <summary>控件是否自动尺寸</summary>
+        public bool IsAutoClip
+        {
+            get { return clip.Width == 0 || clip.Height == 0; }
+        }
+        /// <summary>控件宽是否自动</summary>
+        public bool IsAutoWidth
+        {
+            get { return clip.Width == 0; }
+        }
+        /// <summary>控件高是否自动</summary>
+        public bool IsAutoHeight
+        {
+            get { return clip.Height == 0; }
+        }
+        /// <summary>控件在父控件内的所在区域</summary>
         public RECT InParentClip
         {
             get { return InParent(Clip); }
         }
+        /// <summary>控件内容尺寸</summary>
         public virtual VECTOR2 ContentSize
         {
             get
@@ -787,6 +816,7 @@ namespace EntryEngine.UI
                 //return ChildClip.Size;
             }
         }
+        /// <summary>子控件的区域</summary>
         public virtual RECT ChildClip
         {
             get
@@ -798,6 +828,7 @@ namespace EntryEngine.UI
         {
             get { return InParent(ChildClip); }
         }
+        /// <summary>控件的锚点对齐方式</summary>
         public EPivot Pivot
         {
             get { return pivot; }
@@ -810,6 +841,7 @@ namespace EntryEngine.UI
                 }
             }
         }
+        /// <summary>控件的锚点坐标</summary>
         public VECTOR2 PivotPoint
         {
             get
@@ -818,29 +850,17 @@ namespace EntryEngine.UI
                 return new VECTOR2(PivotAlignmentX * size.X * 0.5f, PivotAlignmentY * size.Y * 0.5f);
             }
         }
-        /// <summary>左0/中1/右2</summary>
+        /// <summary>控件对齐横向：左0/中1/右2</summary>
         public int PivotAlignmentX
         {
             get { return (int)pivot & 0x0f; }
             set { Pivot = (EPivot)(value + (PivotAlignmentY >> 4)); }
         }
-        /// <summary>上0/中1/下2</summary>
+        /// <summary>控件对齐纵向：上0/中1/下2</summary>
         public int PivotAlignmentY
         {
             get { return ((int)pivot & 0xf0) >> 4; }
             set { Pivot = (EPivot)(PivotAlignmentX + (value >> 4)); }
-        }
-        public bool IsAutoClip
-        {
-            get { return clip.Width == 0 || clip.Height == 0; }
-        }
-        public bool IsAutoWidth
-        {
-            get { return clip.Width == 0; }
-        }
-        public bool IsAutoHeight
-        {
-            get { return clip.Height == 0; }
         }
         /// <summary>约束子控件是否在自己的可视范围内才让有效</summary>
         public bool IsClip
@@ -855,14 +875,17 @@ namespace EntryEngine.UI
                 }
             }
         }
+        /// <summary>当前帧鼠标是否悬浮在控件区域内</summary>
         public bool IsHover
         {
             get { return isHover; }
         }
+        /// <summary>当前帧鼠标是否在控件区域内点击过</summary>
         public bool IsClick
         {
             get { return isClick; }
         }
+        /// <summary>控件绘制的先后顺序</summary>
         public int SortZ
         {
             get { return sortZ; }
@@ -878,6 +901,7 @@ namespace EntryEngine.UI
                 }
             }
         }
+        /// <summary>当前帧鼠标是否悬浮在控件及其任一子控件区域内</summary>
         public bool FinalHover
         {
             get
@@ -942,6 +966,7 @@ namespace EntryEngine.UI
         {
             get { return Eventable && IsVisible; }
         }
+        /// <summary>控件是否可见</summary>
         public bool IsVisible
         {
             //get { return Visible && Color.A > 0; }
@@ -969,6 +994,7 @@ namespace EntryEngine.UI
                 return true;
             }
         }
+        /// <summary>控件视图的绘制区域</summary>
         public virtual RECT ViewClip
         {
             get
@@ -987,6 +1013,7 @@ namespace EntryEngine.UI
         {
             get { return finalViewClip; }
         }
+        /// <summary>UI类型</summary>
         public virtual EUIType UIType { get { return EUIType.UIElement; } }
 
         public UIElement()
@@ -1295,16 +1322,19 @@ namespace EntryEngine.UI
         {
             return IsAutoClip;
         }
+        /// <summary>每帧更新逻辑</summary>
         protected virtual void InternalUpdate(Entry e)
         {
         }
+        /// <summary>每帧事件逻辑</summary>
         protected virtual void InternalEvent(Entry e)
         {
         }
+        /// <summary>绘制子控件前执行，这里绘制的内容会被子控件遮挡</summary>
         protected virtual void InternalDraw(GRAPHICS spriteBatch, Entry e)
         {
         }
-        //static PATCH patch = PATCH.GetNinePatch(new COLOR(235, 32, 32, 64), COLOR.Aqua, 1);
+        /// <summary>绘制子控件后绘制，这里绘制的内容会遮挡子控件</summary>
         protected virtual void InternalDrawAfter(GRAPHICS spriteBatch, Entry e)
         {
         }
@@ -1854,94 +1884,87 @@ namespace EntryEngine.UI
         }
     }
 
-    /// <summary>
-    /// 流程状态
-    /// 1. Ending & Loading同时进行
-    /// 2. 所有Ending结束，Loading完成的菜单率先进入Preparing，Preparing需要进行绘制，但不进行更新
-    /// 3. 所有Preparing结束，进入Showing
-    /// 4. 所有Beginning结束，进入Running
-    /// 
-    /// 流程状态2
-    /// Ending: Update, Draw
-    /// Loading:
-    /// Preparing: Draw
-    /// Showing: Update, Draw
-    /// Running: Event, Update, Draw
+    /// <summary>场景流程
+    /// <para>1. Ending & Loading同时进行</para>
+    /// <para>2. 所有Ending结束，Loading完成的菜单率先进入Preparing，Preparing需要进行绘制，但不进行更新</para>
+    /// <para>3. 所有Preparing结束，进入Showing</para>
+    /// <para>4. 所有Beginning结束，进入Running</para>
+    /// <para>Ending: Update, Draw</para>
+    /// <para>Loading:</para>
+    /// <para>Preparing: Draw</para>
+    /// <para>Showing: Update, Draw</para>
+    /// <para>Running: Event, Update, Draw</para>
     /// </summary>
     public enum EPhase
     {
         None,
+        /// <summary>场景从舞台移除之前的结束阶段：执行更新，绘制</summary>
         Ending,
+        /// <summary>场景进入舞台前的加载阶段：不执行任何流程</summary>
         Loading,
+        /// <summary>场景进入舞台前的准备阶段：执行渲染</summary>
         Preparing,
+        /// <summary>准备完成阶段，会等待其它场景准备完成：执行绘制</summary>
         Prepared,
+        /// <summary>场景进入舞台前的阶段：执行更新，绘制</summary>
         Showing,
+        /// <summary>场景正在运行</summary>
         Running,
     }
-    /// <summary>
-    /// 场景更新的状态
-    /// 
-    /// 参数
-    ///     None:
-    ///         继续更新
-    ///         
-    ///     Dialog:
-    ///         对话框，不更新其它场景事件
-    ///         
-    ///     Block:
-    ///         对话框，完全跳过其它场景更新
-    ///         
-    ///     Cover:
-    ///         遮罩，覆盖除主菜单外的所有自己下面的对话框，使其不绘制也不更新
-    ///         
-    ///     CoverAll:
-    ///         完全跳过其它菜单的绘制和更新
-    ///         
-    ///     Break:
-    ///         可以移除此场景
-    ///         
-    ///		Dispose:
-    ///			移除场景并释放资源
-    ///			
-    ///		Release:
-    ///			移除场景并释放资源及其在Entry内的缓存
-    /// </summary>
+    /// <summary>场景的更新状态，关系着与其它场景如何交互</summary>
     [Code(ECode.ToBeContinue)]
     public enum EState
     {
+        /// <summary>无特别操作</summary>
         None,
+        /// <summary>对话框场景：会让其它场景事件无效</summary>
         Dialog,
+        /// <summary>对话框场景：会让其它场景事件和更新无效</summary>
         Block,
+        /// <summary>子控件场景：会在舞台中加载完成后被移除掉，适用于作为子控件被加入其它控件内</summary>
         Break,
+        /// <summary>一次性场景：会在舞台中加载完成后被移除掉并释放资源</summary>
         Dispose,
+        /// <summary>一次性场景：会在舞台中加载完成后被移除掉并释放资源，并清除实例在舞台中的缓存</summary>
         Release,
+        /// <summary>遮罩场景：绘制主场景和遮罩场景，会让其它场景事件无效</summary>
         Cover,
+        /// <summary>遮罩场景：仅绘制遮罩场景，会让其它场景事件和更新无效</summary>
         CoverAll,
     }
+    /// <summary>场景的资源管理器</summary>
     public enum EContent
     {
+        /// <summary>新建一个资源管理器</summary>
         New,
+        /// <summary>继承父场景的资源管理器，没有父场景时，使用系统的资源管理器</summary>
         Inherit,
+        /// <summary>使用系统的资源管理器</summary>
         System
     }
-    /// <summary>
-    /// 只保留居中和自定义
-    /// </summary>
+    /// <summary>场景出现的位置</summary>
     [Code(ECode.MayBeReform)]
     public enum EShowPosition
     {
+        /// <summary>默认使用场景自定义的位置</summary>
         Default,
+        /// <summary>父场景的中心</summary>
         ParentCenter,
         [Obsolete]
         GraphicsCenter,
     }
+    /// <summary>场景</summary>
     public class UIScene : Panel, IDisposable
     {
         internal EPhase Phase;
         internal COROUTINE Phasing;
+        /// <summary>场景的更新状态，关系着与其它场景如何交互</summary>
         public EState State = EState.None;
+        /// <summary>场景的资源管理器</summary>
         public EContent ContentType = EContent.Inherit;
+        /// <summary>场景出现的位置</summary>
         public EShowPosition ShowPosition;
+        /// <summary>让下一个控件获得焦点的键盘按键，默认是Tab键</summary>
         public PCKeys FocusNextKey = PCKeys.Tab;
         public event Action<UIScene, ContentManager> PhaseLoading;
         public event Action<UIScene> PhasePreparing;
@@ -1964,11 +1987,13 @@ namespace EntryEngine.UI
         {
             get { return State != EState.Break && State != EState.Dispose && State != EState.Release; }
         }
+        /// <summary>场景所在舞台，作为其它控件的子控件时，舞台为null</summary>
         public Entry Entry
         {
             get;
             internal set;
         }
+        /// <summary>场景的资源管理器</summary>
         public ContentManager Content
         {
             get;
@@ -2201,28 +2226,32 @@ namespace EntryEngine.UI
                     else breaklineWidth = e.Width;
                 });
         }
+        /// <summary>场景从舞台移除之前的结束阶段：执行更新，绘制</summary>
         protected internal virtual IEnumerable<ICoroutine> Ending()
         {
             return null;
         }
+        /// <summary>场景进入舞台前的加载阶段：不执行任何流程</summary>
         protected internal virtual IEnumerable<ICoroutine> Loading()
         {
             return null;
         }
+        /// <summary>场景进入舞台前的准备阶段：执行渲染</summary>
         protected internal virtual IEnumerable<ICoroutine> Preparing()
         {
             return null;
         }
+        /// <summary>场景进入舞台前的阶段：执行更新，绘制</summary>
         protected internal virtual IEnumerable<ICoroutine> Showing()
         {
             return null;
         }
+        /// <summary>场景正在运行</summary>
         protected internal virtual IEnumerable<ICoroutine> Running()
         {
             return null;
         }
-        /// <summary>
-        /// <para>异步加载协程，在Load中调用</para>
+        /// <summary><para>异步加载协程，在Load中调用</para>
         /// <para>1. LoadAsync 完全不阻断协程</para>
         /// <para>2. yield return LoadAsync 阻断协程直到异步加载完成，可以自定义ICoroutine来实现加载条</para>
         /// </summary>
@@ -2293,10 +2322,14 @@ namespace EntryEngine.UI
                 }
             }
         }
+        /// <summary>从舞台中移除场景</summary>
         public void Close(bool immediately)
         {
             Close(State, immediately);
         }
+        /// <summary>从舞台中移除场景</summary>
+        /// <param name="state">关闭场景的状态，是否要释放资源等</param>
+        /// <param name="immediately">true: 立即关闭，直接从舞台中移除，不仅过结束阶段</param>
         public void Close(EState state, bool immediately)
         {
             if (Entry == null)
@@ -2307,14 +2340,13 @@ namespace EntryEngine.UI
             else
                 Entry.Close(this, state);
         }
-        /// <summary>
-        /// 场景在其它场景里时，被Remove或Clear时需要关闭此场景
-        /// </summary>
+        /// <summary>场景在其它场景里时，被Remove或Clear时需要关闭此场景</summary>
         protected override void OnRemovedBy(UIElement parent)
         {
             base.OnRemovedBy(parent);
             Close(true);
         }
+        /// <summary>层级显示到最前面</summary>
         public override void ToFront()
         {
             if (Entry == null)
@@ -2322,6 +2354,7 @@ namespace EntryEngine.UI
             else
                 Entry.ToFront(this);
         }
+        /// <summary>层级显示到最后面</summary>
         public override void ToBack()
         {
             if (Entry == null)
@@ -2382,16 +2415,25 @@ namespace EntryEngine.UI
         }
     }
 
+    /// <summary>UI文字显示</summary>
     public class UIText
     {
+        /// <summary>显示的文字内容</summary>
         public string Text = "";
+        /// <summary>字体</summary>
         public FONT Font = FONT.Default;
+        /// <summary>文字显示的颜色</summary>
         public COLOR FontColor = COLOR.Default;
+        /// <summary>文字对齐方式</summary>
         public EPivot TextAlignment;
+        /// <summary>文字阴影</summary>
         public TextShader TextShader;
+        /// <summary>相对于父容器的间隔</summary>
         public VECTOR2 Padding;
+        /// <summary>文字缩放，缩放过大可能会使文字模糊</summary>
         public float Scale = 1f;
 
+        /// <summary>修改字体尺寸大小</summary>
         public float FontSize
         {
             get { return Font == null ? 0 : Font.FontSize; }

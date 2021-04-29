@@ -9,8 +9,10 @@ using EntryEngine.UI;
 
 namespace EntryEngine
 {
+    /// <summary>游戏入口：相当于整个游戏主舞台，用于管理UIScene场景等</summary>
     public abstract partial class Entry : EntryService
     {
+        /// <summary>入口的唯一实例</summary>
         public new static Entry Instance
         {
             get;
@@ -33,6 +35,7 @@ namespace EntryEngine
         /// <summary>每帧经过的时间：true:Platform.FrameRate/false:实际经过时间</summary>
         public bool IsFixedTimeStep;
 
+        /// <summary>舞台中打开的对话框场景</summary>
         public IEnumerable<UIScene> Dialogs
         {
             get
@@ -47,6 +50,7 @@ namespace EntryEngine
                 }
             }
         }
+        /// <summary>舞台中当前打开的主场景，主场景只能同时打开一个</summary>
         public UIScene Scene
         {
             get
@@ -57,6 +61,7 @@ namespace EntryEngine
                     return scenes.First.Value;
             }
         }
+        /// <summary>舞台中之前打开的主场景，可以用来做返回等</summary>
         public UIScene PrevMainScene { get; private set; }
 
         public Entry()
@@ -71,6 +76,7 @@ namespace EntryEngine
             INPUT.Update(this);
             INPUT.Update(this);
         }
+        /// <summary>手动设置单个像素的图片</summary>
         protected void SetPIXEL(TEXTURE texture)
         {
             if (TEXTURE._pixel != null)
@@ -78,6 +84,7 @@ namespace EntryEngine
             if (texture != null)
                 TEXTURE._pixel = new TEXTURE_SYSTEM(texture);
         }
+        /// <summary>手动设置九宫格的图片</summary>
         protected void SetPATCH(TEXTURE texture)
         {
             if (PATCH._patch != null)
@@ -85,6 +92,7 @@ namespace EntryEngine
             if (texture != null)
                 PATCH._patch = new TEXTURE_SYSTEM(texture);
         }
+        /// <summary>关闭并释放没有在使用的场景资源</summary>
         public void ReleaseUnusableScene()
         {
             PrevMainScene = null;
@@ -111,12 +119,14 @@ namespace EntryEngine
                 current = current.Previous;
             }
         }
+        /// <summary>获取缓存中已经存在的场景实例</summary>
         public T GetScene<T>() where T : UIScene
         {
             UIScene scene;
             cachedScenes.TryGetValue(typeof(T), out scene);
             return (T)scene;
         }
+        /// <summary>获取缓存中已经存在的场景实例，没有实例时创建一个实例</summary>
         public T GetSceneOrCreate<T>() where T : UIScene, new()
         {
             Type type = typeof(T);
@@ -141,12 +151,14 @@ namespace EntryEngine
             }
             return (T)scene;
         }
+        /// <summary>打开一个主场景，会替换掉之前的主场景</summary>
         public T ShowMainScene<T>() where T : UIScene, new()
         {
             T scene = CacheScene<T>();
             ShowMainScene(scene);
             return scene;
         }
+        /// <summary>打开一个主场景，会替换掉之前的主场景</summary>
         public void ShowMainScene(UIScene scene)
         {
             if (scenes.Count > 0)
@@ -154,9 +166,7 @@ namespace EntryEngine
             InternalShowScene(scene, EState.None, true);
             //phase = EPhase.Ending;
         }
-        /// <summary>
-        /// 使用过场场景切换场景
-        /// </summary>
+        /// <summary>使用过场场景切换场景</summary>
         /// <typeparam name="T">要切换的主场景类型</typeparam>
         /// <typeparam name="U">过场场景类型</typeparam>
         /// <returns>主场景</returns>
@@ -168,10 +178,12 @@ namespace EntryEngine
             ShowDialogScene<U>();
             return main;
         }
+        /// <summary>打开一个对话框场景</summary>
         public T ShowDialogScene<T>() where T : UIScene, new()
         {
             return ShowDialogScene<T>(EState.Dialog);
         }
+        /// <summary>打开一个对话框场景</summary>
         public T ShowDialogScene<T>(EState dialogState) where T : UIScene, new()
         {
             T scene = CacheScene<T>();
@@ -658,6 +670,7 @@ namespace EntryEngine
                 gameTime.ElapsedSecond = (float)time.TotalSeconds;
             }
         }
+        /// <summary>渲染舞台</summary>
         public void Draw()
         {
             GRAPHICS.Clear();
@@ -777,12 +790,11 @@ namespace EntryEngine
     #region Input
 
 
-    /*
-	 * 鼠标和触屏都应有屏幕坐标和画布坐标
-	 */
+    /// <summary>用户交互</summary>
     [ADevice]
     public class INPUT
     {
+        /// <summary>鼠标 / 触屏</summary>
         public IPointer Pointer
         {
             get
@@ -797,9 +809,13 @@ namespace EntryEngine
                 }
             }
         }
+        /// <summary>鼠标交互</summary>
         public MOUSE Mouse;
+        /// <summary>触屏交互</summary>
         public TOUCH Touch;
+        /// <summary>键盘交互</summary>
         public KEYBOARD Keyboard;
+        /// <summary>文字输入</summary>
         public InputText InputDevice;
 
         protected INPUT()
@@ -1026,9 +1042,7 @@ namespace EntryEngine
     }
     public interface IInputState
     {
-        /// <summary>
-        /// 是否点击
-        /// </summary>
+        /// <summary>是否点击</summary>
         /// <param name="key">0:左键 / 1:右键 / 2:中键 / 自定义按键</param>
         /// <returns>是否点击</returns>
         bool IsClick(int key);
@@ -1042,13 +1056,12 @@ namespace EntryEngine
     //}
     public interface IPointerState : IInputState
     {
-        /// <summary>
-        /// 坐标
-        /// </summary>
+        /// <summary>坐标</summary>
         VECTOR2 Position { get; set; }
     }
     public interface IMouseState : IPointerState
     {
+        /// <summary>鼠标滑轮，普通鼠标每滑动一格的值为1</summary>
         [Code(ECode.Value)]
         float ScrollWheelValue { get; }
     }
@@ -1071,19 +1084,23 @@ namespace EntryEngine
         private T previous;
         private Dictionary<int, ComboClick> comboClicks = new Dictionary<int, ComboClick>();
 
+        /// <summary>当前帧的操作信息</summary>
         public T Current
         {
             get { return current; }
             protected set { current = value; }
         }
+        /// <summary>前一帧的操作信息</summary>
         public T Previous
         {
             get { return previous; }
         }
+        /// <summary>连点信息</summary>
         public Dictionary<int, ComboClick> ComboClicks
         {
             get { return comboClicks; }
         }
+        /// <summary>默认键的连点信息</summary>
         public ComboClick ComboClick
         {
             get { return GetComboClick(DefaultKey); }
@@ -1097,6 +1114,7 @@ namespace EntryEngine
             comboClicks.TryGetValue(key, out combo);
             return combo;
         }
+        /// <summary>新增连点信息</summary>
         public void AddMultipleClick(params int[] keys)
         {
             for (int i = 0; i < keys.Length; i++)
@@ -1104,16 +1122,19 @@ namespace EntryEngine
                 comboClicks[keys[i]] = new ComboClick();
             }
         }
+        /// <summary>当前帧是否点击(仅一帧)</summary>
         public virtual bool IsClick(int key)
         {
             return (current != null && current.IsClick(key)) && (previous == null || !previous.IsClick(key));
             //return current.IsClick(key) && !previous.IsClick(key);
         }
+        /// <summary>当前帧是否放开(仅一帧)</summary>
         public virtual bool IsRelease(int key)
         {
             return (previous != null && previous.IsClick(key)) && (current == null || !current.IsClick(key));
             //return !current.IsClick(key) && previous.IsClick(key);
         }
+        /// <summary>当前帧是否按住(多帧)</summary>
         public virtual bool IsPressed(int key)
         {
             return current != null && current.IsClick(key);
@@ -1155,15 +1176,18 @@ namespace EntryEngine
             return IsPressed(ActionMap[action]);
         }
     }
+    /// <summary>键盘操作</summary>
     public abstract class KEYBOARD : Input<IKeyboardState>
     {
         /// <summary>ComboClick.IsKeyActive(ms)</summary>
         public static float KeyInputInterval = 50;
 
+        /// <summary>是否按下了任意键</summary>
         public bool Focused
         {
             get { return Current != null && Current.HasPressedAnyKey || (Previous != null && Previous.HasPressedAnyKey); }
         }
+        /// <summary>当前帧是否按下了Ctrl键</summary>
         public bool Ctrl
         {
             get
@@ -1171,6 +1195,7 @@ namespace EntryEngine
                 return IsPressed(PCKeys.LeftControl) || IsPressed(PCKeys.RightControl);
             }
         }
+        /// <summary>当前帧是否按下了Alt键</summary>
         public bool Alt
         {
             get
@@ -1178,6 +1203,7 @@ namespace EntryEngine
                 return IsPressed(PCKeys.LeftAlt) || IsPressed(PCKeys.RightAlt);
             }
         }
+        /// <summary>当前帧是否按下了Shift键</summary>
         public bool Shift
         {
             get
@@ -1238,11 +1264,10 @@ namespace EntryEngine
         //    }
         //}
     }
+    /// <summary>单击，双击，长按等</summary>
     public class ComboClick
     {
-        /// <summary>
-        /// 连续点击有效时间
-        /// </summary>
+        /// <summary>连续点击有效时间，单位毫秒</summary>
         public static ushort ComboTime = 250;
 
         private float doubleClickTime = ComboTime;
@@ -1253,30 +1278,26 @@ namespace EntryEngine
         private float pressedTime;
         private float _pressedTime;
 
-        /// <summary>
-        /// 连续点击次数
-        /// </summary>
+        /// <summary>连续点击次数</summary>
         public int ClickCount { get { return clickCount; } }
+        /// <summary>是否双击</summary>
         public bool IsDoubleClick { get { return isDoubleClick; } }
-        /// <summary>
-        /// 按键按下时间（ms）
-        /// </summary>
+        /// <summary>按键按下时间（ms）</summary>
         public float PressedTime { get { return pressedTime; } }
-        /// <summary>
-        /// 是否处于连续点击的有效时间内
-        /// </summary>
+        /// <summary>是否处于连续点击的有效时间内</summary>
         public bool IsComboClickActive { get { return clickCount > 0 && firstClickedTime < doubleClickTime; } }
 
         public ComboClick() { }
-        /// <summary>
-        /// 多次点击
-        /// </summary>
+        /// <summary>多次点击</summary>
         /// <param name="doubleClickInternal">双击判定时间</param>
         public ComboClick(float doubleClickInternal)
         {
             this.doubleClickTime = doubleClickInternal;
         }
 
+        /// <summary>更新点击状态</summary>
+        /// <param name="click">当前帧是否点击</param>
+        /// <param name="time">相对上一帧经过的时间，单位毫秒</param>
         public void Update(bool click, float time)
         {
             // mouse double click
@@ -1319,9 +1340,7 @@ namespace EntryEngine
                 firstClickedTime = 0;
             }
         }
-        /// <summary>
-        /// 按键是否有效，首次按下有效 / 持续按下超过双击时间后持续有效
-        /// </summary>
+        /// <summary>按键是否有效，首次按下有效 / 持续按下超过双击时间后持续有效</summary>
         public bool IsKeyActive(float interval)
         {
             if (isFirstClicked && pressedTime == 0)
@@ -1341,28 +1360,41 @@ namespace EntryEngine
     // IPointer : IInputState继承后会导致Pointer<T>继承的Input<T>的IsClick方法不能确定是Input<T>.IsClick还是IInputState.IsClick
     public interface IPointer
     {
+        /// <summary>当前帧鼠标的坐标</summary>
         VECTOR2 Position { get; set; }
+        /// <summary>上一帧鼠标的坐标</summary>
         VECTOR2 PositionPrevious { get; }
+        /// <summary>当前帧相对上一帧鼠标移动了的坐标</summary>
         VECTOR2 DeltaPosition { get; }
+        /// <summary>鼠标按下时的坐标</summary>
         VECTOR2 ClickPosition { get; }
+        /// <summary>单击，双击，长按等</summary>
         ComboClick ComboClick { get; }
+        /// <summary>默认键的值，例如鼠标左键默认值为0</summary>
         int DefaultKey { get; }
 
         void Update(Entry entry);
         ComboClick GetComboClick(int key);
+        /// <summary>当前帧是否点击(仅一帧)</summary>
         bool IsClick(int key);
+        /// <summary>当前帧是否点击并放开(仅一帧)</summary>
         bool IsTap();
+        /// <summary>当前帧是否点击并放开(仅一帧)</summary>
         bool IsTap(int key);
+        /// <summary>当前帧是否放开(仅一帧)</summary>
         bool IsRelease(int key);
+        /// <summary>当前帧是否按住(多帧)</summary>
         bool IsPressed(int key);
+        /// <summary>当前帧坐标是否移入区域(仅一帧)</summary>
         bool EnterArea(RECT area);
+        /// <summary>当前帧坐标是否移入区域(仅一帧)</summary>
         bool EnterArea(CIRCLE area);
+        /// <summary>当前帧坐标是否移出区域(仅一帧)</summary>
         bool LeaveArea(RECT area);
+        /// <summary>当前帧坐标是否移出区域(仅一帧)</summary>
         bool LeaveArea(CIRCLE area);
     }
-    /// <summary>
-    /// 升级到.net4.0就可以对泛型T使用out关键字，Pointer`IPointerState就可以等于MOUSE或TOUCH实例了，目前则使用IPointer接口
-    /// </summary>
+    /// <summary>升级到.net4.0就可以对泛型T使用out关键字，Pointer`IPointerState就可以等于MOUSE或TOUCH实例了，目前则使用IPointer接口</summary>
     public abstract class Pointer<T> : Input<T>, IPointer where T : IPointerState
     {
         /// <summary>
@@ -1378,7 +1410,7 @@ namespace EntryEngine
         protected VECTOR2 position = VECTOR2.NaN;
         protected VECTOR2 positionPrevious = VECTOR2.NaN;
 
-        /// <summary>Position in Graphcis</summary>
+        /// <summary>当前帧鼠标的坐标</summary>
         public VECTOR2 Position
         {
             get { return position; }
@@ -1389,6 +1421,7 @@ namespace EntryEngine
                     Current.Position = Entry._GRAPHICS.PointToScreen(value);
             }
         }
+        /// <summary>当前帧相对上一帧鼠标移动了的坐标</summary>
         public VECTOR2 DeltaPosition
         {
             get
@@ -1398,23 +1431,28 @@ namespace EntryEngine
                 return VECTOR2.Subtract(ref position, ref positionPrevious);
             }
         }
+        /// <summary>上一帧鼠标的坐标</summary>
         public VECTOR2 PositionPrevious
         {
             get { return positionPrevious; }
         }
+        /// <summary>鼠标按下时的坐标</summary>
         public VECTOR2 ClickPosition
         {
             get { return clickPosition; }
         }
+        /// <summary>鼠标当前坐标相对于点击坐标的值</summary>
         public VECTOR2 ClickPositionRelative
         {
             get { return VECTOR2.Subtract(ref position, ref clickPosition); }
         }
 
+        /// <summary>当前帧是否点击并放开(仅一帧)</summary>
         public bool IsTap()
         {
             return IsTap(DefaultKey);
         }
+        /// <summary>当前帧是否点击并放开(仅一帧)</summary>
         public bool IsTap(int key)
         {
             var combo = GetComboClick(key);
@@ -1444,18 +1482,22 @@ namespace EntryEngine
                 }
             }
         }
+        /// <summary>当前帧坐标是否移入区域(仅一帧)</summary>
         public bool EnterArea(RECT area)
         {
             return !area.Contains(PositionPrevious) && area.Contains(Position);
         }
+        /// <summary>当前帧坐标是否移入区域(仅一帧)</summary>
         public bool EnterArea(CIRCLE area)
         {
             return !area.Contains(PositionPrevious) && area.Contains(Position);
         }
+        /// <summary>当前帧坐标是否移出区域(仅一帧)</summary>
         public bool LeaveArea(RECT area)
         {
             return !area.Contains(Position) && area.Contains(PositionPrevious);
         }
+        /// <summary>当前帧坐标是否移出区域(仅一帧)</summary>
         public bool LeaveArea(CIRCLE area)
         {
             return !area.Contains(Position) && area.Contains(PositionPrevious);
@@ -1491,13 +1533,10 @@ namespace EntryEngine
             return this.IsPressed(key);
         }
     }
-    /// <summary>
-    /// 0: Left
-    /// 1: Right
-    /// 2: Middle
-    /// </summary>
+    /// <summary>0: Left | 1: Right | 2: Middle</summary>
     public abstract class MOUSE : Pointer<IMouseState>
     {
+        /// <summary>鼠标滑轮，普通鼠标每滑动一格的值为1</summary>
         public float ScrollWheelValue
         {
             get { return Current.ScrollWheelValue - Previous.ScrollWheelValue; }
@@ -1508,9 +1547,7 @@ namespace EntryEngine
             AddMultipleClick(0, 1, 2);
         }
     }
-    /// <summary>
-    /// 可以用IMouseState模拟单个Touch
-    /// </summary>
+    /// <summary>可以用IMouseState模拟单个Touch</summary>
     /// <typeparam name="T">IMouseState或ITouchState</typeparam>
     public class SingleTouch<T> : Pointer<T> where T : IPointerState
     {
@@ -1539,10 +1576,12 @@ namespace EntryEngine
         private int size;
         private ITouchState[] states = new ITouchState[TOUCH_COUNT];
 
+        /// <summary>触屏的手指数</summary>
         public int Count
         {
             get { return size; }
         }
+        /// <summary>首个触屏的手指信息</summary>
         public Pointer<ITouchState> First
         {
             get
@@ -1552,6 +1591,7 @@ namespace EntryEngine
                 return inputs[0];
             }
         }
+        /// <summary>最后一个触屏的手指信息</summary>
         public Pointer<ITouchState> Last
         {
             get
@@ -1561,6 +1601,7 @@ namespace EntryEngine
                 return inputs[size - 1];
             }
         }
+        /// <summary>默认为最后一个触屏的手指信息</summary>
         public override int DefaultKey
         {
             get { return size == 0 ? 0 : size - 1; }
@@ -1569,23 +1610,17 @@ namespace EntryEngine
 
         #region 手势
 
-        /// <summary>
-        /// 扩大
-        /// </summary>
+        /// <summary>扩大</summary>
         public bool TouchExpand
         {
             get { return Scale > 0; }
         }
-        /// <summary>
-        /// 缩小
-        /// </summary>
+        /// <summary>缩小</summary>
         public bool TouchReduce
         {
             get { return Scale < 0; }
         }
-        /// <summary>
-        /// 缩放
-        /// </summary>
+        /// <summary>缩放，单位为百分比</summary>
         public float Scale
         {
             get
@@ -1611,9 +1646,7 @@ namespace EntryEngine
                 }
             }
         }
-        /// <summary>
-        /// 旋转
-        /// </summary>
+        /// <summary>旋转，单位为角度</summary>
         public float Rotate
         {
             get
@@ -2648,16 +2681,14 @@ namespace EntryEngine
     #region Content
 
 
+    /// <summary>资源加载管道，涵盖一类资源的加载</summary>
     public abstract class ContentPipeline
     {
-        /// <summary>
-        /// 可处理的源文件类型
+        /// <summary>可处理的源文件类型
         /// <para>null: 可以处理所有类型</para>
         /// </summary>
         public abstract IEnumerable<string> SuffixProcessable { get; }
-        /// <summary>
-        /// 源文件输出以及最终能加载的文件类型，以源文件类型加载则值应为null
-        /// </summary>
+        /// <summary>源文件输出以及最终能加载的文件类型，以源文件类型加载则值应为null</summary>
         public virtual string FileType { get { return null; } }
         protected internal ContentManager Manager
         {
@@ -2974,6 +3005,7 @@ namespace EntryEngine
      * 
      * 跨平台通用方式：协程同步加载
      */
+    /// <summary>游戏中的一类资源，例如图片，帧动画，粒子特效，3D模型等</summary>
     public abstract class Content : IDisposable
     {
         internal ContentManager ContentManager;
@@ -2981,6 +3013,7 @@ namespace EntryEngine
         /// <summary>Cache不会被Dispose</summary>
         internal bool IsMain;
 
+        /// <summary>资源名</summary>
         public string Key
         {
             get { return _Key; }
@@ -3190,6 +3223,7 @@ namespace EntryEngine
             }
         }
     }
+    /// <summary>资源管理器：管理图片，字体，动画等各种资源的加载，卸载</summary>
     [ADevice]
     public class ContentManager
     {
@@ -3198,6 +3232,7 @@ namespace EntryEngine
         private Dictionary<string, Content> contents = new Dictionary<string, Content>();
         private Dictionary<string, AsyncLoadContent> asyncs = new Dictionary<string, AsyncLoadContent>();
 
+        /// <summary>加载资源的IO信息</summary>
         public _IO.iO IODevice
         {
             get { return ioDevice; }
@@ -3212,6 +3247,7 @@ namespace EntryEngine
                 ioDevice = value;
             }
         }
+        /// <summary>资源加载的根目录</summary>
         public string RootDirectory
         {
             get { return IODevice.RootDirectory; }
@@ -3226,6 +3262,7 @@ namespace EntryEngine
                 IODevice.RootDirectory = value;
             }
         }
+        /// <summary>资源管理器可以管理的所有资源类型</summary>
         public IEnumerable<ContentPipeline> ContentPipelines
         {
             get
@@ -3385,6 +3422,8 @@ namespace EntryEngine
                 return !value.IsDisposed;
             return false;
         }
+        /// <summary>某个资源是否已经加载</summary>
+        /// <param name="key">资源名</param>
         public bool IsLoaded(string key, out Content content)
         {
             content = null;
@@ -3392,6 +3431,8 @@ namespace EntryEngine
                 return !content.IsDisposed;
             return false;
         }
+        /// <summary>手动添加一个外部加载的资源</summary>
+        /// <param name="key">资源名</param>
         public void AddContent(string key, Content content)
         {
             content.IsMain = true;
@@ -3405,6 +3446,7 @@ namespace EntryEngine
             content.ContentManager = null;
             content._Key = null;
         }
+        /// <summary>释放当前实例加载的所有资源</summary>
         public void Dispose()
         {
             StopAsyncLoading();
@@ -3412,6 +3454,7 @@ namespace EntryEngine
                 InternalDisposeContent(content);
             contents.Clear();
         }
+        /// <summary>释放当前实例加载的指定资源名的资源</summary>
         public void Dispose(string key)
         {
             Content content;
@@ -3428,11 +3471,13 @@ namespace EntryEngine
                 Dispose(content._Key);
             }
         }
+        /// <summary>加载一个资源，资源名就用文件名</summary>
         public Content Load(string file)
         {
             file = FilePathUnify(file);
             return InternalLoad(file, file);
         }
+        /// <summary>加载一个资源，自己指定资源名</summary>
         public Content Load(string key, string file)
         {
             //if (asyncs.ContainsKey(key))
@@ -3456,14 +3501,17 @@ namespace EntryEngine
 
             return content;
         }
+        /// <summary>加载一个资源，资源名就用文件名</summary>
         public T Load<T>(string file) where T : Content
         {
             return (T)Load(file, file);
         }
+        /// <summary>加载一个资源，自己指定资源名</summary>
         public T Load<T>(string key, string file) where T : Content
         {
             return (T)Load(key, file);
         }
+        /// <summary>停止正在进行的异步加载</summary>
         public void StopAsyncLoading()
         {
             foreach (AsyncLoadContent loading in asyncs.Values.ToArray())
@@ -3503,6 +3551,9 @@ namespace EntryEngine
                 asyncs.Add(key, async);
             return async;
         }
+        /// <summary>异步加载一个资源</summary>
+        /// <param name="callback">资源加载完成的回调，可以为null</param>
+        /// <param name="exCallback">资源加载失败的回调，可以为null</param>
         public AsyncLoadContent LoadAsync<T>(string key, string file, Action<T> callback, Action<Exception> exCallback) where T : Content
         {
             return InternalLoadAsync<T>(key, FilePathUnify(file), callback, exCallback);
@@ -3552,6 +3603,9 @@ namespace EntryEngine
                 asyncs.Add(key, async);
             return async;
         }
+        /// <summary>异步加载替换一个资源，原本有资源名的资源将会被释放掉</summary>
+        /// <param name="callback">资源加载完成的回调，可以为null</param>
+        /// <param name="exCallback">资源加载失败的回调，可以为null</param>
         public AsyncLoadContent ReplaceAsync<T>(string key, string file, Action<T> callback, Action<Exception> exCallback) where T : Content
         {
             return InternalReplaceAsync<T>(key, FilePathUnify(file), callback, exCallback);
@@ -3570,6 +3624,7 @@ namespace EntryEngine
         {
             return InternalReplaceAsync(key, FilePathUnify(file), callback, null);
         }
+        /// <summary>同步新增加载一个资源，资源名已有时，会自动设置一个新资源名并再加载一遍资源</summary>
         public T New<T>(string key, string file, out string _key) where T : Content
         {
             _key = IdentityKey(key);
@@ -3587,6 +3642,7 @@ namespace EntryEngine
         //    Dispose(key);
         //    Add(key, target);
         //}
+        /// <summary>资源名已有时，自动设置一个新资源名</summary>
         public string IdentityKey(string key)
         {
             int index = 0;
@@ -3601,6 +3657,7 @@ namespace EntryEngine
             return key;
         }
 
+        /// <summary>会将'\'替换成'/'，去掉后缀名</summary>
         public static string PathNonSuffix(string fileName)
         {
             int index = fileName.LastIndexOf('.');
@@ -3609,6 +3666,7 @@ namespace EntryEngine
             fileName = fileName.Replace('\\', '/');
             return fileName;
         }
+        /// <summary>会将'\'替换成'/'</summary>
         public static string FilePathUnify(string filePath)
         {
             return filePath.Replace('\\', '/');
@@ -3622,14 +3680,20 @@ namespace EntryEngine
     #region Audio
 
 
+    /// <summary>声音播放状态</summary>
     public enum ESoundState
     {
+        /// <summary>停止的</summary>
         Stopped = 0,
+        /// <summary>正在播放</summary>
         Playing = 1,
+        /// <summary>暂停的</summary>
         Paused = 2,
     }
+    /// <summary>声音资源</summary>
     public abstract class SOUND : Content
     {
+        /// <summary>声音文件支持的类型，默认为wav,ogg,mp3</summary>
         public static string[] FileTypes =
 		{
 			"wav",
@@ -3677,13 +3741,16 @@ namespace EntryEngine
         /// <summary>设置是否循环</summary>
         protected internal abstract void SetLoop(bool loop);
     }
+    /// <summary>左右声立体音效需要用到的发声体</summary>
     public interface IAudioSource
     {
         float SourceX { get; }
         float SourceY { get; }
     }
+    /// <summary>简单发声体</summary>
     public class PAudioSource : IAudioSource
     {
+        /// <summary>发声体坐标</summary>
         public VECTOR2 Position;
         public float SourceX
         {
@@ -3694,6 +3761,7 @@ namespace EntryEngine
             get { return Position.Y; }
         }
     }
+    /// <summary>声音播放器</summary>
     [ADevice]
     public abstract class AUDIO
     {
@@ -3721,13 +3789,14 @@ namespace EntryEngine
         private Pool<Sound> freeSounds = new Pool<Sound>();
         private ContentManager content;
         private bool isInternalContent;
+        /// <summary>左右声道音效听声音的人</summary>
         public IAudioSource Listener;
-        /// <summary>3D音效能听到声音的最远距离</summary>
+        /// <summary>左右声道音效能听到声音的最远距离</summary>
         public float MaxDistance = 750;
         private float _maxDistanceSquared;
         private float _maxDistanceSquaredD;
 
-        /// <summary>0 ~ 1</summary>
+        /// <summary>音量：0 ~ 1</summary>
         public virtual float Volume
         {
             get { return volume; }
@@ -3735,7 +3804,7 @@ namespace EntryEngine
         }
         /// <summary>是否静音</summary>
         public virtual bool Mute { get; set; }
-        /// <summary>侦听坐标</summary>
+        /// <summary>听声音的人的坐标</summary>
         public VECTOR2 ListenerLocation
         {
             get
@@ -3754,6 +3823,7 @@ namespace EntryEngine
                     sounds.Count == 0;
             }
         }
+        /// <summary>用于加载声音的资源管理器</summary>
         public ContentManager Content
         {
             get
@@ -3803,10 +3873,12 @@ namespace EntryEngine
                 sound.SoundSource.Channel = GetChannel(listener.X, sound.AudioSource.SourceX);
             }
         }
+        /// <summary>停止背景音乐</summary>
         public void StopMusic()
         {
             Stop(sound);
         }
+        /// <summary>停止人声</summary>
         public void StopVoice(object key)
         {
             Sound sound;
@@ -3861,21 +3933,25 @@ namespace EntryEngine
             sound.SoundSource.Channel = channel;
         }
         protected abstract void Play(ref SoundSource source, SOUND wave);
+        /// <summary>暂停背景音乐</summary>
         public void PauseMusic()
         {
             if (this.sound.SoundSource != null)
                 Pause(this.sound.SoundSource);
         }
+        /// <summary>停止一个声音</summary>
         public void Pause(SOUND sound)
         {
             if (sound.Source != null)
                 Pause(sound.Source);
         }
+        /// <summary>继续播放暂停的背景音乐</summary>
         public void ResumeMusic()
         {
             if (this.sound.SoundSource != null)
                 Resume(this.sound.SoundSource);
         }
+        /// <summary>继续播放暂停的一个声音</summary>
         public void Resume(SOUND sound)
         {
             if (sound.Source != null)
@@ -3884,22 +3960,26 @@ namespace EntryEngine
         protected virtual void Pause(SoundSource source) { }
         protected virtual void Resume(SoundSource source) { }
         protected abstract void Stop(SoundSource source);
+        /// <summary>播放背景音乐</summary>
         public SOUND PlayMusic(string name)
         {
             return PlayMusic(name, null);
         }
+        /// <summary>播放背景音乐</summary>
         public SOUND PlayMusic(string name, IAudioSource source)
         {
             SOUND load = Content.Load<SOUND>(name);
             PlayMusic(load, source);
             return load;
         }
+        /// <summary>播放背景音乐</summary>
         public SOUND PlayMusic(string name, float volume, float channel)
         {
             SOUND load = Content.Load<SOUND>(name);
             PlayMusic(load, volume, channel);
             return load;
         }
+        /// <summary>播放背景音乐</summary>
         public void PlayMusic(SOUND sound, IAudioSource source)
         {
             StopMusic();
@@ -3918,6 +3998,10 @@ namespace EntryEngine
             }
             Play(this.sound, sound, volume, channel, true);
         }
+        /// <summary>播放背景音乐：整个播放器仅允许播放一个的声音，二次播放会打断之前的播放</summary>
+        /// <param name="sound">要播放的音乐</param>
+        /// <param name="volume">播放音乐的声音大小</param>
+        /// <param name="channel">声道(-1左 ~ 1右)</param>
         public void PlayMusic(SOUND sound, float volume, float channel)
         {
             StopMusic();
@@ -3929,26 +4013,32 @@ namespace EntryEngine
 
             Play(this.sound, sound, volume, channel, true);
         }
+        /// <summary>播放人声</summary>
         public SOUND PlayVoice(object obj, string name)
         {
             return PlayVoice(obj, name, 1, 0);
         }
+        /// <summary>播放人声</summary>
         public SOUND PlayVoice(object obj, string name, IAudioSource source)
         {
             SOUND load = Content.Load<SOUND>(name);
             PlayVoice(obj, load, source);
             return load;
         }
+        /// <summary>播放人声</summary>
         public SOUND PlayVoice(object obj, string name, float volume, float channel)
         {
             SOUND load = Content.Load<SOUND>(name);
             PlayVoice(obj, load, volume, channel);
             return load;
         }
+        /// <summary>播放人声</summary>
         public void PlayVoice(object obj, SOUND sound, IAudioSource source)
         {
             InternalPlayVoice(obj, sound, source, 1, 0);
         }
+        /// <summary>播放人声：同一个对象仅允许播放一个的声音，不同对象可以一起播放，相同对象的二次播放会打断之前的播放</summary>
+        /// <param name="obj">播放声音的对象</param>
         public void PlayVoice(object obj, SOUND sound, float volume, float channel)
         {
             InternalPlayVoice(obj, sound, null, volume, channel);
@@ -3981,22 +4071,26 @@ namespace EntryEngine
         {
             sources.Clear();
         }
+        /// <summary>播放音效</summary>
         public SOUND PlaySound(string name)
         {
             return PlaySound(name, 1, 0);
         }
+        /// <summary>播放音效</summary>
         public SOUND PlaySound(string name, IAudioSource source)
         {
             SOUND load = Content.Load<SOUND>(name);
             PlaySound(load, source);
             return load;
         }
+        /// <summary>播放音效</summary>
         public SOUND PlaySound(string name, float volume, float channel)
         {
             SOUND load = Content.Load<SOUND>(name);
             PlaySound(load, volume, channel);
             return load;
         }
+        /// <summary>播放音效</summary>
         public void PlaySound(SOUND sound, IAudioSource source)
         {
             if (sound == null)
@@ -4014,6 +4108,7 @@ namespace EntryEngine
             }
             Play(newSound, sound, volume, channel, false);
         }
+        /// <summary>播放音效：音效可以多个一起播放，没有办法打断已经播放的音效</summary>
         public void PlaySound(SOUND sound, float volume, float channel)
         {
             if (sound == null)
@@ -4075,15 +4170,16 @@ namespace EntryEngine
     #region Graphics
 
 
-    /*
-	 * Texture种类
-	 * 1. 普通Texture
-	 * 2. Piece: 自带SourceRectangle的组合大图
-	 * 3. Patch: 九宫格图
-	 * -4. Tile: 平铺图
-	 * -5. Map: 超过2048的超大图
-	 * 6. Animation: 序列帧动画
-	 */
+    /// <summary>图片资源的基类
+    /// <para>图片资源包括</para>
+    /// <para>1. 普通静态图片</para>
+    /// <para>2. PIECE: 大图上的一部分</para>
+    /// <para>3. PATCH: 九宫格图</para>
+    /// <para>4. TILE: 平铺图</para>
+    /// <para>5. ANIMATION: 序列帧动画</para>
+    /// <para>6. ParticleSystem: 粒子系统</para>
+    /// <para>其它可以自行扩展，例如龙骨骼，Spine等骨骼动画</para>
+    /// </summary>
     [ADevice]
     public abstract class TEXTURE : Content, ICoroutine
     {
@@ -4100,6 +4196,7 @@ namespace EntryEngine
         private const string KEY_PIXEL = "*PIXEL";
 
         internal static TEXTURE _pixel;
+        /// <summary>单个像素的图片</summary>
         public static TEXTURE Pixel
         {
             get
@@ -4115,12 +4212,15 @@ namespace EntryEngine
             }
         }
 
+        /// <summary>图片的宽</summary>
         public abstract int Width { get; }
+        /// <summary>图片的高</summary>
         public abstract int Height { get; }
         public VECTOR2 Size
         {
             get { return new VECTOR2(Width, Height); }
         }
+        /// <summary>图片的中心点</summary>
         public VECTOR2 Center
         {
             get { return new VECTOR2(Width * 0.5f, Height * 0.5f); }
@@ -4139,6 +4239,7 @@ namespace EntryEngine
         {
         }
 
+        /// <summary>获取图片的像素颜色</summary>
         public COLOR[] GetData()
         {
             return GetData(new RECT(0, 0, Width, Height));
@@ -4155,6 +4256,7 @@ namespace EntryEngine
         {
             throw new NotImplementedException();
         }
+        /// <summary>将图片保存成本地文件</summary>
         public virtual void Save(string file)
         {
             throw new NotImplementedException();
@@ -4394,6 +4496,7 @@ namespace EntryEngine
         }
     }
 
+    /// <summary>一张大图上面的其中一小块</summary>
     public sealed class PIECE : TEXTURE_Link
     {
         /// <summary>宽高就是图像的尺寸</summary>
@@ -4670,6 +4773,7 @@ namespace EntryEngine
         }
     }
 
+    /// <summary>九宫格图片，可以自由缩放不失真</summary>
     public sealed class PATCH : TEXTURE_Link
     {
         internal const string KEY_PATCH = "*PATCH";
@@ -4730,7 +4834,9 @@ namespace EntryEngine
 
         /// <summary>左上 Body宽高[不是右下]</summary>
         public RECT Anchor;
+        /// <summary>九宫格中间内容的颜色</summary>
         public COLOR ColorBody;
+        /// <summary>九宫格边框的颜色</summary>
         public COLOR ColorBorder;
 
         public float Left
@@ -5051,6 +5157,7 @@ namespace EntryEngine
         }
     }
 
+    /// <summary>序列帧动画</summary>
     public sealed class ANIMATION : TEXTURE_Link
     {
         private List<Sequence> sequences;
@@ -5061,14 +5168,17 @@ namespace EntryEngine
         private int loop;
         private int updated;
 
+        /// <summary>当前动作当前帧播放经过的时间，单位秒</summary>
         public float FrameElapsedTime
         {
             get { return elapsedTime; }
         }
+        /// <summary>当前播放的动作</summary>
         public Sequence Sequence
         {
             get { return sequences[current]; }
         }
+        /// <summary>当前整个动作播放经过的时间，单位秒</summary>
         public float SequenceElapsedTime
         {
             get
@@ -5085,10 +5195,12 @@ namespace EntryEngine
                 return current;
             }
         }
+        /// <summary>当前整个动作的完整时长</summary>
         public float FullSequenceTime
         {
             get { return GetSequenceTime(Sequence, new HashSet<string>()); }
         }
+        /// <summary>当前整个动作播放的进度 0~1</summary>
         public float Progress
         {
             get
@@ -5130,6 +5242,7 @@ namespace EntryEngine
                 elapsedTime = Frame.Interval;
             }
         }
+        /// <summary>当前帧在整个动作中的索引</summary>
         public int CurrentFrame
         {
             get { return currentFrame; }
@@ -5139,10 +5252,12 @@ namespace EntryEngine
                 Base = Texture;
             }
         }
+        /// <summary>当前帧的信息</summary>
         public Frame Frame
         {
             get { return Sequence.Frames[currentFrame]; }
         }
+        /// <summary>当前动画是否播放完毕</summary>
         public bool IsSequenceOver
         {
             get
@@ -5153,10 +5268,12 @@ namespace EntryEngine
                 return currentFrame == sequence.FrameCount - 1 && loop >= sequence.Loop && IsFrameOver;
             }
         }
+        /// <summary>当前动作当前帧是否播放完毕</summary>
         public bool IsFrameOver
         {
             get { return elapsedTime >= Frame.Interval; }
         }
+        /// <summary>当前帧的图片</summary>
         public TEXTURE Texture
         {
             get { return textures[Frame.Texture]; }
@@ -5292,11 +5409,13 @@ namespace EntryEngine
                 if (!textures.ContainsKey(frame.Texture))
                     textures.Add(frame.Texture, content.Load<TEXTURE>(frame.Texture));
         }
+        /// <summary>重播整个动画</summary>
         public void Reset()
         {
             current = 0;
             ResetSequence();
         }
+        /// <summary>重播当前动作</summary>
         public void ResetSequence()
         {
             loop = 0;
@@ -5304,19 +5423,21 @@ namespace EntryEngine
             elapsedTime = 0;
             Base = Texture;
         }
+        /// <summary>播放前一个动作，已经到最前面了则会播放最后一个动作</summary>
         public void PreviousSequence()
         {
             if (--current < 0)
                 current = sequences.Count - 1;
             ResetSequence();
         }
+        /// <summary>播放下一个动作，已经到最后面了则会播放第一个动作</summary>
         public void NextSequence()
         {
             if (++current >= sequences.Count)
                 current = 0;
             ResetSequence();
         }
-        /// <summary>下一帧</summary>
+        /// <summary>播放下一帧</summary>
         /// <returns>序列动画是否播放完毕</returns>
         public bool NextFrame()
         {
@@ -5342,6 +5463,8 @@ namespace EntryEngine
             Base = Texture;
             return over;
         }
+        /// <summary>播放一个动作，当前动作已经和要播放的动作一样时，不会重新播放</summary>
+        /// <param name="name">动作名字</param>
         /// <returns>成功更换动画</returns>
         public bool Play(string name)
         {
@@ -5362,6 +5485,7 @@ namespace EntryEngine
             }
             return false;
         }
+        /// <summary>播放一个动作，当前动作已经和要播放的动作一样时，会重新播放</summary>
         public void Replay(string name)
         {
             if (Sequence.Name == name)
@@ -5369,6 +5493,8 @@ namespace EntryEngine
             else
                 Play(name);
         }
+        /// <summary>更新动画的播放</summary>
+        /// <param name="elapsed">动画播放经过的时间，单位秒</param>
         /// <returns>动画播放完毕</returns>
         public bool Update(float elapsed)
         {
@@ -5430,13 +5556,19 @@ namespace EntryEngine
             return cache;
         }
     }
+    /// <summary>序列帧动画中的一个动作</summary>
     [AReflexible]public class Sequence
     {
+        /// <summary>动作名</summary>
         public string Name;
+        /// <summary>是否循环播放，-1时无限循环播放</summary>
         public short Loop;
+        /// <summary>播放完当前动作后，跳转到下个动作</summary>
         public string Next;
+        /// <summary>当前动画的所有帧</summary>
         public Frame[] Frames;
 
+        /// <summary>当前动画的总帧数</summary>
         public int FrameCount
         {
             get
@@ -5446,6 +5578,7 @@ namespace EntryEngine
                 return Frames.Length;
             }
         }
+        /// <summary>当前动作的单次播放时长，单位秒</summary>
         public float Time
         {
             get
@@ -5457,6 +5590,7 @@ namespace EntryEngine
                 return time;
             }
         }
+        /// <summary>当前动作的播放总时长，算上了循环次数，单位秒</summary>
         public float TotalTime
         {
             get
@@ -5469,6 +5603,7 @@ namespace EntryEngine
             get { return Frames[index]; }
         }
 
+        /// <summary>更改帧之间的播放时间间隔，单位秒</summary>
         public void SetInterval(float interval)
         {
             if (Frames != null)
@@ -5480,12 +5615,16 @@ namespace EntryEngine
             }
         }
     }
+    /// <summary>序列帧动画中一个动作的一帧</summary>
     [AReflexible]public class Frame
     {
+        /// <summary>当前帧的图片路径</summary>
         public string Texture;
-        /// <summary>秒</summary>
+        /// <summary>当前帧持续的播放时间，单位秒</summary>
         public float Interval;
+        /// <summary>当前帧图片的锚点</summary>
         public float PivotX;
+        /// <summary>当前帧图片的锚点</summary>
         public float PivotY;
     }
     public class PipelineAnimation : ContentPipeline
@@ -5544,7 +5683,7 @@ namespace EntryEngine
         }
     }
 
-    /// <summary>
+    /// <summary>瓷砖平铺图，可用编辑器制作
     /// 未实现绘制指定SourceRectangle
     /// 待实现循环轮播的背景图片
     /// </summary>
@@ -5871,30 +6010,38 @@ namespace EntryEngine
         }
     }
 
-    /// <summary>
-    /// 将多张小图按照一定的位置摆放成一张大图，需特殊编辑器
+    /// <summary>将多张小图按照一定的位置摆放成一张大图，可用编辑器制作
     /// 未实现绘制指定SourceRectangle
     /// </summary>
     [Code(ECode.Attention)]
     public sealed class PICTURE : TEXTURE
     {
+        /// <summary>图片画布信息</summary>
         [AReflexible]
         public class Graphics
         {
+            /// <summary>画布宽</summary>
             public int Width;
+            /// <summary>画布高</summary>
             public int Height;
+            /// <summary>当前图片中的各个部分</summary>
             public Part[] Parts;
         }
+        /// <summary>当前图片中的一个部分</summary>
         [AReflexible]
         public class Part
         {
+            /// <summary>当前部分在图片中的横坐标</summary>
             public int X;
+            /// <summary>当前部分在图片中的纵坐标</summary>
             public int Y;
+            /// <summary>当前部分的图片资源路径</summary>
             public string Source;
             [NonSerialized]
             public TEXTURE Texture;
         }
 
+        /// <summary>当前图片画布信息</summary>
         public Graphics Data;
 
         public override int Width
@@ -5995,6 +6142,7 @@ namespace EntryEngine
     }
 
 
+    /// <summary>文字字体</summary>
     [ADevice("FONT.Default")]
     public abstract class FONT : Content
     {
@@ -6009,6 +6157,7 @@ namespace EntryEngine
         internal const string KEY_DEFAULT = "*DEFAULT";
 
         private static FONT _default;
+        /// <summary>系统默认字体</summary>
         public static FONT Default
         {
             get
@@ -6025,12 +6174,13 @@ namespace EntryEngine
             }
         }
 
-        /// <summary>
-        /// 字体尺寸（单位：像素）
-        /// </summary>
+        /// <summary>字体尺寸（单位：像素）</summary>
         public abstract float FontSize { get; set; }
+        /// <summary>字体行高</summary>
         public abstract float LineHeight { get; }
+        /// <summary>当前字体是否是系统默认字体</summary>
         public bool IsDefault { get { return _Key == KEY_DEFAULT; } }
+        /// <summary>当前字体是否是支持所有文字的字体</summary>
         public virtual bool IsDynamic { get { return false; } }
 
         protected FONT()
@@ -6041,27 +6191,33 @@ namespace EntryEngine
         {
         }
 
+        /// <summary>计算文字内容的尺寸</summary>
         public virtual VECTOR2 MeasureString(string text)
         {
             return MeasureString(CharWidth, LineHeight, text);
         }
+        /// <summary>将文字内容按照一定的宽度自动换行</summary>
         public string BreakLine(string text, float width, out string[] lines)
         {
             return BreakLine(CharWidth, LineHeight, text, width, out lines);
         }
+        /// <summary>将文字内容按照一定的宽度自动换行</summary>
         public string BreakLine(string text, float width)
         {
             string[] lines;
             return BreakLine(CharWidth, LineHeight, text, width, out lines);
         }
+        /// <summary>获取光标在一段文字中指定索引的位置</summary>
         public VECTOR2 Cursor(string text, int index)
         {
             return Cursor(CharWidth, LineHeight, text, index);
         }
+        /// <summary>获取一个位置在一段文字中的光标索引位置</summary>
         public int CursorIndex(string text, VECTOR2 mouse)
         {
             return CursorIndex(CharWidth, LineHeight, text, mouse);
         }
+        /// <summary>计算单个文字的宽度</summary>
         protected internal abstract float CharWidth(char c);
         protected internal abstract void Draw(GRAPHICS spriteBatch, string text, VECTOR2 location, COLOR color, float scale);
 
@@ -6104,13 +6260,12 @@ namespace EntryEngine
         public const char LINE_BREAK = '\n';
         public const string SYMBOL_STRING = ")!@#$%^&*(`~-_=+\\|[{]};:\'\",<.>/?";
 
+        /// <summary>判断一个字符是否是半角字符</summary>
         public static bool IsHalfWidthChar(char c)
         {
             return c < 127;
         }
-        /// <summary>
-        /// 测量等宽字体字符串的尺寸
-        /// </summary>
+        /// <summary>测量等宽字体字符串的尺寸</summary>
         /// <param name="calcWidth">计算字符宽度</param>
         /// <param name="height">行高</param>
         /// <param name="text">要测量的文字</param>
@@ -6159,9 +6314,7 @@ namespace EntryEngine
             result.Y = line * height;
             return result;
         }
-        /// <summary>
-        /// 自动换行
-        /// </summary>
+        /// <summary>自动换行</summary>
         /// <param name="calcWidth">计算字符宽度</param>
         /// <param name="height">行高</param>
         /// <param name="text">字符串</param>
@@ -6246,9 +6399,7 @@ namespace EntryEngine
             lines = list.ToArray();
             return string.Join(LINE_BREAK.ToString(), lines);
         }
-        /// <summary>
-        /// 光标在一段文字中的坐标
-        /// </summary>
+        /// <summary>光标在一段文字中的坐标</summary>
         /// <param name="calcWidth">计算字符宽度</param>
         /// <param name="height">行高</param>
         /// <param name="text">字符串</param>
@@ -6302,9 +6453,7 @@ namespace EntryEngine
         {
             return Cursor(calcWidth, height, text, text.Length);
         }
-        /// <summary>
-        /// 获得鼠标在文字内容中的索引
-        /// </summary>
+        /// <summary>获得鼠标在文字内容中的索引</summary>
         /// <param name="calcWidth">计算字符宽度</param>
         /// <param name="height">行高</param>
         /// <param name="text">内容</param>
@@ -6366,9 +6515,7 @@ namespace EntryEngine
             }
             return index + col;
         }
-        /// <summary>
-        /// 查找索引处字符相似的字符的连续字符串
-        /// </summary>
+        /// <summary>查找索引处字符相似的字符的连续字符串</summary>
         /// <param name="text">要查找的字符串</param>
         /// <param name="index">相似字符的索引位置</param>
         /// <returns>相似字符的索引范围</returns>
@@ -6428,9 +6575,7 @@ namespace EntryEngine
 
             return ECharType.Unicode;
         }
-        /// <summary>
-        /// 将自动换行的字符串中的索引映射到没换行前的字符串内
-        /// </summary>
+        /// <summary>将自动换行的字符串中的索引映射到没换行前的字符串内</summary>
         /// <param name="current">自动换行后的文字</param>
         /// <param name="index">换行后文字内的索引</param>
         /// <param name="previous">没换行前的文字</param>
@@ -6490,9 +6635,7 @@ namespace EntryEngine
         {
             return text.Substring(text.LastIndexOf(LINE_BREAK) + 1);
         }
-        /// <summary>
-        /// 文字中索引所在的行的文字
-        /// </summary>
+        /// <summary>文字中索引所在的行的文字</summary>
         /// <param name="text">文字</param>
         /// <param name="index">索引</param>
         /// <returns>索引所在行的文字</returns>
@@ -6516,9 +6659,7 @@ namespace EntryEngine
             IndexForRowCol(text, index, 0, text.Length, out row, out col);
             return row;
         }
-        /// <summary>
-        /// 文字中索引所在的行与列索引
-        /// </summary>
+        /// <summary>文字中索引所在的行与列索引</summary>
         /// <param name="text">文字</param>
         /// <param name="index">索引</param>
         /// <param name="start">文字开始索引</param>
@@ -6594,9 +6735,12 @@ namespace EntryEngine
             Async = null;
         }
     }
+    /// <summary>文字阴影</summary>
     public class TextShader
     {
+        /// <summary>阴影显示的偏移值</summary>
         public VECTOR2 Offset;
+        /// <summary>阴影颜色</summary>
         public COLOR Color;
         public TextShader() { this.Color.A = 128; }
         public TextShader(float offsetX, float offsetY, COLOR color)
@@ -6640,6 +6784,7 @@ namespace EntryEngine
             }
         }
     }
+    /// <summary>静态的图片文字字体</summary>
     public abstract class FontTexture : FONT
     {
         public const ushort BUFFER_SIZE = 1024;
@@ -6803,6 +6948,7 @@ namespace EntryEngine
                 target.Effect = null;
         }
     }
+    /// <summary>静态的图片文字字体，可用编辑器生成</summary>
     public class FontStatic : FontTexture
     {
         private float scale = 1;
@@ -7314,10 +7460,14 @@ namespace EntryEngine
     //}
 
 
+    /// <summary>图片反转</summary>
     [Flags]public enum EFlip : byte
     {
+        /// <summary>图片不反转</summary>
         None = 0,
+        /// <summary>图片横向反转</summary>
         FlipHorizontally = 1,
+        /// <summary>图片纵向反转</summary>
         FlipVertically = 2,
     }
     public enum EPrimitiveType : byte
@@ -7372,9 +7522,7 @@ namespace EntryEngine
         internal BoundingBox[] spriteBoundingBox = new BoundingBox[128];
         internal int spriteQueueCount;
     }
-    /// <summary>
-    /// OriginX, OriginY是相对于SourceRectangle的百分比数字，例如0.5,0.5就是图像居中绘制
-    /// </summary>
+    /// <summary>画布，管理整个项目的渲染</summary>
     [ADevice]
     public abstract class GRAPHICS
     {
@@ -7409,6 +7557,7 @@ namespace EntryEngine
         /// <summary>绘制前检测对象是否在视口内，不在视口内则跳过绘制，若绘制性能高则不建议开启此检测</summary>
         public bool Culling;
 
+        /// <summary>视口缩放模式</summary>
         public EViewport ViewportMode
         {
             get { return viewportMode; }
@@ -7420,6 +7569,7 @@ namespace EntryEngine
                 GraphicsAdaptScreen();
             }
         }
+        /// <summary>屏幕/窗口的显示尺寸</summary>
         public VECTOR2 ScreenSize
         {
             get { return InternalScreenSize; }
@@ -7436,6 +7586,7 @@ namespace EntryEngine
                 return new RECT(VECTOR2.Zero, ScreenSize);
             }
         }
+        /// <summary>画布/视口的尺寸，游戏内所有的像素值都参照这个尺寸</summary>
         public VECTOR2 GraphicsSize
         {
             get { return graphicsViewport.Size; }
@@ -7452,6 +7603,7 @@ namespace EntryEngine
         {
             get { return new RECT(0, 0, graphicsViewport.Width, graphicsViewport.Height); }
         }
+        /// <summary>画布在屏幕中可能会缩小或放大显示，这是视觉上需要显示1个像素时的缩放值</summary>
         public VECTOR2 OnePixel
         {
             get { return ToPixelCeiling(VECTOR2.One); }
@@ -7466,6 +7618,7 @@ namespace EntryEngine
             get { return graphicsViewport; }
         }
 
+        /// <summary>是否全屏显示</summary>
         public abstract bool IsFullScreen { get; set; }
         protected abstract VECTOR2 InternalScreenSize { get; set; }
 
@@ -7483,10 +7636,12 @@ namespace EntryEngine
         {
             get { return renderStates.Count; }
         }
+        /// <summary>画布当前矩阵变化</summary>
         public MATRIX2x3 CurrentTransform
         {
             get { return (MATRIX2x3)CurrentRenderState.Transform; }
         }
+        /// <summary>画布当前裁剪的区域，区域外的内容不显示</summary>
         public RECT CurrentGraphics
         {
             get { return CurrentRenderState.Graphics; }
@@ -7653,32 +7808,45 @@ namespace EntryEngine
             InternalBegin(state.ThreeD, ref result, ref scissor, state.Shader);
         }
         protected abstract void InternalBegin(bool threeD, ref MATRIX matrix, ref RECT graphics, SHADER shader);
+        /// <summary>渲染前的渲染设置(3D)</summary>
+        /// <param name="transform">3D矩阵变换</param>
+        /// <param name="graphics">裁切显示的区域</param>
+        /// <param name="shader">使用的Shader</param>
         public void Begin(MATRIX transform, RECT graphics, SHADER shader)
         {
             Begin(true, ref transform, ref graphics, shader);
         }
+        /// <summary>渲染前的渲染设置</summary>
         public void Begin()
         {
             RenderState rs = CurrentRenderState;
             Begin(rs.ThreeD, ref rs.Transform, ref rs.Graphics, null);
         }
+        /// <summary>渲染前的渲染设置(2D)</summary>
         public void Begin(MATRIX2x3 transform)
         {
             Begin(ref transform, ref CurrentRenderState.Graphics, null);
         }
+        /// <summary>渲染前的渲染设置</summary>
         public void Begin(RECT graphics)
         {
             RenderState rs = CurrentRenderState;
             Begin(rs.ThreeD, ref rs.Transform, ref graphics, null);
         }
+        /// <summary>渲染前的渲染设置(2D)</summary>
         public void Begin(MATRIX2x3 transform, RECT graphics)
         {
             Begin(ref transform, ref graphics, null);
         }
+        /// <summary>渲染前的渲染设置(2D)</summary>
+        /// <param name="transform">2D矩阵变换</param>
+        /// <param name="graphics">裁切显示的区域</param>
+        /// <param name="shader">使用的Shader</param>
         public void Begin(MATRIX2x3 transform, RECT graphics, SHADER shader)
         {
             Begin(ref transform, ref graphics, shader);
         }
+        /// <summary>渲染前的渲染设置</summary>
         public void Begin(SHADER shader)
         {
             RenderState rs = CurrentRenderState;
@@ -7722,6 +7890,7 @@ namespace EntryEngine
         public virtual void Clear()
         {
         }
+        /// <summary>当前配置的渲染结束</summary>
         public void End()
         {
             if (!HasRenderTarget)
@@ -7762,6 +7931,8 @@ namespace EntryEngine
         {
             throw new NotImplementedException();
         }
+        /// <summary>渲染图片</summary>
+        /// <param name="rect">显示在屏幕上的位置</param>
         public void Draw(TEXTURE texture, RECT rect)
         {
             BaseDraw(texture, rect.X, rect.Y, rect.Width, rect.Height, false, float.NaN, 0, 0, 0, false, 0, 0, 0, 0, 0, 0, 0, EFlip.None);
@@ -7786,6 +7957,15 @@ namespace EntryEngine
         {
             BaseDraw(texture, rect.X, rect.Y, rect.Width, rect.Height, false, float.NaN, 0, 0, 0, true, color.R, color.G, color.B, color.A, rotation, originX, originY, flip);
         }
+        /// <summary>渲染图片</summary>
+        /// <param name="texture">图片</param>
+        /// <param name="rect">显示在屏幕上的位置</param>
+        /// <param name="source">选择图片上的一个区域来绘制</param>
+        /// <param name="color">绘制图片乘算的颜色，显示颜色计算公式：图片像素颜色值 * 这个颜色值 / 255，每个像素的rgba四个值会分别计算</param>
+        /// <param name="rotation">图片旋转，单位弧度</param>
+        /// <param name="originX">旋转锚点横坐标</param>
+        /// <param name="originY">旋转锚点纵坐标</param>
+        /// <param name="flip">反转设置</param>
         public void Draw(TEXTURE texture, RECT rect, RECT source, COLOR color, float rotation, float originX, float originY, EFlip flip)
         {
             BaseDraw(texture, rect.X, rect.Y, rect.Width, rect.Height, false, source.X, source.Y, source.Width, source.Height, true, color.R, color.G, color.B, color.A, rotation, originX, originY, flip);
@@ -8205,6 +8385,13 @@ namespace EntryEngine
             VECTOR2 location = UI.UIElement.TextAlign(bound, font.MeasureString(text), alignment);
             Draw(font, text, location, color, 1);
         }
+        /// <summary>绘制文字</summary>
+        /// <param name="font">字体</param>
+        /// <param name="text">文字内容</param>
+        /// <param name="bound">文字在画布上的区域</param>
+        /// <param name="color">文字的颜色</param>
+        /// <param name="alignment">文字在区域内的对齐方式</param>
+        /// <param name="scale">文字的缩放</param>
         public void Draw(FONT font, string text, RECT bound, COLOR color, UI.EPivot alignment, float scale)
         {
             VECTOR2 location = UI.UIElement.TextAlign(bound, font.MeasureString(text) * scale, alignment);
