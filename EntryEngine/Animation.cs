@@ -339,7 +339,7 @@ namespace EntryEngine
             return true;
         }
     }
-    [ASummaryP("旋转", "粒子的尺寸", EParticleStreamType.一次性)]
+    [ASummaryP("旋转", "粒子的旋转", EParticleStreamType.一次性)]
     [AReflexible]public class PSRotation : PSRandomSkip
     {
         [ASummary("角度", "粒子显示的角度")]
@@ -537,35 +537,6 @@ namespace EntryEngine
             return Area.Contains(p.Position.X, p.Position.Y) != Not;
         }
     }
-    [AReflexible]public enum EPSCheck : byte
-    {
-        等于,
-        大于,
-        大于等于,
-        小于,
-        小于等于,
-    }
-    [ASummaryP("范围：速度", "粒子移动速度是否在范围内", EParticleStreamType.条件)]
-    [AReflexible]public class PSSpeedCheck : ParticleStream
-    {
-        /// <summary>每秒移动的像素</summary>
-        [ASummary("速度", "每秒移动的像素值")]
-        public float Speed;
-        [ASummary("比较符", "")]
-        public EPSCheck OP;
-        public override bool Update(Particle p, ParticleEmitter ps, float elapsed)
-        {
-            switch (OP)
-            {
-                case EPSCheck.等于: return p.speed == Speed;
-                case EPSCheck.大于: return p.speed > Speed;
-                case EPSCheck.大于等于: return p.speed >= Speed;
-                case EPSCheck.小于: return p.speed < Speed;
-                case EPSCheck.小于等于: return p.speed <= Speed;
-                default: return true;
-            }
-        }
-    }
     [ASummaryP("范围：存在时间", "粒子存在时间是否在范围内", EParticleStreamType.条件)]
     [AReflexible]public class PSTimer : ParticleStream
     {
@@ -591,6 +562,60 @@ namespace EntryEngine
             return false;
         }
     }
+
+    [AReflexible]public enum EPSCheck : byte
+    {
+        等于,
+        大于,
+        大于等于,
+        小于,
+        小于等于,
+    }
+    [AReflexible]public abstract class PSCheck : ParticleStream
+    {
+        [ASummary("比较值", "")]
+        public float Value;
+        [ASummary("比较符", "")]
+        public EPSCheck OP;
+
+        public abstract float GetParticleValue(Particle p);
+        public override bool Update(Particle p, ParticleEmitter ps, float elapsed)
+        {
+            float value = GetParticleValue(p);
+            switch (OP)
+            {
+                case EPSCheck.等于: return p.speed == Value;
+                case EPSCheck.大于: return p.speed > Value;
+                case EPSCheck.大于等于: return p.speed >= Value;
+                case EPSCheck.小于: return p.speed < Value;
+                case EPSCheck.小于等于: return p.speed <= Value;
+                default: return true;
+            }
+        }
+    }
+    [ASummaryP("范围：速度", "粒子移动速度是否在范围内，比较值为每秒移动的像素值", EParticleStreamType.条件)]
+    [AReflexible]public class PSSpeedCheck : PSCheck
+    {
+        public override float GetParticleValue(Particle p)
+        {
+            return p.speed;
+        }
+    }
+    [ASummaryP("范围：大小", "粒子大小是否在范围内，比较值为粒子的大小", EParticleStreamType.条件)]
+    [AReflexible]public class PSScaleCheck : PSCheck
+    {
+        [ASummary("横向", "")]
+        public bool ScaleX = true;
+
+        public override float GetParticleValue(Particle p)
+        {
+            if (ScaleX)
+                return p.Scale.X;
+            else
+                return p.Scale.Y;
+        }
+    }
+
 
     // MOTION
     [ASummaryP("改变：存在时间", "粒子存在时间改变", EParticleStreamType.变化)]
@@ -715,6 +740,28 @@ namespace EntryEngine
                 if ((Change & EPSColor.不透明) != EPSColor.无)
                     p.Color.A = _MATH.InByte(p.Color.A + VaryValue(p.Color.A));
             }
+            return true;
+        }
+    }
+    [ASummaryP("改变：大小", "粒子大小改变", EParticleStreamType.变化)]
+    [AReflexible]public class PSScaleAdd : PSPropertyAdd
+    {
+        [ASummary("横向缩放", "")]
+        public bool ScaleX = true;
+        [ASummary("纵向缩放", "")]
+        public bool ScaleY = true;
+        public override bool Update(Particle p, ParticleEmitter ps, float elapsed)
+        {
+            if (ScaleX && ScaleY)
+            {
+                float value = VaryValue(p.Scale.X);
+                p.Scale.X += value;
+                p.Scale.Y += value;
+            }
+            else if (ScaleX)
+                p.Scale.X += VaryValue(p.Scale.X);
+            else if (ScaleY)
+                p.Scale.Y += VaryValue(p.Scale.Y);
             return true;
         }
     }
