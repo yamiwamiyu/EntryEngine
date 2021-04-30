@@ -425,7 +425,7 @@ namespace EditorUI
                 try
                 {
                     reference = LoadUI((File.ReadAllBytes(file)), false);
-                    reference.Tag = file;
+                    reference.Tag = UtilityEditor.GetProjectRelativePath(file, EditorUI.DIR_PREVIEW);
                 }
                 catch (Exception ex)
                 {
@@ -893,7 +893,7 @@ namespace EditorUI
                 name = Path.Combine(name, instance.Name);
 				if (!UtilityEditor.SaveFile(ref name, EditorUI.SUFFIX_ELEMENT))
 					return false;
-				FilePath = name;
+                FilePath = UtilityEditor.GetProjectRelativePath(name, EditorUI.DIR_PREVIEW);
 			}
 
             // save uielement to data
