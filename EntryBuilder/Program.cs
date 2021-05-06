@@ -928,6 +928,8 @@ namespace EntryBuilder
                 get;
                 private set;
             }
+            /// <summary>前端代码的后缀，例如C#就是cs，JS就是js</summary>
+            protected virtual string ClientSuffix { get { return "cs"; } }
 
             public void Write(Type type)
             {
@@ -1701,7 +1703,7 @@ namespace EntryBuilder
 
             public void Save(Type type, string outputClientPath, string outputServerPath)
             {
-                string clientFile = Path.Combine(outputClientPath, type.Name + "Proxy.js");
+                string clientFile = Path.Combine(outputClientPath, type.Name + "Proxy." + ClientSuffix);
                 string serverFile = Path.Combine(outputServerPath, type.Name + "Stub.cs");
                 SaveCode(clientFile, builder);
                 SaveCode(serverFile, server);
@@ -2217,6 +2219,8 @@ namespace EntryBuilder
             /// <summary>是否需要模块化JS：模块化使用export / 非模块化使用var</summary>
             public bool IsModule;
 
+            protected override string ClientSuffix { get { return "js"; } }
+
             protected override void Write(MethodInfo[] call, MethodInfo[] callback, Dictionary<int, Type> asyncCB)
             {
                 WNamespace(server);
@@ -2360,6 +2364,8 @@ namespace EntryBuilder
         {
             /// <summary>是否需要模块化JS：模块化使用export / 非模块化使用var</summary>
             public bool IsModule;
+
+            protected override string ClientSuffix { get { return "js"; } }
 
             protected override void Write(MethodInfo[] call, MethodInfo[] callback, Dictionary<int, Type> asyncCB)
             {
