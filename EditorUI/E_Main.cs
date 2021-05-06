@@ -416,16 +416,32 @@ namespace EditorUI
             string file;
             reader.Read(out file);
             UIElement reference = null;
-            if (reff && !string.IsNullOrEmpty(file) && File.Exists(file))
+            if (reff && !string.IsNullOrEmpty(file))
             {
-                try
+                if (File.Exists(file))
                 {
-                    reference = LoadUI((File.ReadAllBytes(file)), false);
-                    reference.Tag = UtilityEditor.GetProjectRelativePath(file, EditorUI.DIR_PREVIEW);
+                    try
+                    {
+                        reference = LoadUI((File.ReadAllBytes(file)), false);
+                        reference.Tag = UtilityEditor.GetProjectRelativePath(file, EditorUI.DIR_PREVIEW);
+                    }
+                    catch (Exception ex)
+                    {
+                        _LOG.Error("Load file:{0} error:{1}!", file, ex.Message);
+                    }
                 }
-                catch (Exception ex)
+                else
                 {
-                    _LOG.Error("Load file:{0} error:{1}!", file, ex.Message);
+                    // 加载已经被删除的引用
+                    Label deleted = new Label();
+                    deleted.Width = 100;
+                    deleted.Height = 30;
+                    deleted.SourceNormal = TEXTURE.Pixel;
+                    deleted.Color = COLOR.Black;
+                    deleted.Text = "丢失的引用";
+                    deleted.UIText.FontColor = COLOR.White;
+                    deleted.UIText.TextAlignment = EPivot.MiddleCenter;
+                    reference = deleted;
                 }
             }
 
@@ -602,10 +618,12 @@ namespace EditorUI
             if (view == null)
                 return;
 
-            //if (e.INPUT.Pointer.IsPressed(1) && e.INPUT.Pointer.DeltaPosition.X != 0)
-            //{
-            //    Project.Document.Expand((int)e.INPUT.Pointer.DeltaPosition.X);
-            //}
+            // H键恢复缩放的视图
+            if (Project.Document != null && e.INPUT.Keyboard.IsClick(PCKeys.H))
+            {
+                Project.Document.Scale = 1;
+                ResetViewport();
+            }
 
             bool dragable = e.INPUT.Keyboard.IsPressed((int)PCKeys.Space);
             pvc.DragMode = dragable ? EDragMode.Drag : EDragMode.None;
@@ -838,15 +856,35 @@ namespace EditorUI
             }
 
             // 自动重置视口尺寸
-            if (view != null && pv.Size != EditingScene.Size)
+            if (view != null && pv.Size != EditingScene.Size * Project.Document.Scale)
                 ResetViewport();
 		}
 		protected override void InternalDrawAfter(GRAPHICS spriteBatch, Entry e)
 		{
 			base.InternalDrawAfter(spriteBatch, e);
 
+            if (EditingScene != null)
+            {
+                EditingScene.DrawAfterBegin = BeginScale;
+                EditingScene.DrawBeforeEnd = EndScale;
+            }
+            // 当前鼠标选中的对象
             UIElement focus = UIElement.FindElementByPosition(this, e.INPUT.Pointer.Position);
-            if (focus != null && focus != this && focus != pvc)
+            bool inview = false;
+            if (focus != null)
+            {
+                UIElement temp = focus;
+                while (temp != null)
+                {
+                    temp = temp.Parent;
+                    if (temp == pv)
+                    {
+                        inview = true;
+                        break;
+                    }
+                }
+            }
+            if (focus != null && focus != this && focus != pvc && !inview)
             {
                 spriteBatch.Draw(patchViewportFocusBorder, focus.ViewClip, GRAPHICS.NullSource, C.ColorFocusBorder);
 
@@ -858,6 +896,21 @@ namespace EditorUI
                 //spriteBatch.Draw(FONT.Default, text, e.INPUT.Pointer.Position, COLOR.Red);
             }
 
+            spriteBatch.BeginFromPrevious(Project.Document.ScaleMatrix);
+
+            if (focus != null && focus != this && focus != pvc && inview)
+            {
+                spriteBatch.Draw(patchViewportFocusBorder, focus.ViewClip, GRAPHICS.NullSource, C.ColorFocusBorder);
+
+                //string text = focus.Name;
+                //if (string.IsNullOrEmpty(text))
+                //{
+                //    text = focus.GetType().Name;
+                //}
+                //spriteBatch.Draw(FONT.Default, text, e.INPUT.Pointer.Position, COLOR.Red);
+            }
+
+            // 自动对齐的对象
             foreach (NearAlign item in nears)
             {
                 RECT line;
@@ -896,10 +949,13 @@ namespace EditorUI
                 }
             }
 
+            // 编辑模式
             if (CurrentEditMode != null)
             {
                 spriteBatch.Draw(TEXTURE.Pixel, Entry.GRAPHICS.FullGraphicsArea, GRAPHICS.NullSource, CurrentEditMode.BackColor);
             }
+
+            spriteBatch.End();
         }
 	}
     public class Widget

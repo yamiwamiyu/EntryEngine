@@ -161,6 +161,8 @@ namespace EditorUI
 
             Document.ScaleChanged += new Action<float>(Document_ScaleChanged);
             pv.DrawBeforeEnd += ViewportDrawLines;
+            //pv.DrawAfterBegin = BeginScale;
+            //pv.DrawBeforeEnd = EndScale;
 
             pvc.Add(pv);
 
@@ -168,20 +170,38 @@ namespace EditorUI
             patchViewportSelectedParentBorder = GetNinePatch(C.ColorFocusBorder, C.ColorFocusBody);
             patchViewportFocusBorder = GetNinePatch(C.ColorFocusBorder, C.ColorFocusBody);
             patchViewportAlign = GetNinePatch(C.ColorAlignLine, COLOR.TransparentBlack);
+
+            //pvc.Hover += ScaleViewport;
         }
 
+        // 鼠标中键并且滚动滑轮可以缩放视图
+        private void ScaleViewport(UIElement sender, Entry e)
+        {
+            if (Project.Document != null && e.INPUT.Pointer.IsPressed(2) && e.INPUT.Mouse.ScrollWheelValue != 0)
+            {
+                Project.Document.Expand(_MATH.Sign(e.INPUT.Mouse.ScrollWheelValue));
+                Handle();
+                ResetViewport();
+            }
+        }
         private void Document_ScaleChanged(float obj)
         {
-            pv.Size = EditingScene.Size * obj;
-            pvc.ContentScope = pv.Size + pvc.Size * 2;
+            //pv.Size = EditingScene.Size * obj;
+            //pvc.ContentScope = pv.Size + pvc.Size * 2;
         }
         private void BeginScale(UIElement sender, GRAPHICS spriteBatch, Entry e)
         {
             if (view == null) return;
-            var scale = Project.Document.ScaleMatrix;
-            var viewport = sender.FinalViewClip;
-            viewport.Size = VECTOR2.Transform(viewport.Size, scale);
-            spriteBatch.Begin(scale, viewport);
+            //var scale = Project.Document.ScaleMatrix;
+            //var viewport = sender.FinalViewClip;
+            //viewport.Size = VECTOR2.Transform(viewport.Size, scale);
+
+            var matrix = MATRIX2x3.CreateTransform(0, 
+                0, 0, 
+                Project.Document.Scale, Project.Document.Scale, 
+                0, 0);
+            //var matrix = Project.Document.ScaleMatrix;
+            spriteBatch.BeginFromPrevious(matrix);
         }
         private void EndScale(UIElement sender, GRAPHICS spriteBatch, Entry e)
         {
@@ -260,12 +280,18 @@ namespace EditorUI
         }
 
         private void ResetViewport()
-        {
-            //pv.Pivot = EPivot.MiddleCenter;
-            pv.Size = EditingScene.Size;
-            pv.Location = pvc.ContentSize / 2 - pv.Size / 2;
+        { 
+            ////pv.Pivot = EPivot.MiddleCenter;
+            //pv.Size = EditingScene.Size;
+            //pv.Location = pvc.Size;
+            //pvc.ContentScope = pv.Size + pvc.Size * 2;
+            //pvc.Offset = pvc.OffsetScope / 2;
+
+            pv.Pivot = EPivot.MiddleCenter;
+            pv.Size = EditingScene.Size * Project.Document.Scale;
             pvc.ContentScope = pv.Size + pvc.Size * 2;
-            pvc.Offset = pvc.OffsetScope / 2;
+            pv.Location = pvc.ContentScope / 2;
+            pvc.Offset = pvc.Size - (pvc.Size - pv.Size) / 2;
         }
         private void BuildView(UIScene scene)
         {
@@ -281,9 +307,10 @@ namespace EditorUI
             view = SetElement(scene) as View;
             
             Document_ScaleChanged(Project.Document.Scale);
-            ResetViewport();
             // ResetViewport后再添加场景，否则停靠会改变场景尺寸
             pv.Add(scene);
+            ResetViewport();
+            
         }
         private bool ViewFindSkip(UIElement e)
         {
@@ -560,7 +587,7 @@ namespace EditorUI
             byte[] data = SaveUI(widget, true);
             //throw new NotImplementedException();
             //return InternalLoadUI(new ByteReader(data), true);
-            return LoadUI(data);
+            return LoadUI(data, true);
         }
         private void DeleteSelected()
         {
