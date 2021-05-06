@@ -23,13 +23,9 @@ namespace EditorUI
 		public const string SUFFIX_ELEMENT = "ui";
         public const string SUFFIX_CS = ".logic.cs";
         public const string SUFFIX_DESIGN_CS = ".design.cs";
-        /// <summary>
-        /// 输出的UI代码目录
-        /// </summary>
+        /// <summary>输出的UI代码目录</summary>
         public const string DIR_UI = "UI";
-        /// <summary>
-        /// 控件预设文件及预览图目录
-        /// </summary>
+        /// <summary>控件预设文件及预览图目录</summary>
         public const string DIR_PREVIEW = "Preview";
 		public static string[] DIRECTORY =
 		{
@@ -585,10 +581,6 @@ namespace EditorUI
             if (Handled)
                 return;
 
-            if (e.INPUT.Pointer.ComboClick.IsDoubleClick)
-            {
-                // TEST
-            }
             //int count = 0;
             //UIElement.ForeachAllChildPriority(this, null, u => count += u.ChildCount);
             //Console.WriteLine("UIElement count: {0}", count);
@@ -609,6 +601,11 @@ namespace EditorUI
 
             if (view == null)
                 return;
+
+            //if (e.INPUT.Pointer.IsPressed(1) && e.INPUT.Pointer.DeltaPosition.X != 0)
+            //{
+            //    Project.Document.Expand((int)e.INPUT.Pointer.DeltaPosition.X);
+            //}
 
             bool dragable = e.INPUT.Keyboard.IsPressed((int)PCKeys.Space);
             pvc.DragMode = dragable ? EDragMode.Drag : EDragMode.None;
@@ -778,6 +775,46 @@ namespace EditorUI
             if (e.INPUT.Keyboard.IsClick(PCKeys.LeftAlt) ||
                 e.INPUT.Keyboard.IsClick(PCKeys.RightAlt))
                 drawBorder = !drawBorder;
+
+            // Tab选中下一个控件
+            if (e.INPUT.Keyboard.IsClick(PCKeys.Tab))
+            {
+                if (selected == null)
+                    // 选中场景
+                    Selected = EditingScene;
+                else
+                {
+                    // 优先选中自己的子控件
+                    if (selected.ChildCount > 0)
+                    {
+                        Selected = selected[0];
+                    }
+                    else
+                    {
+                        while (true)
+                        {
+                            // 选中兄弟节点
+                            int index = selected.Parent.IndexOf(selected) + 1;
+                            if (index < selected.Parent.ChildCount)
+                            {
+                                Selected = selected.Parent[index];
+                                break;
+                            }
+                            else
+                            {
+                                // 向上一级
+                                if (selected.Parent == EditingScene)
+                                {
+                                    Selected = null;
+                                    break;
+                                }
+                                else
+                                    selected = selected.Parent;
+                            }
+                        }
+                    }
+                }
+            }
 		}
 		protected override void InternalUpdate(Entry e)
 		{
@@ -799,6 +836,10 @@ namespace EditorUI
                     }
                 }
             }
+
+            // 自动重置视口尺寸
+            if (view != null && pv.Size != EditingScene.Size)
+                ResetViewport();
 		}
 		protected override void InternalDrawAfter(GRAPHICS spriteBatch, Entry e)
 		{

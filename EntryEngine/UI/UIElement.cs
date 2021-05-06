@@ -2372,7 +2372,7 @@ namespace EntryEngine.UI
             }
             base.InternalUpdate(e);
         }
-        private void DoKeyboard(UIElement sender, Entry e)
+        public void DoKeyboard(UIElement sender, Entry e)
         {
             if (Parent == null && IsInStage && Entry.Scene == this && e.INPUT.Keyboard.IsClick(FocusNextKey))
             {

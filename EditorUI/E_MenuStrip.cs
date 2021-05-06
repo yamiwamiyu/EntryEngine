@@ -59,38 +59,38 @@ namespace EditorUI
 
 
 
-            strip2 = new ContextMenuStrip();
-            strip2.Background = ms.Background;
+            //strip2 = new ContextMenuStrip();
+            //strip2.Background = ms.Background;
 
-            item = new MenuStripItem();
-            item.Text = "编辑";
-            item.UIText.Padding.X = 10;
-            item.MenuStripChild = strip2;
-            ms.AddItem(item);
+            //item = new MenuStripItem();
+            //item.Text = "编辑";
+            //item.UIText.Padding.X = 10;
+            //item.MenuStripChild = strip2;
+            //ms.AddItem(item);
 
-            item2 = new MenuStripItem();
-            item2.Text = "撤销";
-            strip2.AddItem(item2);
+            //item2 = new MenuStripItem();
+            //item2.Text = "撤销";
+            //strip2.AddItem(item2);
 
-            item2 = new MenuStripItem();
-            item2.Text = "重做";
-            strip2.AddItem(item2);
+            //item2 = new MenuStripItem();
+            //item2.Text = "重做";
+            //strip2.AddItem(item2);
 
-            item2 = new MenuStripItem();
-            item2.Text = "剪切";
-            strip2.AddItem(item2);
+            //item2 = new MenuStripItem();
+            //item2.Text = "剪切";
+            //strip2.AddItem(item2);
 
-            item2 = new MenuStripItem();
-            item2.Text = "复制";
-            strip2.AddItem(item2);
+            //item2 = new MenuStripItem();
+            //item2.Text = "复制";
+            //strip2.AddItem(item2);
 
-            item2 = new MenuStripItem();
-            item2.Text = "粘贴";
-            strip2.AddItem(item2);
+            //item2 = new MenuStripItem();
+            //item2.Text = "粘贴";
+            //strip2.AddItem(item2);
 
-            item2 = new MenuStripItem();
-            item2.Text = "删除";
-            strip2.AddItem(item2);
+            //item2 = new MenuStripItem();
+            //item2.Text = "删除";
+            //strip2.AddItem(item2);
 
 
             strip2 = new ContextMenuStrip();
@@ -108,10 +108,6 @@ namespace EditorUI
 
             item2 = new MenuStripItem();
             item2.Text = "背景色";
-            strip2.AddItem(item2);
-
-            item2 = new MenuStripItem();
-            item2.Text = "重置视口尺寸";
             strip2.AddItem(item2);
 
 			item2 = new MenuStripItem();
@@ -161,14 +157,13 @@ namespace EditorUI
             ms[0].MenuStripChild[4].Clicked += SaveView;
             ms[0].MenuStripChild[5].Clicked += ExitApplication;
 
-            ms[2].MenuStripChild[0].Clicked += SelectEntryBuilder;
-            ms[2].MenuStripChild[1].Clicked += SelectBGColor;
-            ms[2].MenuStripChild[2].Clicked += ResetViewportSize;
-			ms[2].MenuStripChild[3].Clicked += ResavePreviewCode;
-            ms[2].MenuStripChild[4].Clicked += AllVisible;
-            ms[2].MenuStripChild[5].Clicked += DeleteInvisible;
-            ms[2].MenuStripChild[6].Clicked += ClearTranslation;
-            ms[2].MenuStripChild[7].Clicked += ChangeFont;
+            ms[1].MenuStripChild[0].Clicked += SelectEntryBuilder;
+            ms[1].MenuStripChild[1].Clicked += SelectBGColor;
+			ms[1].MenuStripChild[2].Clicked += ResavePreviewCode;
+            ms[1].MenuStripChild[3].Clicked += AllVisible;
+            ms[1].MenuStripChild[4].Clicked += DeleteInvisible;
+            ms[1].MenuStripChild[5].Clicked += ClearTranslation;
+            ms[1].MenuStripChild[6].Clicked += ChangeFont;
             this.Add(ms);
         }
 
@@ -272,15 +267,6 @@ namespace EditorUI
 				C.ViewportBGColor = color.Value;
 				pvc.Background = GetNinePatch(COLOR.Gray, C.ViewportBGColor);
 			}
-        }
-        private void ResetViewportSize(UIElement sender, Entry e)
-        {
-            if (view == null)
-                return;
-            // fixed: 停靠改变尺寸
-            pv.Remove(EditingScene);
-            ResetViewport();
-            pv.Add(EditingScene);
         }
 		private void ResavePreviewCode(UIElement sender, Entry e)
 		{
