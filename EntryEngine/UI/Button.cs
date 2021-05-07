@@ -2,26 +2,41 @@
 
 namespace EntryEngine.UI
 {
+    /// <summary>按钮状态</summary>
 	public enum EButtonState
 	{
+        /// <summary>普通</summary>
 		Normal,
+        /// <summary>鼠标悬浮</summary>
 		Hover,
+        /// <summary>鼠标点击</summary>
 		Click,
+        /// <summary>已经点击过或被选中</summary>
 		Clicked,
+        /// <summary>不可用</summary>
 		Unable = 0xf0,
 	}
+    /// <summary>普通按钮</summary>
     public class Button : UIElement, ISelectable
 	{
+        /// <summary>普通状态下显示的图片</summary>
 		public TEXTURE SourceNormal;
+        /// <summary>鼠标悬浮状态下显示的图片</summary>
 		public TEXTURE SourceHover;
+        /// <summary>鼠标点击状态下显示的图片</summary>
 		public TEXTURE SourceClick;
+        /// <summary>已经点击过或被选中状态下显示的图片</summary>
 		public TEXTURE SourceClicked;
+        /// <summary>不可用状态下显示的图片</summary>
 		public TEXTURE SourceUnable;
 		private bool hasClicked;
 		private UIText uitext = new UIText();
+        /// <summary>没有被选中的状态下被选中时触发</summary>
         public event DUpdate<Button> OnChecked;
+        /// <summary>没有被选中的状态下被选中时触发</summary>
 		public event DUpdate<Button> CheckedChanged;
 
+        /// <summary>文字属性</summary>
 		public UIText UIText
 		{
 			get { return uitext; }
@@ -34,6 +49,7 @@ namespace EntryEngine.UI
 				}
 			}
 		}
+        /// <summary>显示的文字</summary>
 		public virtual string Text
 		{
 			get { return uitext.Text; }
@@ -46,6 +62,7 @@ namespace EntryEngine.UI
         //        return true;
         //    }
         //}
+        /// <summary>是否选中的状态</summary>
 		public virtual bool Checked
 		{
 			get { return hasClicked; }
@@ -70,6 +87,7 @@ namespace EntryEngine.UI
             get { return Checked; }
             set { Checked = value; }
         }
+        /// <summary>当前状态下显示的图片</summary>
 		public TEXTURE Source
 		{
 			get
@@ -105,6 +123,7 @@ namespace EntryEngine.UI
 				return source;
 			}
 		}
+        /// <summary>按钮的当前状态</summary>
 		public EButtonState ButtonState
 		{
 			get

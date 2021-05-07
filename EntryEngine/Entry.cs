@@ -6744,7 +6744,12 @@ namespace EntryEngine
         public VECTOR2 Offset;
         /// <summary>阴影颜色</summary>
         public COLOR Color;
-        public TextShader() { this.Color.A = 128; }
+        public TextShader()
+        {
+            this.Color.A = 128; 
+            this.Offset.X = 2; 
+            this.Offset.Y = 2;
+        }
         public TextShader(float offsetX, float offsetY, COLOR color)
         {
             this.Offset.X = offsetX;

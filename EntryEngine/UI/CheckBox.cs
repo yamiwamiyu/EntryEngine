@@ -6,12 +6,16 @@ using System.Linq;
 
 namespace EntryEngine.UI
 {
+    /// <summary>单选 / 多选</summary>
 	public class CheckBox : Button
 	{
+        /// <summary>true: 单选框 / false: 多选框</summary>
 		public bool IsRadioButton;
+        /// <summary>true: 选中状态下，显示普通和选中两个状态的图片，选中覆盖普通</summary>
 		public bool CheckedOverlayNormal;
         public event Action<CheckBox> GroupSelectionChanged;
 
+        /// <summary>在相同父级中的框</summary>
 		public IEnumerable<CheckBox> Group
 		{
 			get
@@ -29,6 +33,7 @@ namespace EntryEngine.UI
 				}
 			}
 		}
+        /// <summary>在相同父级中被选中的框</summary>
 		public IEnumerable<CheckBox> GroupSelection
 		{
 			get
@@ -36,6 +41,7 @@ namespace EntryEngine.UI
                 return Group.Where(g => g.Checked);
 			}
 		}
+        /// <summary>在相同父级中被选中的框在父级中的索引</summary>
         public IEnumerable<int> GroupSelectionIndexes
         {
             get
@@ -49,6 +55,7 @@ namespace EntryEngine.UI
                 }
             }
         }
+        /// <summary>在相同父级中首个被选中的框，没有选中时返回null</summary>
         public CheckBox GroupSelected
         {
             get
@@ -58,12 +65,13 @@ namespace EntryEngine.UI
                 return Group.FirstOrDefault(g => g.Checked);
             }
         }
+        /// <summary>在相同父级中首个被选中的框的索引，没有选中时返回-1</summary>
         public int GroupSelectedIndex
         {
             get
             {
-                if (!IsRadioButton)
-                    return -1;
+                //if (!IsRadioButton)
+                //    return -1;
 
                 int index = 0;
                 foreach (var item in Group)
@@ -76,6 +84,7 @@ namespace EntryEngine.UI
                 return -1;
             }
         }
+        /// <summary>是否选中的状态</summary>
 		public override bool Checked
 		{
 			get

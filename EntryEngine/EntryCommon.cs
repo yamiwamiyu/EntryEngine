@@ -5,7 +5,7 @@ using System.Linq;
 
 namespace EntryEngine
 {
-    // 入口
+    /// <summary>入口</summary>
 	public class EntryService : IDisposable
 	{
 		public static EntryService Instance
@@ -201,6 +201,7 @@ namespace EntryEngine
 			}
 		}
 	}
+    /// <summary>游戏用到的时间相关的内容</summary>
 	public class GameTime
 	{
         public static GameTime Time;
@@ -1105,6 +1106,7 @@ namespace EntryEngine
 		}
 	}
 
+    /// <summary>区间</summary>
 	public struct Range<T> where T : IComparable<T>
 	{
 		public T Min;
@@ -1253,11 +1255,13 @@ namespace EntryEngine
 	}
 
     // 池
+    /// <summary>要用到池的对象应该继承此类型以便快速进行池内的增删改</summary>
 	public class PoolItem
 	{
 		internal int PoolIndex;
 	}
     public delegate void ActionRef<T>(ref T action);
+    /// <summary>池数据结构，可以循环利用对象，减少new对象的次数</summary>
 	public class Pool<T> : IEnumerable<T>
 	{
 		private T[] items;
@@ -1317,17 +1321,21 @@ namespace EntryEngine
 				item.PoolIndex = index;
 			return index;
 		}
+        /// <summary>从池里取出一个空闲的对象</summary>
 		public T Allot()
 		{
 			T item;
 			Allot(out item);
 			return item;
 		}
+        /// <summary>从池里取出一个空闲的对象，没有空闲对象时new一个对象</summary>
         public T AllotOrCreate()
         {
             int index;
             return AllotOrCreate(out index);
         }
+        /// <summary>从池里取出一个空闲的对象，没有空闲对象时new一个对象</summary>
+        /// <param name="index">对象在池里的索引，索引可用于RemoveAt</param>
         public T AllotOrCreate(out int index)
         {
             T item;
@@ -1339,6 +1347,8 @@ namespace EntryEngine
             }
             return item;
         }
+        /// <summary>从池里取出一个空闲的对象</summary>
+        /// <returns>对象在池里的索引，索引可用于RemoveAt</returns>
 		public int Allot(out T item)
 		{
 			item = default(T);
@@ -1353,6 +1363,7 @@ namespace EntryEngine
 			}
 			return -1;
 		}
+        /// <summary>往池里放入一个对象</summary>
 		public int Add(T target)
 		{
 			if (IsFull)
@@ -1378,6 +1389,7 @@ namespace EntryEngine
 		{
 			return Array.IndexOf(items, target);
 		}
+        /// <summary>从池里移除一个对象</summary>
 		public bool Remove(T target)
 		{
 			int index = IndexOf(target);
@@ -1391,10 +1403,12 @@ namespace EntryEngine
 				return false;
 			}
 		}
+        /// <summary>从池里通过索引快速移除一个对象</summary>
         public void RemoveAt<U>(U target) where U : PoolItem, T
         {
             RemoveAt(target.PoolIndex);
         }
+        /// <summary>从池里通过索引快速移除一个对象</summary>
 		public T RemoveAt(int index)
 		{
 			T target = items[index];
@@ -1747,6 +1761,7 @@ namespace EntryEngine
 
 
     // 树
+    /// <summary>树数据结构</summary>
     public abstract class Tree<T> : IEnumerable<T> where T : Tree<T>
     {
         protected internal List<T> Childs
@@ -1754,6 +1769,7 @@ namespace EntryEngine
             get;
             private set;
         }
+        /// <summary>整棵树的根节点</summary>
         public T Root
         {
             get
@@ -1768,15 +1784,18 @@ namespace EntryEngine
                 }
             }
         }
+        /// <summary>当前节点的父节点</summary>
         public T Parent
         {
             get;
             private set;
         }
+        /// <summary>当前节点的首个子节点</summary>
         public T First
         {
             get { return Childs.First(); }
         }
+        /// <summary>当前节点的末尾子节点</summary>
         public T Last
         {
             get { return Childs.Last(); }
@@ -1785,6 +1804,7 @@ namespace EntryEngine
         {
             get { return Childs[index]; }
         }
+        /// <summary>当前节点在数中的深度，根节点从0算起</summary>
         public int Depth
         {
             get
@@ -1799,6 +1819,7 @@ namespace EntryEngine
                 return depth;
             }
         }
+        /// <summary>子节点的数量</summary>
         public int ChildCount
         {
             get { return Childs.Count; }
@@ -1813,10 +1834,12 @@ namespace EntryEngine
         {
             return true;
         }
+        /// <summary>给此节点添加一个子节点</summary>
         public bool Add(T node)
         {
             return Insert(node, Childs.Count);
         }
+        /// <summary>给此节点添加多个子节点</summary>
         public void AddRange(IEnumerable<T> nodes)
         {
             foreach (var node in nodes)
@@ -1826,14 +1849,21 @@ namespace EntryEngine
         {
             return Childs.ToArray();
         }
+        /// <summary>遍历此节点及其子节点，先处理自己，再处理子节点</summary>
+        /// <param name="skip">返回true则不处理节点及其子节点</param>
+        /// <param name="func">需要对遍历的节点进行的操作</param>
         public void ForeachParentPriority(Func<T, bool> skip, Action<T> func)
         {
             ForParentPriority((T)this, skip, func);
         }
+        /// <summary>遍历此节点及其子节点，先处理子节点，再处理自己</summary>
+        /// <param name="skip">返回true则不处理节点及其子节点</param>
+        /// <param name="func">需要对遍历的节点进行的操作</param>
         public void ForeachChildPriority(Func<T, bool> skip, Action<T> func)
         {
             ForChildPriority((T)this, skip, func);
         }
+        /// <summary>给此节点在指定位置插入一个子节点</summary>
         public bool Insert(T node, int index)
         {
             if (node == null)
@@ -1861,6 +1891,7 @@ namespace EntryEngine
         protected virtual void OnAddedBy(T parent, int index)
         {
         }
+        /// <summary>删除指定的子节点</summary>
         public bool Remove(T node)
         {
             bool result = Childs.Remove(node);
@@ -1872,6 +1903,7 @@ namespace EntryEngine
             }
             return result;
         }
+        /// <summary>删除指定位置的子节点</summary>
         public void Remove(int index)
         {
             T node = Childs[index];
@@ -1886,12 +1918,14 @@ namespace EntryEngine
         protected virtual void OnRemovedBy(T parent)
         {
         }
+        /// <summary>清除所有子节点</summary>
         public void Clear()
         {
             T[] item = this.ToArray();
             for (int i = Childs.Count - 1; i >= 0; i--)
                 Remove(i);
         }
+        /// <summary>遍历此节点及其子节点，找到符合条件的节点</summary>
         public T Find(Func<T, bool> func)
         {
             return FindParentPriority((T)this, null, func);
@@ -2961,14 +2995,21 @@ namespace EntryEngine
 
 
     // 协程
+    /// <summary>协程的状态</summary>
     public enum EAsyncState
     {
+        /// <summary>刚创建的协程</summary>
         Created,
+        /// <summary>正在执行中</summary>
         Running,
+        /// <summary>执行完成</summary>
         Success,
+        /// <summary>执行取消</summary>
         Canceled,
+        /// <summary>执行过程中出现异常</summary>
         Faulted,
     }
+    /// <summary>协程基类</summary>
     public abstract class Async : ICoroutine
     {
         protected const byte COMPLETED = 100;
@@ -2986,15 +3027,18 @@ namespace EntryEngine
         {
             get { return State == EAsyncState.Faulted; }
         }
+        /// <summary>当前协程执行的状态</summary>
         public EAsyncState State
         {
             get;
             private set;
         }
+        /// <summary>协程是否执行完成</summary>
         public bool IsEnd
         {
             get { return State > EAsyncState.Running; }
         }
+        /// <summary>协程执行的进度，0~100</summary>
         public byte Progress
         {
             get { return progress; }
@@ -3015,17 +3059,20 @@ namespace EntryEngine
                 }
             }
         }
+        /// <summary>协程执行的进度，0~1</summary>
         public float ProgressFloat
         {
-            get { return 1.0f * progress * _MATH.DIVIDE_BY_1[COMPLETED]; }
+            get { return progress * 0.01f; }
             set { Progress = (byte)(value * COMPLETED); }
         }
+        /// <summary>协程执行异常时的异常信息</summary>
         public Exception FaultedReason
         {
             get;
             private set;
         }
 
+        /// <summary>开始执行协程</summary>
         public void Run()
         {
             if (State >= EAsyncState.Running)
@@ -3045,12 +3092,14 @@ namespace EntryEngine
         {
             Progress = COMPLETED;
         }
+        /// <summary>协程执行异常</summary>
         public void Error(Exception ex)
         {
             CheckCompleted();
             FaultedReason = ex;
             Complete(EAsyncState.Faulted);
         }
+        /// <summary>协程执行取消</summary>
         public void Cancel()
         {
             CheckCompleted();
@@ -3073,6 +3122,7 @@ namespace EntryEngine
         {
         }
     }
+    /// <summary>协程加载数据</summary>
     public class AsyncData<T> : Async
     {
         private bool set;
@@ -3102,6 +3152,7 @@ namespace EntryEngine
         }
     }
 
+    /// <summary>协程接口</summary>
     public interface ICoroutine
     {
         bool IsEnd { get; }
@@ -3128,6 +3179,7 @@ namespace EntryEngine
             completed = coroutine(time);
         }
     }
+    /// <summary>可迭代协程，一般放入EntryService.SetCoroutine</summary>
     public class COROUTINE : PoolItem, ICoroutine, IDisposable
     {
         public struct CorSingleEnumerator : IEnumerator<ICoroutine>
@@ -3251,6 +3303,7 @@ namespace EntryEngine
             coroutine = null;
         }
     }
+    /// <summary>队列协程，按照队列顺序执行协程，整个队列执行完毕时协程完毕</summary>
     public class CorQueue : ICoroutine
     {
         private Queue<COROUTINE> coroutines = new Queue<COROUTINE>();
@@ -3310,6 +3363,7 @@ namespace EntryEngine
                 coroutines.Dequeue().Dispose();
         }
     }
+    /// <summary>可迭代协程，迭代返回指定类型的数据</summary>
     public class CorEnumerator<T> : PoolItem, ICoroutine, IDisposable
     {
         private IEnumerator<T> coroutine;
@@ -3364,13 +3418,17 @@ namespace EntryEngine
             yield return coroutine;
         }
     }
+    /// <summary>等待时间协程</summary>
     public struct TIME : ICoroutine, IUpdatable
     {
+        /// <summary>一秒钟</summary>
         public static TIME Second
         {
             get { return new TIME(1000); }
         }
+        /// <summary>当前经过的时间，单位毫秒</summary>
         public float Current;
+        /// <summary>需要等待的时间，单位毫秒</summary>
         public int Interval;
         public bool IsEnd
         {
@@ -3389,25 +3447,29 @@ namespace EntryEngine
         {
             Current += time.Elapsed;
         }
+        /// <summary>重新开始计时</summary>
         public void Reset()
         {
             Current = 0;
         }
+        /// <summary>当前经过时间减去等待时间，开始下一轮的计时</summary>
         public void NextTurn()
         {
             Current -= Interval;
         }
+        /// <summary>让当前经过时间等于需要等待的时间以结束协程</summary>
         public void TimeOut()
         {
             Current = Interval;
         }
     }
+    /// <summary>等待钟表协程</summary>
     public struct CLOCK : ICoroutine
     {
         public float Elapsed;
         /// <summary>起止时间</summary>
         public Range<float> Duration;
-        /// <summary>时钟嘀嗒（取值-n仅一次:0每次:n间隔)</summary>
+        /// <summary>时钟嘀嗒（取值-n仅一次:0每次:n间隔)，单位毫秒</summary>
         public int TickTime;
 
         public bool IsEnd
@@ -3422,6 +3484,9 @@ namespace EntryEngine
             }
         }
 
+        /// <summary>经过时间</summary>
+        /// <param name="time">单位毫秒</param>
+        /// <returns>是否滴答一次</returns>
         public bool Tick(float time)
         {
             // 持续时间已过
@@ -3460,6 +3525,7 @@ namespace EntryEngine
     {
         void Update(float elapsed);
     }
+    /// <summary>时间线</summary>
     public class Timeline<T> : ICoroutine, IEnumerable<KeyValuePair<float, T>>
     {
         private class TimeKeyFrame
@@ -3468,14 +3534,18 @@ namespace EntryEngine
             public KeyFrame<T> KeyFrame;
         }
 
+        /// <summary>是否循环</summary>
         public bool Loop;
         private float _elapsed;
+        /// <summary>开始时间，单位秒</summary>
         public float StartTime;
+        /// <summary>结束时间，单位秒</summary>
         public float EndTime;
         private LinkedList<TimeKeyFrame> keyFrames = new LinkedList<TimeKeyFrame>();
         private LinkedListNode<TimeKeyFrame> current;
         private Action<T> set;
 
+        /// <summary>当前经过时间，单位秒</summary>
         public float Elapsed
         {
             get { return _elapsed; }
@@ -3497,6 +3567,7 @@ namespace EntryEngine
                 Elapse();
             }
         }
+        /// <summary>结束时间，单位秒</summary>
         public float OverTime
         {
             get
@@ -3514,6 +3585,7 @@ namespace EntryEngine
         {
             get { return _elapsed >= OverTime; }
         }
+        /// <summary>获取时间点上的关键帧</summary>
         public T this[float time]
         {
             get
@@ -3530,6 +3602,7 @@ namespace EntryEngine
                     node.KeyFrame.Value = value;
             }
         }
+        /// <summary>关键帧</summary>
         public KeyValuePair<float, T>[] Keys
         {
             get
@@ -3546,6 +3619,8 @@ namespace EntryEngine
             }
         }
 
+        /// <summary>一条时间线只关注一个属性值</summary>
+        /// <param name="set">属性值的赋值方法</param>
         public Timeline(Action<T> set)
         {
             if (set == null)
@@ -3553,10 +3628,12 @@ namespace EntryEngine
             this.set = set;
         }
 
+        /// <summary>添加一个固定帧，瞬间切换到这个帧的值</summary>
         public void AddFixedFrame(float time, T value)
         {
             AddKeyFrame(time, new KFFixed<T>() { Value = value });
         }
+        /// <summary>添加一个补帧，数字类型可以补帧，非数字类型会变成一个固定帧</summary>
         public void AddComplementFrame(float time, T value)
         {
             Type type = typeof(T);
@@ -3623,12 +3700,14 @@ namespace EntryEngine
                 keyFrames.AddLast(key);
             }
         }
+        /// <summary>清除所有关键帧，重置时间</summary>
         public void Clear()
         {
             keyFrames.Clear();
             _elapsed = 0;
             current = null;
         }
+        /// <summary>移除一个关键帧</summary>
         public bool RemoveKeyFrame(float time)
         {
             var node = keyFrames.FirstOrDefault(k => k.Time == time);
@@ -3716,6 +3795,7 @@ namespace EntryEngine
             _elapsed += time.ElapsedSecond;
             Elapse();
         }
+        /// <summary>时间线经过时间，单位秒</summary>
         public void Update(float elapsed)
         {
             _elapsed += elapsed;
@@ -3868,6 +3948,7 @@ namespace EntryEngine
     }
 
     // 时间结构
+    /// <summary>计时器</summary>
     public struct TIMER
     {
         private static long Tick
@@ -3917,15 +3998,20 @@ namespace EntryEngine
             return elapsed;
         }
     }
+    /// <summary>周计时器</summary>
     public struct WeekDuration
     {
-        public int Week;
+        /// <summary>周几，-1可以无论周几</summary>
+        public DayOfWeek Week;
+        /// <summary>一天内的时间短</summary>
         public Duration[] Duration;
 
+        /// <summary>是否满足天</summary>
         public bool IsDay(DayOfWeek day)
         {
-            return Week < 0 || (int)day == Week;
+            return Week < 0 || day == Week;
         }
+        /// <summary>是否满足天和时间</summary>
         public bool IsTime(DateTime time)
         {
             if (Duration == null)
@@ -3943,6 +4029,7 @@ namespace EntryEngine
             }
             return false;
         }
+        /// <summary>没到时间前，距离开始时间的倒计时</summary>
         public TimeSpan? BeginCountdown(DateTime time)
         {
             if (Duration != null && IsDay(time.DayOfWeek))
@@ -3962,6 +4049,7 @@ namespace EntryEngine
             }
             return null;
         }
+        /// <summary>已到时间后，距离结束时间的倒计时</summary>
         public TimeSpan? EndCountdown(DateTime time)
         {
             if (Duration != null && IsDay(time.DayOfWeek))
@@ -3982,6 +4070,7 @@ namespace EntryEngine
             return null;
         }
     }
+    /// <summary>日计时器</summary>
     public struct Duration
     {
         public TimeSpan Start;
@@ -3993,6 +4082,7 @@ namespace EntryEngine
         }
     }
 
+    /// <summary>空数组和单个元素的数组单例</summary>
     public static class _SARRAY<T>
     {
         public static readonly T[] Empty = new T[0];
@@ -4003,6 +4093,7 @@ namespace EntryEngine
             return Single;
         }
     }
+    /// <summary>对象单例</summary>
     public static class _S<T> where T : class, new()
     {
         private static T value;

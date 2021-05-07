@@ -6,10 +6,12 @@ using System.Linq;
 
 namespace EntryEngine.UI
 {
+    /// <summary>标签分页导航</summary>
     public class TabPage : CheckBox
     {
         private UIElement page;
 
+        /// <summary>标签页被选中时需要显示的控件</summary>
         public UIElement Page
         {
             get { return page; }
@@ -56,13 +58,17 @@ namespace EntryEngine.UI
                     yield return item;
         }
     }
+    /// <summary>下拉框</summary>
     public class DropDown : CheckBox
     {
         private Button dropDownText;
         private Selectable dropDownList;
+        /// <summary>下拉框展开时触发</summary>
         public event Action<DropDown> Expanded;
+        /// <summary>下拉框折叠时触发</summary>
         public event Action<DropDown> Collapsed;
-        
+
+        /// <summary>下拉框是否被展开</summary>
         public override bool Checked
         {
             get
@@ -102,6 +108,7 @@ namespace EntryEngine.UI
                 }
             }
         }
+        /// <summary>下拉框显示的文字</summary>
         public Button DropDownText
         {
             get { return dropDownText; }
@@ -123,6 +130,7 @@ namespace EntryEngine.UI
                     Add(dropDownText);
             }
         }
+        /// <summary>下拉选项列表</summary>
         public Selectable DropDownList
         {
             get { return dropDownList; }
@@ -157,6 +165,7 @@ namespace EntryEngine.UI
                 }
             }
         }
+        /// <summary>下拉项的数量</summary>
         public int ItemCount
         {
             get
@@ -168,6 +177,7 @@ namespace EntryEngine.UI
                     - (dropDownList.ScrollBarHorizontal == null ? 0 : 1);
             }
         }
+        /// <summary>显示选中项的文字</summary>
         public override string Text
         {
             get
@@ -290,6 +300,7 @@ namespace EntryEngine.UI
     {
         bool Selected { get; set; }
     }
+    /// <summary>可选择的列表</summary>
     public class Selectable : UIScene
     {
         private int selectedIndex = -1;
@@ -322,6 +333,7 @@ namespace EntryEngine.UI
                        - (ScrollBarHorizontal == null ? 0 : 1);
             }
         }
+        /// <summary>选中项的索引</summary>
         public int SelectedIndex
         {
             get { return selectedIndex; }
@@ -355,6 +367,7 @@ namespace EntryEngine.UI
                     SelectedIndexChanged(this);
             }
         }
+        /// <summary>选中项</summary>
         public Button Selected
         {
             get

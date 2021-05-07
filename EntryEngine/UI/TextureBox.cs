@@ -2,17 +2,23 @@
 
 namespace EntryEngine.UI
 {
+    /// <summary>图片框</summary>
     public class TextureBox : UIElement
     {
 		private TEXTURE texture;
+
+        /// <summary>适配模式</summary>
         public EViewport DisplayMode = EViewport.Strength;
+        /// <summary>图片切换时触发</summary>
         public event DUpdate<TextureBox> TextureChanged;
+        /// <summary>反转模式</summary>
         public EFlip Flip;
 
         public override EUIType UIType
         {
             get { return EUIType.TextureBox; }
         }
+        /// <summary>显示的图片</summary>
         public TEXTURE Texture
         {
 			get { return texture; }
@@ -116,12 +122,14 @@ namespace EntryEngine.UI
             texture = null;
         }
     }
+    /// <summary>序列帧动画框</summary>
 	public class AnimationBox : TextureBox
 	{
         public override EUIType UIType
         {
             get { return EUIType.AnimationBox; }
         }
+        /// <summary>序列帧</summary>
 		public ANIMATION Animation
 		{
 			get
@@ -133,7 +141,9 @@ namespace EntryEngine.UI
 				Texture = value;
 			}
 		}
+        /// <summary>帧切换时触发</summary>
 		public event DUpdate<AnimationBox> FrameChanged;
+        /// <summary>动画播放完成时触发</summary>
 		public event DUpdate<AnimationBox> SequenceOver;
 
 		protected override void InternalUpdate(Entry e)

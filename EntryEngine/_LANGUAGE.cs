@@ -5,6 +5,7 @@ using EntryEngine.Serialize;
 
 namespace EntryEngine
 {
+    /// <summary>多语言</summary>
     public static class _LANGUAGE
     {
         public class LANGUAGE

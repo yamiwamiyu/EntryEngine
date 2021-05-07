@@ -5,21 +5,28 @@ using System.Collections.Generic;
 
 namespace EntryEngine.UI
 {
-	public enum EScrollOrientation
+    /// <summary>滚动模式</summary>
+	[Flags]public enum EScrollOrientation
 	{
+        /// <summary>没有滚动</summary>
 		None = 0x00,
 		Horizontal = 0x01,
 		HorizontalAuto = 0x02,
 		Vertical = 0x04,
 		VerticalAuto = 0x08,
 	}
+    /// <summary>拖拽模式</summary>
 	public enum EDragMode
 	{
+        /// <summary>不能拖拽</summary>
 		None,
+        /// <summary>可拖拽</summary>
 		Drag,
 		//DragInertia,
+        /// <summary>移动控件的位置</summary>
 		Move
 	}
+    /// <summary>面板</summary>
 	public class Panel : UIElement
 	{
         private const float INERTIA_STOP = 0.05f;
@@ -33,8 +40,11 @@ namespace EntryEngine.UI
 		private bool scrollBarSizeFixed;
 		private bool needUpdateScrollBar;
 		private bool needBeginEnd;
+        /// <summary>无论可否滚动，覆盖控件大小的背景图片</summary>
 		public TEXTURE Background;
+        /// <summary>内容较多可滚动时，显示在完整内容区域的背景图片</summary>
         public TEXTURE BackgroundFull;
+        /// <summary>拖拽模式</summary>
 		public EDragMode DragMode;
         public float DragInertia;
         /// <summary>惯性移动量，拖拽时会自动维护，也可以自定义设置这个值</summary>
@@ -57,6 +67,7 @@ namespace EntryEngine.UI
 				}
 			}
 		}
+        /// <summary>横向滚动条</summary>
 		public ScrollBarBase ScrollBarHorizontal
 		{
 			get { return scrollBarHorizontal; }
@@ -76,6 +87,7 @@ namespace EntryEngine.UI
 				UpdateScrollBar();
 			}
 		}
+        /// <summary>纵向滚动条</summary>
 		public ScrollBarBase ScrollBarVertical
 		{
 			get { return scrollBarVertical; }
@@ -113,6 +125,7 @@ namespace EntryEngine.UI
             get { return dragFriction; }
             set { dragFriction = _MATH.Clamp(value, 0, 1); }
         }
+        /// <summary>内容偏移</summary>
 		public float OffsetX
 		{
 			get { return offset.X; }
@@ -126,6 +139,7 @@ namespace EntryEngine.UI
 				}
 			}
 		}
+        /// <summary>内容偏移</summary>
 		public float OffsetY
 		{
 			get { return offset.Y; }
@@ -139,6 +153,7 @@ namespace EntryEngine.UI
 				}
 			}
 		}
+        /// <summary>内容偏移</summary>
 		public VECTOR2 Offset
 		{
 			get { return offset; }
@@ -153,10 +168,12 @@ namespace EntryEngine.UI
 				}
 			}
 		}
+        /// <summary>内容可偏移区间</summary>
 		public VECTOR2 OffsetScope
 		{
 			get { return offsetScope; }
 		}
+        /// <summary>内容区间</summary>
 		public VECTOR2 ContentScope
 		{
 			get

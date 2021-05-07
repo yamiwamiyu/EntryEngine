@@ -305,6 +305,7 @@ namespace EntryEngine
     }
 #endif
 
+    /// <summary>可撤销 / 重做的一个操作</summary>
     public interface IOperation
     {
         void Redo();
@@ -318,11 +319,13 @@ namespace EntryEngine
         public abstract void Redo();
         public abstract void Undo();
     }
+    /// <summary>可撤销 / 重做的操作记录</summary>
     public class OperationLog
     {
         private List<IOperation> operations = new List<IOperation>();
         private Stack<IOperation> redos = new Stack<IOperation>();
         private IOperation last;
+        /// <summary>可记录的最大数量，-1则不限制数量</summary>
         public int Capcity = -1;
 
         public IOperation[] OperationHistory
@@ -360,6 +363,9 @@ namespace EntryEngine
         {
             InternalOperate(operation, true, false);
         }
+        /// <summary>做一个操作</summary>
+        /// <param name="operation">操作</param>
+        /// <param name="operate">是否需要调用操作的Redo</param>
         public void Operate(IOperation operation, bool operate)
         {
             InternalOperate(operation, true, operate);
@@ -384,6 +390,8 @@ namespace EntryEngine
         {
             Undo(1);
         }
+        /// <summary>撤销</summary>
+        /// <param name="count">撤销几个操作</param>
         public void Undo(int count)
         {
             count = _MATH.Min(count, operations.Count);
@@ -401,6 +409,8 @@ namespace EntryEngine
         {
             Redo(1);
         }
+        /// <summary>重做</summary>
+        /// <param name="count">重做几个操作</param>
         public void Redo(int count)
         {
             count = _MATH.Min(count, redos.Count);
@@ -409,6 +419,7 @@ namespace EntryEngine
                 InternalOperate(redos.Pop(), false, true);
             }
         }
+        /// <summary>保存之后，将重新赋值最后一个动作</summary>
         public void Save()
         {
             last = LastOperation;
@@ -420,16 +431,19 @@ namespace EntryEngine
         }
     }
 
+    /// <summary>数值改变的操作</summary>
     public class OValueModify<T> : Operation
     {
         private Action<T> setter;
         private T origin;
         private T target;
 
+        /// <summary>原始值</summary>
         public T Origin
         {
             get { return origin; }
         }
+        /// <summary>目标值</summary>
         public T Target
         {
             get { return target; }
@@ -438,6 +452,11 @@ namespace EntryEngine
         public OValueModify(VariableObject variable, T target, bool operate) : this((T)variable.GetValue(), target, v => variable.SetValue(v), operate)
         {
         }
+        /// <summary>构造一个赋值操作</summary>
+        /// <param name="origin">原始值</param>
+        /// <param name="target">目标值</param>
+        /// <param name="setter">赋值操作</param>
+        /// <param name="operate">是否立刻执行赋值操作</param>
         public OValueModify(T origin, T target, Action<T> setter, bool operate)
         {
             if (setter == null)

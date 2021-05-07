@@ -5,16 +5,19 @@ using System.Text;
 namespace EntryEngine.UI
 {
     // 若不实现ITypist，则Readonly将使用Label.Readonly的显示实现
+    /// <summary>文本框</summary>
 	public class TextBox : Label, ITypist
 	{
 		private char password;
         private UIText defaultText = new UIText();
 
+        /// <summary>只读，true时不能修改</summary>
         public bool Readonly
         {
             get;
             set;
         }
+        /// <summary>多行，true时可以多行编辑</summary>
         public bool Multiple
         {
             get;
@@ -24,6 +27,7 @@ namespace EntryEngine.UI
         {
             get { return IsPasswordMode; }
         }
+        /// <summary>是否为密码模式</summary>
 		public bool IsPasswordMode
 		{
 			get { return password != default(char); }
@@ -35,6 +39,7 @@ namespace EntryEngine.UI
 					Password = default(char);
 			}
 		}
+        /// <summary>密码模式现实的代替字符</summary>
 		public char Password
 		{
 			get { return password; }
@@ -47,6 +52,7 @@ namespace EntryEngine.UI
 				}
 			}
 		}
+        /// <summary>当文本框文字内容为空时显示的默认提示文字</summary>
         public UIText DefaultText
         {
             get { return defaultText; }
@@ -101,6 +107,7 @@ namespace EntryEngine.UI
             }
         }
 	}
+    /// <summary>数字框，仅允许输入数字</summary>
     public class NumberBox : TextBox
     {
         private double minValue = double.MinValue;

@@ -5306,7 +5306,7 @@ namespace EntryEngine
 				* MATRIX2x3.CreateScale(scaleX, scaleY)
 				* MATRIX2x3.CreateRotation(radians)
                 * MATRIX2x3.CreateTranslation(offsetX, offsetY)
-                //* Matrix2x3.CreateTranslation(pivotX, pivotY)
+                //* MATRIX2x3.CreateTranslation(pivotX, pivotY)
 				;
 		}
         public static MATRIX2x3 CreateTranslation(float x, float y)

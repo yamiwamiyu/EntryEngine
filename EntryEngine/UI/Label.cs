@@ -4,6 +4,7 @@ using System;
 namespace EntryEngine.UI
 {
     // todo: 增加OffsetScope，在编辑时允许滚动条滚动
+    /// <summary>文字标签</summary>
 	public class Label : Button, ITypist
 	{
 		private string text = string.Empty;
@@ -17,6 +18,7 @@ namespace EntryEngine.UI
         public event Action<Label> DisplayChanged;
         private VECTOR2 offset;
 
+        /// <summary>是否拥有光标</summary>
         public override bool Checked
         {
             get
@@ -28,6 +30,7 @@ namespace EntryEngine.UI
                 base.Checked = value;
             }
         }
+        /// <summary>字体</summary>
 		public FONT Font
 		{
 			get { return UIText.Font; }
@@ -40,6 +43,7 @@ namespace EntryEngine.UI
 					FontChanged(this);
 			}
 		}
+        /// <summary>字体大小</summary>
         public float FontSize
         {
             get
@@ -57,6 +61,7 @@ namespace EntryEngine.UI
                 NeedUpdateLocalToWorld = true;
             }
         }
+        /// <summary>原始文字内容</summary>
 		public override string Text
 		{
 			get { return text; }
@@ -72,6 +77,7 @@ namespace EntryEngine.UI
                 ResetDisplay();
 			}
 		}
+        /// <summary>是否自动换行，需要设置控件的宽度</summary>
 		public bool BreakLine
 		{
 			get { return breakLine && Font != null && !IsAutoWidth; }
@@ -84,6 +90,7 @@ namespace EntryEngine.UI
 				}
 			}
 		}
+        /// <summary>有自动换行或加密'*'显示时实际显示的文字内容</summary>
 		public string DisplayText
         {
             get { return UIText.Text; }
@@ -99,6 +106,7 @@ namespace EntryEngine.UI
                 }
             }
         }
+        /// <summary>文字最大长度，长度超过时会被自动截取掉，-1则不限制长度</summary>
 		public int MaxLength
 		{
 			get { return maxLength; }
