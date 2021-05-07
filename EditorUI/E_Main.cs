@@ -856,20 +856,15 @@ namespace EditorUI
             }
 
             // 自动重置视口尺寸
-            if (view != null && pv.Size != EditingScene.Size * Project.Document.Scale)
+            if (view != null && pv.Size != EditingScene.Size)
                 ResetViewport();
 		}
-		protected override void InternalDrawAfter(GRAPHICS spriteBatch, Entry e)
-		{
-			base.InternalDrawAfter(spriteBatch, e);
+        protected override void InternalDrawAfter(GRAPHICS spriteBatch, Entry e)
+        {
+            base.InternalDrawAfter(spriteBatch, e);
 
-            if (EditingScene != null)
-            {
-                EditingScene.DrawAfterBegin = BeginScale;
-                EditingScene.DrawBeforeEnd = EndScale;
-            }
             // 当前鼠标选中的对象
-            UIElement focus = UIElement.FindElementByPosition(this, e.INPUT.Pointer.Position);
+            UIElement focus = UIElement.FindElementByPosition(this, ScaledPointerPosition);
             bool inview = false;
             if (focus != null)
             {
@@ -896,7 +891,7 @@ namespace EditorUI
                 //spriteBatch.Draw(FONT.Default, text, e.INPUT.Pointer.Position, COLOR.Red);
             }
 
-            spriteBatch.BeginFromPrevious(Project.Document.ScaleMatrix);
+            BeginScale(this, spriteBatch, e);
 
             if (focus != null && focus != this && focus != pvc && inview)
             {
@@ -955,7 +950,7 @@ namespace EditorUI
                 spriteBatch.Draw(TEXTURE.Pixel, Entry.GRAPHICS.FullGraphicsArea, GRAPHICS.NullSource, CurrentEditMode.BackColor);
             }
 
-            spriteBatch.End();
+            EndScale(this, spriteBatch, e);
         }
 	}
     public class Widget

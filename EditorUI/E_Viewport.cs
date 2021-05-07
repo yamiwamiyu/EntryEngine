@@ -125,6 +125,31 @@ namespace EditorUI
             private get;
             set;
         }
+        private MATRIX2x3 ScaleMatrix
+        {
+            get
+            {
+                var clip = EditingScene.ViewClip;
+                return MATRIX2x3.CreateTransform(0,
+                    clip.X + clip.Width / 2, clip.Y + clip.Height / 2,
+                    Project.Document.Scale, Project.Document.Scale,
+                    clip.X + clip.Width / 2, clip.Y + clip.Height / 2);
+                //return MATRIX2x3.Identity;
+            }
+        }
+        private VECTOR2 ScaledPointerPosition
+        {
+            get
+            {
+                VECTOR2 position = __INPUT.PointerPosition;
+                if (view != null)
+                {
+                    var matrix = ScaleMatrix;
+                    VECTOR2.Transform(ref position, ref matrix);
+                }
+                return position;
+            }
+        }
 
         private void InitializeViewport()
         {
@@ -161,8 +186,8 @@ namespace EditorUI
 
             Document.ScaleChanged += new Action<float>(Document_ScaleChanged);
             pv.DrawBeforeEnd += ViewportDrawLines;
-            //pv.DrawAfterBegin = BeginScale;
-            //pv.DrawBeforeEnd = EndScale;
+            pv.DrawAfterBegin = BeginScale;
+            pv.DrawBeforeEnd = EndScale;
 
             pvc.Add(pv);
 
@@ -171,7 +196,7 @@ namespace EditorUI
             patchViewportFocusBorder = GetNinePatch(C.ColorFocusBorder, C.ColorFocusBody);
             patchViewportAlign = GetNinePatch(C.ColorAlignLine, COLOR.TransparentBlack);
 
-            //pvc.Hover += ScaleViewport;
+            pvc.Hover += ScaleViewport;
         }
 
         // 鼠标中键并且滚动滑轮可以缩放视图
@@ -196,12 +221,7 @@ namespace EditorUI
             //var viewport = sender.FinalViewClip;
             //viewport.Size = VECTOR2.Transform(viewport.Size, scale);
 
-            var matrix = MATRIX2x3.CreateTransform(0, 
-                0, 0, 
-                Project.Document.Scale, Project.Document.Scale, 
-                0, 0);
-            //var matrix = Project.Document.ScaleMatrix;
-            spriteBatch.BeginFromPrevious(matrix);
+            spriteBatch.BeginFromPrevious(ScaleMatrix);
         }
         private void EndScale(UIElement sender, GRAPHICS spriteBatch, Entry e)
         {
@@ -212,6 +232,8 @@ namespace EditorUI
         {
             if (view == null)
                 return;
+
+            BeginScale(sender, spriteBatch, e);
 
             if (!drawBorder)
             {
@@ -277,21 +299,25 @@ namespace EditorUI
                     e.INPUT.Pointer.Position - selectedElement.PivotPoint,
                     C.PreViewColor);
             }
+
+            EndScale(sender, spriteBatch, e);
         }
 
         private void ResetViewport()
-        { 
-            ////pv.Pivot = EPivot.MiddleCenter;
-            //pv.Size = EditingScene.Size;
-            //pv.Location = pvc.Size;
-            //pvc.ContentScope = pv.Size + pvc.Size * 2;
-            //pvc.Offset = pvc.OffsetScope / 2;
-
-            pv.Pivot = EPivot.MiddleCenter;
-            pv.Size = EditingScene.Size * Project.Document.Scale;
+        {
+            //pv.Pivot = EPivot.MiddleCenter;
+            pv.Size = EditingScene.Size;
+            pv.Location = pvc.Size;
             pvc.ContentScope = pv.Size + pvc.Size * 2;
-            pv.Location = pvc.ContentScope / 2;
-            pvc.Offset = pvc.Size - (pvc.Size - pv.Size) / 2;
+            pvc.Offset = pvc.OffsetScope / 2;
+
+            //pv.Pivot = EPivot.MiddleCenter;
+            //pv.Size = EditingScene.Size;
+            ////var size = EditingScene.Size * Project.Document.Scale;
+            //var size = EditingScene.Size;
+            //pvc.ContentScope = size + pvc.Size * 2;
+            //pv.Location = pvc.ContentScope / 2;
+            //pvc.Offset = pvc.Size - (pvc.Size - size) / 2;
         }
         private void BuildView(UIScene scene)
         {
