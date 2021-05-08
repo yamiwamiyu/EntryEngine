@@ -1,4 +1,4 @@
-copy ..\..\..\..\Xna\bin\CLIENT\*.dll Xna\
+copy ..\..\..\..\Xna\bin\Debug\*.dll Xna\
 ::copy ..\..\..\..\Xna\bin\Debug\*.pdb Xna\
 move Xna\fmodex.dll fmodex.dll
 

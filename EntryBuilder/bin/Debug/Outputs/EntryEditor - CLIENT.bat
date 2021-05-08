@@ -6,7 +6,7 @@ copy ..\..\..\..\Xna\bin\CLIENT\*.dll EntryEditor\
 
 ::copy ..\..\..\..\Xna\*.dll EntryEditor\
 
-copy ..\..\..\..\EntryEngine\bin\CLIENT\*.dll EntryEditor\
+copy ..\..\..\..\EntryEngine\bin\Debug\*.dll EntryEditor\
 
 del EntryEditor\Microsoft.Xna.Framework.dll
 del EntryEditor\Microsoft.Xna.Framework.Game.dll
