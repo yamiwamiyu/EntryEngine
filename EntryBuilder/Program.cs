@@ -521,12 +521,12 @@ namespace EntryBuilder
             //PublishToWebGL(@"C:\Yamiwamiyu\Project\EntryEngineGit\trunk\", @"C:\Yamiwamiyu\Project\IslandChronicle\Code\Client", "", @"C:\Yamiwamiyu\Project\ChamberH5New\Publish\WebGL\index.html", false, 1);
             //BuildTableTranslate("", "");
             //BuildDatabaseMysql(@"C:\Yamiwamiyu\Project\YMHY\Code\Protocol\Protocol\bin\Release\Protocol.dll", "Server._DB", @"C:\Yamiwamiyu\Project\YMHY\Code\Server\Server\_DB.design.cs", "", "", false);
-            //BuildProtocolAgentHttp("", @"D:\Project2\xss\xss\Code\ServerImpl\", @"D:\Project2\xss\xss\Code\Protocol\Protocol\bin\Release\Protocol.dll", false);
+            //BuildProtocolAgentHttp(@"D:\Desktop\hdcq2\Code\Client\Client", @"D:\Desktop\hdcq2\Code\Server\Server", @"D:\Desktop\hdcq2\Code\Protocol\Protocol\bin\Debug\Protocol.dll", 0);
             //BuildCSVFromExcel(@"C:\Yamiwamiyu\Project\hdcq2\Design\Tables_Build", @"C:\Yamiwamiyu\Project\IslandChronicle\Design\Tables_Build", null, "12.0", "a.cs", false);
             //Console.ReadKey();
             //return;
 
-			Methods = typeof(Program).GetMethods(BindingFlags.Static | BindingFlags.Public);
+            Methods = typeof(Program).GetMethods(BindingFlags.Static | BindingFlags.Public);
 
             try
             {
@@ -2061,67 +2061,107 @@ namespace EntryBuilder
                  * });
                  */
                 string name = type.Name + "Proxy";
-                string cbname = agent.Callback != null ? agent.Callback.CodeName() : null;
 
-                //builder.AppendLine("class {0} : {1}, {2}", name, typeof(StubClientAsync).Name, type.Name);
-                //builder.AppendLine("class {0} : {1}, {2}", name, typeof(StubClientAsync).Name, type.Name);
-                builder.AppendLine("class {0} : {1}", name, typeof(Stub).Name);
+                builder.AppendLine("class {0}", name);
+
                 builder.AppendBlock(() =>
                 {
-                    if (agent.Callback != null)
-                    {
-                        builder.AppendLine("public {0} __Agent;", cbname);
-                        builder.AppendLine("public Func<{0}> __GetAgent;", cbname);
-                        builder.AppendLine("public Func<ByteReader, {0}> __ReadAgent;", cbname);
-                    }
-                    builder.AppendLine("public Action<ByteWriter> __WriteAgent;");
+                    builder.AppendLine(
+@"  /// <summary>请求的公共地址，例如 http://127.0.0.1:888/Action/ </summary>
+    public string base_url = """";
+    /// <summary>在发送请求之前执行</summary>
+    public Action<HttpRequestPost> onSend = null;
+    /// <summary>在回调之前执行</summary>
+    public Action<HttpRequestPost> onCallback = null;
+    /// <summary>处理接口返回错误</summary>
+    public Action<string> onErrorMsg = null;
+    /// <summary>处理请求错误</summary>
+    public Action<HttpRequestPost> onError = null;
+    /// <summary>回调函数异步还是同步执行，true为异步</summary>
+    public bool async = true;");
                     builder.AppendLine();
 
-                    // 构造函数，添加服务器回调处理方法存根
-                    builder.AppendLine("public {0}()", name);
+                    builder.AppendLine(
+@"  /// <summary>发送HTTP请求</summary>
+    /// <param name=""url"">请求的地址，例如 1/GetInfo</param>
+    /// <param name=""data"">请求的参数</param>
+    /// <param name=""callback"">请求完成后的回调函数</param>
+    private AsyncData<string> send<T>(string url, string data, Action<T> callback)");
+
                     builder.AppendBlock(() =>
                     {
-                        builder.AppendLine("this.Protocol = {0};", agent.Protocol);
-                        // add method
-                        for (int i = 0, offset = 0,
-                             len = callback.Length, n = call.Length + len;
-                             i < n; i++)
-                        {
-                            bool isDelegate = asyncCB.ContainsKey(i);
-                            MethodInfo method;
-                            if (isDelegate)
-                            {
-                                method = call[i];
-                                offset++;
-                            }
-                            else
-                            {
-                                if (i - offset >= len)
-                                    continue;
-                                method = callback[i - offset];
-                            }
-                            builder.AppendLine("AddMethod({1}, {0}_{1});", method.Name, i);
-                        }
-                    });
-                    if (agent.Callback != null)
+                        builder.AppendLine(
+@"      AsyncData<string> result = new AsyncData<string>();
+
+        var request = new HttpRequestPost();
+        var requestURL = base_url + url;
+        request.Connect(requestURL);
+
+        if (onSend != null)
+            onSend(request);
+
+        request.Send(Encoding.UTF8.GetBytes(data));
+
+        request.OnReceived += (response) =>
+        {
+            if (response.StatusCode == HttpStatusCode.OK)
+            {
+                string tempData = _IO.ReadPreambleText(_IO.ReadStream(response.GetResponseStream()), Encoding.UTF8);
+
+                tempData = !string.IsNullOrEmpty(tempData) ? tempData : ""{}"";
+                if (tempData.StartsWith(""{\""errCode\""""))
+                {
+                    if (onErrorMsg != null)
                     {
-                        builder.AppendLine("public {0}({1} agent) : this()", name, cbname);
-                        builder.AppendBlock(() =>
-                        {
-                            builder.AppendLine("this.__Agent = agent;");
-                        });
-                        builder.AppendLine("public {0}(Func<{1}> agent) : this()", name, cbname);
-                        builder.AppendBlock(() =>
-                        {
-                            builder.AppendLine("this.__GetAgent = agent;");
-                        });
-                        builder.AppendLine("public {0}(Func<ByteReader, {1}> agent) : this()", name, cbname);
-                        builder.AppendBlock(() =>
-                        {
-                            builder.AppendLine("this.__ReadAgent = agent;");
-                        });
+                        onErrorMsg(tempData);
                     }
-                    builder.AppendLine();
+                    else
+                    {
+                        _LOG.Warning(""未设置onErrorMsg: {0}"", tempData);
+                    }
+                }
+                else
+                {
+                    if (onCallback != null)
+                    {
+                        onCallback(request);
+                    }
+                    if (callback != null)
+                    {
+                        if (async)
+                        {
+                            callback(JsonReader.Deserialize<T>(tempData));
+                        }
+                        else
+                        {
+                            EntryService.Instance.Synchronize(() => callback(JsonReader.Deserialize<T>(tempData)));
+                        }
+                    }
+                    else
+                    {
+                        _LOG.Warning(""未设置回调函数: {0}"",tempData);
+                    }
+                }
+                result.SetData(tempData);
+            }
+            else if (onError != null)
+            {
+                 onError(request);
+            }
+            else
+            {
+                _LOG.Warning(""State: {0} {1}"", response.StatusCode, response.StatusDescription);
+            }
+        };
+
+        request.OnError += (req, e, resultBytes) =>
+        {
+            _LOG.Error(e, ""发送请求错误 {0}"", requestURL);
+        };
+
+        return result;"
+                       );
+                    });
 
                     // 通过代理调用接口方法
                     WCCallProxy(builder, call, asyncCB);
@@ -2137,13 +2177,24 @@ namespace EntryBuilder
                     MethodInfo method = call[i];
                     ParameterInfo[] parameters = method.GetParameters();
 
-                    // 方法头
-                    //bool hasAsync = parameters.Contains(p => p.ParameterType.Is(typeof(Delegate)));
+                    builder.AppendLine();
+                    // 生成注解关联
+                    builder.Append("/// <see cref=\"{0}.{1}(", type.FullName, method.Name);
+                    for (int j = 0, n = parameters.Length - 1; j <= n; j++)
+                    {
+                        if (j != 0)
+                            builder.Append(", ");
+                        var param = parameters[j];
+                        builder.Append("{0}", param.ParameterType.CodeName().Replace('<', '{').Replace('>', '}'));
+                    }
+                    builder.AppendLine(")\"></see>");
+                    // 生成方法头
                     bool hasAsync = asyncCB.ContainsKey(i);
                     if (hasAsync)
-                        builder.Append("public StubClientAsync.AsyncWaitCallback {0}(", method.Name);
+                        builder.Append("public AsyncData<string> {0}(", method.Name);
                     else
                         builder.Append("public void {0}(", method.Name);
+                    // 生成方法参数
                     for (int j = 0, n = parameters.Length - 1; j <= n; j++)
                     {
                         if (j != 0)
@@ -2154,53 +2205,17 @@ namespace EntryBuilder
                     builder.AppendLine(")");
                     builder.AppendBlock(() =>
                     {
+                        // 处理参数为HTTP请求参数
+                        builder.AppendLine("var parameters = new StringBuilder();");
+                        for (int j = 0, n = parameters.Length - 2; j <= n; j++)
+                        {
+                            builder.AppendLine("parameters.Append(\"{0}={1}{2}\", {0});", parameters[j].Name, "{0}", j != n ? "&" : "");
+                        }
+                        // 生成请求调用
                         if (hasAsync)
-                            builder.AppendLine("if (Link == null) return null;");
+                            builder.AppendLine("return send(\"{0}/{1}\", parameters.ToString(), {2});", agent.Protocol, method.Name, parameters[parameters.Length - 1].Name);
                         else
-                            builder.AppendLine("if (Link == null) return;");
-                        builder.AppendLine("ByteWriter __writer = new ByteWriter();");
-                        builder.AppendLine("if (__WriteAgent != null) __WriteAgent(__writer);");
-                        builder.AppendLine("__writer.Write((byte){0});", agent.Protocol);
-                        builder.AppendLine("__writer.Write((ushort){0});", i);
-                        foreach (ParameterInfo param in parameters)
-                        {
-                            if (hasAsync && param.ParameterType.Is(typeof(Delegate)))
-                            {
-                                builder.AppendLine("var __async = Push({0});", param.Name);
-                                builder.AppendLine("if (__async == null) return null;");
-                                builder.AppendLine("__writer.Write(__async.ID);", param.Name);
-                            }
-                            else
-                            {
-                                builder.AppendLine("__writer.Write({0});", param.Name);
-                            }
-                        }
-                        builder.AppendLine("#if DEBUG");
-                        builder.AppendFormat("_LOG.Debug(\"{0}({{0}} bytes)", method.Name);
-                        for (int j = 0, n = parameters.Length - 1; j <= n; j++)
-                        {
-                            ParameterInfo param = parameters[j];
-                            builder.AppendFormat(" {0}: {{{1}}}", param.Name, j + 1);
-                            if (j != n)
-                                builder.Append(",");
-                        }
-                        builder.Append("\", __writer.Position");
-                        for (int j = 0; j < parameters.Length; j++)
-                        {
-                            ParameterInfo param = parameters[j];
-                            if (hasAsync && param.ParameterType.Is(typeof(Delegate)))
-                                builder.Append(", \"{0}\"", param.ParameterType.CodeName());
-                            else if (!param.ParameterType.IsCustomType())
-                                builder.Append(", {0}", param.Name);
-                            else
-                                builder.Append(", JsonWriter.Serialize({0})", param.Name);
-                        }
-                        builder.AppendLine(");");
-                        builder.AppendLine("#endif");
-                        builder.AppendLine("Link.Write(__writer.Buffer, 0, __writer.Position);");
-
-                        if (hasAsync)
-                            builder.AppendLine("return __async;");
+                            builder.AppendLine("send(\"{0}/{1}\", parameters.ToString(), {2});", agent.Protocol, method.Name, parameters[parameters.Length - 1].Name);
                     });
                 }
                 builder.AppendLine();
