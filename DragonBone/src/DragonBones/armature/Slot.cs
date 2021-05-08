@@ -105,7 +105,7 @@ namespace DragonBones
         /// <private/>
         internal float _pivotY;
         /// <private/>
-        protected readonly Matrix _localMatrix = new Matrix();
+        public readonly Matrix _localMatrix = new Matrix();
         /// <internal/>
         /// <private/>
         internal readonly ColorTransform _colorTransform = new ColorTransform();
@@ -561,14 +561,15 @@ namespace DragonBones
         {
             this.globalTransformMatrix.CopyFrom(this._localMatrix);
             this.globalTransformMatrix.Concat(this._parent.globalTransformMatrix);
-            if (isCache)
-            {
-                this.global.FromMatrix(this.globalTransformMatrix);
-            }
-            else
-            {
-                this._globalDirty = true;
-            }
+            this.global.FromMatrix(this.globalTransformMatrix);
+            //if (isCache)
+            //{
+            //    this.global.FromMatrix(this.globalTransformMatrix);
+            //}
+            //else
+            //{
+            //    this._globalDirty = true;
+            //}
         }
         /// <internal/>
         /// <private/>

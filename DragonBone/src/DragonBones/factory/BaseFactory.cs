@@ -25,8 +25,6 @@ using System;
 
 namespace DragonBones
 {
-    /// <internal/>
-    /// <private/>
     public class BuildArmaturePackage
     {
         public string dataName = "";
@@ -61,9 +59,7 @@ namespace DragonBones
     /// <language>zh_CN</language>
     public abstract class BaseFactory
     {
-        /// <private/>
         internal static ObjectDataParser _objectParser = null;
-        /// <private/>
         protected static BinaryDataParser _binaryParser = null;
         /// <private/>
         public bool autoSearch = false;
@@ -299,8 +295,7 @@ namespace DragonBones
         /// <private/>
         protected virtual Armature _BuildChildArmature(BuildArmaturePackage dataPackage, Slot slot, DisplayData displayData)
         {
-            throw new NotImplementedException();
-            //return this.BuildArmature(displayData.path, dataPackage != null ? dataPackage.dataName : "", "", dataPackage != null ? dataPackage.textureAtlasName : "");
+            return this.BuildArmature(dataPackage.data, dataPackage.texture);
         }
         /// <private/>
         protected object _GetSlotDisplay(BuildArmaturePackage dataPackage, DisplayData displayData, DisplayData rawDisplayData, Slot slot)

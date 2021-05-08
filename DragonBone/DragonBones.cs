@@ -167,7 +167,12 @@ namespace DragonBone
             int count = 0;
             for (int i = 0; i < slots.Count; i++)
             {
-                var slot = slots[i];
+                Slot slot = slots[i];
+
+                if (i == 1)
+                {
+                    _LOG.Debug(slot.global.ToString());
+                }
 
                 //if (!slot.visible) continue;
                 var display = slot._displayDatas[slot.displayIndex];
@@ -176,105 +181,105 @@ namespace DragonBone
                     var data = (ImageDisplayData)display;
                     var currentTextureData = data.texture;
 
-                    var textureScale = slot._armature.armatureData.scale * currentTextureData.parent.scale;
-                    var sourceX = currentTextureData.region.x;
-                    var sourceY = currentTextureData.region.y;
-                    var sourceWidth = currentTextureData.region.width;
-                    var sourceHeight = currentTextureData.region.height;
+                    //var textureScale = slot._armature.armatureData.scale * currentTextureData.parent.scale;
+                    //var sourceX = currentTextureData.region.x;
+                    //var sourceY = currentTextureData.region.y;
+                    //var sourceWidth = currentTextureData.region.width;
+                    //var sourceHeight = currentTextureData.region.height;
 
-                    var scaleWidth = sourceWidth * textureScale;
-                    var scaleHeight = sourceHeight * textureScale;
-                    var pivotX = slot._pivotX;
-                    var pivotY = slot._pivotY;
+                    //var scaleWidth = sourceWidth * textureScale;
+                    //var scaleHeight = sourceHeight * textureScale;
+                    //var pivotX = slot._pivotX;
+                    //var pivotY = slot._pivotY;
 
-                    {
-                        byte r = (byte)(vertex.Color.R * slot._colorTransform.redMultiplier);
-                        byte g = (byte)(vertex.Color.G * slot._colorTransform.greenMultiplier);
-                        byte b = (byte)(vertex.Color.B * slot._colorTransform.blueMultiplier);
-                        byte a = (byte)(vertex.Color.A * slot._colorTransform.alphaMultiplier);
-                        for (int j = 0; j < 4; j++)
-                        {
-                            vertices[j].Color.R = r;
-                            vertices[j].Color.G = g;
-                            vertices[j].Color.B = b;
-                            vertices[j].Color.A = a;
-                        }
-                    }
+                    //{
+                    //    byte r = (byte)(vertex.Color.R * slot._colorTransform.redMultiplier);
+                    //    byte g = (byte)(vertex.Color.G * slot._colorTransform.greenMultiplier);
+                    //    byte b = (byte)(vertex.Color.B * slot._colorTransform.blueMultiplier);
+                    //    byte a = (byte)(vertex.Color.A * slot._colorTransform.alphaMultiplier);
+                    //    for (int j = 0; j < 4; j++)
+                    //    {
+                    //        vertices[j].Color.R = r;
+                    //        vertices[j].Color.G = g;
+                    //        vertices[j].Color.B = b;
+                    //        vertices[j].Color.A = a;
+                    //    }
+                    //}
 
-                    {
-                        var sm = slot.parent.globalTransformMatrix;
-                        var bm = slot.globalTransformMatrix;
-                        float[] vertexOffset = 
-                        {
-                            sm.tx, sm.ty,
-                            sm.tx + sourceWidth, sm.ty,
-                            sm.tx, sm.ty + sourceHeight,
-                            sm.tx + sourceWidth, sm.ty + sourceHeight,
-                        };
-                        float bwx = bm.tx + vertex.Destination.X, bwy = bm.ty + vertex.Destination.X;
-                        float a = bm.a, b = bm.b, c = bm.c, d = bm.d;
-                        float offsetX, offsetY;
+                    //{
+                    //    var sm = slot.parent.globalTransformMatrix;
+                    //    var bm = slot.globalTransformMatrix;
+                    //    float[] vertexOffset = 
+                    //    {
+                    //        sm.tx, sm.ty,
+                    //        sm.tx + sourceWidth, sm.ty,
+                    //        sm.tx, sm.ty + sourceHeight,
+                    //        sm.tx + sourceWidth, sm.ty + sourceHeight,
+                    //    };
+                    //    float bwx = bm.tx + vertex.Destination.X, bwy = bm.ty + vertex.Destination.X;
+                    //    float a = bm.a, b = bm.b, c = bm.c, d = bm.d;
+                    //    float offsetX, offsetY;
 
-                        offsetX = vertexOffset[0]; // 0
-                        offsetY = vertexOffset[1]; // 1
-                        vertices[0].Position.X = offsetX * a + offsetY * b + bwx; // bl
-                        vertices[0].Position.Y = offsetX * c + offsetY * d + bwy;
+                    //    offsetX = vertexOffset[0]; // 0
+                    //    offsetY = vertexOffset[1]; // 1
+                    //    vertices[0].Position.X = offsetX * a + offsetY * b + bwx; // bl
+                    //    vertices[0].Position.Y = offsetX * c + offsetY * d + bwy;
 
-                        offsetX = vertexOffset[2]; // 2
-                        offsetY = vertexOffset[3]; // 3
-                        vertices[1].Position.X = offsetX * a + offsetY * b + bwx; // ul
-                        vertices[1].Position.Y = offsetX * c + offsetY * d + bwy;
+                    //    offsetX = vertexOffset[2]; // 2
+                    //    offsetY = vertexOffset[3]; // 3
+                    //    vertices[1].Position.X = offsetX * a + offsetY * b + bwx; // ul
+                    //    vertices[1].Position.Y = offsetX * c + offsetY * d + bwy;
 
-                        offsetX = vertexOffset[4]; // 4
-                        offsetY = vertexOffset[5]; // 5
-                        vertices[2].Position.X = offsetX * a + offsetY * b + bwx; // ur
-                        vertices[2].Position.Y = offsetX * c + offsetY * d + bwy;
+                    //    offsetX = vertexOffset[4]; // 4
+                    //    offsetY = vertexOffset[5]; // 5
+                    //    vertices[2].Position.X = offsetX * a + offsetY * b + bwx; // ur
+                    //    vertices[2].Position.Y = offsetX * c + offsetY * d + bwy;
 
-                        offsetX = vertexOffset[6]; // 6
-                        offsetY = vertexOffset[7]; // 7
-                        vertices[3].Position.X = offsetX * a + offsetY * b + bwx; // br
-                        vertices[3].Position.Y = offsetX * c + offsetY * d + bwy;
+                    //    offsetX = vertexOffset[6]; // 6
+                    //    offsetY = vertexOffset[7]; // 7
+                    //    vertices[3].Position.X = offsetX * a + offsetY * b + bwx; // br
+                    //    vertices[3].Position.Y = offsetX * c + offsetY * d + bwy;
 
-                        //vertices
-                        //vertices[0].Position.X = 0 * scaleWidth - pivotX * sourceWidth;
-                        //vertices[0].Position.Y = 0 * scaleHeight - pivotY * sourceHeight;
+                    //    //vertices
+                    //    //vertices[0].Position.X = 0 * scaleWidth - pivotX * sourceWidth;
+                    //    //vertices[0].Position.Y = 0 * scaleHeight - pivotY * sourceHeight;
 
-                        //vertices[1].Position.X = 1 * scaleWidth - pivotX * sourceWidth;
-                        //vertices[1].Position.Y = 0 * scaleHeight - pivotY * sourceHeight;
+                    //    //vertices[1].Position.X = 1 * scaleWidth - pivotX * sourceWidth;
+                    //    //vertices[1].Position.Y = 0 * scaleHeight - pivotY * sourceHeight;
 
-                        //vertices[2].Position.X = 0 * scaleWidth - pivotX * sourceWidth;
-                        //vertices[2].Position.Y = 1 * scaleHeight - pivotY * sourceHeight;
+                    //    //vertices[2].Position.X = 0 * scaleWidth - pivotX * sourceWidth;
+                    //    //vertices[2].Position.Y = 1 * scaleHeight - pivotY * sourceHeight;
 
-                        //vertices[3].Position.X = 1 * scaleWidth - pivotX * sourceWidth;
-                        //vertices[3].Position.Y = 1 * scaleHeight - pivotY * sourceHeight;
-                    }
+                    //    //vertices[3].Position.X = 1 * scaleWidth - pivotX * sourceWidth;
+                    //    //vertices[3].Position.Y = 1 * scaleHeight - pivotY * sourceHeight;
+                    //}
 
-                    {
-                        vertices[0].TextureCoordinate.X = data.texture.region.x;
-                        vertices[0].TextureCoordinate.Y = data.texture.region.y;
-                        vertices[1].TextureCoordinate.X = data.texture.region.x + data.texture.region.width;
-                        vertices[1].TextureCoordinate.Y = data.texture.region.y;
-                        vertices[2].TextureCoordinate.X = data.texture.region.x;
-                        vertices[2].TextureCoordinate.Y = data.texture.region.y + data.texture.region.height;
-                        vertices[3].TextureCoordinate.X = data.texture.region.x + data.texture.region.width;
-                        vertices[3].TextureCoordinate.Y = data.texture.region.y + data.texture.region.height;
-                    }
+                    //{
+                    //    vertices[0].TextureCoordinate.X = data.texture.region.x;
+                    //    vertices[0].TextureCoordinate.Y = data.texture.region.y;
+                    //    vertices[1].TextureCoordinate.X = data.texture.region.x + data.texture.region.width;
+                    //    vertices[1].TextureCoordinate.Y = data.texture.region.y;
+                    //    vertices[2].TextureCoordinate.X = data.texture.region.x;
+                    //    vertices[2].TextureCoordinate.Y = data.texture.region.y + data.texture.region.height;
+                    //    vertices[3].TextureCoordinate.X = data.texture.region.x + data.texture.region.width;
+                    //    vertices[3].TextureCoordinate.Y = data.texture.region.y + data.texture.region.height;
+                    //}
 
-                    graphics.DrawPrimitives(Texture.Texture, vertices, 0, 4, quadTriangles, 0, 2);
+                    //graphics.DrawPrimitives(Texture.Texture, vertices, 0, 4, quadTriangles, 0, 2);
 
 
-                    //graphics.BaseDraw(Texture.Texture,
-                    //    slot.global.x,
-                    //    slot.global.y,
-                    //    data.texture.region.width, data.texture.region.height,
-                    //    false,
-                    //    data.texture.region.x, data.texture.region.y, data.texture.region.width, data.texture.region.height,
-                    //    true,
-                    //    (byte)(slot._colorTransform.redMultiplier * 255), (byte)(slot._colorTransform.greenMultiplier * 255),
-                    //    (byte)(slot._colorTransform.blueMultiplier * 255), (byte)(slot._colorTransform.alphaMultiplier * 255),
-                    //    _MATH.ToRadian(slot.global.rotation),
-                    //    data.pivot.x, data.pivot.y,
-                    //    EFlip.None);
+                    graphics.BaseDraw(Texture.Texture,
+                        slot.global.x,
+                        slot.global.y,
+                        slot.global.scaleX, slot.global.scaleY,
+                        true,
+                        data.texture.region.x, data.texture.region.y, data.texture.region.width, data.texture.region.height,
+                        true,
+                        (byte)(slot._colorTransform.redMultiplier * 255), (byte)(slot._colorTransform.greenMultiplier * 255),
+                        (byte)(slot._colorTransform.blueMultiplier * 255), (byte)(slot._colorTransform.alphaMultiplier * 255),
+                        slot.global.rotation,
+                        data.pivot.x, data.pivot.y,
+                        EFlip.None);
                 }
                 else if (display is MeshDisplayData)
                 {
