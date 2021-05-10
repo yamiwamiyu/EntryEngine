@@ -357,13 +357,13 @@ namespace DragonBones
             this._clock.AdvanceTime(passedTime);
         }
 
-        public void BufferEvent(EventObject value)
-        {
-            if (!this._events.Contains(value))
-            {
-                this._events.Add(value);
-            }
-        }
+        //public void BufferEvent(EventObject value)
+        //{
+        //    if (!this._events.Contains(value))
+        //    {
+        //        this._events.Add(value);
+        //    }
+        //}
 
         public void BufferObject(BaseObject value)
         {

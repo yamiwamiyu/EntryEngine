@@ -679,7 +679,7 @@ namespace DragonBones
                     eventObject.type = eventType;
                     eventObject.armature = this._armature;
                     eventObject.animationState = this;
-                    this._armature._dragonBones.BufferEvent(eventObject);
+                    this._armature.eventDispatcher.DispatchDBEvent(eventObject.type, eventObject);
                 }
             }
 
@@ -723,7 +723,7 @@ namespace DragonBones
                     eventObject.type = eventType;
                     eventObject.armature = this._armature;
                     eventObject.animationState = this;
-                    this._armature._dragonBones.BufferEvent(eventObject);
+                    this._armature.eventDispatcher.DispatchDBEvent(eventObject.type, eventObject);
                 }
             }
         }

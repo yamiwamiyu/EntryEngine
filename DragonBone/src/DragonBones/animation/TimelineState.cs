@@ -62,7 +62,7 @@ namespace DragonBones
                             eventObject.time = (float)this._frameArray[frameOffset] / (float)this._frameRate;
                             eventObject.animationState = this._animationState;
                             EventObject.ActionDataToInstance(action, eventObject, this._armature);
-                            this._armature._dragonBones.BufferEvent(eventObject);
+                            this._armature.eventDispatcher.DispatchDBEvent(eventObject.type, eventObject);
                         }
                     }
                 }
@@ -99,7 +99,7 @@ namespace DragonBones
                             eventObject.type = EventObject.START;
                             eventObject.armature = this._armature;
                             eventObject.animationState = this._animationState;
-                            this._armature._dragonBones.BufferEvent(eventObject);
+                            this._armature.eventDispatcher.DispatchDBEvent(eventObject.type, eventObject);
                         }
                     }
                     else
@@ -178,7 +178,7 @@ namespace DragonBones
                                     if (loopCompleteEvent != null && crossedFrameIndex == 0)
                                     {
                                         // Add loop complete event after first frame.
-                                        this._armature._dragonBones.BufferEvent(loopCompleteEvent);
+                                        this._armature.eventDispatcher.DispatchDBEvent(loopCompleteEvent.type, loopCompleteEvent);
                                         loopCompleteEvent = null;
                                     }
 
@@ -252,7 +252,7 @@ namespace DragonBones
                                     if (loopCompleteEvent != null && crossedFrameIndex == 0)
                                     {
                                         // Add loop complete event before first frame.
-                                        this._armature._dragonBones.BufferEvent(loopCompleteEvent);
+                                        this._armature.eventDispatcher.DispatchDBEvent(loopCompleteEvent.type, loopCompleteEvent);
                                         loopCompleteEvent = null;
                                     }
 
@@ -287,7 +287,7 @@ namespace DragonBones
                             if (!isReverse && loopCompleteEvent != null)
                             {
                                 // Add loop complete event before first frame.
-                                this._armature._dragonBones.BufferEvent(loopCompleteEvent);
+                                this._armature.eventDispatcher.DispatchDBEvent(loopCompleteEvent.type, loopCompleteEvent);
                                 loopCompleteEvent = null;
                             }
 
@@ -298,12 +298,12 @@ namespace DragonBones
 
                 if (loopCompleteEvent != null)
                 {
-                    this._armature._dragonBones.BufferEvent(loopCompleteEvent);
+                    this._armature.eventDispatcher.DispatchDBEvent(loopCompleteEvent.type, loopCompleteEvent);
                 }
 
                 if (completeEvent != null)
                 {
-                    this._armature._dragonBones.BufferEvent(completeEvent);
+                    this._armature.eventDispatcher.DispatchDBEvent(completeEvent.type, completeEvent);
                 }
             }
         }

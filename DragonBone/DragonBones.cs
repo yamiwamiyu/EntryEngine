@@ -348,18 +348,37 @@ namespace EntryEngine.DragonBones
         {
             get { return Armature.animation; }
         }
+        Dictionary<string, List<ListenerDelegate<EventObject>>> events = new Dictionary<string, List<ListenerDelegate<EventObject>>>();
         public bool HasDBEventListener(string type)
         {
-            return false;
+            return events.ContainsKey(type);
         }
         public void DispatchDBEvent(string type, EventObject eventObject)
         {
+            List<ListenerDelegate<EventObject>> list;
+            if (!events.TryGetValue(type, out list))
+                return;
+            for (int i = 0; i < list.Count; i++)
+                list[i](type, eventObject);
         }
+        /// <summary>添加事件</summary>
         public void AddDBEventListener(string type, ListenerDelegate<EventObject> listener)
         {
+            List<ListenerDelegate<EventObject>> list;
+            if (!events.TryGetValue(type, out list))
+            {
+                list = new List<ListenerDelegate<EventObject>>(4);
+                events.Add(type, list);
+            }
+            list.Add(listener);
         }
         public void RemoveDBEventListener(string type, ListenerDelegate<EventObject> listener)
         {
+            List<ListenerDelegate<EventObject>> list;
+            if (events.TryGetValue(type, out list))
+            {
+                list.Remove(listener);
+            }
         }
         #endregion
     }
