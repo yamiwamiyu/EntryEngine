@@ -7407,28 +7407,28 @@ namespace EntryEngine
 
 
     [Code(ECode.LessUseful | ECode.MayBeReform)]
-    public interface SHADER
+    public abstract class SHADER : Content
     {
-        int PassCount { get; }
-        void LoadFromCode(string code);
-        bool SetPass(int pass);
-        bool HasProperty(string name);
-        bool GetValueBoolean(string property);
-        int GetValueInt32(string property);
-        MATRIX GetValueMatrix(string property);
-        float GetValueSingle(string property);
-        TEXTURE GetValueTexture(string property);
-        VECTOR2 GetValueVector2(string property);
-        VECTOR3 GetValueVector3(string property);
-        VECTOR4 GetValueVector4(string property);
-        void SetValue(string property, bool value);
-        void SetValue(string property, float value);
-        void SetValue(string property, int value);
-        void SetValue(string property, MATRIX value);
-        void SetValue(string property, TEXTURE value);
-        void SetValue(string property, VECTOR2 value);
-        void SetValue(string property, VECTOR3 value);
-        void SetValue(string property, VECTOR4 value);
+        public abstract int PassCount { get; }
+        public abstract void LoadFromCode(string code);
+        public abstract bool SetPass(int pass);
+        public abstract bool HasProperty(string name);
+        public abstract bool GetValueBoolean(string property);
+        public abstract int GetValueInt32(string property);
+        public abstract MATRIX GetValueMatrix(string property);
+        public abstract float GetValueSingle(string property);
+        public abstract TEXTURE GetValueTexture(string property);
+        public abstract VECTOR2 GetValueVector2(string property);
+        public abstract VECTOR3 GetValueVector3(string property);
+        public abstract VECTOR4 GetValueVector4(string property);
+        public abstract void SetValue(string property, bool value);
+        public abstract void SetValue(string property, float value);
+        public abstract void SetValue(string property, int value);
+        public abstract void SetValue(string property, MATRIX value);
+        public abstract void SetValue(string property, TEXTURE value);
+        public abstract void SetValue(string property, VECTOR2 value);
+        public abstract void SetValue(string property, VECTOR3 value);
+        public abstract void SetValue(string property, VECTOR4 value);
     }
     //public class SHADER : ShaderBase
     //{

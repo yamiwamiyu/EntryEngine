@@ -863,7 +863,7 @@ namespace EntryEngine.Unity
         {
             get { return material; }
         }
-        public int PassCount
+        public override int PassCount
         {
             get { return material.passCount; }
         }
@@ -872,94 +872,94 @@ namespace EntryEngine.Unity
         {
             material = new Material(shader);
         }
-        public bool IsDisposed
+        public override bool IsDisposed
         {
             get { return disposed; }
         }
-        public void Dispose()
+        protected override void InternalDispose()
         {
-			disposed = true;
-			if (material != null)
-			{
-				Resources.UnloadAsset(material);
-				material = null;
-			}
+            disposed = true;
+            if (material != null)
+            {
+                Resources.UnloadAsset(material);
+                material = null;
+            }
         }
-        public void LoadFromCode(string code)
+        public override void LoadFromCode(string code)
         {
             material = new Material(code);
         }
-        public bool SetPass(int pass)
+        public override bool SetPass(int pass)
         {
             return material.SetPass(pass);
         }
-        public bool HasProperty(string name)
+        public override bool HasProperty(string name)
         {
             return material.HasProperty(name);
         }
-        public bool GetValueBoolean(string property)
+        public override bool GetValueBoolean(string property)
         {
             return material.GetInt(property) != 0;
         }
-        public int GetValueInt32(string property)
+        public override int GetValueInt32(string property)
         {
             return material.GetInt(property);
         }
-        public MATRIX GetValueMatrix(string property)
+        public override MATRIX GetValueMatrix(string property)
         {
             return material.GetMatrix(property).GetMatrix();
         }
-        public float GetValueSingle(string property)
+        public override float GetValueSingle(string property)
         {
             return material.GetFloat(property);
         }
-        public TEXTURE GetValueTexture(string property)
+        public override TEXTURE GetValueTexture(string property)
         {
             return new Texture2DUnity((Texture2D)material.GetTexture(property));
         }
-        public VECTOR2 GetValueVector2(string property)
+        public override VECTOR2 GetValueVector2(string property)
         {
             Vector4 vector = material.GetVector(property);
             return new VECTOR2(vector.x, vector.y);
         }
-        public VECTOR3 GetValueVector3(string property)
+        public override VECTOR3 GetValueVector3(string property)
         {
             Vector4 vector = material.GetVector(property);
             return new VECTOR3(vector.x, vector.y, vector.z);
         }
-        public VECTOR4 GetValueVector4(string property)
+        public override VECTOR4 GetValueVector4(string property)
         {
             return material.GetVector(property).GetVector4();
         }
-        public void SetValue(string property, bool value)
+        public override void SetValue(string property, bool value)
         {
             material.SetInt(property, value ? 1 : 0);
         }
-        public void SetValue(string property, float value)
+        public override void SetValue(string property, float value)
         {
             material.SetFloat(property, value);
         }
-        public void SetValue(string property, int value)
+        public override void SetValue(string property, int value)
         {
             material.SetInt(property, value);
         }
-        public void SetValue(string property, MATRIX value)
+        public override void SetValue(string property, MATRIX value)
         {
             material.SetMatrix(property, value.GetMatrix());
         }
-        public void SetValue(string property, TEXTURE value)
+        public override void SetValue(string property, TEXTURE value)
         {
             material.SetTexture(property, value.GetTexture());
         }
-        public void SetValue(string property, VECTOR2 value)
+        public override void SetValue(string property, VECTOR2 value)
         {
             material.SetVector(property, new Vector4(value.X, value.Y, 0, 0));
         }
-        public void SetValue(string property, VECTOR3 value)
+        public override void SetValue(string property, VECTOR3 value)
         {
             material.SetVector(property, new Vector4(value.X, value.Y, value.Z, 0));
         }
-        public void SetValue(string property, VECTOR4 value)
+        public override void SetValue(string property, VECTOR4 value)
         {
             material.SetVector(property, value.GetVector4());
         }

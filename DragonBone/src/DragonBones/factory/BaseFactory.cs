@@ -293,9 +293,9 @@ namespace DragonBones
         }
 
         /// <private/>
-        protected virtual Armature _BuildChildArmature(BuildArmaturePackage dataPackage, Slot slot, DisplayData displayData)
+        protected virtual Armature _BuildChildArmature(BuildArmaturePackage dataPackage, Slot slot, ArmatureDisplayData displayData)
         {
-            return this.BuildArmature(dataPackage.data, dataPackage.texture);
+            return this.BuildArmature(displayData.path, dataPackage.data, dataPackage.texture);
         }
         /// <private/>
         protected object _GetSlotDisplay(BuildArmaturePackage dataPackage, DisplayData displayData, DisplayData rawDisplayData, Slot slot)
@@ -325,7 +325,7 @@ namespace DragonBones
                         //{
                         //    display = slot.rawDisplay;
                         //}
-                        display = slot._displayDatas[0];
+                        display = displayData;
                     }
                     break;
                 case DisplayType.Mesh:
@@ -349,13 +349,13 @@ namespace DragonBones
                         //{
                         //    display = slot.rawDisplay;
                         //}
-                        display = slot._displayDatas[0];
+                        display = displayData;
                     }
                     break;
                 case DisplayType.Armature:
                     {
                         var armatureDisplayData = displayData as ArmatureDisplayData;
-                        var childArmature = this._BuildChildArmature(dataPackage, slot, displayData);
+                        var childArmature = this._BuildChildArmature(dataPackage, slot, armatureDisplayData);
                         if (childArmature != null)
                         {
                             childArmature.inheritAnimation = armatureDisplayData.inheritAnimation;
@@ -801,7 +801,7 @@ namespace DragonBones
         /// <see cref="DragonBones.ArmatureData"/>
         /// <version>DragonBones 3.0</version>
         /// <language>zh_CN</language>
-        public virtual Armature BuildArmature(DragonBonesData dbdata, TextureAtlasData texture)
+        public virtual Armature BuildArmature(string armatureName, DragonBonesData dbdata, TextureAtlasData texture)
         {
             var dataPackage = new BuildArmaturePackage();
             //if (!this._FillBuildArmaturePackage(dataPackage, dragonBonesName, armatureName, skinName, textureAtlasName))
@@ -809,7 +809,11 @@ namespace DragonBones
             //    Helper.Assert(false, "No armature data: " + armatureName + ", " + (dragonBonesName != "" ? dragonBonesName : ""));
             //    return null;
             //}
-            var armatureData = dbdata.stage;
+            ArmatureData armatureData;
+            if (string.IsNullOrEmpty(armatureName))
+                armatureData = dbdata.stage;
+            else
+                armatureData = dbdata.armatures[armatureName];
             dataPackage.armature = armatureData;
             dataPackage.dataName = dbdata.name;
             dataPackage.data = dbdata;

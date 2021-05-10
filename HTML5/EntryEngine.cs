@@ -721,83 +721,83 @@ namespace EntryEngine.HTML5
             get { throw new NotImplementedException(); }
         }
 
-        public int PassCount
+        public override int PassCount
         {
             get { throw new NotImplementedException(); }
         }
-        public void LoadFromCode(string code)
+        public override void LoadFromCode(string code)
         {
             throw new NotImplementedException();
         }
-        public bool SetPass(int pass)
+        public override bool SetPass(int pass)
         {
             throw new NotImplementedException();
         }
-        public bool HasProperty(string name)
+        public override bool HasProperty(string name)
         {
             throw new NotImplementedException();
         }
-        public bool GetValueBoolean(string property)
+        public override bool GetValueBoolean(string property)
         {
             throw new NotImplementedException();
         }
-        public int GetValueInt32(string property)
+        public override int GetValueInt32(string property)
         {
             throw new NotImplementedException();
         }
-        public MATRIX GetValueMatrix(string property)
+        public override MATRIX GetValueMatrix(string property)
         {
             throw new NotImplementedException();
         }
-        public float GetValueSingle(string property)
+        public override float GetValueSingle(string property)
         {
             throw new NotImplementedException();
         }
-        public TEXTURE GetValueTexture(string property)
+        public override TEXTURE GetValueTexture(string property)
         {
             throw new NotImplementedException();
         }
-        public VECTOR2 GetValueVector2(string property)
+        public override VECTOR2 GetValueVector2(string property)
         {
             throw new NotImplementedException();
         }
-        public VECTOR3 GetValueVector3(string property)
+        public override VECTOR3 GetValueVector3(string property)
         {
             throw new NotImplementedException();
         }
-        public VECTOR4 GetValueVector4(string property)
+        public override VECTOR4 GetValueVector4(string property)
         {
             throw new NotImplementedException();
         }
-        public void SetValue(string property, bool value)
+        public override void SetValue(string property, bool value)
         {
             throw new NotImplementedException();
         }
-        public void SetValue(string property, float value)
+        public override void SetValue(string property, float value)
         {
             throw new NotImplementedException();
         }
-        public void SetValue(string property, int value)
+        public override void SetValue(string property, int value)
         {
             throw new NotImplementedException();
         }
-        public void SetValue(string property, MATRIX value)
+        public override void SetValue(string property, MATRIX value)
         {
             throw new NotImplementedException();
         }
-        public void SetValue(string property, TEXTURE value)
+        public override void SetValue(string property, TEXTURE value)
         {
             throw new NotImplementedException();
         }
-        public void SetValue(string property, VECTOR2 value)
+        public override void SetValue(string property, VECTOR2 value)
         {
             throw new NotImplementedException();
         }
-        public void SetValue(string property, VECTOR3 value)
+        public override void SetValue(string property, VECTOR3 value)
         {
             throw new NotImplementedException();
         }
-        public void SetValue(string property, VECTOR4 value)
+        public override void SetValue(string property, VECTOR4 value)
         {
             throw new NotImplementedException();
         }

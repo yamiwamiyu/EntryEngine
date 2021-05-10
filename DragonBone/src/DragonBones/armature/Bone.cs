@@ -125,15 +125,34 @@ namespace DragonBones
                 {
                     //global.CopyFrom(this.origin).Add(this.offset).Add(this.animationPose);
                     global.x = this.origin.x + this.offset.x + this.animationPose.x;
-                    global.y = this.origin.y + this.offset.y + this.animationPose.y;
-                    global.skew = this.origin.skew + this.offset.skew + this.animationPose.skew;
-                    global.rotation = this.origin.rotation + this.offset.rotation + this.animationPose.rotation;
                     global.scaleX = this.origin.scaleX * this.offset.scaleX * this.animationPose.scaleX;
                     global.scaleY = this.origin.scaleY * this.offset.scaleY * this.animationPose.scaleY;
+
+                    if (DragonBones.yDown)
+                    {
+                        global.y = origin.y + offset.y + animationPose.y;
+                        global.skew = origin.skew + offset.skew + animationPose.skew;
+                        global.rotation = origin.rotation + offset.rotation + animationPose.rotation;
+                    }
+                    else
+                    {
+                        global.y = origin.y - offset.y + animationPose.y;
+                        global.skew = origin.skew - offset.skew + animationPose.skew;
+                        global.rotation = origin.rotation - offset.rotation + animationPose.rotation;
+                    }
                 }
                 else
                 {
-                    global.CopyFrom(this.offset).Add(this.animationPose);
+                    global.CopyFrom(this.offset);
+
+                    if (!DragonBones.yDown)
+                    {
+                        global.y = -global.y;
+                        global.skew = -global.skew;
+                        global.rotation = -global.rotation;
+                    }
+
+                    global.Add(this.animationPose);
                 }
 
             }
@@ -152,6 +171,13 @@ namespace DragonBones
             {
                 inherit = false;
                 global.CopyFrom(this.offset);
+
+                if (!DragonBones.yDown)
+                {
+                    global.y = -global.y;
+                    global.skew = -global.skew;
+                    global.rotation = -global.rotation;
+                }
             }
 
             if (inherit)
@@ -197,14 +223,15 @@ namespace DragonBones
                         globalTransformMatrix.ty = global.y;
                     }
 
-                    if (isCache)
-                    {
-                        global.FromMatrix(globalTransformMatrix);
-                    }
-                    else
-                    {
-                        this._globalDirty = true;
-                    }
+                    //if (isCache)
+                    //{
+                    //    global.FromMatrix(globalTransformMatrix);
+                    //}
+                    //else
+                    //{
+                    //    this._globalDirty = true;
+                    //}
+                    global.FromMatrix(globalTransformMatrix);
                 }
                 else
                 {

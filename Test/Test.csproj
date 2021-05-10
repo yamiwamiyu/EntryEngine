@@ -54,6 +54,10 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\DragonBone\DragonBone.csproj">
+      <Project>{45325383-F04A-4E9D-9EC1-FAC6E151E680}</Project>
+      <Name>DragonBone</Name>
+    </ProjectReference>
     <ProjectReference Include="..\EntryEngine\EntryEngine.csproj">
       <Project>{424D14E4-1661-42E9-A192-B1C60D4669FF}</Project>
       <Name>EntryEngine</Name>

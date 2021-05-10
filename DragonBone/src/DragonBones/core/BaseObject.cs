@@ -170,21 +170,25 @@ namespace DragonBones
         /// <language>zh_CN</language>
         public static T BorrowObject<T>() where T : BaseObject, new()
         {
-            var type = typeof(T);
-            var pool = _poolsMap.ContainsKey(type) ? _poolsMap[type] : null;
-            if (pool != null && pool.Count > 0)
-            {
-                var index = pool.Count - 1;
-                var obj = pool[index];
-                pool.RemoveAt(index);
-                return (T)obj;
-            }
-            else
-            {
-                var obj = new T();
-                obj._OnClear();
-                return obj;
-            }
+            //var type = typeof(T);
+            //List<BaseObject> pool;
+            //_poolsMap.TryGetValue(type, out pool);
+            //if (pool != null && pool.Count > 0)
+            //{
+            //    var index = pool.Count - 1;
+            //    var obj = pool[index];
+            //    pool.RemoveAt(index);
+            //    return (T)obj;
+            //}
+            //else
+            //{
+            //    var obj = new T();
+            //    obj._OnClear();
+            //    return obj;
+            //}
+            var obj = new T();
+            obj._OnClear();
+            return obj;
         }
         /// <summary>
         /// - A unique identification number assigned to the object.
@@ -219,7 +223,7 @@ namespace DragonBones
         public void ReturnToPool()
         {
             _OnClear();
-            _ReturnObject(this);
+            //_ReturnObject(this);
         }
 
         // public static implicit operator bool(BaseObject exists)

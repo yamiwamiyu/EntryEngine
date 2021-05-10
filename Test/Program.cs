@@ -14,45 +14,30 @@ using System.Drawing;
 using System.Drawing.Imaging;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
+using EntryEngine.DragonBones;
 
 namespace Test
 {
     class TestScene : UIScene
     {
+        DRAGONBONES db;
         protected override IEnumerable<ICoroutine> Loading()
         {
+            this.Background = TEXTURE.Pixel;
+            db = Content.Load<DRAGONBONES>("dragonbones/牧师.dbs");
             return base.Loading();
+        }
+        protected override void InternalDraw(GRAPHICS spriteBatch, Entry e)
+        {
+            base.InternalDraw(spriteBatch, e);
+            spriteBatch.Draw(db, new VECTOR2(300, 300));
         }
     }
 
     class Program
     {
-        public int A { get; set; }
-        public int B
-        {
-            get { return 0; }
-            set
-            {
-            }
-        }
         static void Main(string[] args)
         {
-            var pp = typeof(Program).GetProperties();
-
-            SerializeSetting.DefaultSetting = new SerializeSetting()
-                {
-                    Filter = new SerializeValidatorReadonly(),
-                    Property = true,
-                };
-            string text = JsonWriter.Serialize(new
-                {
-                    key1 = "value1",
-                    key2 = 5,
-                    key3 = new VECTOR2(),
-                });
-            Console.WriteLine(text);
-            Console.ReadKey();
-
             using (XnaGate gate = new XnaGate())
             {
                 gate.OnInitialized += (e) =>
@@ -60,10 +45,11 @@ namespace Test
                     e.OnNewContentManager += (cm) =>
                     {
                         cm.AddFirstPipeline(new PipelineSpine());
+                        cm.AddFirstPipeline(new PipelineDragonBones());
                     };
 
                     e.GRAPHICS.ScreenSize = new VECTOR2(1600, 900);
-                    e.GRAPHICS.GraphicsSize = e.GRAPHICS.ScreenSize;
+                    e.GRAPHICS.GraphicsSize = new VECTOR2(900, 1600);
                     e.ShowMainScene<TestScene>();
                 };
                 gate.Run();

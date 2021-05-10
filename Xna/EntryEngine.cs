@@ -460,7 +460,7 @@ namespace EntryEngine.Xna
         }
     }
 
-	public class ShaderXna : Content, SHADER
+	public class ShaderXna : SHADER
     {
         private Effect effect;
         private bool _isInBeginEndPair;
@@ -477,7 +477,7 @@ namespace EntryEngine.Xna
         {
             get { return effect; }
         }
-        public int PassCount
+        public override int PassCount
         {
             get { return effect.CurrentTechnique.Passes.Count; }
         }
@@ -485,16 +485,14 @@ namespace EntryEngine.Xna
         {
             get { return effect.IsDisposed; }
         }
-        public void LoadFromCode(string code)
+        public override void LoadFromCode(string code)
         {
             throw new NotImplementedException();
         }
-        /// <summary>
-        /// 开关Shader
-        /// </summary>
+        /// <summary>开关Shader</summary>
         /// <param name="pass">开启：1 ~ PassCount/关闭：-pass|0</param>
         /// <returns>是否正常操作Shader</returns>
-        public bool SetPass(int pass)
+        public override bool SetPass(int pass)
         {
             if (pass == 0)
             {
@@ -523,71 +521,71 @@ namespace EntryEngine.Xna
             }
             return true;
         }
-        public bool HasProperty(string name)
+        public override bool HasProperty(string name)
         {
             return effect.Parameters[name] != null;
         }
-        public bool GetValueBoolean(string property)
+        public override bool GetValueBoolean(string property)
         {
             return effect.Parameters[property].GetValueBoolean();
         }
-        public int GetValueInt32(string property)
+        public override int GetValueInt32(string property)
         {
             return effect.Parameters[property].GetValueInt32();
         }
-        public MATRIX GetValueMatrix(string property)
+        public override MATRIX GetValueMatrix(string property)
         {
             return effect.Parameters[property].GetValueMatrix().GetMatrix();
         }
-        public float GetValueSingle(string property)
+        public override float GetValueSingle(string property)
         {
             return effect.Parameters[property].GetValueSingle();
         }
-        public TEXTURE GetValueTexture(string property)
+        public override TEXTURE GetValueTexture(string property)
         {
             return new TextureXna(effect.Parameters[property].GetValueTexture2D());
         }
-        public VECTOR2 GetValueVector2(string property)
+        public override VECTOR2 GetValueVector2(string property)
         {
             return effect.Parameters[property].GetValueVector2().GetVector2();
         }
-        public VECTOR3 GetValueVector3(string property)
+        public override VECTOR3 GetValueVector3(string property)
         {
             return effect.Parameters[property].GetValueVector3().GetVector3();
         }
-        public VECTOR4 GetValueVector4(string property)
+        public override VECTOR4 GetValueVector4(string property)
         {
             return effect.Parameters[property].GetValueVector4().GetVector4();
         }
-        public void SetValue(string property, bool value)
+        public override void SetValue(string property, bool value)
         {
             effect.Parameters[property].SetValue(value);
         }
-        public void SetValue(string property, float value)
+        public override void SetValue(string property, float value)
         {
             effect.Parameters[property].SetValue(value);
         }
-        public void SetValue(string property, int value)
+        public override void SetValue(string property, int value)
         {
             effect.Parameters[property].SetValue(value);
         }
-        public void SetValue(string property, MATRIX value)
+        public override void SetValue(string property, MATRIX value)
         {
             effect.Parameters[property].SetValue(value.GetMatrix());
         }
-        public void SetValue(string property, TEXTURE value)
+        public override void SetValue(string property, TEXTURE value)
         {
             effect.Parameters[property].SetValue(value.GetTexture());
         }
-        public void SetValue(string property, VECTOR2 value)
+        public override void SetValue(string property, VECTOR2 value)
         {
             effect.Parameters[property].SetValue(value.GetVector2());
         }
-        public void SetValue(string property, VECTOR3 value)
+        public override void SetValue(string property, VECTOR3 value)
         {
             effect.Parameters[property].SetValue(value.GetVector3());
         }
-        public void SetValue(string property, VECTOR4 value)
+        public override void SetValue(string property, VECTOR4 value)
         {
             effect.Parameters[property].SetValue(value.GetVector4());
         }
