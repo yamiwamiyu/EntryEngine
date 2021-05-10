@@ -179,11 +179,11 @@ namespace DragonBones
         {
             if (data.type == ActionType.Play)
             {
-                instance.type = EventObject.FRAME_EVENT;
+                instance.type = EEventType.FRAME_EVENT;
             }
             else
             {
-                instance.type = data.type == ActionType.Frame ? EventObject.FRAME_EVENT : EventObject.SOUND_EVENT;
+                instance.type = data.type == ActionType.Frame ? EEventType.FRAME_EVENT : EEventType.SOUND_EVENT;
             }
 
             instance.name = data.name;
@@ -225,7 +225,7 @@ namespace DragonBones
         /// </summary>
         /// <version>DragonBones 4.5</version>
         /// <language>zh_CN</language>
-        public string type;
+        public EEventType type;
         /// <summary>
         /// - The event name. (The frame event name or the frame sound name)
         /// </summary>
@@ -289,7 +289,7 @@ namespace DragonBones
         protected override void _OnClear()
         {
             this.time = 0.0f;
-            this.type = string.Empty;
+            this.type = EEventType.FRAME_EVENT;
             this.name = string.Empty;
             this.armature = null;
             this.bone = null;

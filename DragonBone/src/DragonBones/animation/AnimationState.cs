@@ -672,7 +672,7 @@ namespace DragonBones
                 // Fade start event.
                 this._subFadeState = 0;
 
-                var eventType = isFadeOut ? EventObject.FADE_OUT : EventObject.FADE_IN;
+                var eventType = isFadeOut ? EEventType.FADE_OUT : EEventType.FADE_IN;
                 if (this._armature.eventDispatcher.HasDBEventListener(eventType))
                 {
                     var eventObject = BaseObject.BorrowObject<EventObject>();
@@ -716,7 +716,7 @@ namespace DragonBones
                     this._fadeState = 0;
                 }
 
-                var eventType = isFadeOut ? EventObject.FADE_OUT_COMPLETE : EventObject.FADE_IN_COMPLETE;
+                var eventType = isFadeOut ? EEventType.FADE_OUT_COMPLETE : EEventType.FADE_IN_COMPLETE;
                 if (this._armature.eventDispatcher.HasDBEventListener(eventType))
                 {
                     var eventObject = BaseObject.BorrowObject<EventObject>();

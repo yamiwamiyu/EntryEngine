@@ -342,7 +342,7 @@ namespace DragonBones
                     {
                         // May be armature disposed before advanceTime.
                         armature.eventDispatcher.DispatchDBEvent(eventObject.type, eventObject);
-                        if (eventObject.type == EventObject.SOUND_EVENT)
+                        if (eventObject.type == EEventType.SOUND_EVENT)
                         {
                             this._eventManager.DispatchDBEvent(eventObject.type, eventObject);
                         }

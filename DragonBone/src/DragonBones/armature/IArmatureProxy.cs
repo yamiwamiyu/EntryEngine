@@ -22,6 +22,27 @@
  */
 ﻿namespace DragonBones
 {
+     public enum EEventType
+     {
+         /// <summary>动画开始播放</summary>
+         START,
+         /// <summary>动画循环播放完成一次</summary>
+         LOOP_COMPLETE,
+         /// <summary>动画播放完成</summary>
+         COMPLETE,
+         /// <summary>动画淡入开始</summary>
+         FADE_IN,
+         /// <summary>动画淡入完成</summary>
+         FADE_IN_COMPLETE,
+         /// <summary>动画淡出开始</summary>
+         FADE_OUT,
+         /// <summary>动画淡出完成</summary>
+         FADE_OUT_COMPLETE,
+         /// <summary>动画帧事件</summary>
+         FRAME_EVENT,
+         /// <summary>动画帧声音事件</summary>
+         SOUND_EVENT,
+     }
     /// <summary>
     /// - The armature proxy interface, the docking engine needs to implement it concretely.
     /// </summary>
@@ -35,66 +56,16 @@
     /// <see cref="DragonBones.Armature"/>
     /// <version>DragonBones 5.0</version>
     /// <language>zh_CN</language>
-    public interface IArmatureProxy : IEventDispatcher<EventObject>
+    public class IArmatureProxy : IEventDispatcher<EventObject>
     {
-        /// <internal/>
-        /// <private/>
-        void DBInit(Armature armature);
-        /// <internal/>
-        /// <private/>
-        void DBClear();
-        /// <internal/>
-        /// <private/>
-        void DBUpdate();
-        /// <summary>
-        /// - Dispose the instance and the Armature instance. (The Armature instance will return to the object pool)
-        /// </summary>
-        /// <example>
-        /// TypeScript style, for reference only.
-        /// <pre>
-        ///     removeChild(armatureDisplay);
-        ///     armatureDisplay.dispose();
-        /// </pre>
-        /// </example>
-        /// <version>DragonBones 4.5</version>
-        /// <language>en_US</language>
+        /// <summary>骨架信息</summary>
+        public virtual Armature Armature { get; protected set; }
+        /// <summary>动作动画</summary>
+        public virtual Animation Animation { get { return Armature.animation; } }
 
-        /// <summary>
-        /// - 释放该实例和骨架。 （骨架会回收到对象池）
-        /// </summary>
-        /// <example>
-        /// TypeScript 风格，仅供参考。
-        /// <pre>
-        ///     removeChild(armatureDisplay);
-        ///     armatureDisplay.dispose();
-        /// </pre>
-        /// </example>
-        /// <version>DragonBones 4.5</version>
-        /// <language>zh_CN</language>
-        void Dispose(bool disposeProxy);
-         /// <summary>
-         /// - The armature.
-         /// </summary>
-         /// <version>DragonBones 4.5</version>
-         /// <language>en_US</language>
-
-         /// <summary>
-         /// - 骨架。
-         /// </summary>
-         /// <version>DragonBones 4.5</version>
-         /// <language>zh_CN</language>
-         Armature armature { get; }
-         /// <summary>
-         /// - The animation player.
-         /// </summary>
-         /// <version>DragonBones 3.0</version>
-         /// <language>en_US</language>
-
-         /// <summary>
-         /// - 动画播放器。
-         /// </summary>
-         /// <version>DragonBones 3.0</version>
-         /// <language>zh_CN</language>
-         Animation animation { get; }
+        protected internal virtual void DBInit(Armature armature) { this.Armature = armature; }
+        protected internal virtual void DBClear() { }
+        protected internal virtual void DBUpdate() { }
+        protected internal virtual void Dispose(bool disposeProxy) { }
     }
 }

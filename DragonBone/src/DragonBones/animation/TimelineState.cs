@@ -54,7 +54,7 @@ namespace DragonBones
                     }
                     else
                     {
-                        var eventType = action.type == ActionType.Frame ? EventObject.FRAME_EVENT : EventObject.SOUND_EVENT;
+                        var eventType = action.type == ActionType.Frame ? EEventType.FRAME_EVENT : EEventType.SOUND_EVENT;
                         if (action.type == ActionType.Sound || eventDispatcher.HasDBEventListener(eventType))
                         {
                             var eventObject = BaseObject.BorrowObject<EventObject>();
@@ -93,10 +93,10 @@ namespace DragonBones
 
                         prevPlayTimes = this.currentPlayTimes;
 
-                        if (eventDispatcher.HasDBEventListener(EventObject.START))
+                        if (eventDispatcher.HasDBEventListener(EEventType.START))
                         {
                             var eventObject = BaseObject.BorrowObject<EventObject>();
-                            eventObject.type = EventObject.START;
+                            eventObject.type = EEventType.START;
                             eventObject.armature = this._armature;
                             eventObject.animationState = this._animationState;
                             this._armature.eventDispatcher.DispatchDBEvent(eventObject.type, eventObject);
@@ -114,20 +114,20 @@ namespace DragonBones
 
                 if (this.currentPlayTimes != prevPlayTimes)
                 {
-                    if (eventDispatcher.HasDBEventListener(EventObject.LOOP_COMPLETE))
+                    if (eventDispatcher.HasDBEventListener(EEventType.LOOP_COMPLETE))
                     {
                         loopCompleteEvent = BaseObject.BorrowObject<EventObject>();
-                        loopCompleteEvent.type = EventObject.LOOP_COMPLETE;
+                        loopCompleteEvent.type = EEventType.LOOP_COMPLETE;
                         loopCompleteEvent.armature = this._armature;
                         loopCompleteEvent.animationState = this._animationState;
                     }
 
                     if (this.playState > 0)
                     {
-                        if (eventDispatcher.HasDBEventListener(EventObject.COMPLETE))
+                        if (eventDispatcher.HasDBEventListener(EEventType.COMPLETE))
                         {
                             completeEvent = BaseObject.BorrowObject<EventObject>();
-                            completeEvent.type = EventObject.COMPLETE;
+                            completeEvent.type = EEventType.COMPLETE;
                             completeEvent.armature = this._armature;
                             completeEvent.animationState = this._animationState;
                         }

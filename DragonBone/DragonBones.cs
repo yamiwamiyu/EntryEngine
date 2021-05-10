@@ -77,8 +77,10 @@ namespace EntryEngine.DragonBones
         protected override Armature _BuildArmature(BuildArmaturePackage dataPackage)
         {
             DRAGONBONES display = new DRAGONBONES();
+            display.Proxy = new IArmatureProxy();
+
             Armature armature = new Armature();
-            armature.Init(dataPackage.armature, display, display, _dragonBonesInstance);
+            armature.Init(dataPackage.armature, display.Proxy, display, _dragonBonesInstance);
 
             display.DragonBonesData = dataPackage.data;
             display.Texture = (DBTextureAtlasData)dataPackage.texture;
@@ -93,7 +95,7 @@ namespace EntryEngine.DragonBones
     }
 
     /// <summary>龙骨骼</summary>
-    public class DRAGONBONES : TEXTURE, IArmatureProxy
+    public class DRAGONBONES : TEXTURE
     {
         private const int TL = 0;
         private const int TR = 1;
@@ -103,21 +105,26 @@ namespace EntryEngine.DragonBones
         private static TextureVertex[] vertices = new TextureVertex[128];
 
         internal DragonBonesData DragonBonesData;
-        internal Armature Armature;
         internal DBTextureAtlasData Texture;
         int updated;
 
         public override int Width
         {
-            get { return (int)Armature._armatureData.aabb.width; }
+            get { return (int)Proxy.Armature._armatureData.aabb.width; }
         }
         public override int Height
         {
-            get { return (int)Armature._armatureData.aabb.height; }
+            get { return (int)Proxy.Armature._armatureData.aabb.height; }
         }
         public override bool IsDisposed
         {
-            get { return Armature == null; }
+            get { return Proxy.Armature == null; }
+        }
+        /// <summary>龙骨信息</summary>
+        public IArmatureProxy Proxy
+        {
+            get;
+            internal set;
         }
 
         internal DRAGONBONES() { }
@@ -125,15 +132,15 @@ namespace EntryEngine.DragonBones
         public override void Update(GameTime time)
         {
             updated = GameTime.Time.FrameID;
-            if (Armature != null)
-                Armature.AdvanceTime(time.ElapsedSecond);
+            if (Proxy.Armature != null)
+                Proxy.Armature.AdvanceTime(time.ElapsedSecond);
         }
         protected override void InternalDispose()
         {
-            if (Armature != null)
+            if (Proxy != null)
             {
-                Armature.Dispose();
-                Armature = null;
+                Proxy.Armature.Dispose();
+                Proxy = null;
             }
             if (Texture != null)
             {
@@ -147,7 +154,7 @@ namespace EntryEngine.DragonBones
         }
         protected override bool Draw(GRAPHICS graphics, ref SpriteVertex vertex)
         {
-            if (Armature == null) return true;
+            if (Proxy.Armature == null) return true;
 
             if (updated != GameTime.Time.FrameID)
             {
@@ -155,7 +162,7 @@ namespace EntryEngine.DragonBones
                 Update(GameTime.Time);
             }
 
-            var slots = Armature.GetSlots();
+            var slots = Proxy.Armature.GetSlots();
             if (slots.Count == 0) return true;
 
             //armature.flipX = true;
@@ -304,7 +311,7 @@ namespace EntryEngine.DragonBones
                     else if (display is Armature)
                     {
                         var data = (Armature)display;
-                        ((DRAGONBONES)data.proxy).Draw(graphics, ref vertex);
+                        ((DRAGONBONES)data.display).Draw(graphics, ref vertex);
                     }
                     else
                         throw new NotImplementedException();
@@ -318,69 +325,11 @@ namespace EntryEngine.DragonBones
         protected override Content Cache()
         {
             var armature = PipelineDragonBones.factory.BuildArmature(null, this.DragonBonesData, this.Texture);
-            var cache = (DRAGONBONES)armature.proxy;
+            var cache = (DRAGONBONES)armature.display;
             cache._Key = this._Key;
-            cache.animation.Play();
+            cache.Proxy.Animation.Play();
             return cache;
         }
-
-        #region IArmatureProxy
-        public void DBInit(Armature armature)
-        {
-            this.Armature = armature;
-        }
-        public void DBClear()
-        {
-        }
-        public void DBUpdate()
-        {
-            //this._armature.AdvanceTime(GameTime.Time.ElapsedSecond);
-        }
-        public void Dispose(bool disposeProxy)
-        {
-        }
-        public Armature armature
-        {
-            get { return Armature; }
-        }
-        /// <summary>龙骨骼动画</summary>
-        public Animation animation
-        {
-            get { return Armature.animation; }
-        }
-        Dictionary<string, List<ListenerDelegate<EventObject>>> events = new Dictionary<string, List<ListenerDelegate<EventObject>>>();
-        public bool HasDBEventListener(string type)
-        {
-            return events.ContainsKey(type);
-        }
-        public void DispatchDBEvent(string type, EventObject eventObject)
-        {
-            List<ListenerDelegate<EventObject>> list;
-            if (!events.TryGetValue(type, out list))
-                return;
-            for (int i = 0; i < list.Count; i++)
-                list[i](type, eventObject);
-        }
-        /// <summary>添加事件</summary>
-        public void AddDBEventListener(string type, ListenerDelegate<EventObject> listener)
-        {
-            List<ListenerDelegate<EventObject>> list;
-            if (!events.TryGetValue(type, out list))
-            {
-                list = new List<ListenerDelegate<EventObject>>(4);
-                events.Add(type, list);
-            }
-            list.Add(listener);
-        }
-        public void RemoveDBEventListener(string type, ListenerDelegate<EventObject> listener)
-        {
-            List<ListenerDelegate<EventObject>> list;
-            if (events.TryGetValue(type, out list))
-            {
-                list.Remove(listener);
-            }
-        }
-        #endregion
     }
     public class PipelineDragonBones : ContentPipeline
     {
@@ -414,7 +363,7 @@ namespace EntryEngine.DragonBones
             var textureData = factory.ParseTextureAtlasData(new JsonReader(stringdata).ReadDictionary(), texture);
 
             var armature = factory.BuildArmature(null, dragonbonesData, textureData);
-            var result = (DRAGONBONES)armature.proxy;
+            var result = (DRAGONBONES)armature.display;
             return result;
         }
         protected override void LoadAsync(AsyncLoadContent async)
@@ -439,7 +388,7 @@ namespace EntryEngine.DragonBones
                         var textureData = factory.ParseTextureAtlasData(new JsonReader(stringdata).ReadDictionary(), r2);
 
                         var armature = factory.BuildArmature(null, dragonbonesData, textureData);
-                        var result = (DRAGONBONES)armature.proxy;
+                        var result = (DRAGONBONES)armature.display;
                         async.SetData(result);
                     });
                 });
