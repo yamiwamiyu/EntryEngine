@@ -513,6 +513,22 @@ namespace EntryEngine
             return true;
         }
     }
+    [ASummaryP("顺序子节点", "顺序执行子节点，不符合条件后停止", EParticleStreamType.条件)]
+    [AReflexible]public class PSOrder : ParticleStream
+    {
+        [ASummary("取反", "取反后，变成\"符合\"条件后停止")]
+        public bool Not;
+        public override bool Update(Particle p, ParticleEmitter ps, float elapsed)
+        {
+            if (Child > 0)
+            {
+                for (int i = 0; i < Child; i++)
+                    if (ps.Flow[ps._stream + i].Update(p, ps, elapsed) == Not)
+                        return false;
+            }
+            return true;
+        }
+    }
     [ASummaryP("范围：矩形", "粒子是否在矩形范围内", EParticleStreamType.条件)]
     [AReflexible]public class PSInArea : ParticleStream
     {
