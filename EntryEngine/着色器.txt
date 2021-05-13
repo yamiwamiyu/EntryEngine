@@ -1,0 +1,73 @@
+﻿// Shader分为顶点着色器和片元着色器
+// 1. 显卡渲染一次只会用到一个顶点着色器和片元着色器
+// 2. HLSL多个PASS理论上是将多个顶点着色器和片元着色器封装在了一个文件里，减少重复编码
+// 3. 切换PASS实际就是切换使用不同的顶点着色器和片元着色器
+
+// HLSL示例
+// 矩阵投影，vs输出的坐标是笛卡尔坐标，可以通过此矩阵将屏幕坐标系转换成笛卡尔坐标系
+uniform float4x4 View;
+struct VS_OUTPUT
+{
+	// POSITION语义代表变量为最终顶点在屏幕上的坐标位置
+    float4 Position   : POSITION; 
+	// 顶点颜色，在光栅化阶段进行插值后传入到ps
+    float4 Color      : COLOR0;
+	// 顶点纹理uv，在光栅化阶段进行插值后传入到ps
+    float2 UV		  : TEXCOORD0;
+};
+VS_OUTPUT vs
+	(
+		// 程序传入的顶点坐标
+		float3 Position : POSITION,
+		// 程序传入的顶点颜色
+		float4 Color : COLOR0,
+		// 程序传入的图片UV 0~1
+		float2 Coord : TEXCOORD0
+	)
+{
+	VS_OUTPUT output;
+	output.Position = mul(float4(Position, 1), View);
+	output.Color = Color;
+	output.UV = Coord;
+	return output;
+};
+// 图片
+uniform sampler Texture;
+float4 ps(float4 Color : COLOR0, float2 UV : TEXCOORD0) : COLOR
+{ 
+	// 顶点插值颜色可以实现渐变，最终输出顶点颜色与图片上颜色的叠加颜色
+	return Color * tex2D(Texture, UV);
+};
+technique Technique1
+{
+	pass Pass1
+	{
+		VertexShader = compile vs_1_1 vs();
+		PixelShader = compile ps_1_1 ps();
+	}
+}
+
+// WEBGL示例
+// 矩阵投影
+uniform mat4 view;
+// 程序传入的顶点坐标
+attribute vec3 vpos;
+// 程序传入的顶点颜色
+attribute vec4 vcolor;
+// 程序传入的图片UV 0~1
+attribute vec2 vcoord;
+// 顶点颜色，在光栅化阶段进行插值后传入到ps
+varying vec4 color;
+// 顶点纹理uv，在光栅化阶段进行插值后传入到ps
+varying vec2 coord;
+// gl_Position预设变量是输出的顶点坐标
+void main(void) { gl_Position = view * vec4(vpos, 1.0); color = vcolor; coord = vcoord; }
+
+varying vec4 color;
+varying vec2 coord;
+// 图片
+uniform sampler2D sampler;
+// gl_FragColor预设变量是输出的颜色
+void main(void) { gl_FragColor = color * texture2D(sampler, coord); }
+
+// webgl没有类似pass的东西，顶点着色器和片元着色器需要分开加载

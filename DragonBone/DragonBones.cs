@@ -83,7 +83,7 @@ namespace EntryEngine.DragonBones
             armature.Init(dataPackage.armature, display.Proxy, display, _dragonBonesInstance);
 
             display.DragonBonesData = dataPackage.data;
-            display.Texture = (DBTextureAtlasData)dataPackage.texture;
+            display.TextureData = (DBTextureAtlasData)dataPackage.texture;
             return armature;
         }
         protected override Slot _BuildSlot(BuildArmaturePackage dataPackage, SlotData slotData, Armature armature)
@@ -105,7 +105,7 @@ namespace EntryEngine.DragonBones
         private static TextureVertex[] vertices = new TextureVertex[128];
 
         internal DragonBonesData DragonBonesData;
-        internal DBTextureAtlasData Texture;
+        internal DBTextureAtlasData TextureData;
         int updated;
 
         public override int Width
@@ -126,6 +126,7 @@ namespace EntryEngine.DragonBones
             get;
             internal set;
         }
+        public TEXTURE Texture { get { return TextureData.Texture; } }
 
         internal DRAGONBONES() { }
 
@@ -142,14 +143,14 @@ namespace EntryEngine.DragonBones
                 Proxy.Armature.Dispose();
                 Proxy = null;
             }
-            if (Texture != null)
+            if (TextureData != null)
             {
-                if (Texture.Texture != null)
+                if (TextureData.Texture != null)
                 {
-                    Texture.Texture.Dispose();
-                    Texture.Texture = null;
+                    TextureData.Texture.Dispose();
+                    TextureData.Texture = null;
                 }
-                Texture = null;
+                TextureData = null;
             }
         }
         protected override bool Draw(GRAPHICS graphics, ref SpriteVertex vertex)
@@ -280,8 +281,7 @@ namespace EntryEngine.DragonBones
 
                         //graphics.DrawPrimitives(Texture.Texture, vertices, 0, 4, quadTriangles, 0, 2);
 
-
-                        graphics.BaseDraw(Texture.Texture,
+                        graphics.BaseDraw(TextureData.Texture,
                             slot.global.x,
                             slot.global.y,
                             slot.global.scaleX, slot.global.scaleY,
@@ -324,7 +324,7 @@ namespace EntryEngine.DragonBones
         }
         protected override Content Cache()
         {
-            var armature = PipelineDragonBones.factory.BuildArmature(null, this.DragonBonesData, this.Texture);
+            var armature = PipelineDragonBones.factory.BuildArmature(null, this.DragonBonesData, this.TextureData);
             var cache = (DRAGONBONES)armature.display;
             cache._Key = this._Key;
             cache.Proxy.Animation.Play();

@@ -146,14 +146,14 @@ namespace Spine
                     itemVertices[TR].Position.Z = 0;
 
                     float[] uvs = regionAttachment.UVs;
-                    itemVertices[TL].TextureCoordinate.X = uvs[RegionAttachment.ULX];
-                    itemVertices[TL].TextureCoordinate.Y = uvs[RegionAttachment.ULY];
-                    itemVertices[BL].TextureCoordinate.X = uvs[RegionAttachment.BLX];
-                    itemVertices[BL].TextureCoordinate.Y = uvs[RegionAttachment.BLY];
-                    itemVertices[BR].TextureCoordinate.X = uvs[RegionAttachment.BRX];
-                    itemVertices[BR].TextureCoordinate.Y = uvs[RegionAttachment.BRY];
-                    itemVertices[TR].TextureCoordinate.X = uvs[RegionAttachment.URX];
-                    itemVertices[TR].TextureCoordinate.Y = uvs[RegionAttachment.URY];
+                    itemVertices[TL].UV.X = uvs[RegionAttachment.ULX];
+                    itemVertices[TL].UV.Y = uvs[RegionAttachment.ULY];
+                    itemVertices[BL].UV.X = uvs[RegionAttachment.BLX];
+                    itemVertices[BL].UV.Y = uvs[RegionAttachment.BLY];
+                    itemVertices[BR].UV.X = uvs[RegionAttachment.BRX];
+                    itemVertices[BR].UV.Y = uvs[RegionAttachment.BRY];
+                    itemVertices[TR].UV.X = uvs[RegionAttachment.URX];
+                    itemVertices[TR].UV.Y = uvs[RegionAttachment.URY];
 
                     graphics.DrawPrimitives(texture, vertices, 0, 4, quadTriangles, 0, 2);
                 }
@@ -198,8 +198,8 @@ namespace Spine
                         itemVertices[ii].Position.X = _vertices[v];
                         itemVertices[ii].Position.Y = _vertices[v + 1];
                         itemVertices[ii].Position.Z = 0;
-                        itemVertices[ii].TextureCoordinate.X = uvs[v];
-                        itemVertices[ii].TextureCoordinate.Y = uvs[v + 1];
+                        itemVertices[ii].UV.X = uvs[v];
+                        itemVertices[ii].UV.Y = uvs[v + 1];
                     }
 
                     graphics.DrawPrimitives(texture, vertices, 0, vertexCount / 2, triangles, 0, triangles.Length / 3);

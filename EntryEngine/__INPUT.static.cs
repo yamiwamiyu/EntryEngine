@@ -48,6 +48,10 @@ namespace EntryEngine
         {
             get { return __instance.Mouse.Previous; }
         }
+        public static System.Collections.Generic.Dictionary<int, EntryEngine.ComboClick> MouseComboClicks
+        {
+            get { return __instance.Mouse.ComboClicks; }
+        }
         public static EntryEngine.ComboClick MouseComboClick
         {
             get { return __instance.Mouse.ComboClick; }
@@ -170,6 +174,10 @@ namespace EntryEngine
         {
             get { return __instance.Touch.Previous; }
         }
+        public static System.Collections.Generic.Dictionary<int, EntryEngine.ComboClick> TouchComboClicks
+        {
+            get { return __instance.Touch.ComboClicks; }
+        }
         public static EntryEngine.ComboClick TouchComboClick
         {
             get { return __instance.Touch.ComboClick; }
@@ -254,6 +262,10 @@ namespace EntryEngine
         public static EntryEngine.IKeyboardState KeyboardPrevious
         {
             get { return __instance.Keyboard.Previous; }
+        }
+        public static System.Collections.Generic.Dictionary<int, EntryEngine.ComboClick> KeyboardComboClicks
+        {
+            get { return __instance.Keyboard.ComboClicks; }
         }
         public static EntryEngine.ComboClick KeyboardComboClick
         {

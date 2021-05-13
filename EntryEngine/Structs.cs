@@ -6673,6 +6673,14 @@ namespace EntryEngine
             this.A = a;
         }
 		public COLOR(byte r, byte g, byte b) : this(r, g, b, byte.MaxValue) { }
+        public VECTOR4 ToFloat()
+        {
+            return new VECTOR4(
+                R * BYTE_TO_FLOAT,
+                G * BYTE_TO_FLOAT,
+                B * BYTE_TO_FLOAT,
+                A * BYTE_TO_FLOAT);
+        }
         public byte[] ToRGBA()
         {
             return new byte[] { R, G, B, A };

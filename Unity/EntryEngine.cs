@@ -1135,8 +1135,8 @@ namespace EntryEngine.Unity
             float theight = Texture == null ? 1 : _MATH.DIVIDE_BY_1[Texture.Height];
             for (int i = offset, e = offset + count; i < e; i++)
             {
-                vertices[i].TextureCoordinate.X *= twidth;
-                vertices[i].TextureCoordinate.Y = 1 - vertices[i].TextureCoordinate.Y * theight;
+                vertices[i].UV.X *= twidth;
+                vertices[i].UV.Y = 1 - vertices[i].UV.Y * theight;
 
                 // Begin时已用GL.LoadPixelMatrix代替此坐标转换
                 //if (twoD)
@@ -1180,7 +1180,7 @@ namespace EntryEngine.Unity
         private void DrawPrimitive(ref TextureVertex vertex)
         {
             GL.Color(vertex.Color.GetColor());
-            GL.TexCoord2(vertex.TextureCoordinate.X, vertex.TextureCoordinate.Y);
+            GL.TexCoord2(vertex.UV.X, vertex.UV.Y);
             GL.Vertex3(vertex.Position.X, vertex.Position.Y, vertex.Position.Z);
         }
         protected override void DrawPrimitivesEnd()

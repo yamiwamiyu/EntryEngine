@@ -32,9 +32,6 @@ namespace EntryEngine.Xna
 
         private ScreenshotData screenshot = new ScreenshotData();
         private Matrix spriteTransformMatrix;
-        private BasicEffect effect;
-        private bool current3D;
-        private bool endingBatchEnd = true;
 
         public SpriteBatch XnaBatch
         {
@@ -90,26 +87,27 @@ namespace EntryEngine.Xna
             XnaBatch = new SpriteBatch(device.GraphicsDevice);
         }
 
-        protected override void SetViewport(MATRIX2x3 view, RECT viewport)
+        protected override void SetViewport(ref MATRIX2x3 view, ref RECT graphicsViewport)
         {
-            viewport = AreaToScreen(viewport);
+            var screenViewport = AreaToScreen(graphicsViewport);
             Viewport v = new Viewport();
             v.MinDepth = 0;
             v.MaxDepth = 1;
-            v.X = (int)viewport.X;
-            v.Y = (int)viewport.Y;
-            v.Width = (int)viewport.Width;
-            v.Height = (int)viewport.Height;
+            v.X = (int)screenViewport.X;
+            v.Y = (int)screenViewport.Y;
+            v.Width = (int)screenViewport.Width;
+            v.Height = (int)screenViewport.Height;
             Device.Viewport = v;
             //Device.RenderState.ScissorTestEnable = true;
+
+            // 设置视口后不需要再偏移
+            view.M31 = 0;
+            view.M32 = 0;
+            graphicsViewport.X = 0;
+            graphicsViewport.Y = 0;
         }
         protected override void InternalBegin(bool threeD, ref MATRIX matrix, ref RECT graphics, SHADER shader)
         {
-            //if (RenderTargetCount > 1)
-                BatchEnd(false);
-
-            this.endingBatchEnd = false;
-
             if (screenshot.OnBegin != null)
             {
                 screenshot.OnBegin();
@@ -117,29 +115,17 @@ namespace EntryEngine.Xna
             }
 
             spriteTransformMatrix = matrix.GetMatrix();
-            current3D = threeD;
 
-            if (threeD)
+            if (shader != null)
             {
-                if (effect == null)
-                {
-                    effect = new BasicEffect(XnaGate.Gate.GraphicsDevice, null);
-                    effect.VertexColorEnabled = true;
-                    effect.TextureEnabled = true;
-                    //effect.EnableDefaultLighting();
-                    //effect.LightingEnabled = true;
-                    //effect.PreferPerPixelLighting = true;
-                }
-                effect.View = spriteTransformMatrix;
-                effect.Begin();
-                foreach (var pass in effect.CurrentTechnique.Passes)
-                    pass.Begin();
+                shader.Begin(this);
             }
             else
             {
                 XnaBatch.Begin(SpriteBlendMode.AlphaBlend,
-                    SpriteSortMode.Immediate, SaveStateMode.None,
-                    spriteTransformMatrix);
+                        SpriteSortMode.Immediate, SaveStateMode.None,
+                        spriteTransformMatrix);
+                Device.SetVertexShaderConstant(2, spriteTransformMatrix);
             }
 
             var renderState = XnaBatch.GraphicsDevice.RenderState;
@@ -165,46 +151,11 @@ namespace EntryEngine.Xna
         }
         protected override void Ending(GRAPHICS.RenderState render)
         {
-            BatchEnd(true);
+            if (render.Shader != null)
+                render.Shader.End(this);
+            else
+                XnaBatch.End();
         }
-        private void BatchEnd(bool endingBatchEnd)
-        {
-            if (endingBatchEnd || !this.endingBatchEnd)
-            {
-                if (current3D)
-                {
-                    foreach (var pass in effect.CurrentTechnique.Passes)
-                        pass.End();
-                    effect.End();
-                }
-                else
-                {
-                    XnaBatch.End();
-                }
-            }
-
-            this.endingBatchEnd = endingBatchEnd;
-        }
-        //public override void BeginShader(IShader shader)
-        //{
-        //    if (shader != null)
-        //    {
-        //        base.BeginShader(shader);
-        //        for (int i = 1; i <= shader.PassCount; i++)
-        //        {
-        //            shader.SetPass(i);
-        //        }
-        //    }
-        //}
-        //public override void EndShader()
-        //{
-        //    IShader shader = CurrentShader;
-        //    if (shader != null)
-        //    {
-        //        shader.SetPass(0);
-        //        base.EndShader();
-        //    }
-        //}
         public override TEXTURE Screenshot(RECT graphics)
         {
             // Flush the last draw by SpriteSortMode.Immediate 
@@ -305,55 +256,32 @@ namespace EntryEngine.Xna
             }
             return null;
         }
-        //protected override void InternalDraw(TEXTURE texture, ref SpriteVertex vertex)
-        //{
-        //    XnaBatch.Draw(texture.GetTexture(),
-        //        vertex.Destination.GetRect(),
-        //        vertex.Source.GetRect(),
-        //        vertex.Color.GetColor(),
-        //        vertex.Rotation,
-        //        vertex.Origin.GetVector2(),
-        //        GetFlipEffect(vertex.Flip), 0);
-        //}
-        //private SpriteEffects GetFlipEffect(EFlip flip)
-        //{
-        //    if (flip == EFlip.FlipVertically)
-        //        return SpriteEffects.FlipVertically;
-        //    else if (flip == (EFlip.FlipHorizontally | EFlip.FlipVertically))
-        //        return SpriteEffects.FlipVertically | SpriteEffects.FlipHorizontally;
-        //    else
-        //        return (SpriteEffects)flip;
-        //}
-        protected override void DrawPrimitivesBegin(TEXTURE texture, EPrimitiveType ptype)
+        protected override void InternalDrawPrimitivesBegin(TEXTURE texture, EPrimitiveType ptype, int textureIndex)
         {
             if (texture == null)
+            {
+                Device.Textures[textureIndex] = null;
                 return;
+            }
             var t2d = texture.GetTexture();
-            Device.SetVertexShaderConstant(1, new Vector4((float)t2d.Width, (float)t2d.Height, 0f, 0f));
-            if (current3D)
+            if (CurrentRenderState.Shader == null)
             {
-                effect.Texture = t2d;
+                // UV设置0~1
+                if (UVNormalize)
+                    Device.SetVertexShaderConstant(1, new Vector4(1, 1, 0f, 0f));
+                else
+                    Device.SetVertexShaderConstant(1, new Vector4(texture.Width, texture.Height, 0f, 0f));
             }
-            else
-            {
-                Device.Textures[0] = t2d;
-                Device.SetVertexShaderConstant(2, spriteTransformMatrix);
-            }
+            Device.Textures[textureIndex] = t2d;
         }
-        protected override void DrawPrimitives(EPrimitiveType ptype, TextureVertex[] vertices, int offset, int count, short[] indexes, int indexOffset, int primitiveCount)
+        public override void DrawPrimitives(EPrimitiveType ptype, TextureVertex[] vertices, int offset, int count, short[] indexes, int indexOffset, int primitiveCount)
         {
             PrimitiveType resultType = ptype == EPrimitiveType.Point ? PrimitiveType.PointList :
                 (ptype == EPrimitiveType.Line) ? PrimitiveType.LineList : PrimitiveType.TriangleList;
+            if (primitiveCount <= 0)
+                primitiveCount = GetPrimitiveCount(ptype, count);
             Device.DrawUserIndexedPrimitives(resultType, vertices, offset, count, indexes, indexOffset, primitiveCount);
         }
-        //protected override void OutputVertex(ref TextureVertex output)
-        //{
-        //    // Xna3.1的颜色是BGRA
-        //    byte r = output.Color.R;
-        //    byte b = output.Color.B;
-        //    output.Color.R = b;
-        //    output.Color.B = r;
-        //}
     }
 	public class TextureXna : TEXTURE
     {
@@ -463,7 +391,6 @@ namespace EntryEngine.Xna
 	public class ShaderXna : SHADER
     {
         private Effect effect;
-        private bool _isInBeginEndPair;
 
         public ShaderXna()
         {
@@ -485,110 +412,11 @@ namespace EntryEngine.Xna
         {
             get { return effect.IsDisposed; }
         }
-        public override void LoadFromCode(string code)
-        {
-            throw new NotImplementedException();
-        }
-        /// <summary>开关Shader</summary>
-        /// <param name="pass">开启：1 ~ PassCount/关闭：-pass|0</param>
-        /// <returns>是否正常操作Shader</returns>
-        public override bool SetPass(int pass)
-        {
-            if (pass == 0)
-            {
-                if (_isInBeginEndPair)
-                {
-                    foreach (EffectPass e in effect.CurrentTechnique.Passes)
-                        e.End();
-                    effect.End();
-                    _isInBeginEndPair = false;
-                }
-            }
-            else if (pass < 0)
-            {
-                pass--;
-                effect.CurrentTechnique.Passes[-pass].End();
-            }
-            else
-            {
-                if (!_isInBeginEndPair)
-                {
-                    effect.Begin();
-                    _isInBeginEndPair = true;
-                }
-                pass--;
-                effect.CurrentTechnique.Passes[pass].Begin();
-            }
-            return true;
-        }
         public override bool HasProperty(string name)
         {
             return effect.Parameters[name] != null;
         }
-        public override bool GetValueBoolean(string property)
-        {
-            return effect.Parameters[property].GetValueBoolean();
-        }
-        public override int GetValueInt32(string property)
-        {
-            return effect.Parameters[property].GetValueInt32();
-        }
-        public override MATRIX GetValueMatrix(string property)
-        {
-            return effect.Parameters[property].GetValueMatrix().GetMatrix();
-        }
-        public override float GetValueSingle(string property)
-        {
-            return effect.Parameters[property].GetValueSingle();
-        }
-        public override TEXTURE GetValueTexture(string property)
-        {
-            return new TextureXna(effect.Parameters[property].GetValueTexture2D());
-        }
-        public override VECTOR2 GetValueVector2(string property)
-        {
-            return effect.Parameters[property].GetValueVector2().GetVector2();
-        }
-        public override VECTOR3 GetValueVector3(string property)
-        {
-            return effect.Parameters[property].GetValueVector3().GetVector3();
-        }
-        public override VECTOR4 GetValueVector4(string property)
-        {
-            return effect.Parameters[property].GetValueVector4().GetVector4();
-        }
-        public override void SetValue(string property, bool value)
-        {
-            effect.Parameters[property].SetValue(value);
-        }
-        public override void SetValue(string property, float value)
-        {
-            effect.Parameters[property].SetValue(value);
-        }
-        public override void SetValue(string property, int value)
-        {
-            effect.Parameters[property].SetValue(value);
-        }
-        public override void SetValue(string property, MATRIX value)
-        {
-            effect.Parameters[property].SetValue(value.GetMatrix());
-        }
-        public override void SetValue(string property, TEXTURE value)
-        {
-            effect.Parameters[property].SetValue(value.GetTexture());
-        }
-        public override void SetValue(string property, VECTOR2 value)
-        {
-            effect.Parameters[property].SetValue(value.GetVector2());
-        }
-        public override void SetValue(string property, VECTOR3 value)
-        {
-            effect.Parameters[property].SetValue(value.GetVector3());
-        }
-        public override void SetValue(string property, VECTOR4 value)
-        {
-            effect.Parameters[property].SetValue(value.GetVector4());
-        }
+
 		protected override void InternalDispose()
 		{
 			if (effect != null)
@@ -601,26 +429,125 @@ namespace EntryEngine.Xna
 		{
 			return new ShaderXna(effect.Clone(effect.GraphicsDevice));
 		}
-	}
-    public class PipelineShaderXna : ContentPipelineBinary
+
+        protected override void InternalBegin(GRAPHICS g)
+        {
+            effect.Begin();
+            effect.CurrentTechnique.Passes[CurrentPass].Begin();
+        }
+        protected override void InternalEnd(GRAPHICS g)
+        {
+            effect.CurrentTechnique.Passes[CurrentPass].End();
+            effect.End();
+        }
+
+        public override void SetValue(string property, bool value)
+        {
+            effect.Parameters[property].SetValue(value);
+        }
+        public override void SetValue(string property, bool[] value)
+        {
+            effect.Parameters[property].SetValue(value);
+        }
+        public override void SetValue(string property, float value)
+        {
+            effect.Parameters[property].SetValue(value);
+        }
+        public override void SetValue(string property, float[] value)
+        {
+            effect.Parameters[property].SetValue(value);
+        }
+        public override void SetValue(string property, int value)
+        {
+            effect.Parameters[property].SetValue(value);
+        }
+        public override void SetValue(string property, int[] value)
+        {
+            effect.Parameters[property].SetValue(value);
+        }
+        public override void SetValue(string property, MATRIX value)
+        {
+            effect.Parameters[property].SetValue(value.GetMatrix());
+        }
+        public override void SetValue(string property, MATRIX[] value)
+        {
+            Matrix[] result = new Matrix[value.Length];
+            for (int i = 0; i < result.Length; i++)
+                result[i] = value[i].GetMatrix();
+            effect.Parameters[property].SetValue(result);
+        }
+        public override void SetValue(string property, TEXTURE value)
+        {
+            effect.Parameters[property].SetValue(value.GetTexture());
+        }
+        public override void SetValue(string property, VECTOR2 value)
+        {
+            effect.Parameters[property].SetValue(value.GetVector2());
+        }
+        public override void SetValue(string property, VECTOR2[] value)
+        {
+            Vector2[] result = new Vector2[value.Length];
+            for (int i = 0; i < result.Length; i++)
+                result[i] = value[i].GetVector2();
+            effect.Parameters[property].SetValue(result);
+        }
+        public override void SetValue(string property, VECTOR3 value)
+        {
+            effect.Parameters[property].SetValue(value.GetVector3());
+        }
+        public override void SetValue(string property, VECTOR3[] value)
+        {
+            Vector3[] result = new Vector3[value.Length];
+            for (int i = 0; i < result.Length; i++)
+                result[i] = value[i].GetVector3();
+            effect.Parameters[property].SetValue(result);
+        }
+        public override void SetValue(string property, VECTOR4 value)
+        {
+            effect.Parameters[property].SetValue(value.GetVector4());
+        }
+        public override void SetValue(string property, VECTOR4[] value)
+        {
+            Vector4[] result = new Vector4[value.Length];
+            for (int i = 0; i < result.Length; i++)
+                result[i] = value[i].GetVector4();
+            effect.Parameters[property].SetValue(result);
+        }
+
+        protected override Content Cache()
+        {
+            ShaderXna copy = new ShaderXna(effect);
+            copy._Key = this._Key;
+            return copy;
+        }
+    }
+    public class PipelineShaderXna : PipelineShader
     {
-        private const string SUFFIX = "effect";
-        public override IEnumerable<string> SuffixProcessable
+        ///// <summary>VS语法版本</summary>
+        //public static ShaderProfile VS = ShaderProfile.VS_2_0;
+        ///// <summary>PS语法版本</summary>
+        //public static ShaderProfile PS = ShaderProfile.PS_2_0;
+        public override Content LoadFromText(string text)
         {
-            get { yield return SUFFIX; }
-        }
-        public override Content LoadFromBytes(byte[] buffer)
-        {
-            return new ShaderXna(new Effect(XnaGate.Gate.GraphicsDevice, buffer, CompilerOptions.None, null));
-        }
-        public byte[] ReadFile(string file)
-        {
-            CompiledEffect effect = Effect.CompileEffectFromFile(file, null, null, CompilerOptions.None, TargetPlatform.Windows);
+            var effect = Effect.CompileEffectFromSource(text, new CompilerMacro[0], null, CompilerOptions.None, TargetPlatform.Windows);
+
+            //var compile = ShaderCompiler.CompileFromSource(text,
+            //    null, null, CompilerOptions.None,
+            //    "vs", VS, TargetPlatform.Windows);
+            //byte[] code = compile.GetShaderCode();
+            //var vs = new VertexShader(XnaGate.Gate.GraphicsDevice, code);
+
+            //compile = ShaderCompiler.CompileFromSource(text,
+            //    null, null, CompilerOptions.None,
+            //    "ps", PS, TargetPlatform.Windows);
+            //code = compile.GetShaderCode();
+            //var ps = new PixelShader(XnaGate.Gate.GraphicsDevice, code);
             if (!effect.Success)
             {
                 throw new Exception(effect.ErrorsAndWarnings);
             }
-            return effect.GetEffectCode();
+
+            return new ShaderXna(new Effect(XnaGate.Gate.GraphicsDevice, effect.GetEffectCode(), CompilerOptions.None, null));
         }
     }
 
@@ -1520,6 +1447,7 @@ namespace EntryEngine.Xna
             content.AddPipeline(new PipelinePatch());
             content.AddPipeline(new PipelineFontStatic());
             content.AddPipeline(new PipelineTextureXna());
+            content.AddPipeline(new PipelineShaderXna());
 #if CLIENT
             content.AddPipeline(new PipelineSoundFmod());
 #endif

@@ -7,12 +7,8 @@ namespace EntryEngine
 {
     static partial class _LOG
     {
-#if !DEBUG
         public static Logger _Logger = new EntryEngine._LOG.LoggerEmpty();
-#else
-        public static Logger _Logger = new LoggerConsole();
-#endif
-
+        
         public static void Append(string value, params object[] param)
         {
             #if EntryBuilder

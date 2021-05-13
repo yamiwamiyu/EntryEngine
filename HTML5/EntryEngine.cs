@@ -712,103 +712,114 @@ namespace EntryEngine.HTML5
     }
     public class ShaderJSGL : SHADER
     {
-        public static ShaderJSGL DefaultVertexShader
-        {
-            get { throw new NotImplementedException(); }
-        }
-        public static ShaderJSGL DefaultPixelShader
-        {
-            get { throw new NotImplementedException(); }
-        }
-
         public override int PassCount
         {
             get { throw new NotImplementedException(); }
         }
-        public override void LoadFromCode(string code)
+
+        protected override void InternalBegin(GRAPHICS g)
         {
             throw new NotImplementedException();
         }
-        public override bool SetPass(int pass)
+
+        protected override void InternalEnd(GRAPHICS g)
         {
             throw new NotImplementedException();
         }
+
         public override bool HasProperty(string name)
         {
             throw new NotImplementedException();
         }
-        public override bool GetValueBoolean(string property)
-        {
-            throw new NotImplementedException();
-        }
-        public override int GetValueInt32(string property)
-        {
-            throw new NotImplementedException();
-        }
-        public override MATRIX GetValueMatrix(string property)
-        {
-            throw new NotImplementedException();
-        }
-        public override float GetValueSingle(string property)
-        {
-            throw new NotImplementedException();
-        }
-        public override TEXTURE GetValueTexture(string property)
-        {
-            throw new NotImplementedException();
-        }
-        public override VECTOR2 GetValueVector2(string property)
-        {
-            throw new NotImplementedException();
-        }
-        public override VECTOR3 GetValueVector3(string property)
-        {
-            throw new NotImplementedException();
-        }
-        public override VECTOR4 GetValueVector4(string property)
-        {
-            throw new NotImplementedException();
-        }
+
         public override void SetValue(string property, bool value)
         {
             throw new NotImplementedException();
         }
+
+        public override void SetValue(string property, bool[] value)
+        {
+            throw new NotImplementedException();
+        }
+
         public override void SetValue(string property, float value)
         {
             throw new NotImplementedException();
         }
+
+        public override void SetValue(string property, float[] value)
+        {
+            throw new NotImplementedException();
+        }
+
         public override void SetValue(string property, int value)
         {
             throw new NotImplementedException();
         }
+
+        public override void SetValue(string property, int[] value)
+        {
+            throw new NotImplementedException();
+        }
+
         public override void SetValue(string property, MATRIX value)
         {
             throw new NotImplementedException();
         }
+
+        public override void SetValue(string property, MATRIX[] value)
+        {
+            throw new NotImplementedException();
+        }
+
         public override void SetValue(string property, TEXTURE value)
         {
             throw new NotImplementedException();
         }
+
         public override void SetValue(string property, VECTOR2 value)
         {
             throw new NotImplementedException();
         }
+
+        public override void SetValue(string property, VECTOR2[] value)
+        {
+            throw new NotImplementedException();
+        }
+
         public override void SetValue(string property, VECTOR3 value)
         {
             throw new NotImplementedException();
         }
+
+        public override void SetValue(string property, VECTOR3[] value)
+        {
+            throw new NotImplementedException();
+        }
+
         public override void SetValue(string property, VECTOR4 value)
         {
             throw new NotImplementedException();
         }
-    }
-    public class PipelineShaderJSGL : ContentPipelineBinary
-    {
-        public override IEnumerable<string> SuffixProcessable
+
+        public override void SetValue(string property, VECTOR4[] value)
         {
-            get { return null; }
+            throw new NotImplementedException();
         }
-        public override Content LoadFromBytes(byte[] bytes)
+
+        public override bool IsDisposed
+        {
+            get { throw new NotImplementedException(); }
+        }
+
+        protected override void InternalDispose()
+        {
+            throw new NotImplementedException();
+        }
+    }
+    public class PipelineShaderJSGL : PipelineShader
+    {
+        public override Content LoadFromText(string text)
         {
             throw new NotImplementedException();
         }
@@ -877,6 +888,7 @@ namespace EntryEngine.HTML5
         private static WebGLBuffer indicesBuffer;
         private static short[] indicesBufferArray;
         static int[] PrimitiveTypes;
+        //private static int[] textureIndices;
 
         public static WebGLTexture CreateGLTexture(Image image)
         {
@@ -948,11 +960,15 @@ namespace EntryEngine.HTML5
         }
         internal GraphicsWebGL(WebGLRenderingContext context)
         {
-            //XCornerOffsets = new float[] {  };
-            //YCornerOffsets = new float[] {  };
-
             GraphicsWebGL.gl = context;
             PrimitiveTypes = new int[] { context.POINTS, context.LINES, context.TRIANGLES };
+            //textureIndices = new int[]
+            //{
+            //    gl.TEXTURE0,
+            //    gl.TEXTURE1,
+            //    gl.TEXTURE2,
+            //    gl.TEXTURE3,
+            //};
             /*
              * [Pixel Shader]
              * precision mediump float;
@@ -1030,7 +1046,7 @@ namespace EntryEngine.HTML5
             // 7-9个float是uv
             context.vertexAttribPointer(vcoord, 2, context.FLOAT, false, 36, 28);            
         }
-        protected override void SetViewport(MATRIX2x3 view, RECT viewport)
+        protected override void SetViewport(ref MATRIX2x3 view, ref RECT viewport)
         {
             // 固定画布尺寸撑满屏幕
             VECTOR2 gsize = GraphicsSize;
@@ -1066,31 +1082,11 @@ namespace EntryEngine.HTML5
             rect.Y -= graphicsToScreen.M32;
             // 左下角0,0 单位像素
             gl.scissor((int)rect.X, gl.canvas.height - (int)(rect.Y + rect.Height), (int)rect.Width, (int)rect.Height);
-            if (threeD)
-            {
-                vertexShaderMatrixArray[0] = matrix.M11;
-                vertexShaderMatrixArray[1] = matrix.M12;
-                vertexShaderMatrixArray[2] = matrix.M13;
-                vertexShaderMatrixArray[3] = matrix.M14;
-                vertexShaderMatrixArray[4] = matrix.M21;
-                vertexShaderMatrixArray[5] = matrix.M22;
-                vertexShaderMatrixArray[6] = matrix.M23;
-                vertexShaderMatrixArray[7] = matrix.M24;
-                vertexShaderMatrixArray[8] = matrix.M31;
-                vertexShaderMatrixArray[9] = matrix.M32;
-                vertexShaderMatrixArray[10] = matrix.M33;
-                vertexShaderMatrixArray[11] = matrix.M34;
-                vertexShaderMatrixArray[12] = matrix.M41;
-                vertexShaderMatrixArray[13] = matrix.M42;
-                vertexShaderMatrixArray[14] = matrix.M43;
-                vertexShaderMatrixArray[15] = matrix.M44;
 
-                gl.uniformMatrix4fv(vertexShaderMatrix, false, vertexShaderMatrixArray);
+            if (shader == null)
+            {
                 // todo: 大范围使用3D时，不清楚遮挡关系会如何；目前开启深度测试相同深度的对象覆盖关系将发生变化
                 //gl.enable(gl.DEPTH_TEST);
-            }
-            else
-            {
                 var gsize = GraphicsSize;
                 MATRIX2x3 view =
                     // 1280, 720
@@ -1120,8 +1116,12 @@ namespace EntryEngine.HTML5
 
                 gl.uniformMatrix4fv(vertexShaderMatrix, false, vertexShaderMatrixArray);
             }
+            else
+            {
+                shader.Begin(this);
+            }
         }
-        protected override void DrawPrimitivesBegin(TEXTURE texture, EPrimitiveType ptype)
+        protected override void InternalDrawPrimitivesBegin(TEXTURE texture, EPrimitiveType ptype, int textureIndex)
         {
             //var tex = _HTML5.GetTextureGL(texture);
             var tex = ((TextureJS)TEXTURE.GetDrawableTexture(texture)).Texture;
@@ -1130,13 +1130,13 @@ namespace EntryEngine.HTML5
                 _LOG.Debug("DrawPrimitivesBegin Texture: null");
                 return;
             }
-
-            //canvas.activeTexture(canvas.TEXTURE0);
+            
             gl.bindTexture(gl.TEXTURE_2D, tex);
+            //gl.activeTexture(textureIndices[textureIndex]);
 
             //HTML5Gate.TestTime++;
         }
-        protected override void DrawPrimitives(EPrimitiveType ptype, TextureVertex[] vertices, int offset, int count, short[] indexes, int indexOffset, int primitiveCount)
+        public override void DrawPrimitives(EPrimitiveType ptype, TextureVertex[] vertices, int offset, int count, short[] indexes, int indexOffset, int primitiveCount)
         {
             if (indexOffset != 0)
                 throw new NotImplementedException();
@@ -1159,20 +1159,6 @@ namespace EntryEngine.HTML5
                 arrayBuffer = new Float32Array(capcity);
             }
 
-            float twidth = Texture == null ? 1 : _MATH.DIVIDE_BY_1[Texture.Width];
-            float theight = Texture == null ? 1 : _MATH.DIVIDE_BY_1[Texture.Height];
-            for (int i = offset, n = offset + count; i < n; i++)
-            {
-                // 使用左上坐标系计算好坐标再转换成左下角坐标
-                // WebGL的原点在画布中央
-                //float x = vertices[i].Position.X;
-                //float y = vertices[i].Position.Y;
-                //vertices[i].Position.X = ((x * modelview.M11 + y * modelview.M21 + modelview.M31) * _gs.X - 0.5f) * 2;
-                //vertices[i].Position.Y = (0.5f - (x * modelview.M12 + y * modelview.M22 + modelview.M32) * _gs.Y) * 2;
-
-                vertices[i].TextureCoordinate.X *= twidth;
-                vertices[i].TextureCoordinate.Y *= theight;
-            }
             for (int i = offset, n = offset + count; i < n; i++)
             {
                 int _offset = i * 9;
@@ -1183,8 +1169,8 @@ namespace EntryEngine.HTML5
                 arrayBuffer[_offset + 4] = vertices[i].Color.G * COLOR.BYTE_TO_FLOAT;
                 arrayBuffer[_offset + 5] = vertices[i].Color.B * COLOR.BYTE_TO_FLOAT;
                 arrayBuffer[_offset + 6] = vertices[i].Color.A * COLOR.BYTE_TO_FLOAT;
-                arrayBuffer[_offset + 7] = vertices[i].TextureCoordinate.X;
-                arrayBuffer[_offset + 8] = vertices[i].TextureCoordinate.Y;
+                arrayBuffer[_offset + 7] = vertices[i].UV.X;
+                arrayBuffer[_offset + 8] = vertices[i].UV.Y;
             }
             gl.bufferData(gl.ARRAY_BUFFER, arrayBuffer.subarray(offset, offset + count * 9), gl.STREAM_DRAW);
 
@@ -1202,8 +1188,13 @@ namespace EntryEngine.HTML5
         //{
         //    gl.flush();
         //}
+        protected override void Ending(GRAPHICS.RenderState render)
+        {
+            if (render.Shader != null)
+                render.Shader.End(this);
+        }
     }
-    public class GraphicsCanvas : GRAPHICS
+    public class GraphicsCanvas
     {
         internal static GraphicsCanvas TextGraphics;
 
@@ -1243,38 +1234,9 @@ namespace EntryEngine.HTML5
         }
 
         internal CanvasRenderingContext2D ctx;
-        public override bool IsFullScreen { get { return false; } set { } }
-        protected override VECTOR2 InternalScreenSize
-        {
-            get { return new VECTOR2(ctx.canvas.width, ctx.canvas.height); }
-            set
-            {
-                ctx.canvas.width = (int)value.X;
-                ctx.canvas.height = (int)value.Y;
-            }
-        }
         internal GraphicsCanvas(CanvasRenderingContext2D context)
         {
             ctx = context;
-        }
-        protected override void SetViewport(MATRIX2x3 view, RECT viewport)
-        {
-        }
-        protected override void InternalBegin(bool threeD, ref MATRIX matrix, ref RECT graphics, SHADER shader)
-        {
-            throw new NotImplementedException();
-        }
-        protected override void InternalDraw(TEXTURE texture, ref SpriteVertex vertex, ref BoundingBox box)
-        {
-            base.InternalDraw(texture, ref vertex, ref box);
-        }
-        protected override void DrawPrimitives(EPrimitiveType ptype, TextureVertex[] vertices, int offset, int count, short[] indexes, int indexOffset, int primitiveCount)
-        {
-            throw new NotImplementedException();
-        }
-        protected override void DrawPrimitivesBegin(TEXTURE texture, EPrimitiveType ptype)
-        {
-            throw new NotImplementedException();
         }
     }
 
@@ -1369,9 +1331,9 @@ namespace EntryEngine.HTML5
                 GRAPHICS = new GraphicsWebGL((WebGLRenderingContext)graphics);
             else
             {
-                _LOG.Warning("渲染模式为Canvas而非WebGL");
-                graphics = canvas.getContext("2d");
-                GRAPHICS = new GraphicsCanvas((CanvasRenderingContext2D)graphics);
+                throw new NotImplementedException("您的浏览器不支持webgl");
+                //graphics = canvas.getContext("2d");
+                //GRAPHICS = new GraphicsCanvas((CanvasRenderingContext2D)graphics);
             }
             // 保留2d-context用于绘制文字，获取图片颜色数据等，此canvas不能和gl的一样，否则getContext会返回null
             //canvas = (HTMLCanvasElement)window.document.getElementById("CANVAS");

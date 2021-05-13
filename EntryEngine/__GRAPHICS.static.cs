@@ -28,6 +28,11 @@ namespace EntryEngine
             get { return __instance.Culling; }
             set { __instance.Culling = value; }
         }
+        public static bool UVNormalize
+        {
+            get { return __instance.UVNormalize; }
+            set { __instance.UVNormalize = value; }
+        }
         public static EntryEngine.EViewport ViewportMode
         {
             get { return __instance.ViewportMode; }
@@ -79,6 +84,14 @@ namespace EntryEngine
         public static EntryEngine.RECT CurrentGraphics
         {
             get { return __instance.CurrentGraphics; }
+        }
+        public static EntryEngine.MATRIX2x3 CurrentCartesianTransform
+        {
+            get { return __instance.CurrentCartesianTransform; }
+        }
+        public static EntryEngine.MATRIX2x3 GraphicsToCartesianMatrix()
+        {
+            return __instance.GraphicsToCartesianMatrix();
         }
         public static EntryEngine.VECTOR2 PointToGraphics(EntryEngine.VECTOR2 point)
         {
@@ -276,13 +289,33 @@ namespace EntryEngine
         {
             __instance.Draw(font, text, bound, color, alignment, scale);
         }
-        public static void DrawPrimitives(EntryEngine.TEXTURE texture, EntryEngine.TextureVertex[] vertices, int offset, int count, short[] indexes, int indexOffset, int primitiveCount)
+        public static EntryEngine.TextureVertex[] GetVertexBuffer()
         {
-            __instance.DrawPrimitives(texture, vertices, offset, count, indexes, indexOffset, primitiveCount);
+            return __instance.GetVertexBuffer();
+        }
+        public static EntryEngine.TextureVertex[] ResizeVertexBuffer(int newSize)
+        {
+            return __instance.ResizeVertexBuffer(newSize);
+        }
+        public static void InputVertexToOutputVertex(ref EntryEngine.SpriteVertex vertex, int outputIndex)
+        {
+            __instance.InputVertexToOutputVertex(ref vertex, outputIndex);
         }
         public static void DrawPrimitives(EntryEngine.TEXTURE texture, EntryEngine.EPrimitiveType ptype, EntryEngine.TextureVertex[] vertices, int offset, int count, short[] indexes, int indexOffset, int primitiveCount)
         {
             __instance.DrawPrimitives(texture, ptype, vertices, offset, count, indexes, indexOffset, primitiveCount);
+        }
+        public static void DrawPrimitives(EntryEngine.EPrimitiveType ptype, EntryEngine.TextureVertex[] vertices, int offset, int count, short[] indexes, int indexOffset, int primitiveCount)
+        {
+            __instance.DrawPrimitives(ptype, vertices, offset, count, indexes, indexOffset, primitiveCount);
+        }
+        public static void DrawPrimitivesBegin(EntryEngine.TEXTURE texture, EntryEngine.EPrimitiveType ptype, int textureIndex)
+        {
+            __instance.DrawPrimitivesBegin(texture, ptype, textureIndex);
+        }
+        public static void DrawPrimitivesEnd()
+        {
+            __instance.DrawPrimitivesEnd();
         }
     }
 }

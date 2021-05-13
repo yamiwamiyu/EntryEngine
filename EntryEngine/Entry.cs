@@ -2963,13 +2963,18 @@ namespace EntryEngine
     }
     public abstract class ContentPipelineBinary : ContentPipeline
     {
+        /// <summary>更换处理文件后缀名</summary>
+        protected virtual string ReplaceFileSuffix(string file)
+        {
+            return file;
+        }
         protected internal sealed override Content Load(string file)
         {
-            return LoadFromBytes(Manager.IODevice.ReadByte(file));
+            return LoadFromBytes(Manager.IODevice.ReadByte(ReplaceFileSuffix(file)));
         }
         protected internal sealed override void LoadAsync(AsyncLoadContent async)
         {
-            var read = Manager.IODevice.ReadAsync(async.File);
+            var read = Manager.IODevice.ReadAsync(ReplaceFileSuffix(async.File));
             if (read.IsEnd)
             {
                 async.SetData(LoadFromBytes(read.Data));
@@ -2989,9 +2994,9 @@ namespace EntryEngine
     {
         public sealed override Content LoadFromBytes(byte[] bytes)
         {
-            return InternalLoad(Manager.IODevice.ReadPreambleText(bytes));
+            return LoadFromText(Manager.IODevice.ReadPreambleText(bytes));
         }
-        protected abstract Content InternalLoad(string text);
+        public abstract Content LoadFromText(string text);
     }
 
     /*
@@ -7406,65 +7411,102 @@ namespace EntryEngine
     }
 
 
-    [Code(ECode.LessUseful | ECode.MayBeReform)]
+    /// <summary>顶点着色器和片元着色器，顶点着色器参数仅支持TextureVertex类型声明的参数
+    /// <para>1. 显卡渲染一次只会用到一个顶点着色器和片元着色器</para>
+    /// <para>2. HLSL多个PASS理论上是将多个顶点着色器和片元着色器封装在了一个文件里，减少重复编码</para>
+    /// <para>3. 切换PASS实际就是切换使用不同的顶点着色器和片元着色器</para>
+    /// 
+    /// <para>调用GRAPHICS.Begin使用自定义SHADER时，默认坐标系是数学坐标系(屏幕中心点0,0，顺时针，最右1，最上1，最左-1，最下-1)</para>
+    /// <para>参照GRAPHICS.GraphicsToCartesianMatrix</para>
+    /// </summary>
     public abstract class SHADER : Content
     {
+        public static string DefaultShaderText;
+        private static SHADER defaultShader;
+        public static SHADER DefaultShader
+        {
+            get
+            {
+                if (defaultShader != null)
+                    return defaultShader;
+                if (!string.IsNullOrEmpty(DefaultShaderText))
+                {
+                    foreach (var item in Entry._ContentManager.ContentPipelines)
+                        if (item is PipelineShader)
+                        {
+                            defaultShader = (SHADER)((PipelineShader)item).LoadFromText(DefaultShaderText);
+                            break;
+                        }
+                    if (defaultShader == null)
+                        DefaultShaderText = null;
+                }
+                return defaultShader;
+            }
+        }
+
+        /// <summary>效果开启前调用</summary>
+        public Action<GRAPHICS> OnBegin;
+        /// <summary>渲染绑定图片时</summary>
+        public Action<TEXTURE> OnTexture;
+        /// <summary>效果结束后调用</summary>
+        public Action<GRAPHICS> OnEnd;
+        private int currentPass;
+        /// <summary>当前使用的顶点着色器和片元着色器通道</summary>
+        public int CurrentPass
+        {
+            get { return currentPass; }
+            set
+            {
+                if (value < 0 || currentPass > PassCount)
+                    throw new ArgumentOutOfRangeException("currentPass");
+                this.currentPass = value;
+            }
+        }
+        /// <summary>顶点着色器和片元着色器通道的数量</summary>
         public abstract int PassCount { get; }
-        public abstract void LoadFromCode(string code);
-        public abstract bool SetPass(int pass);
+        /// <summary>生效Shader，在GRAPHICS会自动调用，非特殊情况不要自己调用</summary>
+        public void Begin(GRAPHICS g)
+        {
+            if (OnBegin != null)
+                OnBegin(g);
+            InternalBegin(g);
+        }
+        protected abstract void InternalBegin(GRAPHICS g);
+        /// <summary>结束Shader，在GRAPHICS会自动调用，非特殊情况不要自己调用</summary>
+        public void End(GRAPHICS g)
+        {
+            InternalEnd(g);
+            if (OnEnd != null)
+                OnEnd(g);
+        }
+        protected abstract void InternalEnd(GRAPHICS g);
+        // 获取/设置uniform的全局变量
         public abstract bool HasProperty(string name);
-        public abstract bool GetValueBoolean(string property);
-        public abstract int GetValueInt32(string property);
-        public abstract MATRIX GetValueMatrix(string property);
-        public abstract float GetValueSingle(string property);
-        public abstract TEXTURE GetValueTexture(string property);
-        public abstract VECTOR2 GetValueVector2(string property);
-        public abstract VECTOR3 GetValueVector3(string property);
-        public abstract VECTOR4 GetValueVector4(string property);
         public abstract void SetValue(string property, bool value);
+        public abstract void SetValue(string property, bool[] value);
         public abstract void SetValue(string property, float value);
+        public abstract void SetValue(string property, float[] value);
         public abstract void SetValue(string property, int value);
+        public abstract void SetValue(string property, int[] value);
         public abstract void SetValue(string property, MATRIX value);
+        public abstract void SetValue(string property, MATRIX[] value);
         public abstract void SetValue(string property, TEXTURE value);
         public abstract void SetValue(string property, VECTOR2 value);
+        public abstract void SetValue(string property, VECTOR2[] value);
         public abstract void SetValue(string property, VECTOR3 value);
+        public abstract void SetValue(string property, VECTOR3[] value);
         public abstract void SetValue(string property, VECTOR4 value);
+        public abstract void SetValue(string property, VECTOR4[] value);
     }
-    //public class SHADER : ShaderBase
-    //{
-    //    private List<ShaderVertex> vs;
-    //    private List<ShaderPixel> ps;
-
-    //    public List<ShaderVertex> VS
-    //    {
-    //        get { return vs; }
-    //    }
-    //    public List<ShaderPixel> PS
-    //    {
-    //        get { return ps; }
-    //    }
-
-    //    public SHADER()
-    //    {
-    //        vs = new List<ShaderVertex>();
-    //        ps = new List<ShaderPixel>();
-    //    }
-    //    public SHADER(ShaderVertex[] vs, ShaderPixel[] ps)
-    //    {
-    //        this.vs = new List<ShaderVertex>(vs);
-    //        this.ps = new List<ShaderPixel>(ps);
-    //    }
-    //    public SHADER(params ShaderVertex[] vs)
-    //    {
-    //        this.vs = new List<ShaderVertex>(vs);
-    //        this.ps = new List<ShaderPixel>();
-    //    }
-    //    public SHADER(params ShaderPixel[] ps)
-    //    {
-    //        this.vs = new List<ShaderVertex>();
-    //        this.ps = new List<ShaderPixel>(ps);
-    //    }
-    //}
+    public abstract class PipelineShader : ContentPipelineText
+    {
+        /// <summary>加载特效文件后缀shader</summary>
+        public const string SUFFIX = "shader";
+        public sealed override IEnumerable<string> SuffixProcessable
+        {
+            get { yield return SUFFIX; }
+        }
+    }
 
 
     /// <summary>图片反转</summary>
@@ -7477,12 +7519,14 @@ namespace EntryEngine
         /// <summary>图片纵向反转</summary>
         FlipVertically = 2,
     }
+    /// <summary>基元图形</summary>
     public enum EPrimitiveType : byte
     {
         Point,
         Line,
         Triangle,
     }
+    /// <summary>精灵渲染参数</summary>
     public struct SpriteVertex
     {
         public RECT Source;
@@ -7492,11 +7536,13 @@ namespace EntryEngine
         public EFlip Flip;
         public COLOR Color;
     }
+    /// <summary>顶点着色器的参数</summary>
     public struct TextureVertex
     {
         public VECTOR3 Position;
         public COLOR Color;
-        public VECTOR2 TextureCoordinate;
+        /// <summary>0~1</summary>
+        public VECTOR2 UV;
     }
     /// <summary>屏幕适配</summary>
     public enum EViewport
@@ -7565,6 +7611,8 @@ namespace EntryEngine
         private short[] indices;
         /// <summary>绘制前检测对象是否在视口内，不在视口内则跳过绘制，若绘制性能高则不建议开启此检测</summary>
         public bool Culling;
+        /// <summary>true时，图片UV需要除以图片宽高约束在0~1内</summary>
+        public bool UVNormalize = true;
 
         /// <summary>视口缩放模式</summary>
         public EViewport ViewportMode
@@ -7617,11 +7665,13 @@ namespace EntryEngine
         {
             get { return ToPixelCeiling(VECTOR2.One); }
         }
+        /// <summary>画布转换到视口的矩阵</summary>
         public MATRIX2x3 View
         {
             get { return view; }
             protected set { view = value; }
         }
+        /// <summary>画布视口区域</summary>
         public RECT Viewport
         {
             get { return graphicsViewport; }
@@ -7669,6 +7719,8 @@ namespace EntryEngine
             get { return renderStates.Count > 0; }
         }
         protected TEXTURE Texture { get { return currentTexture; } }
+        /// <summary>画布当前矩阵在笛卡尔坐标系中的变化，一般用于SHADER中的矩阵变化</summary>
+        public MATRIX2x3 CurrentCartesianTransform { get { return CurrentTransform * GraphicsToCartesianMatrix(); } }
 
         protected GRAPHICS()
         {
@@ -7713,30 +7765,34 @@ namespace EntryEngine
                     break;
             }
 
-            // set viewport
-            //RECT screenViewport;
-            //screenViewport.X = view.M31;
-            //screenViewport.Y = view.M32;
-            //screenViewport.Width = screen.X - view.M31 * 2;
-            //screenViewport.Height = screen.Y - view.M32 * 2;
-
-            //graphicsViewport.X = view.M31 / view.M11;
-            //graphicsViewport.Y = view.M32 / view.M22;
-
             graphicsToScreen = view;
             MATRIX2x3.Invert(ref graphicsToScreen, out screenToGraphics);
-            view.M31 = 0;
-            view.M32 = 0;
-            SetViewport(view, graphicsViewport);
+            
+            SetViewport(ref view, ref graphicsViewport);
 
             // viewport set over, change to graphics
             nullRenderState.Graphics = graphicsViewport;
-            nullRenderState.Graphics.X = 0;
-            nullRenderState.Graphics.Y = 0;
-            //graphicsViewport.X = 0;
-            //graphicsViewport.Y = 0;
         }
-        protected abstract void SetViewport(MATRIX2x3 view, RECT viewport);
+        /// <summary>设置画布在屏幕的可视区域</summary>
+        /// <param name="view">将屏幕坐标转换成画布坐标的矩阵</param>
+        /// <param name="graphicsViewport">画布在屏幕的可视区域</param>
+        protected abstract void SetViewport(ref MATRIX2x3 view, ref RECT graphicsViewport);
+
+        /// <summary>将画布坐标系转换成笛卡尔坐标系
+        /// <para>默认SHADER都是笛卡尔坐标系</para>
+        /// <para>但是画布绘制对象都是屏幕坐标系</para>
+        /// <para>所以使用画布渲染对象，却要使用自定义的SHADER时</para>
+        /// <para>需要使用这个转换矩阵映射顶点以正确显示在画布上</para>
+        /// <para>若有其它屏幕坐标系的矩阵需要做变换时，用矩阵乘以此矩阵</para>
+        /// </summary>
+        public MATRIX2x3 GraphicsToCartesianMatrix()
+        {
+            var gsize = GraphicsSize;
+            return
+                MATRIX2x3.CreateScale(2 / gsize.X, -2 / gsize.Y)
+                // 1, -1
+                * MATRIX2x3.CreateTranslation(-1, 1);
+        }
         public VECTOR2 PointToGraphics(VECTOR2 point)
         {
             VECTOR2.Transform(ref point, ref screenToGraphics);
@@ -7793,6 +7849,11 @@ namespace EntryEngine
         }
         private void Begin(bool threeD, ref MATRIX matrix, ref RECT graphics, SHADER shader)
         {
+            if (HasRenderTarget)
+                Ending(CurrentRenderState);
+
+            Flush();
+
             RenderState renderState;
             if (!renderStates.Allot(out renderState))
             {
@@ -7807,15 +7868,18 @@ namespace EntryEngine
         }
         private void Begin(RenderState state)
         {
-            Flush();
             MATRIX result = state.Transform;
             if (!state.ThreeD)
                 result *= (MATRIX)view;
             RECT scissor = state.Graphics;
-            //scissor.Offset(graphicsViewport.X, graphicsViewport.Y);
-            //RECT.Intersect(ref scissor, ref graphicsViewport, out scissor);
             InternalBegin(state.ThreeD, ref result, ref scissor, state.Shader);
         }
+        /// <summary>开启批绘制</summary>
+        /// <param name="threeD">是否采用3D</param>
+        /// <param name="matrix">变换矩阵</param>
+        /// <param name="graphics">画布裁剪区域</param>
+        /// <param name="shader">使用的着色器</param>
+        /// <param name="ending">是否是结束时重新开启的批绘制</param>
         protected abstract void InternalBegin(bool threeD, ref MATRIX matrix, ref RECT graphics, SHADER shader);
         /// <summary>渲染前的渲染设置(3D)</summary>
         /// <param name="transform">3D矩阵变换</param>
@@ -7829,18 +7893,18 @@ namespace EntryEngine
         public void Begin()
         {
             RenderState rs = CurrentRenderState;
-            Begin(rs.ThreeD, ref rs.Transform, ref rs.Graphics, null);
+            Begin(rs.ThreeD, ref rs.Transform, ref rs.Graphics, rs.Shader);
         }
         /// <summary>渲染前的渲染设置(2D)</summary>
         public void Begin(MATRIX2x3 transform)
         {
-            Begin(ref transform, ref CurrentRenderState.Graphics, null);
+            Begin(ref transform, ref CurrentRenderState.Graphics, CurrentRenderState.Shader);
         }
         /// <summary>渲染前的渲染设置</summary>
         public void Begin(RECT graphics)
         {
             RenderState rs = CurrentRenderState;
-            Begin(rs.ThreeD, ref rs.Transform, ref graphics, null);
+            Begin(rs.ThreeD, ref rs.Transform, ref graphics, rs.Shader);
         }
         /// <summary>渲染前的渲染设置(2D)</summary>
         public void Begin(MATRIX2x3 transform, RECT graphics)
@@ -7864,19 +7928,21 @@ namespace EntryEngine
         public void BeginFromPrevious(MATRIX2x3 matrix)
         {
             matrix = FromPrevious(matrix);
-            Begin(ref matrix, ref CurrentRenderState.Graphics, null);
+            RenderState rs = CurrentRenderState;
+            Begin(ref matrix, ref rs.Graphics, rs.Shader);
         }
         public void BeginFromPrevious(RECT rect)
         {
             rect = FromPrevious(rect);
-            Begin(CurrentRenderState.ThreeD, ref CurrentRenderState.Transform, ref rect, null);
+            RenderState rs = CurrentRenderState;
+            Begin(CurrentRenderState.ThreeD, ref rs.Transform, ref rect, rs.Shader);
         }
         /// <summary>在之前的矩阵的基础上开始绘制</summary>
         public void BeginFromPrevious(MATRIX2x3 matrix, RECT rect)
         {
             matrix = FromPrevious(matrix);
             rect = FromPrevious(rect);
-            Begin(ref matrix, ref rect, null);
+            Begin(ref matrix, ref rect, CurrentRenderState.Shader);
         }
         public MATRIX2x3 FromPrevious(MATRIX2x3 matrix)
         {
@@ -7972,8 +8038,8 @@ namespace EntryEngine
         /// <param name="source">选择图片上的一个区域来绘制</param>
         /// <param name="color">绘制图片乘算的颜色，显示颜色计算公式：图片像素颜色值 * 这个颜色值 / 255，每个像素的rgba四个值会分别计算</param>
         /// <param name="rotation">图片旋转，单位弧度</param>
-        /// <param name="originX">旋转锚点横坐标</param>
-        /// <param name="originY">旋转锚点纵坐标</param>
+        /// <param name="originX">旋转/缩放锚点，0~1分别代表最左到最右</param>
+        /// <param name="originY">旋转/缩放锚点，0~1分别代表最上到最下</param>
         /// <param name="flip">反转设置</param>
         public void Draw(TEXTURE texture, RECT rect, RECT source, COLOR color, float rotation, float originX, float originY, EFlip flip)
         {
@@ -8011,6 +8077,26 @@ namespace EntryEngine
         {
             BaseDraw(texture, location.X, location.Y, scale.X, scale.Y, true, source.X, source.Y, source.Width, source.Height, true, color.R, color.G, color.B, color.A, rotation, origin.X, origin.Y, flip);
         }
+        /// <summary>绘制将普通参数转换为SpriteVertex参数</summary>
+        /// <param name="texture">渲染的图片</param>
+        /// <param name="x">渲染到频幕上的位置，单位像素</param>
+        /// <param name="y">渲染到频幕上的位置，单位像素</param>
+        /// <param name="w">渲染到频幕上的宽度，单位像素</param>
+        /// <param name="h">渲染到频幕上的高度，单位像素</param>
+        /// <param name="scale">true: w *= sw; h *= sh;</param>
+        /// <param name="sx">渲染图片部分的位置，单位像素</param>
+        /// <param name="sy">渲染图片部分的位置，单位像素</param>
+        /// <param name="sw">渲染图片部分的宽度，单位像素</param>
+        /// <param name="sh">渲染图片部分的高度，单位像素</param>
+        /// <param name="color">true: 使用rgba / false: 使用DefaultColor.RGBA</param>
+        /// <param name="r">叠加颜色</param>
+        /// <param name="g">叠加颜色</param>
+        /// <param name="b">叠加颜色</param>
+        /// <param name="a">叠加颜色</param>
+        /// <param name="rotation">图片旋转，单位弧度</param>
+        /// <param name="ox">旋转/缩放锚点，0~1分别代表最左到最右</param>
+        /// <param name="oy">旋转/缩放锚点，0~1分别代表最上到最下</param>
+        /// <param name="flip">图像反转</param>
         public void BaseDraw(TEXTURE texture,
             float x, float y, float w, float h, bool scale, 
             float sx, float sy, float sw, float sh,
@@ -8418,23 +8504,23 @@ namespace EntryEngine
             //TestFlushCount = 0;
         }
 
-        //int TestFlushCount;
         protected void Flush()
         {
             if (bufferCount == 0)
                 return;
 
-            //_LOG.Debug("buffer count: {0} stack: {1}", bufferCount, Environment.StackTrace);
             for (int r = 0; r < bufferCount; r++)
             {
                 RenderBuffer buffer = buffers[r];
 
                 currentTexture = textures[buffer.TextureIndex];
-                DrawPrimitivesBegin(currentTexture, EPrimitiveType.Triangle);
+                DrawPrimitivesBegin(currentTexture, EPrimitiveType.Triangle, 0);
+
+                float u = 1.0f / currentTexture.Width;
+                float v = 1.0f / currentTexture.Height;
 
                 int offset = 0;
                 int count = buffer.spriteQueueCount;
-                //_LOG.Debug("{0}: tname:{1} count:{2}", TestFlushCount, currentTexture.Key, count);
                 buffer.spriteQueueCount = 0;
                 while (count > 0)
                 {
@@ -8446,21 +8532,42 @@ namespace EntryEngine
                     for (int i = 0; i < num; i++)
                         InputVertexToOutputVertex(ref buffer.spriteQueue[offset + i], i * 4);
 
+                    if (UVNormalize)
+                    {
+                        for (int i = 0, e = num * 4; i < e; i++)
+                        {
+                            outputVertices[i].UV.X *= u;
+                            outputVertices[i].UV.Y *= v;
+                        }
+                    }
+
                     DrawPrimitives(EPrimitiveType.Triangle, outputVertices, 0, num * 4, indices, 0, num * 2);
                     offset += num;
                     count -= num;
                 }
 
                 DrawPrimitivesEnd();
-
-                //TestFlushCount++;
             }
 
             textureCount = 0;
             bufferCount = 0;
             currentTexture = null;
         }
-        private void InputVertexToOutputVertex(ref SpriteVertex vertex, int outputIndex)
+        /// <summary>获取顶点着色器对应的参数数组，可以自行修改相应内容</summary>
+        public TextureVertex[] GetVertexBuffer()
+        {
+            return outputVertices;
+        }
+        /// <summary>重置顶点缓冲长度，之前缓冲的内容将清空</summary>
+        public TextureVertex[] ResizeVertexBuffer(int newSize)
+        {
+            outputVertices = new TextureVertex[newSize];
+            return outputVertices;
+        }
+        /// <summary>将精灵渲染参数转换为顶点缓冲</summary>
+        /// <param name="vertex">精炼渲染参数</param>
+        /// <param name="outputIndex">顶点缓冲的索引，每次缓冲将产生4个顶点，连续操作时，索引应每次+4</param>
+        public void InputVertexToOutputVertex(ref SpriteVertex vertex, int outputIndex)
         {
             float rotation = vertex.Rotation;
             float cos, sin;
@@ -8491,18 +8598,13 @@ namespace EntryEngine
                 int index = outputIndex + i;
                 outputVertices[index].Position.X = vertex.Destination.X + xOffset * cos - yOffset * sin;
                 outputVertices[index].Position.Y = vertex.Destination.Y + xOffset * sin + yOffset * cos;
-                outputVertices[index].TextureCoordinate.X = vertex.Source.X + xc * vertex.Source.Width;
-                outputVertices[index].TextureCoordinate.Y = vertex.Source.Y + yc * vertex.Source.Height;
+                outputVertices[index].UV.X = vertex.Source.X + xc * vertex.Source.Width;
+                outputVertices[index].UV.Y = vertex.Source.Y + yc * vertex.Source.Height;
                 outputVertices[index].Color.R = vertex.Color.R;
                 outputVertices[index].Color.G = vertex.Color.G;
                 outputVertices[index].Color.B = vertex.Color.B;
                 outputVertices[index].Color.A = vertex.Color.A;
             }
-        }
-        /// <summary>三角形绘制</summary>
-        public void DrawPrimitives(TEXTURE texture, TextureVertex[] vertices, int offset, int count, short[] indexes, int indexOffset, int primitiveCount)
-        {
-            DrawPrimitives(texture, EPrimitiveType.Triangle, vertices, offset, count, indexes, indexOffset, primitiveCount);
         }
         public void DrawPrimitives(TEXTURE texture, EPrimitiveType ptype, TextureVertex[] vertices, int offset, int count, short[] indexes, int indexOffset, int primitiveCount)
         {
@@ -8511,16 +8613,42 @@ namespace EntryEngine
             Flush();
             currentTexture = texture;
             //DrawPrimitivesBegin(changeTex ? drawable : null, ptype);
-            DrawPrimitivesBegin(texture, ptype);
+            DrawPrimitivesBegin(texture, ptype, 0);
             DrawPrimitives(ptype, vertices, offset, count, indexes, indexOffset, primitiveCount);
             DrawPrimitivesEnd();
         }
-        protected abstract void DrawPrimitives(EPrimitiveType ptype, TextureVertex[] vertices, int offset, int count, short[] indexes, int indexOffset, int primitiveCount);
-        protected abstract void DrawPrimitivesBegin(TEXTURE texture, EPrimitiveType ptype);
-        protected virtual void DrawPrimitivesEnd()
+        /// <summary>绘制片元(基元图形)</summary>
+        /// <param name="ptype">片元类型</param>
+        /// <param name="vertices">作为参数传输到顶点着色器的结构体，简称顶点</param>
+        /// <param name="offset">顶点索引偏移</param>
+        /// <param name="count">顶点数量</param>
+        /// <param name="indexes">顶点顺序</param>
+        /// <param name="indexOffset">片元索引偏移</param>
+        /// <param name="primitiveCount">片元数量，传小于等于0时，会根据片元类型和顶点数量自动设置</param>
+        public abstract void DrawPrimitives(EPrimitiveType ptype, TextureVertex[] vertices, int offset, int count, short[] indexes, int indexOffset, int primitiveCount);
+        /// <summary>为片元着色器设置smapler2D</summary>
+        /// <param name="textureIndex">暂未实现参数</param>
+        public void DrawPrimitivesBegin(TEXTURE texture, EPrimitiveType ptype, int textureIndex)
+        {
+            var shader = CurrentRenderState.Shader;
+            if (shader != null && shader.OnTexture != null)
+                shader.OnTexture(texture);
+            InternalDrawPrimitivesBegin(texture, ptype, textureIndex);
+        }
+        protected abstract void InternalDrawPrimitivesBegin(TEXTURE texture, EPrimitiveType ptype, int textureIndex);
+        public virtual void DrawPrimitivesEnd()
         {
         }
 
+        public static int GetPrimitiveCount(EPrimitiveType type, int verticesCount)
+        {
+            if (type == EPrimitiveType.Point)
+                return verticesCount;
+            else if (type == EPrimitiveType.Line)
+                return verticesCount >> 1;
+            else
+                return verticesCount / 3;
+        }
         /// <summary>每6个为一组按的索引0,1,2,0,2,3</summary>
         public static short[] CreateTriangleIndexData(int vertexCount)
         {
@@ -8552,600 +8680,537 @@ namespace EntryEngine
             return array;
         }
     }
-    [Code(ECode.LessUseful | ECode.BeNotTest)]
-    public class VertexPool
-    {
-        private TEXTURE texture;
-        private TextureVertex[] vertices;
-        private int index;
-        private int triangle;
-        private short[] indices;
-
-        public VertexPool(int capcity, short[] indices)
-        {
-            if (capcity <= 0)
-                throw new ArgumentException("capcity");
-
-            if (indices == null)
-                throw new ArgumentNullException("indices");
-
-            if (indices.Length <= capcity)
-                throw new ArgumentException("Indices count is not enough.");
-
-            this.indices = indices;
-            vertices = new TextureVertex[capcity];
-        }
-
-        public bool IsNeedFlush(TEXTURE tex, int count)
-        {
-            if (tex == null)
-                return false;
-
-            if (tex != texture)
-                return true;
-            this.texture = tex;
-
-            if (index + count >= vertices.Length)
-                return true;
-
-            return false;
-        }
-        public void Flush(GRAPHICS g)
-        {
-            if (texture == null)
-                return;
-
-            if (index == 0)
-            {
-                texture = null;
-                return;
-            }
-
-            g.DrawPrimitives(texture, vertices, 0, index, indices, 0, triangle);
-
-            texture = null;
-            index = 0;
-            triangle = 0;
-        }
-        public void AllocVertex(int vertexCount, int triangleCount, ActionRef<TextureVertex> action)
-        {
-            for (int i = 0; i < vertexCount; i++)
-                action(ref vertices[index + i]);
-            index += vertexCount;
-            triangleCount += triangleCount;
-        }
-    }
 
 
     #region cpu render
 
-    public class TextureCPU : TEXTURE
-    {
-        internal int width;
-        private int height;
-        internal COLOR[] datas;
+    //public class TextureCPU : TEXTURE
+    //{
+    //    internal int width;
+    //    private int height;
+    //    internal COLOR[] datas;
 
-        public override int Width
-        {
-            get { return width; }
-        }
-        public override int Height
-        {
-            get { return height; }
-        }
-        public override bool IsDisposed
-        {
-            get { return datas == null; }
-        }
+    //    public override int Width
+    //    {
+    //        get { return width; }
+    //    }
+    //    public override int Height
+    //    {
+    //        get { return height; }
+    //    }
+    //    public override bool IsDisposed
+    //    {
+    //        get { return datas == null; }
+    //    }
 
-        public TextureCPU(COLOR[] color, int width)
-        {
-            if (color.Length % width != 0)
-                throw new ArgumentException();
-            this.datas = color;
-            this.width = width;
-            this.height = color.Length / width;
-        }
-        public TextureCPU(TEXTURE texture)
-        {
-            this.width = texture.Width;
-            this.height = texture.Height;
-            this.datas = texture.GetData();
-        }
+    //    public TextureCPU(COLOR[] color, int width)
+    //    {
+    //        if (color.Length % width != 0)
+    //            throw new ArgumentException();
+    //        this.datas = color;
+    //        this.width = width;
+    //        this.height = color.Length / width;
+    //    }
+    //    public TextureCPU(TEXTURE texture)
+    //    {
+    //        this.width = texture.Width;
+    //        this.height = texture.Height;
+    //        this.datas = texture.GetData();
+    //    }
 
-        public COLOR GetColor(ushort x, ushort y)
-        {
-            return datas[y * width + x];
-        }
-        public override COLOR[] GetData(RECT area)
-        {
-            if (area.X == 0 && area.Y == 0 && area.Width == width && area.Height == height)
-                return datas;
-            return Utility.GetArray(datas, (int)area.X, (int)area.Y, (int)area.Width, (int)area.Height, width);
-        }
-        public override void SetData(COLOR[] buffer, RECT area)
-        {
-            Utility.SetArray(buffer, datas, (int)area.X, (int)area.Y, (int)area.Width, (int)area.Height, width, (int)area.Width, 0);
-        }
-        protected internal override void InternalDispose()
-        {
-            this.datas = null;
-        }
-    }
-    public abstract class CPUShaderBase : IDisposable
-    {
-        public bool Enable = true;
-        protected internal abstract void main();
-        public virtual void Dispose() { }
-    }
-    public abstract class CPUShaderVertex : CPUShaderBase
-    {
-        protected internal static VECTOR3 Position;
-    }
-    public class VSDefault : CPUShaderVertex
-    {
-        public static VSDefault Default { get; private set; }
-        static VSDefault()
-        {
-            Default = new VSDefault();
-        }
-        private VSDefault() { }
-        internal MATRIX view;
-        internal VECTOR3 vpos;
-        internal COLOR vcolor;
-        internal VECTOR2 vcoord;
-        protected internal override void main()
-        {
-            VECTOR3.Transform(ref vpos, ref view, out Position);
-        }
-    }
-    public abstract class CPUShaderPixel : CPUShaderBase
-    {
-        public const float R255 = 1f / 255f;
-        protected internal static COLOR Color;
-        protected internal static TextureCPU Sampler
-        {
-            get;
-            internal set;
-        }
-    }
-    public class PSDefault : CPUShaderPixel
-    {
-        public static PSDefault Default { get; private set; }
-        static PSDefault()
-        {
-            Default = new PSDefault();
-        }
-        private PSDefault() { }
-        internal COLOR color;
-        internal VECTOR2 coord;
-        protected internal override void main()
-        {
-            if (coord.Y >= Sampler.Height) coord.Y %= Sampler.Height;
-            if (coord.X >= Sampler.width) coord.X %= Sampler.width;
-            COLOR scolor = Sampler.datas[(ushort)coord.Y * Sampler.width + (ushort)coord.X];
-            Color.R = (byte)(color.R * scolor.R * R255);
-            Color.G = (byte)(color.G * scolor.G * R255);
-            Color.B = (byte)(color.B * scolor.B * R255);
-            Color.A = (byte)(color.A * scolor.A * R255);
-        }
-    }
-    public sealed class GraphicsDeviceCPU : GRAPHICS
-    {
-        private enum EColorFlag
-        {
-            /// <summary>
-            /// 线性计算每个像素点的值
-            /// </summary>
-            Linear,
-            /// <summary>
-            /// 固定计算像素点的值
-            /// </summary>
-            Fixed,
-            /// <summary>
-            /// 不计算颜色的值
-            /// </summary>
-            Ignore,
-        }
+    //    public COLOR GetColor(ushort x, ushort y)
+    //    {
+    //        return datas[y * width + x];
+    //    }
+    //    public override COLOR[] GetData(RECT area)
+    //    {
+    //        if (area.X == 0 && area.Y == 0 && area.Width == width && area.Height == height)
+    //            return datas;
+    //        return Utility.GetArray(datas, (int)area.X, (int)area.Y, (int)area.Width, (int)area.Height, width);
+    //    }
+    //    public override void SetData(COLOR[] buffer, RECT area)
+    //    {
+    //        Utility.SetArray(buffer, datas, (int)area.X, (int)area.Y, (int)area.Width, (int)area.Height, width, (int)area.Width, 0);
+    //    }
+    //    protected internal override void InternalDispose()
+    //    {
+    //        this.datas = null;
+    //    }
+    //}
+    //public abstract class CPUShaderBase : IDisposable
+    //{
+    //    public bool Enable = true;
+    //    protected internal abstract void main();
+    //    public virtual void Dispose() { }
+    //}
+    //public abstract class CPUShaderVertex : CPUShaderBase
+    //{
+    //    protected internal static VECTOR3 Position;
+    //}
+    //public class VSDefault : CPUShaderVertex
+    //{
+    //    public static VSDefault Default { get; private set; }
+    //    static VSDefault()
+    //    {
+    //        Default = new VSDefault();
+    //    }
+    //    private VSDefault() { }
+    //    internal MATRIX view;
+    //    internal VECTOR3 vpos;
+    //    internal COLOR vcolor;
+    //    internal VECTOR2 vcoord;
+    //    protected internal override void main()
+    //    {
+    //        VECTOR3.Transform(ref vpos, ref view, out Position);
+    //    }
+    //}
+    //public abstract class CPUShaderPixel : CPUShaderBase
+    //{
+    //    public const float R255 = 1f / 255f;
+    //    protected internal static COLOR Color;
+    //    protected internal static TextureCPU Sampler
+    //    {
+    //        get;
+    //        internal set;
+    //    }
+    //}
+    //public class PSDefault : CPUShaderPixel
+    //{
+    //    public static PSDefault Default { get; private set; }
+    //    static PSDefault()
+    //    {
+    //        Default = new PSDefault();
+    //    }
+    //    private PSDefault() { }
+    //    internal COLOR color;
+    //    internal VECTOR2 coord;
+    //    protected internal override void main()
+    //    {
+    //        if (coord.Y >= Sampler.Height) coord.Y %= Sampler.Height;
+    //        if (coord.X >= Sampler.width) coord.X %= Sampler.width;
+    //        COLOR scolor = Sampler.datas[(ushort)coord.Y * Sampler.width + (ushort)coord.X];
+    //        Color.R = (byte)(color.R * scolor.R * R255);
+    //        Color.G = (byte)(color.G * scolor.G * R255);
+    //        Color.B = (byte)(color.B * scolor.B * R255);
+    //        Color.A = (byte)(color.A * scolor.A * R255);
+    //    }
+    //}
+    //public sealed class GraphicsDeviceCPU : GRAPHICS
+    //{
+    //    private enum EColorFlag
+    //    {
+    //        /// <summary>
+    //        /// 线性计算每个像素点的值
+    //        /// </summary>
+    //        Linear,
+    //        /// <summary>
+    //        /// 固定计算像素点的值
+    //        /// </summary>
+    //        Fixed,
+    //        /// <summary>
+    //        /// 不计算颜色的值
+    //        /// </summary>
+    //        Ignore,
+    //    }
 
-        private CPUShaderVertex[] currentVS = new CPUShaderVertex[4];
-        private CPUShaderPixel[] currentPS = new CPUShaderPixel[4];
-        private int vsIndex;
-        private int psIndex;
-        private VECTOR3[] triangleVertex = new VECTOR3[3];
-        private byte[] triangleVertexIndex = new byte[3];
-        private TextureVertex _four;
-        private VECTOR3[] lineVertex = new VECTOR3[2];
-        private Dictionary<TEXTURE, TextureCPU> textureDataCache = new Dictionary<TEXTURE, TextureCPU>();
+    //    private CPUShaderVertex[] currentVS = new CPUShaderVertex[4];
+    //    private CPUShaderPixel[] currentPS = new CPUShaderPixel[4];
+    //    private int vsIndex;
+    //    private int psIndex;
+    //    private VECTOR3[] triangleVertex = new VECTOR3[3];
+    //    private byte[] triangleVertexIndex = new byte[3];
+    //    private TextureVertex _four;
+    //    private VECTOR3[] lineVertex = new VECTOR3[2];
+    //    private Dictionary<TEXTURE, TextureCPU> textureDataCache = new Dictionary<TEXTURE, TextureCPU>();
 
-        private COLOR[] buffers;
-        private ushort bufferWidth;
-        private ushort bufferHeight;
-        private TEXTURE screenGraphics;
-        private BoundingBox scissor;
-        private GRAPHICS baseDevice;
+    //    private COLOR[] buffers;
+    //    private ushort bufferWidth;
+    //    private ushort bufferHeight;
+    //    private TEXTURE screenGraphics;
+    //    private BoundingBox scissor;
+    //    private GRAPHICS baseDevice;
 
-        public override bool IsFullScreen
-        {
-            get { return baseDevice.IsFullScreen; }
-            set { baseDevice.IsFullScreen = value; }
-        }
-        protected override VECTOR2 InternalScreenSize
-        {
-            get { return baseDevice.ScreenSize; }
-            set { baseDevice.ScreenSize = value; }
-        }
+    //    public override bool IsFullScreen
+    //    {
+    //        get { return baseDevice.IsFullScreen; }
+    //        set { baseDevice.IsFullScreen = value; }
+    //    }
+    //    protected override VECTOR2 InternalScreenSize
+    //    {
+    //        get { return baseDevice.ScreenSize; }
+    //        set { baseDevice.ScreenSize = value; }
+    //    }
 
-        public GraphicsDeviceCPU(GRAPHICS device)
-        {
-            if (device == null)
-                throw new ArgumentNullException("GraphicsDevice");
-            this.baseDevice = device;
-            this.GraphicsSize = device.GraphicsSize;
-        }
+    //    public GraphicsDeviceCPU(GRAPHICS device)
+    //    {
+    //        if (device == null)
+    //            throw new ArgumentNullException("GraphicsDevice");
+    //        this.baseDevice = device;
+    //        this.GraphicsSize = device.GraphicsSize;
+    //    }
 
-        private void SetVS()
-        {
-            vsIndex = 0;
-            //foreach (var shader in Shaders)
-            //{
-            //    foreach (var vs in shader.VS)
-            //    {
-            //        if (vs.Enable)
-            //        {
-            //            if (currentVS.Length == vsIndex)
-            //            {
-            //                Array.Resize(ref currentVS, vsIndex * 2);
-            //            }
-            //            currentVS[vsIndex++] = vs;
-            //        }
-            //    }
-            //}
-        }
-        private void SetPS()
-        {
-            psIndex = 0;
-            //foreach (var shader in Shaders)
-            //{
-            //    foreach (var ps in shader.PS)
-            //    {
-            //        if (ps.Enable)
-            //        {
-            //            if (currentPS.Length == vsIndex)
-            //            {
-            //                Array.Resize(ref currentPS, psIndex * 2);
-            //            }
-            //            currentPS[psIndex++] = ps;
-            //        }
-            //    }
-            //}
-        }
-        protected override void SetViewport(MATRIX2x3 view, RECT viewport)
-        {
-            if (baseDevice.ViewportMode != this.ViewportMode)
-                baseDevice.ViewportMode = this.ViewportMode;
-            if (baseDevice.GraphicsSize != this.GraphicsSize)
-                baseDevice.GraphicsSize = this.GraphicsSize;
-            if (baseDevice.ScreenSize != this.ScreenSize)
-                baseDevice.ScreenSize = this.ScreenSize;
-            viewport = AreaToScreen(viewport);
-            bufferWidth = (ushort)viewport.Width;
-            bufferHeight = (ushort)viewport.Height;
-            buffers = new COLOR[bufferHeight * bufferWidth];
-            screenGraphics = Entry.Instance.NewTEXTURE(bufferWidth, bufferHeight);
-            view.M31 = 0;
-            view.M32 = 0;
-        }
-        protected override void InternalBegin(bool threeD, ref MATRIX matrix, ref RECT graphics, SHADER shader)
-        {
-            VSDefault.Default.view = matrix;
-            this.scissor.Left = graphics.X;
-            this.scissor.Top = graphics.Y;
-            this.scissor.Right = graphics.Right;
-            this.scissor.Bottom = graphics.Bottom;
-        }
-        protected override void DrawPrimitivesBegin(TEXTURE texture, EPrimitiveType ptype)
-        {
-            TEXTURE drawable = TEXTURE.GetDrawableTexture(texture);
-            TextureCPU cpu;
-            if (!textureDataCache.TryGetValue(drawable, out cpu))
-            {
-                cpu = new TextureCPU(drawable);
-                textureDataCache.Add(drawable, cpu);
-            }
-            PSDefault.Sampler = cpu;
-        }
-        protected override void DrawPrimitives(EPrimitiveType ptype, TextureVertex[] vertices, int offset, int count, short[] indexes, int indexOffset, int primitiveCount)
-        {
-            TIMER timer = TIMER.StartNew();
+    //    private void SetVS()
+    //    {
+    //        vsIndex = 0;
+    //        //foreach (var shader in Shaders)
+    //        //{
+    //        //    foreach (var vs in shader.VS)
+    //        //    {
+    //        //        if (vs.Enable)
+    //        //        {
+    //        //            if (currentVS.Length == vsIndex)
+    //        //            {
+    //        //                Array.Resize(ref currentVS, vsIndex * 2);
+    //        //            }
+    //        //            currentVS[vsIndex++] = vs;
+    //        //        }
+    //        //    }
+    //        //}
+    //    }
+    //    private void SetPS()
+    //    {
+    //        psIndex = 0;
+    //        //foreach (var shader in Shaders)
+    //        //{
+    //        //    foreach (var ps in shader.PS)
+    //        //    {
+    //        //        if (ps.Enable)
+    //        //        {
+    //        //            if (currentPS.Length == vsIndex)
+    //        //            {
+    //        //                Array.Resize(ref currentPS, psIndex * 2);
+    //        //            }
+    //        //            currentPS[psIndex++] = ps;
+    //        //        }
+    //        //    }
+    //        //}
+    //    }
+    //    protected override void SetViewport(MATRIX2x3 view, RECT viewport)
+    //    {
+    //        if (baseDevice.ViewportMode != this.ViewportMode)
+    //            baseDevice.ViewportMode = this.ViewportMode;
+    //        if (baseDevice.GraphicsSize != this.GraphicsSize)
+    //            baseDevice.GraphicsSize = this.GraphicsSize;
+    //        if (baseDevice.ScreenSize != this.ScreenSize)
+    //            baseDevice.ScreenSize = this.ScreenSize;
+    //        viewport = AreaToScreen(viewport);
+    //        bufferWidth = (ushort)viewport.Width;
+    //        bufferHeight = (ushort)viewport.Height;
+    //        buffers = new COLOR[bufferHeight * bufferWidth];
+    //        screenGraphics = Entry.Instance.NewTEXTURE(bufferWidth, bufferHeight);
+    //        view.M31 = 0;
+    //        view.M32 = 0;
+    //    }
+    //    protected override void InternalBegin(bool threeD, ref MATRIX matrix, ref RECT graphics, SHADER shader)
+    //    {
+    //        VSDefault.Default.view = matrix;
+    //        this.scissor.Left = graphics.X;
+    //        this.scissor.Top = graphics.Y;
+    //        this.scissor.Right = graphics.Right;
+    //        this.scissor.Bottom = graphics.Bottom;
+    //    }
+    //    protected override void DrawPrimitivesBegin(TEXTURE texture, EPrimitiveType ptype)
+    //    {
+    //        TEXTURE drawable = TEXTURE.GetDrawableTexture(texture);
+    //        TextureCPU cpu;
+    //        if (!textureDataCache.TryGetValue(drawable, out cpu))
+    //        {
+    //            cpu = new TextureCPU(drawable);
+    //            textureDataCache.Add(drawable, cpu);
+    //        }
+    //        PSDefault.Sampler = cpu;
+    //    }
+    //    protected override void DrawPrimitives<T>(EPrimitiveType ptype, T[] vertices, int offset, int count, short[] indexes, int indexOffset, int primitiveCount) where T : struct
+    //    {
+    //        TIMER timer = TIMER.StartNew();
 
-            SetVS();
-            SetPS();
+    //        SetVS();
+    //        SetPS();
 
-            switch (ptype)
-            {
-                case EPrimitiveType.Point:
-                    #region Point
-                    for (int i = 0; i < primitiveCount; i++)
-                    {
-                        int index = offset + indexes[indexOffset + i];
-                        // vertex shader
-                        VSDefault.Default.vpos = vertices[index].Position;
-                        //VSDefault.Default.vcolor = vertices[index].Color;
-                        //VSDefault.Default.vcoord = vertices[index].TextureCoordinate;
-                        VSDefault.Default.main();
-                        for (int s = 0; s < vsIndex; s++)
-                            currentVS[s].main();
-                        // pixel shader
-                        PSDefault.Default.color = VSDefault.Default.vcolor;
-                        PSDefault.Default.coord = VSDefault.Default.vcoord;
-                        PSDefault.Default.main();
-                        for (int s = 0; s < psIndex; s++)
-                            currentPS[s].main();
-                        // scissor
-                        if (CPUShaderVertex.Position.X >= scissor.Left &&
-                            CPUShaderVertex.Position.X < scissor.Right &&
-                            CPUShaderVertex.Position.Y >= scissor.Top &&
-                            CPUShaderVertex.Position.Y <= scissor.Bottom)
-                        {
-                            // render
-                            buffers[(int)CPUShaderVertex.Position.Y * bufferWidth + (int)CPUShaderVertex.Position.X] = CPUShaderPixel.Color;
-                        }
-                    }
-                    #endregion
-                    break;
+    //        switch (ptype)
+    //        {
+    //            case EPrimitiveType.Point:
+    //                #region Point
+    //                for (int i = 0; i < primitiveCount; i++)
+    //                {
+    //                    int index = offset + indexes[indexOffset + i];
+    //                    // vertex shader
+    //                    VSDefault.Default.vpos = vertices[index].Position;
+    //                    //VSDefault.Default.vcolor = vertices[index].Color;
+    //                    //VSDefault.Default.vcoord = vertices[index].TextureCoordinate;
+    //                    VSDefault.Default.main();
+    //                    for (int s = 0; s < vsIndex; s++)
+    //                        currentVS[s].main();
+    //                    // pixel shader
+    //                    PSDefault.Default.color = VSDefault.Default.vcolor;
+    //                    PSDefault.Default.coord = VSDefault.Default.vcoord;
+    //                    PSDefault.Default.main();
+    //                    for (int s = 0; s < psIndex; s++)
+    //                        currentPS[s].main();
+    //                    // scissor
+    //                    if (CPUShaderVertex.Position.X >= scissor.Left &&
+    //                        CPUShaderVertex.Position.X < scissor.Right &&
+    //                        CPUShaderVertex.Position.Y >= scissor.Top &&
+    //                        CPUShaderVertex.Position.Y <= scissor.Bottom)
+    //                    {
+    //                        // render
+    //                        buffers[(int)CPUShaderVertex.Position.Y * bufferWidth + (int)CPUShaderVertex.Position.X] = CPUShaderPixel.Color;
+    //                    }
+    //                }
+    //                #endregion
+    //                break;
 
-                case EPrimitiveType.Line:
-                    #region Line
+    //            case EPrimitiveType.Line:
+    //                #region Line
 
-                    #endregion
-                    break;
+    //                #endregion
+    //                break;
 
-                case EPrimitiveType.Triangle:
-                    //vertices[0].Color = COLOR.Red;
-                    //vertices[1].Color = COLOR.Lime;
-                    //vertices[2].Color = COLOR.Blue;
-                    //vertices[3].Color = COLOR.White;
-                    //primitiveCount = 1;
-                    #region Triangle
-                    for (int i = 0; i < primitiveCount; i++)
-                    {
-                        int index = indexOffset + i * 3;
-                        for (int p = 0; p < 3; p++)
-                        {
-                            // vertex shader
-                            VSDefault.Default.vpos = vertices[offset + indexes[index + p]].Position;
-                            //VSDefault.Default.vcolor = vertices[index].Color;
-                            //VSDefault.Default.vcoord = vertices[index].TextureCoordinate;
-                            VSDefault.Default.main();
-                            for (int s = 0; s < vsIndex; s++)
-                                currentVS[s].main();
-                            triangleVertex[p] = CPUShaderVertex.Position;
-                        }
+    //            case EPrimitiveType.Triangle:
+    //                //vertices[0].Color = COLOR.Red;
+    //                //vertices[1].Color = COLOR.Lime;
+    //                //vertices[2].Color = COLOR.Blue;
+    //                //vertices[3].Color = COLOR.White;
+    //                //primitiveCount = 1;
+    //                #region Triangle
+    //                for (int i = 0; i < primitiveCount; i++)
+    //                {
+    //                    int index = indexOffset + i * 3;
+    //                    for (int p = 0; p < 3; p++)
+    //                    {
+    //                        // vertex shader
+    //                        VSDefault.Default.vpos = vertices[offset + indexes[index + p]].Position;
+    //                        //VSDefault.Default.vcolor = vertices[index].Color;
+    //                        //VSDefault.Default.vcoord = vertices[index].TextureCoordinate;
+    //                        VSDefault.Default.main();
+    //                        for (int s = 0; s < vsIndex; s++)
+    //                            currentVS[s].main();
+    //                        triangleVertex[p] = CPUShaderVertex.Position;
+    //                    }
 
-                        // sort triangle vertex
-                        triangleVertexIndex[0] = 0;
-                        triangleVertexIndex[1] = 1;
-                        triangleVertexIndex[2] = 2;
-                        SortVertex(0, 1);
-                        SortVertex(1, 2);
-                        SortVertex(0, 1);
+    //                    // sort triangle vertex
+    //                    triangleVertexIndex[0] = 0;
+    //                    triangleVertexIndex[1] = 1;
+    //                    triangleVertexIndex[2] = 2;
+    //                    SortVertex(0, 1);
+    //                    SortVertex(1, 2);
+    //                    SortVertex(0, 1);
 
-                        // render
-                        int index1 = offset + indexes[index + triangleVertexIndex[0]];
-                        int index2 = offset + indexes[index + triangleVertexIndex[1]];
-                        int index3 = offset + indexes[index + triangleVertexIndex[2]];
-                        if (triangleVertex[triangleVertexIndex[0]].Y == triangleVertex[triangleVertexIndex[1]].Y)
-                        {
-                            // 上底三角形
-                            DrawTriangle(
-                                ref vertices[index3], ref vertices[index1], ref vertices[index2],
-                                ref triangleVertex[triangleVertexIndex[2]], ref triangleVertex[triangleVertexIndex[0]], ref triangleVertex[triangleVertexIndex[1]]);
-                        }
-                        else if (triangleVertex[triangleVertexIndex[1]].Y == triangleVertex[triangleVertexIndex[2]].Y)
-                        {
-                            // 下底三角形
-                            DrawTriangle(
-                                ref vertices[index1], ref vertices[index2], ref vertices[index3],
-                                ref triangleVertex[triangleVertexIndex[0]], ref triangleVertex[triangleVertexIndex[1]], ref triangleVertex[triangleVertexIndex[2]]);
-                        }
-                        else
-                        {
-                            // 拆分成上底和下底的两个三角形
-                            VECTOR3 four;
-                            four.Y = triangleVertex[triangleVertexIndex[1]].Y;
-                            four.Z = 0;
+    //                    // render
+    //                    int index1 = offset + indexes[index + triangleVertexIndex[0]];
+    //                    int index2 = offset + indexes[index + triangleVertexIndex[1]];
+    //                    int index3 = offset + indexes[index + triangleVertexIndex[2]];
+    //                    if (triangleVertex[triangleVertexIndex[0]].Y == triangleVertex[triangleVertexIndex[1]].Y)
+    //                    {
+    //                        // 上底三角形
+    //                        DrawTriangle(
+    //                            ref vertices[index3], ref vertices[index1], ref vertices[index2],
+    //                            ref triangleVertex[triangleVertexIndex[2]], ref triangleVertex[triangleVertexIndex[0]], ref triangleVertex[triangleVertexIndex[1]]);
+    //                    }
+    //                    else if (triangleVertex[triangleVertexIndex[1]].Y == triangleVertex[triangleVertexIndex[2]].Y)
+    //                    {
+    //                        // 下底三角形
+    //                        DrawTriangle(
+    //                            ref vertices[index1], ref vertices[index2], ref vertices[index3],
+    //                            ref triangleVertex[triangleVertexIndex[0]], ref triangleVertex[triangleVertexIndex[1]], ref triangleVertex[triangleVertexIndex[2]]);
+    //                    }
+    //                    else
+    //                    {
+    //                        // 拆分成上底和下底的两个三角形
+    //                        VECTOR3 four;
+    //                        four.Y = triangleVertex[triangleVertexIndex[1]].Y;
+    //                        four.Z = 0;
 
-                            float v = (triangleVertex[triangleVertexIndex[1]].Y - triangleVertex[triangleVertexIndex[0]].Y) / (triangleVertex[triangleVertexIndex[2]].Y - triangleVertex[triangleVertexIndex[0]].Y);
-                            float w = 1 - v;
+    //                        float v = (triangleVertex[triangleVertexIndex[1]].Y - triangleVertex[triangleVertexIndex[0]].Y) / (triangleVertex[triangleVertexIndex[2]].Y - triangleVertex[triangleVertexIndex[0]].Y);
+    //                        float w = 1 - v;
 
-                            four.X = triangleVertex[triangleVertexIndex[0]].X + v * (triangleVertex[triangleVertexIndex[2]].X - triangleVertex[triangleVertexIndex[0]].X);
+    //                        four.X = triangleVertex[triangleVertexIndex[0]].X + v * (triangleVertex[triangleVertexIndex[2]].X - triangleVertex[triangleVertexIndex[0]].X);
 
-                            // color差值
-                            _four.Color.R = (byte)(vertices[index1].Color.R * w + vertices[index3].Color.R * v);
-                            _four.Color.G = (byte)(vertices[index1].Color.G * w + vertices[index3].Color.G * v);
-                            _four.Color.B = (byte)(vertices[index1].Color.B * w + vertices[index3].Color.B * v);
-                            _four.Color.A = (byte)(vertices[index1].Color.A * w + vertices[index3].Color.A * v);
+    //                        // color差值
+    //                        _four.Color.R = (byte)(vertices[index1].Color.R * w + vertices[index3].Color.R * v);
+    //                        _four.Color.G = (byte)(vertices[index1].Color.G * w + vertices[index3].Color.G * v);
+    //                        _four.Color.B = (byte)(vertices[index1].Color.B * w + vertices[index3].Color.B * v);
+    //                        _four.Color.A = (byte)(vertices[index1].Color.A * w + vertices[index3].Color.A * v);
 
-                            // uv差值
-                            _four.TextureCoordinate.X = vertices[index1].TextureCoordinate.X * w + vertices[index3].TextureCoordinate.X * v;
-                            _four.TextureCoordinate.Y = vertices[index1].TextureCoordinate.Y * w + vertices[index3].TextureCoordinate.Y * v;
+    //                        // uv差值
+    //                        _four.TextureCoordinate.X = vertices[index1].TextureCoordinate.X * w + vertices[index3].TextureCoordinate.X * v;
+    //                        _four.TextureCoordinate.Y = vertices[index1].TextureCoordinate.Y * w + vertices[index3].TextureCoordinate.Y * v;
 
-                            if (four.X > triangleVertex[triangleVertexIndex[1]].X)
-                            {
-                                // 上底三角形
-                                DrawTriangle(
-                                    ref vertices[index1], ref vertices[index2], ref _four,
-                                    ref triangleVertex[triangleVertexIndex[0]], ref triangleVertex[triangleVertexIndex[1]], ref four);
-                                // 下底三角形
-                                DrawTriangle(
-                                    ref vertices[index3], ref vertices[index2], ref _four,
-                                    ref triangleVertex[triangleVertexIndex[2]], ref triangleVertex[triangleVertexIndex[1]], ref four);
-                            }
-                            else
-                            {
-                                // 上底三角形
-                                DrawTriangle(
-                                    ref vertices[index1], ref _four, ref vertices[index2],
-                                    ref triangleVertex[triangleVertexIndex[0]], ref four, ref triangleVertex[triangleVertexIndex[1]]);
-                                // 下底三角形
-                                DrawTriangle(
-                                    ref vertices[index3], ref _four, ref vertices[index2],
-                                    ref triangleVertex[triangleVertexIndex[2]], ref four, ref triangleVertex[triangleVertexIndex[1]]);
-                            }
-                        }
-                    }
-                    #endregion
-                    break;
+    //                        if (four.X > triangleVertex[triangleVertexIndex[1]].X)
+    //                        {
+    //                            // 上底三角形
+    //                            DrawTriangle(
+    //                                ref vertices[index1], ref vertices[index2], ref _four,
+    //                                ref triangleVertex[triangleVertexIndex[0]], ref triangleVertex[triangleVertexIndex[1]], ref four);
+    //                            // 下底三角形
+    //                            DrawTriangle(
+    //                                ref vertices[index3], ref vertices[index2], ref _four,
+    //                                ref triangleVertex[triangleVertexIndex[2]], ref triangleVertex[triangleVertexIndex[1]], ref four);
+    //                        }
+    //                        else
+    //                        {
+    //                            // 上底三角形
+    //                            DrawTriangle(
+    //                                ref vertices[index1], ref _four, ref vertices[index2],
+    //                                ref triangleVertex[triangleVertexIndex[0]], ref four, ref triangleVertex[triangleVertexIndex[1]]);
+    //                            // 下底三角形
+    //                            DrawTriangle(
+    //                                ref vertices[index3], ref _four, ref vertices[index2],
+    //                                ref triangleVertex[triangleVertexIndex[2]], ref four, ref triangleVertex[triangleVertexIndex[1]]);
+    //                        }
+    //                    }
+    //                }
+    //                #endregion
+    //                break;
 
-                default: throw new NotImplementedException();
-            }
-        }
-        private void SortVertex(byte index1, byte index2)
-        {
-            bool swap = false;
-            // 从上到下，从左到右排列顶点
-            float y = triangleVertex[triangleVertexIndex[index1]].Y - triangleVertex[triangleVertexIndex[index2]].Y;
-            if (y > 0)
-                swap = true;
-            else if (y == 0)
-                swap = triangleVertex[triangleVertexIndex[index1]].X > triangleVertex[triangleVertexIndex[index2]].X;
-            if (swap)
-            {
-                byte index = triangleVertexIndex[index1];
-                triangleVertexIndex[index1] = triangleVertexIndex[index2];
-                triangleVertexIndex[index2] = index;
-            }
-        }
-        private void DrawTriangle(
-            ref TextureVertex _pos, ref TextureVertex _lef, ref TextureVertex _rig,
-            ref VECTOR3 pos, ref VECTOR3 lef, ref VECTOR3 rig)
-        {
-            bool downBottom = lef.Y > pos.Y;
-            short ytop;
-            short ybot;
-            if (downBottom)
-            {
-                ytop = (short)pos.Y;
-                ybot = (short)lef.Y;
-            }
-            else
-            {
-                ytop = (short)lef.Y;
-                ybot = (short)pos.Y;
-            }
+    //            default: throw new NotImplementedException();
+    //        }
+    //    }
+    //    private void SortVertex(byte index1, byte index2)
+    //    {
+    //        bool swap = false;
+    //        // 从上到下，从左到右排列顶点
+    //        float y = triangleVertex[triangleVertexIndex[index1]].Y - triangleVertex[triangleVertexIndex[index2]].Y;
+    //        if (y > 0)
+    //            swap = true;
+    //        else if (y == 0)
+    //            swap = triangleVertex[triangleVertexIndex[index1]].X > triangleVertex[triangleVertexIndex[index2]].X;
+    //        if (swap)
+    //        {
+    //            byte index = triangleVertexIndex[index1];
+    //            triangleVertexIndex[index1] = triangleVertexIndex[index2];
+    //            triangleVertexIndex[index2] = index;
+    //        }
+    //    }
+    //    private void DrawTriangle(
+    //        ref TextureVertex _pos, ref TextureVertex _lef, ref TextureVertex _rig,
+    //        ref VECTOR3 pos, ref VECTOR3 lef, ref VECTOR3 rig)
+    //    {
+    //        bool downBottom = lef.Y > pos.Y;
+    //        short ytop;
+    //        short ybot;
+    //        if (downBottom)
+    //        {
+    //            ytop = (short)pos.Y;
+    //            ybot = (short)lef.Y;
+    //        }
+    //        else
+    //        {
+    //            ytop = (short)lef.Y;
+    //            ybot = (short)pos.Y;
+    //        }
 
-            // scissor
-            if (ybot < scissor.Top || ytop >= scissor.Bottom)
-                return;
+    //        // scissor
+    //        if (ybot < scissor.Top || ytop >= scissor.Bottom)
+    //            return;
 
-            // 颜色差值类型
-            EColorFlag colorFlag;
-            if ((_pos.Color.R != _lef.Color.R || _pos.Color.G != _lef.Color.G || _pos.Color.B != _lef.Color.B || _pos.Color.A != _lef.Color.A) ||
-                (_pos.Color.R != _rig.Color.R || _pos.Color.G != _rig.Color.G || _pos.Color.B != _rig.Color.B || _pos.Color.A != _rig.Color.A) ||
-                (_rig.Color.R != _lef.Color.R || _rig.Color.G != _lef.Color.G || _rig.Color.B != _lef.Color.B || _rig.Color.A != _lef.Color.A))
-            {
-                colorFlag = EColorFlag.Linear;
-            }
-            else
-            {
-                colorFlag = EColorFlag.Fixed;
-                PSDefault.Default.color = _pos.Color;
-            }
+    //        // 颜色差值类型
+    //        EColorFlag colorFlag;
+    //        if ((_pos.Color.R != _lef.Color.R || _pos.Color.G != _lef.Color.G || _pos.Color.B != _lef.Color.B || _pos.Color.A != _lef.Color.A) ||
+    //            (_pos.Color.R != _rig.Color.R || _pos.Color.G != _rig.Color.G || _pos.Color.B != _rig.Color.B || _pos.Color.A != _rig.Color.A) ||
+    //            (_rig.Color.R != _lef.Color.R || _rig.Color.G != _lef.Color.G || _rig.Color.B != _lef.Color.B || _rig.Color.A != _lef.Color.A))
+    //        {
+    //            colorFlag = EColorFlag.Linear;
+    //        }
+    //        else
+    //        {
+    //            colorFlag = EColorFlag.Fixed;
+    //            PSDefault.Default.color = _pos.Color;
+    //        }
 
-            // 三角形两条边的反斜率
-            float bottomY = lef.Y;
-            float yxlef = (pos.X - lef.X) / (pos.Y - bottomY);
-            float yxrig = (pos.X - rig.X) / (pos.Y - bottomY);
-            // uv差值
-            float v;
-            float _v = 1f / (ybot - ytop);
-            if (downBottom)
-            {
-                v = 1;
-                _v = -_v;
-            }
-            else
-            {
-                v = 0;
-            }
-            float u;
-            float _u = 1f / (rig.X - lef.X);
-            for (short y = ytop; y < ybot; y++, v += _v)
-            {
-                // scissor
-                if (y < scissor.Top)
-                    continue;
-                if (y >= scissor.Bottom)
-                    break;
+    //        // 三角形两条边的反斜率
+    //        float bottomY = lef.Y;
+    //        float yxlef = (pos.X - lef.X) / (pos.Y - bottomY);
+    //        float yxrig = (pos.X - rig.X) / (pos.Y - bottomY);
+    //        // uv差值
+    //        float v;
+    //        float _v = 1f / (ybot - ytop);
+    //        if (downBottom)
+    //        {
+    //            v = 1;
+    //            _v = -_v;
+    //        }
+    //        else
+    //        {
+    //            v = 0;
+    //        }
+    //        float u;
+    //        float _u = 1f / (rig.X - lef.X);
+    //        for (short y = ytop; y < ybot; y++, v += _v)
+    //        {
+    //            // scissor
+    //            if (y < scissor.Top)
+    //                continue;
+    //            if (y >= scissor.Bottom)
+    //                break;
 
-                short xlef = (short)((y - bottomY) * yxlef + lef.X);
-                short xrig = (short)((y - bottomY) * yxrig + rig.X);
-                if (xlef == xrig)
-                    continue;
-                // scissor
-                if (xrig < scissor.Left || xlef >= scissor.Right)
-                    continue;
+    //            short xlef = (short)((y - bottomY) * yxlef + lef.X);
+    //            short xrig = (short)((y - bottomY) * yxrig + rig.X);
+    //            if (xlef == xrig)
+    //                continue;
+    //            // scissor
+    //            if (xrig < scissor.Left || xlef >= scissor.Right)
+    //                continue;
 
-                u = 0;
-                for (short x = xlef; x < xrig; x++, u += _u)
-                {
-                    // scissor
-                    if (x < scissor.Left)
-                        continue;
-                    if (x >= scissor.Right)
-                        break;
+    //            u = 0;
+    //            for (short x = xlef; x < xrig; x++, u += _u)
+    //            {
+    //                // scissor
+    //                if (x < scissor.Left)
+    //                    continue;
+    //                if (x >= scissor.Right)
+    //                    break;
 
-                    float w = 1 - u - v;
+    //                float w = 1 - u - v;
 
-                    // 颜色线性差值
-                    if (colorFlag == EColorFlag.Linear)
-                    {
-                        PSDefault.Default.color.R = (byte)(_lef.Color.R * w + _rig.Color.R * u + _pos.Color.R * v);
-                        PSDefault.Default.color.G = (byte)(_lef.Color.G * w + _rig.Color.G * u + _pos.Color.G * v);
-                        PSDefault.Default.color.B = (byte)(_lef.Color.B * w + _rig.Color.B * u + _pos.Color.B * v);
-                        PSDefault.Default.color.A = (byte)(_lef.Color.A * w + _rig.Color.A * u + _pos.Color.A * v);
-                    }
-                    // uv线性差值
-                    PSDefault.Default.coord.X = _lef.TextureCoordinate.X * w + _rig.TextureCoordinate.X * u + _pos.TextureCoordinate.X * v;
-                    PSDefault.Default.coord.Y = _lef.TextureCoordinate.Y * w + _rig.TextureCoordinate.Y * u + _pos.TextureCoordinate.Y * v;
-                    PSDefault.Default.main();
-                    for (int s = 0; s < psIndex; s++)
-                        currentPS[s].main();
+    //                // 颜色线性差值
+    //                if (colorFlag == EColorFlag.Linear)
+    //                {
+    //                    PSDefault.Default.color.R = (byte)(_lef.Color.R * w + _rig.Color.R * u + _pos.Color.R * v);
+    //                    PSDefault.Default.color.G = (byte)(_lef.Color.G * w + _rig.Color.G * u + _pos.Color.G * v);
+    //                    PSDefault.Default.color.B = (byte)(_lef.Color.B * w + _rig.Color.B * u + _pos.Color.B * v);
+    //                    PSDefault.Default.color.A = (byte)(_lef.Color.A * w + _rig.Color.A * u + _pos.Color.A * v);
+    //                }
+    //                // uv线性差值
+    //                PSDefault.Default.coord.X = _lef.TextureCoordinate.X * w + _rig.TextureCoordinate.X * u + _pos.TextureCoordinate.X * v;
+    //                PSDefault.Default.coord.Y = _lef.TextureCoordinate.Y * w + _rig.TextureCoordinate.Y * u + _pos.TextureCoordinate.Y * v;
+    //                PSDefault.Default.main();
+    //                for (int s = 0; s < psIndex; s++)
+    //                    currentPS[s].main();
 
-                    int index = y * bufferWidth + x;
-                    if (buffers[index].A == 0)
-                    {
-                        buffers[index].R = (byte)(PSDefault.Color.R * PSDefault.Color.A * PSDefault.R255);
-                        buffers[index].G = (byte)(PSDefault.Color.G * PSDefault.Color.A * PSDefault.R255);
-                        buffers[index].B = (byte)(PSDefault.Color.B * PSDefault.Color.A * PSDefault.R255);
-                        buffers[index].A = 255;
-                    }
-                    else
-                    {
-                        // 根据混合模式混合画布上已有的颜色和当前像素的颜色
-                        buffers[index].R = (byte)(PSDefault.Color.R * PSDefault.Color.A * PSDefault.R255 + buffers[index].R - buffers[index].R * PSDefault.Color.A * PSDefault.R255);
-                        buffers[index].G = (byte)(PSDefault.Color.G * PSDefault.Color.A * PSDefault.R255 + buffers[index].G - buffers[index].G * PSDefault.Color.A * PSDefault.R255);
-                        buffers[index].B = (byte)(PSDefault.Color.B * PSDefault.Color.A * PSDefault.R255 + buffers[index].B - buffers[index].B * PSDefault.Color.A * PSDefault.R255);
-                    }
-                    //buffers[y * bufferWidth + x] = PSDefault.Color;
-                }
-            }
-        }
-        protected internal override void Render()
-        {
-            screenGraphics.SetData(buffers);
-            baseDevice.Begin();
-            baseDevice.Draw(screenGraphics, FullGraphicsArea);
-            baseDevice.End();
-            baseDevice.Render();
-        }
-        public override void Clear()
-        {
-            for (int i = 0, len = buffers.Length; i < len; i++)
-                buffers[i].A = 0;
-        }
-    }
+    //                int index = y * bufferWidth + x;
+    //                if (buffers[index].A == 0)
+    //                {
+    //                    buffers[index].R = (byte)(PSDefault.Color.R * PSDefault.Color.A * PSDefault.R255);
+    //                    buffers[index].G = (byte)(PSDefault.Color.G * PSDefault.Color.A * PSDefault.R255);
+    //                    buffers[index].B = (byte)(PSDefault.Color.B * PSDefault.Color.A * PSDefault.R255);
+    //                    buffers[index].A = 255;
+    //                }
+    //                else
+    //                {
+    //                    // 根据混合模式混合画布上已有的颜色和当前像素的颜色
+    //                    buffers[index].R = (byte)(PSDefault.Color.R * PSDefault.Color.A * PSDefault.R255 + buffers[index].R - buffers[index].R * PSDefault.Color.A * PSDefault.R255);
+    //                    buffers[index].G = (byte)(PSDefault.Color.G * PSDefault.Color.A * PSDefault.R255 + buffers[index].G - buffers[index].G * PSDefault.Color.A * PSDefault.R255);
+    //                    buffers[index].B = (byte)(PSDefault.Color.B * PSDefault.Color.A * PSDefault.R255 + buffers[index].B - buffers[index].B * PSDefault.Color.A * PSDefault.R255);
+    //                }
+    //                //buffers[y * bufferWidth + x] = PSDefault.Color;
+    //            }
+    //        }
+    //    }
+    //    protected internal override void Render()
+    //    {
+    //        screenGraphics.SetData(buffers);
+    //        baseDevice.Begin();
+    //        baseDevice.Draw(screenGraphics, FullGraphicsArea);
+    //        baseDevice.End();
+    //        baseDevice.Render();
+    //    }
+    //    public override void Clear()
+    //    {
+    //        for (int i = 0, len = buffers.Length; i < len; i++)
+    //            buffers[i].A = 0;
+    //    }
+    //}
 
     #endregion
 
