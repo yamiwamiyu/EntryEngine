@@ -106,6 +106,7 @@ namespace EntryBuilder
             builder.Append(method.Name);
             builder.AppendGenericDefine(method);
             builder.AppendMethodParametersWithBracket(method);
+            builder.AppendMethodConstraint(method);
         }
         public static void AppendMethodParametersWithBracket(this StringBuilder builder, MethodBase method)
         {
@@ -132,6 +133,56 @@ namespace EntryBuilder
                     builder.Append(", ");
             }
 #endif
+        }
+        public static void AppendMethodConstraint(this StringBuilder builder, MethodBase method)
+        {
+            if (method.IsGenericMethod)
+            {
+                Type[] generic = method.GetGenericArguments();
+                for (int i = 0, len = generic.Length - 1; i <= len; i++)
+                {
+                    var g = generic[i];
+                    bool whereFlag = false;
+                    if ((g.GenericParameterAttributes & GenericParameterAttributes.ReferenceTypeConstraint) != GenericParameterAttributes.None)
+                    {
+                        builder.Append(" where {0} : class", g.Name);
+                        whereFlag = true;
+                    }
+                    if ((g.GenericParameterAttributes & GenericParameterAttributes.NotNullableValueTypeConstraint) != GenericParameterAttributes.None)
+                    {
+                        if (whereFlag)
+                            builder.Append(", struct");
+                        else
+                            builder.Append(" where {0} : struct", g.Name);
+                        whereFlag = true;
+                    }
+                    if ((g.GenericParameterAttributes & GenericParameterAttributes.DefaultConstructorConstraint) != GenericParameterAttributes.None)
+                    {
+                        if (whereFlag)
+                            builder.Append(", new()");
+                        else
+                            builder.Append(" where {0} : new()", g.Name);
+                        whereFlag = true;
+                    }
+                    var constraints = g.GetGenericParameterConstraints();
+                    if (constraints.Length > 0)
+                    {
+                        if (!whereFlag)
+                            builder.Append(" where {0} : ", g.Name);
+                        for (int j = 0, len2 = constraints.Length - 1; j <= len2; j++)
+                        {
+                            if (whereFlag)
+                                builder.Append(", ");
+                            builder.Append(constraints[j].Name);
+                            if (!whereFlag && j != len2)
+                                builder.Append(", ");
+                        }
+                    }
+                    if (i != len)
+                        builder.Append(" ");
+                }
+                builder.AppendLine();
+            }
         }
         public static void AppendMethodInvoke(this StringBuilder builder, MethodBase method)
         {
