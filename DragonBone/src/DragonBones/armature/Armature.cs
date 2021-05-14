@@ -315,13 +315,11 @@ namespace DragonBones
 
             if (this._armatureData == null)
             {
-                Helper.Assert(false, "The armature has been disposed.");
-                return;
+                throw new InvalidOperationException("The armature has been disposed.");
             }
             else if (this._armatureData.parent == null)
             {
-                Helper.Assert(false, "The armature data has been disposed.\nPlease make sure dispose armature before call factory.clear().");
-                return;
+                throw new InvalidOperationException("The armature data has been disposed.\nPlease make sure dispose armature before call factory.clear().");
             }
 
             var prevCacheFrameIndex = this._cacheFrameIndex;

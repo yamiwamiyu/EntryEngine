@@ -368,19 +368,11 @@ namespace DragonBones
         public AnimationState PlayConfig(AnimationConfig animationConfig)
         {
             var animationName = animationConfig.animation;
-            if (!(this._animations.ContainsKey(animationName)))
+            AnimationData animationData;
+            if (!(this._animations.TryGetValue(animationName, out animationData)))
             {
-                Helper.Assert(false,
-                    "Non-existent animation.\n" +
-                    "DragonBones name: " + this._armature.armatureData.parent.name +
-                    "Armature name: " + this._armature.name +
-                    "Animation name: " + animationName
-                );
-
                 return null;
             }
-
-            var animationData = this._animations[animationName];
 
             if (animationConfig.fadeOutMode == AnimationFadeOutMode.Single)
             {

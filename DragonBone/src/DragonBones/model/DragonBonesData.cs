@@ -165,10 +165,10 @@ namespace DragonBones
         /// <private/>
         public void AddArmature(ArmatureData value)
         {
-            if (this.armatures.ContainsKey(value.name))
+            ArmatureData data;
+            if (this.armatures.TryGetValue(value.name, out data))
             {
-                Helper.Assert(false, "Same armature: " + value.name);
-                this.armatures[value.name].ReturnToPool();
+                data.ReturnToPool();
             }
 
             value.parent = this;

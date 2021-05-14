@@ -123,10 +123,10 @@ namespace DragonBones
         {
             if (value != null)
             {
-                if (this.textures.ContainsKey(value.name))
+                TextureData data;
+                if (this.textures.TryGetValue(value.name, out data))
                 {
-                    Helper.Assert(false, "Same texture: " + value.name);
-                    this.textures[value.name].ReturnToPool();
+                    data.ReturnToPool();
                 }
 
                 value.parent = this;

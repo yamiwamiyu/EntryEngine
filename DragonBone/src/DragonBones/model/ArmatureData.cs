@@ -321,10 +321,10 @@ namespace DragonBones
         {
             if (value != null && !string.IsNullOrEmpty(value.name))
             {
-                if (this.bones.ContainsKey(value.name))
+                BoneData data;
+                if (this.bones.TryGetValue(value.name, out data))
                 {
-                    Helper.Assert(false, "Same bone: " + value.name);
-                    this.bones[value.name].ReturnToPool();
+                    data.ReturnToPool();
                 }
 
                 this.bones[value.name] = value;
@@ -337,10 +337,10 @@ namespace DragonBones
         {
             if (value != null && !string.IsNullOrEmpty(value.name))
             {
-                if (this.slots.ContainsKey(value.name))
+                SlotData data;
+                if (this.slots.TryGetValue(value.name, out data))
                 {
-                    Helper.Assert(false, "Same slot: " + value.name);
-                    this.slots[value.name].ReturnToPool();
+                    data.ReturnToPool();
                 }
 
                 this.slots[value.name] = value;
@@ -353,10 +353,10 @@ namespace DragonBones
         {
             if (value != null && !string.IsNullOrEmpty(value.name))
             {
-                if (this.constraints.ContainsKey(value.name))
+                ConstraintData data;
+                if (this.constraints.TryGetValue(value.name, out data))
                 {
-                    Helper.Assert(false, "Same constraint: " + value.name);
-                    this.slots[value.name].ReturnToPool();
+                    data.ReturnToPool();
                 }
 
                 this.constraints[value.name] = value;
@@ -368,10 +368,10 @@ namespace DragonBones
         {
             if (value != null && !string.IsNullOrEmpty(value.name))
             {
-                if (this.skins.ContainsKey(value.name))
+                SkinData data;
+                if (this.skins.TryGetValue(value.name, out data))
                 {
-                    Helper.Assert(false, "Same slot: " + value.name);
-                    this.skins[value.name].ReturnToPool();
+                    data.ReturnToPool();
                 }
 
                 value.parent = this;
@@ -393,10 +393,10 @@ namespace DragonBones
         {
             if (value != null && !string.IsNullOrEmpty(value.name))
             {
-                if (this.animations.ContainsKey(value.name))
+                AnimationData data;
+                if (this.animations.TryGetValue(value.name, out data))
                 {
-                    Helper.Assert(false, "Same animation: " + value.name);
-                    this.animations[value.name].ReturnToPool();
+                    data.ReturnToPool();
                 }
 
                 value.parent = this;

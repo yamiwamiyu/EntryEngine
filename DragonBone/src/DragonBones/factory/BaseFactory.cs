@@ -562,8 +562,7 @@ namespace DragonBones
                     return;
                 }
 
-                Helper.Assert(false, "Can not add same name data: " + name);
-                return;
+                throw new InvalidOperationException("Can not add same name data: " + name);
             }
 
             this._dragonBonesDataMap[name] = data;

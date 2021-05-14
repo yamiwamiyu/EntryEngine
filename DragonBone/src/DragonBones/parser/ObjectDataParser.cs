@@ -1003,7 +1003,7 @@ namespace DragonBones
             }
             else
             {
-                Helper.Assert(false, "Data error.\n Please reexport DragonBones Data to fixed the bug.");
+                throw new NotImplementedException("Data error.\n Please reexport DragonBones Data to fixed the bug.");
             }
 
             return polygonBoundingBox;
@@ -2092,7 +2092,8 @@ namespace DragonBones
         public override DragonBonesData ParseDragonBonesData(object rawObj, float scale = 1.0f)
         {
             var rawData = rawObj as Dictionary<string, object>;
-            Helper.Assert(rawData != null, "Data error.");
+            if (rawData == null)
+                throw new ArgumentNullException("Data error.");
 
             var version = ObjectDataParser._GetString(rawData, ObjectDataParser.VERSION, "");
             var compatibleVersion = ObjectDataParser._GetString(rawData, ObjectDataParser.COMPATIBLE_VERSION, "");
@@ -2149,15 +2150,12 @@ namespace DragonBones
             }
             else
             {
-                Helper.Assert(
-                    false,
+                throw new NotImplementedException(
                     "Nonsupport data version: " + version + "\n" +
                     "Please convert DragonBones data to support version.\n" +
                     "Read more: https://github.com/DragonBones/Tools/"
                 );
             }
-
-            return null;
         }
 
         public override bool ParseTextureAtlasData(object rawObj, TextureAtlasData textureAtlasData, float scale = 1.0f)

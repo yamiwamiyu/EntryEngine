@@ -255,10 +255,12 @@ namespace DragonBones
         public static readonly int UINT16_SIZE = 2;
         public static readonly int FLOAT_SIZE = 4;
 
-        internal static void Assert(bool condition, string message)
-        {
-            Debug.Assert(condition, message);
-        }
+        //internal static void Assert(bool condition, string message)
+        //{
+        //    //if (!condition)
+        //    //    throw new InvalidOperationException(message);
+        //    //Debug.Assert(condition, message);
+        //}
 
         internal static void ResizeList<T>(this List<T> list, int count, T value = default(T))
         {

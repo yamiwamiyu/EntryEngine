@@ -21,6 +21,7 @@
  * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 ﻿using System.Collections.Generic;
+using System;
 
 namespace DragonBones
 {
@@ -58,7 +59,7 @@ namespace DragonBones
                 }
                 else
                 {
-                    Helper.Assert(false, "The object is already in the pool.");
+                    throw new InvalidOperationException("The object is already in the pool.");
                 }
             }
             else

@@ -290,9 +290,9 @@ namespace DragonBones
 
         public override DragonBonesData ParseDragonBonesData(object rawObj, float scale = 1)
         {
-            Helper.Assert(rawObj != null && rawObj is byte[], "Data error.");
-
             byte[] bytes = rawObj as byte[];
+            if (bytes == null)
+                throw new ArgumentNullException("Data error.");
             int headerLength = 0;
             object header = DeserializeBinaryJsonData(bytes, out headerLength, jsonParseDelegate);
 
@@ -321,8 +321,7 @@ namespace DragonBones
                      tag[2] != array[2] ||
                      tag[3] != array[3])
                 {
-                    Helper.Assert(false, "Nonsupport data.");
-                    return null;
+                    throw new ArgumentException("Nonsupport data.");
                 }
 
                 headerLength = (int)reader.ReadUInt32();
