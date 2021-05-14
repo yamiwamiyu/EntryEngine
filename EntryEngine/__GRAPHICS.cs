@@ -96,8 +96,10 @@ namespace EntryEngine
             }
             MATRIX2x3 rotate = MATRIX2x3.CreateRotation(rotation, origin.X / source.Width * rect.Width, origin.Y / source.Height * rect.Height);
             MATRIX2x3 translation = MATRIX2x3.CreateTranslation(rect.X, rect.Y);
+            MATRIX2x3 scale = MATRIX2x3.CreateScale(rect.Width / source.Width, rect.Height / source.Height);
 
             MATRIX2x3.Multiply(ref rotate, ref mirror, out result);
+            MATRIX2x3.Multiply(ref result, ref scale, out result);
             MATRIX2x3.Multiply(ref result, ref translation, out result);
         }
         /// <summary>
@@ -107,7 +109,9 @@ namespace EntryEngine
         {
             MATRIX2x3 rotate = MATRIX2x3.CreateRotation(rotation, origin.X / source.Width * rect.Width, origin.Y / source.Height * rect.Height);
             MATRIX2x3 translation = MATRIX2x3.CreateTranslation(rect.X, rect.Y);
+            MATRIX2x3 scale = MATRIX2x3.CreateScale(rect.Width / source.Width, rect.Height / source.Height);
             MATRIX2x3.Multiply(ref rotate, ref translation, out result);
+            MATRIX2x3.Multiply(ref result, ref scale, out result);
         }
         /// <summary>通过像素差计算锚点，例如绘制200x200的图片到1000x1000的画布中的100x100的位置，锚点在画布中央，则p=[100,100],s=200,op=[500,500]</summary>
         /// <param name="position">从0开始到绘制区域宽度或高度的位置</param>
