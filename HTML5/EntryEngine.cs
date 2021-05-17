@@ -130,20 +130,11 @@ namespace EntryEngine.HTML5
 #else
     public class IOJSLocal : _IO.iO
     {
-        protected override string _ReadText(string file)
-        {
-            return window.localStorage.getItem(file);
-        }
         protected override byte[] _ReadByte(string file)
         {
             string text = window.localStorage.getItem(file);
             if (text == null) return null;
             return SingleEncoding.Single.GetBytes(text);
-        }
-        protected override void _WriteText(string file, string content, Encoding encoding)
-        {
-            // 可能由重写IO或File.WriteAllText完成对LocalStorage内写入文件
-            window.localStorage.setItem(file, content);
         }
         protected override void _WriteByte(string file, byte[] content)
         {
@@ -296,26 +287,6 @@ namespace EntryEngine.HTML5
             }
 
             return async;
-        }
-        protected sealed override string _ReadText(string file)
-        {
-            string data = base._ReadText(file);
-            if (data != null) return data;
-            // 网络加载
-            var req = new XMLHttpRequest();
-            req.open("GET", BuildNetUrl(file), false);
-            // 同步请求不能设置responseType
-            //req.responseType = "arraybuffer";
-            req.setRequestHeader("Content-Type", "application/octet-stream;charset=ISO-8859-1");
-            req.send();
-            if (req.readyState == 4 && req.status == 200)
-            {
-                return IOEncoding.GetString(SingleEncoding.Single.GetBytes(req.responseText));
-            }
-            else
-            {
-                throw new HttpException((HttpStatusCode)req.status);
-            }
         }
         protected sealed override byte[] _ReadByte(string file)
         {

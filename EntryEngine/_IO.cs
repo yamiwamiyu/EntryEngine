@@ -116,7 +116,7 @@ namespace EntryEngine
                 this.RootDirectory = root;
             }
 
-            internal byte[] _OnReadByte(byte[] data)
+            public byte[] _OnReadByte(byte[] data)
             {
                 if (OnReadByte != null)
                     OnReadByte(ref data);
@@ -136,7 +136,7 @@ namespace EntryEngine
             /// <summary>向IO读取文字内容</summary>
             public string ReadText(string file)
             {
-                return _ReadText(BuildPath(file));
+                return ReadPreambleText(ReadByte(file));
             }
             /// <summary>向IO读取二进制内容</summary>
             public byte[] ReadByte(string file)
@@ -161,7 +161,7 @@ namespace EntryEngine
             /// <summary>向IO写入文字内容</summary>
             public void WriteText(string file, string content, Encoding encoding)
             {
-                _WriteText(BuildPath(file), content, encoding);
+                WriteByte(BuildPath(file), encoding.GetBytes(content));
             }
             /// <summary>向IO写入二进制内容</summary>
             public void WriteByte(string file, byte[] content)
@@ -175,17 +175,9 @@ namespace EntryEngine
                 sync.SetData(_ReadByte(file));
                 return sync;
             }
-            protected virtual string _ReadText(string file)
-            {
-                return File.ReadAllText(file, ioEncoding);
-            }
             protected virtual byte[] _ReadByte(string file)
             {
                 return File.ReadAllBytes(file);
-            }
-            protected virtual void _WriteText(string file, string content, Encoding encoding)
-            {
-                File.WriteAllText(file, content, encoding);
             }
             protected virtual void _WriteByte(string file, byte[] content)
             {
