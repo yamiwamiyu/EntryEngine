@@ -5052,7 +5052,9 @@ namespace EntryBuilder
         }
         public static void BuildEncrypt(string dirOrFile, string outputDir)
         {
-            if (Path.GetFullPath(dirOrFile) == Path.GetFullPath(outputDir))
+            dirOrFile = Path.GetFullPath(dirOrFile);
+            outputDir = Path.GetFullPath(outputDir);
+            if (dirOrFile == outputDir)
             {
                 Console.WriteLine("输入目录不能和输出目录一样");
                 return;
@@ -5070,7 +5072,10 @@ namespace EntryBuilder
                 byte[] data = File.ReadAllBytes(file);
                 for (int i = 0; i < encrypts.Length; i++)
                     encrypts[i].Encrypt(ref data);
-                File.WriteAllBytes(Path.Combine(outputDir, Path.GetFileName(file)), data);
+                FileInfo f = new FileInfo(Path.Combine(outputDir, file.Substring(dirOrFile.Length + 1)));
+                if (!f.Directory.Exists)
+                    f.Directory.Create();
+                File.WriteAllBytes(f.FullName, data);
             }
         }
         [Code(ECode.ToBeContinue)]
