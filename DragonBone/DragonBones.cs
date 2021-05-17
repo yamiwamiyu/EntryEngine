@@ -174,8 +174,12 @@ namespace EntryEngine.DragonBones
             __GRAPHICS.DrawMatrix(ref vertex.Destination, ref vertex.Source, vertex.Rotation, ref vertex.Origin, vertex.Flip, out matrix);
             graphics.BeginFromPrevious(matrix);
 
-            VECTOR2 p;
+            SpriteVertex temp = new SpriteVertex();
+            int vertexCount = 0;
+            int primitiveCount = 0;
+            var vertices = graphics.GetVertexBuffer();
 
+            VECTOR2 p;
             int count = 0;
             for (int i = 0; i < slots.Count; i++)
             {
@@ -195,93 +199,7 @@ namespace EntryEngine.DragonBones
                         var data = (ImageDisplayData)display;
                         var currentTextureData = data.texture;
 
-                        //var textureScale = slot._armature.armatureData.scale * currentTextureData.parent.scale;
-                        //var sourceX = currentTextureData.region.x;
-                        //var sourceY = currentTextureData.region.y;
-                        //var sourceWidth = currentTextureData.region.width;
-                        //var sourceHeight = currentTextureData.region.height;
-
-                        //var scaleWidth = sourceWidth * textureScale;
-                        //var scaleHeight = sourceHeight * textureScale;
-                        //var pivotX = slot._pivotX;
-                        //var pivotY = slot._pivotY;
-
-                        //{
-                        //    byte r = (byte)(vertex.Color.R * slot._colorTransform.redMultiplier);
-                        //    byte g = (byte)(vertex.Color.G * slot._colorTransform.greenMultiplier);
-                        //    byte b = (byte)(vertex.Color.B * slot._colorTransform.blueMultiplier);
-                        //    byte a = (byte)(vertex.Color.A * slot._colorTransform.alphaMultiplier);
-                        //    for (int j = 0; j < 4; j++)
-                        //    {
-                        //        vertices[j].Color.R = r;
-                        //        vertices[j].Color.G = g;
-                        //        vertices[j].Color.B = b;
-                        //        vertices[j].Color.A = a;
-                        //    }
-                        //}
-
-                        //{
-                        //    var sm = slot.parent.globalTransformMatrix;
-                        //    var bm = slot.globalTransformMatrix;
-                        //    float[] vertexOffset = 
-                        //    {
-                        //        sm.tx, sm.ty,
-                        //        sm.tx + sourceWidth, sm.ty,
-                        //        sm.tx, sm.ty + sourceHeight,
-                        //        sm.tx + sourceWidth, sm.ty + sourceHeight,
-                        //    };
-                        //    float bwx = bm.tx + vertex.Destination.X, bwy = bm.ty + vertex.Destination.X;
-                        //    float a = bm.a, b = bm.b, c = bm.c, d = bm.d;
-                        //    float offsetX, offsetY;
-
-                        //    offsetX = vertexOffset[0]; // 0
-                        //    offsetY = vertexOffset[1]; // 1
-                        //    vertices[0].Position.X = offsetX * a + offsetY * b + bwx; // bl
-                        //    vertices[0].Position.Y = offsetX * c + offsetY * d + bwy;
-
-                        //    offsetX = vertexOffset[2]; // 2
-                        //    offsetY = vertexOffset[3]; // 3
-                        //    vertices[1].Position.X = offsetX * a + offsetY * b + bwx; // ul
-                        //    vertices[1].Position.Y = offsetX * c + offsetY * d + bwy;
-
-                        //    offsetX = vertexOffset[4]; // 4
-                        //    offsetY = vertexOffset[5]; // 5
-                        //    vertices[2].Position.X = offsetX * a + offsetY * b + bwx; // ur
-                        //    vertices[2].Position.Y = offsetX * c + offsetY * d + bwy;
-
-                        //    offsetX = vertexOffset[6]; // 6
-                        //    offsetY = vertexOffset[7]; // 7
-                        //    vertices[3].Position.X = offsetX * a + offsetY * b + bwx; // br
-                        //    vertices[3].Position.Y = offsetX * c + offsetY * d + bwy;
-
-                        //    //vertices
-                        //    //vertices[0].Position.X = 0 * scaleWidth - pivotX * sourceWidth;
-                        //    //vertices[0].Position.Y = 0 * scaleHeight - pivotY * sourceHeight;
-
-                        //    //vertices[1].Position.X = 1 * scaleWidth - pivotX * sourceWidth;
-                        //    //vertices[1].Position.Y = 0 * scaleHeight - pivotY * sourceHeight;
-
-                        //    //vertices[2].Position.X = 0 * scaleWidth - pivotX * sourceWidth;
-                        //    //vertices[2].Position.Y = 1 * scaleHeight - pivotY * sourceHeight;
-
-                        //    //vertices[3].Position.X = 1 * scaleWidth - pivotX * sourceWidth;
-                        //    //vertices[3].Position.Y = 1 * scaleHeight - pivotY * sourceHeight;
-                        //}
-
-                        //{
-                        //    vertices[0].TextureCoordinate.X = data.texture.region.x;
-                        //    vertices[0].TextureCoordinate.Y = data.texture.region.y;
-                        //    vertices[1].TextureCoordinate.X = data.texture.region.x + data.texture.region.width;
-                        //    vertices[1].TextureCoordinate.Y = data.texture.region.y;
-                        //    vertices[2].TextureCoordinate.X = data.texture.region.x;
-                        //    vertices[2].TextureCoordinate.Y = data.texture.region.y + data.texture.region.height;
-                        //    vertices[3].TextureCoordinate.X = data.texture.region.x + data.texture.region.width;
-                        //    vertices[3].TextureCoordinate.Y = data.texture.region.y + data.texture.region.height;
-                        //}
-
-                        //graphics.DrawPrimitives(Texture.Texture, vertices, 0, 4, quadTriangles, 0, 2);
-
-                        graphics.BaseDraw(TextureData.Texture,
+                        graphics.ToSpriteVertex(TextureData.Texture,
                             slot.global.x,
                             slot.global.y,
                             slot.global.scaleX, slot.global.scaleY,
@@ -292,21 +210,45 @@ namespace EntryEngine.DragonBones
                             (byte)(slot._colorTransform.blueMultiplier * vertex.Color.B), (byte)(slot._colorTransform.alphaMultiplier * vertex.Color.A),
                             slot.global.rotation,
                             data.pivot.x, data.pivot.y,
-                            EFlip.None);
+                            EFlip.None, ref temp);
+                        graphics.InputVertexToOutputVertex(ref temp, vertexCount);
+                        vertexCount += 4;
+                        primitiveCount += 2;
                     }
                     else if (display is MeshDisplayData)
                     {
                         //var data = (MeshDisplayData)display;
-                        //graphics.BaseDraw(Texture.Texture, data.transform.x, data.transform.y,
-                        //    data.texture.region.width, data.texture.region.height,
-                        //    false,
-                        //    data.texture.region.x, data.texture.region.y, data.texture.region.width, data.texture.region.height,
-                        //    true,
-                        //    (byte)(slot._colorTransform.redMultiplier * 255), (byte)(slot._colorTransform.greenMultiplier * 255),
-                        //    (byte)(slot._colorTransform.blueMultiplier * 255), (byte)(slot._colorTransform.alphaMultiplier * 255),
-                        //    data.transform.rotation,
-                        //    slot._pivotX, slot._pivotY,
-                        //    EFlip.None);
+                        //var intArray = data.vertices.data.intArray;
+                        //var floatArray = data.vertices.data.floatArray;
+                        //var vc = intArray[data.vertices.offset + (int)BinaryOffset.MeshVertexCount];
+                        //var tc = intArray[data.vertices.offset + (int)BinaryOffset.MeshTriangleCount];
+                        //int vertexOffset = intArray[data.vertices.offset + (int)BinaryOffset.MeshFloatOffset];
+                        //var textureScale = slot._armature.armatureData.scale;
+
+                        //if (vertexOffset < 0)
+                        //    vertexOffset += 65536; // Fixed out of bounds bug. 
+
+                        //var uvOffset = vertexOffset + vertexCount * 2;
+                        //var scale = slot._armature._armatureData.scale;
+
+                        //for (int j = 0, iV = vertexOffset, iU = uvOffset, l = vertexCount; j < l; ++j)
+                        //{
+                        //    vertices[vertexCount].UV.X = (data.texture.region.x + floatArray[iU++] * data.texture.region.width);
+                        //    vertices[vertexCount].UV.Y = 1.0f - (data.texture.region.y + floatArray[iU++] * data.texture.region.height);
+
+                        //    vertices[vertexCount].Position.X = floatArray[iV++] * textureScale;
+                        //    vertices[vertexCount].Position.Y = floatArray[iV++] * textureScale;
+                        //    vertices[vertexCount].Position.Z = 0;
+
+                        //    vertices[vertexCount].Color.R = (byte)(slot._colorTransform.redMultiplier * vertex.Color.R);
+                        //    vertices[vertexCount].Color.G = (byte)(slot._colorTransform.greenMultiplier * vertex.Color.G);
+                        //    vertices[vertexCount].Color.B = (byte)(slot._colorTransform.blueMultiplier * vertex.Color.B);
+                        //    vertices[vertexCount].Color.A = (byte)(slot._colorTransform.alphaMultiplier * vertex.Color.A);
+
+                        //    vertexCount++;
+                        //}
+
+                        //primitiveCount += tc;
                     }
                     else if (display is Armature)
                     {
@@ -317,6 +259,10 @@ namespace EntryEngine.DragonBones
                         throw new NotImplementedException();
                 }
             }
+
+            graphics.DrawPrimitives(TextureData.Texture, EPrimitiveType.Triangle,
+                vertices, 0, vertexCount,
+                graphics.GetIndicesBuffer(), 0, primitiveCount);
 
             graphics.End();
 

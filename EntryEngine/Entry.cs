@@ -7507,6 +7507,43 @@ namespace EntryEngine
             get { yield return SUFFIX; }
         }
     }
+    /// <summary>描边</summary>
+    public class ShaderStroke
+    {
+        private static SHADER shader;
+        /// <summary>描边的着色器，为空时无法使用描边效果</summary>
+        public static SHADER Shader
+        {
+            get { return shader; }
+            set
+            {
+                shader = value;
+                if (value != null)
+                {
+                    value.OnTexture = t => shader.SetValue("Delta", new VECTOR2(1f / t.Width, 1f / t.Height));
+                }
+            }
+        }
+
+        /// <summary>描边的颜色</summary>
+        public COLOR Color;
+        /// <summary>描边厚度，单位像素</summary>
+        public int Stroke = 2;
+        /// <summary>羽化</summary>
+        public float Smooth;
+
+        /// <summary>将参数设置到Shader</summary>
+        public void ToShader(SHADER shader)
+        {
+            shader.SetValue("Color", Color.ToFloat());
+            shader.SetValue("Stroke", Stroke);
+            shader.SetValue("Smooth", Smooth);
+        }
+    }
+    /// <summary>渐变色</summary>
+    public class ShaderGradient
+    {
+    }
 
 
     /// <summary>图片反转</summary>
@@ -8077,8 +8114,7 @@ namespace EntryEngine
         {
             BaseDraw(texture, location.X, location.Y, scale.X, scale.Y, true, source.X, source.Y, source.Width, source.Height, true, color.R, color.G, color.B, color.A, rotation, origin.X, origin.Y, flip);
         }
-        /// <summary>绘制将普通参数转换为SpriteVertex参数</summary>
-        /// <param name="texture">渲染的图片</param>
+        /// <summary>将普通参数转换为SpriteVertex参数并渲染图片</summary>
         /// <param name="x">渲染到频幕上的位置，单位像素</param>
         /// <param name="y">渲染到频幕上的位置，单位像素</param>
         /// <param name="w">渲染到频幕上的宽度，单位像素</param>
@@ -8172,6 +8208,82 @@ namespace EntryEngine
             vertex.Origin.Y = oy;
             vertex.Flip = flip;
             Draw(texture, ref vertex);
+        }
+        /// <summary>将普通参数转换为SpriteVertex参数</summary>
+        /// <param name="texture">渲染的图片</param>
+        /// <param name="x">渲染到频幕上的位置，单位像素</param>
+        /// <param name="y">渲染到频幕上的位置，单位像素</param>
+        /// <param name="w">渲染到频幕上的宽度，单位像素</param>
+        /// <param name="h">渲染到频幕上的高度，单位像素</param>
+        /// <param name="scale">true: w *= sw; h *= sh;</param>
+        /// <param name="sx">渲染图片部分的位置，单位像素</param>
+        /// <param name="sy">渲染图片部分的位置，单位像素</param>
+        /// <param name="sw">渲染图片部分的宽度，单位像素</param>
+        /// <param name="sh">渲染图片部分的高度，单位像素</param>
+        /// <param name="color">true: 使用rgba / false: 使用DefaultColor.RGBA</param>
+        /// <param name="r">叠加颜色</param>
+        /// <param name="g">叠加颜色</param>
+        /// <param name="b">叠加颜色</param>
+        /// <param name="a">叠加颜色</param>
+        /// <param name="rotation">图片旋转，单位弧度</param>
+        /// <param name="ox">旋转/缩放锚点，0~1分别代表最左到最右</param>
+        /// <param name="oy">旋转/缩放锚点，0~1分别代表最上到最下</param>
+        /// <param name="flip">图像反转</param>
+        /// <param name="vertex">转换的目标SpriteVertex</param>
+        public void ToSpriteVertex(TEXTURE texture,
+            float x, float y, float w, float h, bool scale,
+            float sx, float sy, float sw, float sh,
+            bool color, byte r, byte g, byte b, byte a,
+            float rotation, float ox, float oy, EFlip flip, ref SpriteVertex vertex)
+        {
+            if (texture == null)
+            {
+                throw new ArgumentNullException("texture");
+            }
+            if (texture.IsDisposed)
+            {
+                throw new ArgumentException("图片资源已经被释放");
+            }
+            if (float.IsNaN(sx))
+            {
+                sx = 0;
+                sy = 0;
+                sw = texture.Width;
+                sh = texture.Height;
+            }
+            if (sw == 0 || sh == 0 || w == 0 || h == 0)
+            {
+                return;
+            }
+            if (scale)
+            {
+                w *= sw;
+                h *= sh;
+            }
+            if (!color)
+            {
+                r = DefaultColor.R;
+                g = DefaultColor.G;
+                b = DefaultColor.B;
+                a = DefaultColor.A;
+            }
+
+            vertex.Destination.X = x;
+            vertex.Destination.Y = y;
+            vertex.Destination.Width = w;
+            vertex.Destination.Height = h;
+            vertex.Source.X = sx;
+            vertex.Source.Y = sy;
+            vertex.Source.Width = sw;
+            vertex.Source.Height = sh;
+            vertex.Color.R = r;
+            vertex.Color.G = g;
+            vertex.Color.B = b;
+            vertex.Color.A = a;
+            vertex.Rotation = rotation;
+            vertex.Origin.X = ox;
+            vertex.Origin.Y = oy;
+            vertex.Flip = flip;
         }
         public void Draw(TEXTURE texture, ref SpriteVertex vertex)
         {
@@ -8516,9 +8628,6 @@ namespace EntryEngine
                 currentTexture = textures[buffer.TextureIndex];
                 DrawPrimitivesBegin(currentTexture, EPrimitiveType.Triangle, 0);
 
-                float u = 1.0f / currentTexture.Width;
-                float v = 1.0f / currentTexture.Height;
-
                 int offset = 0;
                 int count = buffer.spriteQueueCount;
                 buffer.spriteQueueCount = 0;
@@ -8530,16 +8639,7 @@ namespace EntryEngine
                         num = MAX_BATCH_COUNT;
 
                     for (int i = 0; i < num; i++)
-                        InputVertexToOutputVertex(ref buffer.spriteQueue[offset + i], i * 4);
-
-                    if (UVNormalize)
-                    {
-                        for (int i = 0, e = num * 4; i < e; i++)
-                        {
-                            outputVertices[i].UV.X *= u;
-                            outputVertices[i].UV.Y *= v;
-                        }
-                    }
+                        InputVertexToOutputVertex(ref buffer.spriteQueue[offset + i], i << 2);
 
                     DrawPrimitives(EPrimitiveType.Triangle, outputVertices, 0, num * 4, indices, 0, num * 2);
                     offset += num;
@@ -8563,6 +8663,27 @@ namespace EntryEngine
         {
             outputVertices = new TextureVertex[newSize];
             return outputVertices;
+        }
+        /// <summary>获取三角形顶点索引缓冲</summary>
+        public short[] GetIndicesBuffer()
+        {
+            return indices;
+        }
+        /// <summary>对UV进行归一化操作</summary>
+        public void UV(TextureVertex[] vertices, int offset, int count)
+        {
+            UV(currentTexture, vertices, offset, count);
+        }
+        /// <summary>对UV进行归一化操作</summary>
+        public void UV(TEXTURE texture, TextureVertex[] vertices, int offset, int count)
+        {
+            float u = 1.0f / texture.Width;
+            float v = 1.0f / texture.Height;
+            for (int i = offset, e = offset + count; i < e; i++)
+            {
+                outputVertices[i].UV.X *= u;
+                outputVertices[i].UV.Y *= v;
+            }
         }
         /// <summary>将精灵渲染参数转换为顶点缓冲</summary>
         /// <param name="vertex">精炼渲染参数</param>
@@ -8606,14 +8727,16 @@ namespace EntryEngine
                 outputVertices[index].Color.A = vertex.Color.A;
             }
         }
+        /// <summary>图元绘制，会根据UVNormalize对顶点进行UV归一化</summary>
         public void DrawPrimitives(TEXTURE texture, EPrimitiveType ptype, TextureVertex[] vertices, int offset, int count, short[] indexes, int indexOffset, int primitiveCount)
         {
             //var drawable = TEXTURE.GetDrawableTexture(texture);
             //bool changeTex = currentTexture != drawable;
             Flush();
-            currentTexture = texture;
             //DrawPrimitivesBegin(changeTex ? drawable : null, ptype);
             DrawPrimitivesBegin(texture, ptype, 0);
+            if (UVNormalize)
+                UV(currentTexture, vertices, offset, count);
             DrawPrimitives(ptype, vertices, offset, count, indexes, indexOffset, primitiveCount);
             DrawPrimitivesEnd();
         }
@@ -8630,6 +8753,7 @@ namespace EntryEngine
         /// <param name="textureIndex">暂未实现参数</param>
         public void DrawPrimitivesBegin(TEXTURE texture, EPrimitiveType ptype, int textureIndex)
         {
+            currentTexture = texture;
             var shader = CurrentRenderState.Shader;
             if (shader != null && shader.OnTexture != null)
                 shader.OnTexture(texture);

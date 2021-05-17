@@ -255,13 +255,6 @@ namespace DragonBones
         public static readonly int UINT16_SIZE = 2;
         public static readonly int FLOAT_SIZE = 4;
 
-        //internal static void Assert(bool condition, string message)
-        //{
-        //    //if (!condition)
-        //    //    throw new InvalidOperationException(message);
-        //    //Debug.Assert(condition, message);
-        //}
-
         internal static void ResizeList<T>(this List<T> list, int count, T value = default(T))
         {
             if (list.Count == count)
@@ -283,32 +276,12 @@ namespace DragonBones
                 }
             }
         }
-
-        internal static List<float> Convert(this List<object> list)
-        {
-            List<float> res = new List<float>();
-
-            for (int i = 0; i < list.Count; i++)
-            {
-                res[i] = float.Parse(list[i].ToString());
-            }
-
-            return res;
-        }
-        internal static bool FloatEqual(float f0, float f1)
-        {
-            float f = Math.Abs(f0 - f1);
-
-            return (f < 0.000000001f);
-        }
     }
 
     /// <private/>
     public class DragonBones
     {
         public static bool yDown = true;
-        public static bool debug = false;
-        public static bool debugDraw = false;
         public static readonly string VERSION = "5.6.300";
 
         private readonly WorldClock _clock = new WorldClock();

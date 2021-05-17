@@ -1428,6 +1428,10 @@ namespace EntryEngine.Xna
             PipelinePiece.GetDefaultPipeline();
             ContentManager = NewContentManager();
             ContentManager.IODevice = _iO;
+
+//            var preShader = new PipelineShaderXna();
+//            ShaderStroke.Shader = (SHADER)preShader.LoadFromText(
+//@"");
         }
         
         protected override TEXTURE InternalNewTEXTURE(int width, int height)
