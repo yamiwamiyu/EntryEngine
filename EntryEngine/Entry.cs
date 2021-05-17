@@ -3349,6 +3349,16 @@ namespace EntryEngine
         {
             get { return contents.Count == 0 && asyncs.Count == 0; }
         }
+        /// <summary>异步加载是否已经全部完成</summary>
+        public bool IsAsyncLoadComplete
+        {
+            get { return asyncs.Count == 0; }
+        }
+        /// <summary>可以用此属性等待异步加载的全部完成</summary>
+        public ICoroutine WaitAsyncLoadHandle
+        {
+            get { return new CorDelegate((t) => IsAsyncLoadComplete); }
+        }
 
         [ADeviceNew]
         public ContentManager()
