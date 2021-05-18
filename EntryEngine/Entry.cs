@@ -8651,6 +8651,8 @@ namespace EntryEngine
                     for (int i = 0; i < num; i++)
                         InputVertexToOutputVertex(ref buffer.spriteQueue[offset + i], i << 2);
 
+                    if (UVNormalize)
+                        UV(outputVertices, 0, num * 4);
                     DrawPrimitives(EPrimitiveType.Triangle, outputVertices, 0, num * 4, indices, 0, num * 2);
                     offset += num;
                     count -= num;
@@ -8750,7 +8752,7 @@ namespace EntryEngine
             DrawPrimitives(ptype, vertices, offset, count, indexes, indexOffset, primitiveCount);
             DrawPrimitivesEnd();
         }
-        /// <summary>绘制片元(基元图形)</summary>
+        /// <summary>绘制片元(基元图形)，并未根据UVNormalize对顶点进行UV归一化</summary>
         /// <param name="ptype">片元类型</param>
         /// <param name="vertices">作为参数传输到顶点着色器的结构体，简称顶点</param>
         /// <param name="offset">顶点索引偏移</param>
