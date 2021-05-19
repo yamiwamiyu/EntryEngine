@@ -3363,6 +3363,61 @@ namespace EntryEngine
                 coroutines.Dequeue().Dispose();
         }
     }
+    /// <summary>并行协程，并行执行全部协程，全部协程执行完毕时协程完毕</summary>
+    public class CorParallel : ICoroutine
+    {
+        private List<COROUTINE> coroutines = new List<COROUTINE>();
+
+        public bool IsEnd
+        {
+            get { return coroutines.Count == 0; }
+        }
+
+        public CorParallel(){}
+        public CorParallel(IEnumerable<ICoroutine> current)
+        {
+            AddQueue(current);
+        }
+        public CorParallel(IEnumerator<ICoroutine> current)
+        {
+            AddQueue(current);
+        }
+        public CorParallel(params IEnumerable<ICoroutine>[] coroutines)
+        {
+            for (int i = 0; i < coroutines.Length; i++)
+                AddQueue(coroutines[i]);
+        }
+        public CorParallel(params IEnumerator<ICoroutine>[] coroutines)
+        {
+            for (int i = 0; i < coroutines.Length; i++)
+                AddQueue(coroutines[i]);
+        }
+
+        public void AddQueue(IEnumerator<ICoroutine> coroutine)
+        {
+            coroutines.Add(new COROUTINE(coroutine));
+        }
+        public void AddQueue(IEnumerable<ICoroutine> coroutine)
+        {
+            coroutines.Add(new COROUTINE(coroutine));
+        }
+        public void Update(GameTime time)
+        {
+            if (coroutines.Count > 0)
+            {
+                for (int i = coroutines.Count - 1; i >= 0; i--)
+                {
+                    coroutines[i].Update(time);
+                    if (coroutines[i].IsEnd)
+                        coroutines.RemoveAt(i);
+                }
+            }
+        }
+        public void Clear()
+        {
+            coroutines.Clear();
+        }
+    }
     /// <summary>可迭代协程，迭代返回指定类型的数据</summary>
     public class CorEnumerator<T> : PoolItem, ICoroutine, IDisposable
     {
