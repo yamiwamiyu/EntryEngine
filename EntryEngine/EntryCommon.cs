@@ -3376,28 +3376,28 @@ namespace EntryEngine
         public CorParallel(){}
         public CorParallel(IEnumerable<ICoroutine> current)
         {
-            AddQueue(current);
+            Add(current);
         }
         public CorParallel(IEnumerator<ICoroutine> current)
         {
-            AddQueue(current);
+            Add(current);
         }
         public CorParallel(params IEnumerable<ICoroutine>[] coroutines)
         {
             for (int i = 0; i < coroutines.Length; i++)
-                AddQueue(coroutines[i]);
+                Add(coroutines[i]);
         }
         public CorParallel(params IEnumerator<ICoroutine>[] coroutines)
         {
             for (int i = 0; i < coroutines.Length; i++)
-                AddQueue(coroutines[i]);
+                Add(coroutines[i]);
         }
 
-        public void AddQueue(IEnumerator<ICoroutine> coroutine)
+        public void Add(IEnumerator<ICoroutine> coroutine)
         {
             coroutines.Add(new COROUTINE(coroutine));
         }
-        public void AddQueue(IEnumerable<ICoroutine> coroutine)
+        public void Add(IEnumerable<ICoroutine> coroutine)
         {
             coroutines.Add(new COROUTINE(coroutine));
         }
