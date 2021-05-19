@@ -97,16 +97,13 @@ namespace EntryEngine.DragonBones
     /// <summary>龙骨骼</summary>
     public class DRAGONBONES : TEXTURE
     {
-        private const int TL = 0;
-        private const int TR = 1;
-        private const int BL = 2;
-        private const int BR = 3;
-        private static short[] quadTriangles = { 0, 1, 2, 1, 3, 2 };
-        private static TextureVertex[] vertices = new TextureVertex[128];
-
         internal DragonBonesData DragonBonesData;
         internal DBTextureAtlasData TextureData;
         int updated;
+        SpriteVertex tempVertex;
+        /// <summary>子骨架没有继承父插槽的变换，用此来进行转换（效果接近，但任然有细微不正确）</summary>
+        [Code(ECode.BUG)]
+        Transform tempTransform = new Transform();
 
         public override int Width
         {
@@ -166,21 +163,40 @@ namespace EntryEngine.DragonBones
             var slots = Proxy.Armature.GetSlots();
             if (slots.Count == 0) return true;
 
-            //armature.flipX = true;
-            //armature.flipY = true;
-            //vertex.Flip = EFlip.FlipHorizontally;
-
             MATRIX2x3 matrix;
             __GRAPHICS.DrawMatrix(ref vertex.Destination, ref vertex.Source, vertex.Rotation, ref vertex.Origin, vertex.Flip, out matrix);
             graphics.BeginFromPrevious(matrix);
 
-            SpriteVertex temp = new SpriteVertex();
             int vertexCount = 0;
             int primitiveCount = 0;
+
+            DrawArmature(graphics, ref vertex, ref vertexCount, ref primitiveCount);
+            if (vertexCount > 0)
+            {
+                graphics.DrawPrimitives(TextureData.Texture, EPrimitiveType.Triangle,
+                    graphics.GetVertexBuffer(), 0, vertexCount,
+                    graphics.GetIndicesBuffer(), 0, primitiveCount);
+            }
+
+            graphics.End();
+
+            return true;
+        }
+        private void DrawArmature(GRAPHICS graphics, ref SpriteVertex vertex,  ref int vertexCount, ref int primitiveCount)
+        {
+            if (Proxy.Armature == null) return;
+
+            if (updated != GameTime.Time.FrameID)
+            {
+                updated = GameTime.Time.FrameID;
+                Update(GameTime.Time);
+            }
+
+            var slots = Proxy.Armature.GetSlots();
+            if (slots.Count == 0) return;
+
             var vertices = graphics.GetVertexBuffer();
 
-            VECTOR2 p;
-            int count = 0;
             for (int i = 0; i < slots.Count; i++)
             {
                 Slot slot = slots[i];
@@ -199,19 +215,27 @@ namespace EntryEngine.DragonBones
                         var data = (ImageDisplayData)display;
                         var currentTextureData = data.texture;
 
+                        var transform = slot.global;
+                        // 子骨架继承父插槽的变换
+                        if (Proxy.Armature.parent != null)
+                        {
+                            tempTransform.CopyFrom(Proxy.Armature.parent.global);
+                            tempTransform.Add(slot.global);
+                            transform = tempTransform;
+                        }
                         graphics.ToSpriteVertex(TextureData.Texture,
-                            slot.global.x,
-                            slot.global.y,
-                            slot.global.scaleX, slot.global.scaleY,
+                            transform.x,
+                            transform.y,
+                            transform.scaleX, transform.scaleY,
                             true,
                             data.texture.region.x, data.texture.region.y, data.texture.region.width, data.texture.region.height,
                             true,
                             (byte)(slot._colorTransform.redMultiplier * vertex.Color.R), (byte)(slot._colorTransform.greenMultiplier * vertex.Color.G),
                             (byte)(slot._colorTransform.blueMultiplier * vertex.Color.B), (byte)(slot._colorTransform.alphaMultiplier * vertex.Color.A),
-                            slot.global.rotation,
+                            transform.rotation,
                             data.pivot.x, data.pivot.y,
-                            EFlip.None, ref temp);
-                        graphics.InputVertexToOutputVertex(ref temp, vertexCount);
+                            EFlip.None, ref tempVertex);
+                        graphics.InputVertexToOutputVertex(ref tempVertex, vertexCount);
                         vertexCount += 4;
                         primitiveCount += 2;
                     }
@@ -253,20 +277,12 @@ namespace EntryEngine.DragonBones
                     else if (display is Armature)
                     {
                         var data = (Armature)display;
-                        ((DRAGONBONES)data.display).Draw(graphics, ref vertex);
+                        ((DRAGONBONES)data.display).DrawArmature(graphics, ref vertex, ref vertexCount, ref primitiveCount);
                     }
                     else
                         throw new NotImplementedException();
                 }
             }
-
-            graphics.DrawPrimitives(TextureData.Texture, EPrimitiveType.Triangle,
-                vertices, 0, vertexCount,
-                graphics.GetIndicesBuffer(), 0, primitiveCount);
-
-            graphics.End();
-
-            return true;
         }
         protected override Content Cache()
         {
