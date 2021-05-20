@@ -3136,18 +3136,13 @@ namespace EntryEngine
 
             if (callback != null)
             {
-                Action<Content> _callback = callback as Action<Content>;
-                if (_callback == null)
+                this.callback = (c) =>
                 {
-                    _callback = (c) =>
-                    {
-                        // 强制类型转换不触发explicit/implicit转换操作符
-                        //callback(c as T);
-                        // HACK: JS的as关键字暂未实现对explicit的调用，所以暂时使用强制类型转换
-                        callback((T)c.Cache());
-                    };
-                }
-                this.callback = _callback;
+                    // 强制类型转换不触发explicit/implicit转换操作符
+                    //callback(c as T);
+                    // HACK: JS的as关键字暂未实现对explicit的调用，所以暂时使用强制类型转换
+                    callback((T)c.Cache());
+                };
             }
             if (exCallback != null)
             {
@@ -3509,12 +3504,11 @@ namespace EntryEngine
                 AddContent(key, content);
             }
 
-            content = content.Cache();
             AsyncLoadContent async;
             if (asyncs.TryGetValue(key, out async))
                 async.SetData(content);
 
-            return content;
+            return content.Cache();
         }
         /// <summary>加载一个资源，资源名就用文件名</summary>
         public T Load<T>(string file) where T : Content
