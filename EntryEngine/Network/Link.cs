@@ -467,7 +467,7 @@ namespace EntryEngine.Network
                     OnError(ret, msg);
                 this.IsEnd = true;
             }
-            void ICoroutine.Update(GameTime time)
+            public void Update(float time)
             {
             }
         }

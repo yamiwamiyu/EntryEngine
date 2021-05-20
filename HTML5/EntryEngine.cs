@@ -840,7 +840,7 @@ namespace EntryEngine.HTML5
             base.CopyTo(target);
             ((FontDynamicJSGL)target).fontName = this.fontName;
         }
-        protected override Content Cache()
+        public Content Cache()
         {
             return new FontDynamicJSGL(this.fontName, this.FontSize);
         }

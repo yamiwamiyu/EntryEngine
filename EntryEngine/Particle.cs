@@ -953,10 +953,6 @@ namespace EntryEngine
             _updated = true;
             _elapsed += elapsed;
         }
-        public override void Update(GameTime time)
-        {
-            Update(time.ElapsedSecond);
-        }
         protected internal override bool Draw(GRAPHICS graphics, ref SpriteVertex vertex)
         {
             if (!_updated && EntryService.Instance != null)
@@ -982,7 +978,7 @@ namespace EntryEngine
                 emitters[i].Reset();
             _elapsed = 0;
         }
-        protected internal override Content Cache()
+        public override Content Cache()
         {
             var cache = new ParticleSystem();
             cache.Duration = this.Duration;

@@ -514,7 +514,7 @@ namespace EntryEngine.Xna
             effect.Parameters[property].SetValue(result);
         }
 
-        protected override Content Cache()
+        public Content Cache()
         {
             ShaderXna copy = new ShaderXna(effect);
             copy._Key = this._Key;
@@ -1285,7 +1285,7 @@ namespace EntryEngine.Xna
                 cacheP2.image.Dispose();
 			}
 		}
-        protected override Content Cache()
+        public Content Cache()
         {
             FontGUIP font = new FontGUIP(cacheP2.font);
             font._Key = this._Key;

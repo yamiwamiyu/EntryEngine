@@ -127,11 +127,11 @@ namespace EntryEngine.DragonBones
 
         internal DRAGONBONES() { }
 
-        public override void Update(GameTime time)
+        public override void Update(float time)
         {
             updated = GameTime.Time.FrameID;
             if (Proxy.Armature != null)
-                Proxy.Armature.AdvanceTime(time.ElapsedSecond);
+                Proxy.Armature.AdvanceTime(time);
         }
         protected override void InternalDispose()
         {
@@ -157,7 +157,7 @@ namespace EntryEngine.DragonBones
             if (updated != GameTime.Time.FrameID)
             {
                 updated = GameTime.Time.FrameID;
-                Update(GameTime.Time);
+                Update(GameTime.Time.ElapsedSecond);
             }
 
             var slots = Proxy.Armature.GetSlots();
@@ -189,7 +189,7 @@ namespace EntryEngine.DragonBones
             if (updated != GameTime.Time.FrameID)
             {
                 updated = GameTime.Time.FrameID;
-                Update(GameTime.Time);
+                Update(GameTime.Time.ElapsedSecond);
             }
 
             var slots = Proxy.Armature.GetSlots();

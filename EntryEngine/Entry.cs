@@ -580,7 +580,7 @@ namespace EntryEngine
                 {
                     try
                     {
-                        item.Phasing.Update(GameTime);
+                        item.Phasing.Update(GameTime.ElapsedSecond);
                     }
                     catch (Exception ex)
                     {
@@ -3028,7 +3028,8 @@ namespace EntryEngine
 
         protected virtual void CacheDispose() { }
         protected internal abstract void InternalDispose();
-        protected internal virtual Content Cache()
+        /// <summary>返回资源的一个缓存副本</summary>
+        public virtual Content Cache()
         {
             return this;
         }
@@ -4270,7 +4271,7 @@ namespace EntryEngine
         {
             throw new NotImplementedException();
         }
-        public virtual void Update(GameTime time)
+        public virtual void Update(float time)
         {
         }
         /// <summary>图片自定义自身的绘制方式</summary>
@@ -4441,7 +4442,7 @@ namespace EntryEngine
             graphics.Draw(Base, ref vertex);
             return true;
         }
-        public override void Update(GameTime time)
+        public override void Update(float time)
         {
             if (Base != null)
                 Base.Update(time);
@@ -4469,6 +4470,13 @@ namespace EntryEngine
                 Async.Cancel();
             Async = null;
         }
+        public override Content Cache()
+        {
+            if (Base == null)
+                return base.Cache();
+            else
+                return Base.Cache();
+        }
     }
     public abstract class TEXTURE_ANIMATION : TEXTURE_Link
     {
@@ -4480,17 +4488,18 @@ namespace EntryEngine
             get { return anime == null; }
         }
         protected abstract IEnumerable<ICoroutine> Action(GameTime time);
-        public sealed override void Update(GameTime time)
+        public sealed override void Update(float elapsed)
         {
+            var time = GameTime.Time;
             updatedFlag = time.FrameID;
-            base.Update(time);
+            base.Update(time.ElapsedSecond);
             if (anime == null)
             {
                 anime = Action(time).GetEnumerator();
             }
             if (wait != null)
             {
-                wait.Update(time);
+                wait.Update(time.ElapsedSecond);
                 if (!wait.IsEnd)
                     return;
             }
@@ -4502,7 +4511,7 @@ namespace EntryEngine
         protected internal override bool Draw(GRAPHICS graphics, ref SpriteVertex vertex)
         {
             if (updatedFlag != GameTime.Time.FrameID)
-                Update(GameTime.Time);
+                Update(GameTime.Time.ElapsedSecond);
             return base.Draw(graphics, ref vertex);
         }
     }
@@ -4628,7 +4637,7 @@ namespace EntryEngine
             vertex = copy;
             return true;
         }
-        protected internal override Content Cache()
+        public override Content Cache()
         {
             // Base.Cache()?
             var cache = new PIECE();
@@ -5082,7 +5091,7 @@ namespace EntryEngine
             vertex.Origin.Y = __GRAPHICS.CalcOrigin(param.Y, param.H, vertex.Origin.Y);
             graphics.Draw(Base, ref vertex);
         }
-        protected internal override Content Cache()
+        public override Content Cache()
         {
             var cache = new PATCH();
             cache._Key = this._Key;
@@ -5506,8 +5515,7 @@ namespace EntryEngine
         }
         /// <summary>更新动画的播放</summary>
         /// <param name="elapsed">动画播放经过的时间，单位秒</param>
-        /// <returns>动画播放完毕</returns>
-        public bool Update(float elapsed)
+        public override void Update(float elapsed)
         {
             updated = GameTime.Time.FrameID;
 
@@ -5526,19 +5534,13 @@ namespace EntryEngine
                     break;
             }
             this.elapsedTime += elapsed;
-
-            return over;
-        }
-        public override void Update(GameTime time)
-        {
-            Update(time.ElapsedSecond);
         }
         protected internal override bool Draw(GRAPHICS graphics, ref SpriteVertex vertex)
         {
             if (updated != GameTime.Time.FrameID)
             {
                 updated = GameTime.Time.FrameID;
-                Update(GameTime.Time);
+                Update(GameTime.Time.ElapsedSecond);
             }
             var frame = Frame;
             if (frame != null)
@@ -5560,7 +5562,7 @@ namespace EntryEngine
                 textures = null;
             }
         }
-        protected internal override Content Cache()
+        public override Content Cache()
         {
             var cache = new ANIMATION(sequences, textures);
             cache._Key = this._Key;
@@ -5957,11 +5959,12 @@ namespace EntryEngine
             vertex = copy;
             return true;
         }
-        protected internal override Content Cache()
+        public override Content Cache()
         {
             var cache = new TILE();
             cache._Key = this._Key;
-            cache.Base = this.Base;
+            if (this.Base != null)
+                cache.Base = (TEXTURE)this.Base.Cache();
             cache.tileX = this.tileX;
             cache.tileY = this.tileY;
             return cache;
@@ -6729,7 +6732,7 @@ namespace EntryEngine
         {
             Base.InternalDispose();
         }
-        protected internal override EntryEngine.Content Cache()
+        public override EntryEngine.Content Cache()
         {
             return Base.Cache();
         }
@@ -7040,7 +7043,7 @@ namespace EntryEngine
             FontStatic font = (FontStatic)target;
             font.scale = this.scale;
         }
-        protected internal override Content Cache()
+        public override Content Cache()
         {
             FontStatic clone = new FontStatic();
             CopyTo(clone);

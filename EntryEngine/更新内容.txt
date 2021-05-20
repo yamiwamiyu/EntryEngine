@@ -1,4 +1,9 @@
-﻿2020/05/13
+﻿2020/05/20
+1. 将ICoroutine.Update(GameTime)改为实现IUpdatable接口的Update(float)
+2. Content.Cache改为public
+3. 修复部分资源Cache没有将内部资源Cache的BUG
+
+2020/05/13
 1. 完善SHADER，让自定义SHADER可用
 2. 画布增加UVNormalize，渲染时UV改成0~1之间
 3. 新增着色器.txt

@@ -155,7 +155,7 @@ namespace EntryEngine.UI
 				{
 					FrameChanged(this, e);
 				}
-                animation.Update(e.GameTime);
+                animation.Update(e.GameTime.ElapsedSecond);
 				if (animation.IsSequenceOver)
 				{
 					if (SequenceOver != null)

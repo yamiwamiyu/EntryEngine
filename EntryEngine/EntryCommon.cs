@@ -50,7 +50,7 @@ namespace EntryEngine
 #if DEBUG
                     try
                     {
-                        coroutine.Update(gameTime);
+                        coroutine.Update(gameTime.ElapsedSecond);
                     }
                     catch (Exception ex)
                     {
@@ -245,17 +245,9 @@ namespace EntryEngine
 			private set;
 		}
         /// <summary>一帧经过的理论时间毫秒数</summary>
-		public float Elapsed
-		{
-			get;
-			internal set;
-		}
+        public float Elapsed;
         /// <summary>经过的秒数</summary>
-        public float ElapsedSecond
-        {
-            get;
-            internal set;
-        }
+        public float ElapsedSecond;
         /// <summary>当前帧经过的实时时间</summary>
 		public TimeSpan CurrentElapsed
 		{
@@ -3118,7 +3110,7 @@ namespace EntryEngine
         protected virtual void InternalComplete()
         {
         }
-        public virtual void Update(GameTime time)
+        public virtual void Update(float time)
         {
         }
     }
@@ -3153,28 +3145,27 @@ namespace EntryEngine
     }
 
     /// <summary>协程接口</summary>
-    public interface ICoroutine
+    public interface ICoroutine : IUpdatable
     {
         bool IsEnd { get; }
-        void Update(GameTime time);
     }
     /// <summary>自定义委托完成协程</summary>
     public class CorDelegate : ICoroutine
     {
-        private Func<GameTime, bool> coroutine;
+        private Func<float, bool> coroutine;
         private bool completed;
 
         public bool IsEnd
         {
             get { return completed; }
         }
-        public CorDelegate(Func<GameTime, bool> coroutine)
+        public CorDelegate(Func<float, bool> coroutine)
         {
             if (coroutine == null)
                 throw new ArgumentNullException();
             this.coroutine = coroutine;
         }
-        public void Update(GameTime time)
+        public void Update(float time)
         {
             completed = coroutine(time);
         }
@@ -3267,7 +3258,7 @@ namespace EntryEngine
             this.last = false;
         }
 
-        public void Update(GameTime time)
+        public void Update(float time)
         {
             if (current == null)
             {
@@ -3343,7 +3334,7 @@ namespace EntryEngine
         {
             coroutines.Enqueue(new COROUTINE(coroutine));
         }
-        public void Update(GameTime time)
+        public void Update(float time)
         {
             if (coroutines.Count > 0)
             {
@@ -3401,7 +3392,7 @@ namespace EntryEngine
         {
             coroutines.Add(new COROUTINE(coroutine));
         }
-        public void Update(GameTime time)
+        public void Update(float time)
         {
             if (coroutines.Count > 0)
             {
@@ -3459,7 +3450,7 @@ namespace EntryEngine
                 Dispose();
             return last;
         }
-        void ICoroutine.Update(GameTime time)
+        public void Update(float time)
         {
             T item;
             Update(out item);
@@ -3568,16 +3559,19 @@ namespace EntryEngine
             else
                 return (int)(previous / TickTime) != (int)(current / TickTime);
         }
-        void ICoroutine.Update(GameTime time)
+        void IUpdatable.Update(float time)
         {
-            Tick(time.Elapsed);
+            Tick(time);
         }
     }
 
     
     // 时间线
+    /// <summary>每帧可更新的内容</summary>
     public interface IUpdatable
     {
+        /// <summary>更新</summary>
+        /// <param name="elapsed">一帧经过的时间，单位自定义，一般为秒</param>
         void Update(float elapsed);
     }
     /// <summary>时间线</summary>
