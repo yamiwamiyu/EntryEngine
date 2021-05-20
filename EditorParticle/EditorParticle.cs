@@ -161,6 +161,7 @@ public partial class EditorParticle : SceneEditorEntry
                 RefreshEmitter();
             }
         }
+        /// <summary>将控件里的流同步到粒子系统中</summary>
         public void RefreshEmitter()
         {
             UIElement temp = this;
@@ -170,6 +171,7 @@ public partial class EditorParticle : SceneEditorEntry
             List<ParticleStream> list = new List<ParticleStream>();
             RefreshParticleStream(top, list);
             Emitter.Flow = list.ToArray();
+            _this.ResetParticleStream();
         }
 
         static void DrawLine(UIElement sender, GRAPHICS sb, Entry e)
@@ -282,10 +284,14 @@ public partial class EditorParticle : SceneEditorEntry
         }
     }
 
+    /// <summary>删除/恢复一个流节点控件操作，并将控件的流内粒子流同步到粒子系统中</summary>
     class ODelete : IOperation
     {
+        /// <summary>要插入/删除的流控件</summary>
         internal UIElement stream;
+        /// <summary>要插入/删除的流控件的父控件</summary>
         internal UIElement parent;
+        /// <summary>要插入/删除的流控件在父控件中的索引</summary>
         internal int index;
 
         public ODelete()
@@ -330,13 +336,19 @@ public partial class EditorParticle : SceneEditorEntry
             }
         }
     }
+    /// <summary>新插入一个或多个粒子流到指定的流节点位置</summary>
     class ONew : IOperation
     {
+        /// <summary>将A拖入B时，B中会多出A，A原本的父控件中将移除A（Delete）</summary>
         public ODelete Delete;
+        /// <summary>将A拖入B时，B中会多出A（Add），A原本的父控件中将移除A</summary>
         public ODelete Add;
 
+        /// <summary>插入的流节点</summary>
         public FLOW Flow;
+        /// <summary>插入到流节点的位置</summary>
         public int Index;
+        /// <summary>要插入的粒子流</summary>
         public ParticleStream[] Stream;
 
         public void Redo()
@@ -346,6 +358,8 @@ public partial class EditorParticle : SceneEditorEntry
                 Add.Undo();
             if (Delete != null)
                 Delete.Redo();
+            if (Add == null && Delete == null)
+                Flow.RefreshEmitter();
         }
         public void Undo()
         {
@@ -358,6 +372,8 @@ public partial class EditorParticle : SceneEditorEntry
                 Delete.Undo();
             if (Add != null)
                 Add.Redo();
+            if (Add == null && Delete == null)
+                Flow.RefreshEmitter();
         }
     }
 
@@ -548,6 +564,32 @@ public partial class EditorParticle : SceneEditorEntry
 
         New();
         SetTip();
+
+
+        // HACK: 转换之前的粒子系统
+        //const string DIRECTORY = @"....\Launch\Client\Content\";
+        //foreach (var item in Directory.GetFiles(DIRECTORY, "*.ps", SearchOption.AllDirectories))
+        //{
+        //    ParticleSystem p = null;
+        //    try
+        //    {
+        //        string f = _IO.RelativePathForward(item, DIRECTORY);
+        //        p = Content.Load<ParticleSystem>(f);
+        //        for (int i = p.Emitters.Length - 1; i >= 0; i--)
+        //        {
+        //            if (p.Emitters[i].Flow.Length == 0)
+        //            {
+        //                p.RemoveEmitter(p.Emitters[i]);
+        //            }
+        //        }
+        //        Save(p, item);
+        //    }
+        //    catch
+        //    {
+        //        File.Delete(item);
+        //    }
+        //}
+
         return null;
     }
     
@@ -667,12 +709,12 @@ public partial class EditorParticle : SceneEditorEntry
     void Redo()
     {
         ol.Redo();
-        ResetParticleStream();
+        //ResetParticleStream();
     }
     void Undo()
     {
         ol.Undo();
-        ResetParticleStream();
+        //ResetParticleStream();
     }
     void Delete()
     {
@@ -798,16 +840,19 @@ public partial class EditorParticle : SceneEditorEntry
     }
     void AddParticleSystem(ParticleSystem ps, VECTOR2 pos)
     {
-        var emitters = ps.Emitters;
+        var emitters = ps.Emitters.ToArray();
+        // 这里清空发射器，改由add来添加上发射器
+        ps.Emitters.Clear();
         for (int i = 0; i < emitters.Length; i++)
         {
-            var flow = new FLOW();
+            var flow = new FLOW(emitters[i]);
             flow.Location = pos;
 
             ONew op = new ONew();
             op.Flow = flow;
             op.Index = 0;
-            op.Stream = emitters[i].Flow.ToArray();
+            op.Stream = emitters[i].Flow;
+            // 这里清空粒子流，改由op来添加上粒子流
             emitters[i].Flow = new ParticleStream[0];
 
             ODelete add = new ODelete();
@@ -1026,7 +1071,7 @@ public partial class EditorParticle : SceneEditorEntry
                 {
                     UIElement target = UIElement.FindChildPriority(PViewPF, ui => ui == flow || ui == selectedUI, ui => ui != PViewPF && ui.Name != null && ui.IsHover);
                     ONew operation = new ONew();
-                    operation.Stream = flow.Emitter.Flow.ToArray();
+                    operation.Stream = flow.Emitter.Flow;
                     if (target != null)
                     {
                         // 新建粒子流到目标处

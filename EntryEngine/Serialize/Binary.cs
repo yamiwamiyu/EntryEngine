@@ -2440,6 +2440,13 @@ namespace EntryEngine.Serialize
                     }
                 }
 
+                // HACK: 转换之前的粒子系统
+                //if (type.IsArray)
+                //{
+                //    bool value;
+                //    Read(out value);
+                //}
+
                 return base.ReadObject(type);
             }
             protected override object ReadClassObject(Type type)
@@ -2639,7 +2646,13 @@ namespace EntryEngine.Serialize
                             try
                             {
                                 if (valueType != field.FieldType)
+                                {
+                                    // HACK: 转换之前的粒子系统
+                                    //if (result is IList && field.FieldType.IsArray)
+                                    //    result = valueType.GetMethod("ToArray").Invoke(result, new object[0]);
+                                    //else
                                     result = Convert.ChangeType(result, field.FieldType);
+                                }
                                 field.SetValue(value, result);
                             }
                             catch (Exception ex)

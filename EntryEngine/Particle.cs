@@ -870,10 +870,11 @@ namespace EntryEngine
         /// <summary>粒子持续时间(s)</summary>
         public float Duration;
 
-        public ParticleEmitter[] Emitters
-        {
-            get { return emitters.ToArray(); }
-        }
+        public List<ParticleEmitter> Emitters { get { return emitters; } }
+        //public ParticleEmitter[] Emitters
+        //{
+        //    get { return emitters.ToArray(); }
+        //}
         public int EmittersCount
         {
             get { return emitters.Count; }
@@ -912,7 +913,7 @@ namespace EntryEngine
             this.Duration = structure.Duration;
             if (structure.Emitters != null)
                 for (int i = 0; i < structure.Emitters.Length; i++)
-                    AddEmitter(structure.Emitters[i]);
+                    emitters.Add(structure.Emitters[i]);
         }
 
         public bool AddEmitter(ParticleEmitter emitter)
@@ -999,7 +1000,7 @@ namespace EntryEngine
         public StructureParticleSystem(ParticleSystem ps)
         {
             this.Duration = ps.Duration;
-            this.Emitters = ps.Emitters;
+            this.Emitters = ps.Emitters.ToArray();
         }
     }
     public class ParticleEmitter : IUpdatable
@@ -1118,6 +1119,11 @@ namespace EntryEngine
             if (p.Age >= p.Life)
             {
                 particles.RemoveAt(p);
+            }
+
+            if (p.Texture != null)
+            {
+                p.Texture.Update(_elapsed);
             }
         }
         internal void Draw(GRAPHICS graphics, VECTOR2 apos)
