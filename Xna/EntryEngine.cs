@@ -1285,7 +1285,7 @@ namespace EntryEngine.Xna
                 cacheP2.image.Dispose();
 			}
 		}
-        public Content Cache()
+        public override Content Cache()
         {
             FontGUIP font = new FontGUIP(cacheP2.font);
             font._Key = this._Key;
