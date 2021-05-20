@@ -284,7 +284,7 @@ namespace EntryEngine.DragonBones
                 }
             }
         }
-        protected override Content Cache()
+        public Content Cache()
         {
             var armature = PipelineDragonBones.factory.BuildArmature(null, this.DragonBonesData, this.TextureData);
             var cache = (DRAGONBONES)armature.display;
