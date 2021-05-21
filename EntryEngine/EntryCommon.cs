@@ -3309,30 +3309,38 @@ namespace EntryEngine
         }
         public CorQueue(IEnumerable<ICoroutine> current)
         {
-            AddQueue(current);
+            Add(current);
         }
         public CorQueue(IEnumerator<ICoroutine> current)
         {
-            AddQueue(current);
+            Add(current);
         }
         public CorQueue(params IEnumerable<ICoroutine>[] coroutines)
         {
             for (int i = 0; i < coroutines.Length; i++)
-                AddQueue(coroutines[i]);
+                Add(coroutines[i]);
         }
         public CorQueue(params IEnumerator<ICoroutine>[] coroutines)
         {
             for (int i = 0; i < coroutines.Length; i++)
-                AddQueue(coroutines[i]);
+                Add(coroutines[i]);
         }
 
-        public void AddQueue(IEnumerator<ICoroutine> coroutine)
+        public void Add(COROUTINE coroutine)
         {
-            coroutines.Enqueue(new COROUTINE(coroutine));
+            coroutines.Enqueue(coroutine);
         }
-        public void AddQueue(IEnumerable<ICoroutine> coroutine)
+        public COROUTINE Add(IEnumerator<ICoroutine> coroutine)
         {
-            coroutines.Enqueue(new COROUTINE(coroutine));
+            var add = new COROUTINE(coroutine);
+            Add(add);
+            return add;
+        }
+        public COROUTINE Add(IEnumerable<ICoroutine> coroutine)
+        {
+            var add = new COROUTINE(coroutine);
+            Add(add);
+            return add;
         }
         public void Update(float time)
         {
@@ -3384,13 +3392,21 @@ namespace EntryEngine
                 Add(coroutines[i]);
         }
 
-        public void Add(IEnumerator<ICoroutine> coroutine)
+        public void Add(COROUTINE coroutine)
         {
-            coroutines.Add(new COROUTINE(coroutine));
+            coroutines.Add(coroutine);
         }
-        public void Add(IEnumerable<ICoroutine> coroutine)
+        public COROUTINE Add(IEnumerator<ICoroutine> coroutine)
         {
-            coroutines.Add(new COROUTINE(coroutine));
+            var add = new COROUTINE(coroutine);
+            Add(add);
+            return add;
+        }
+        public COROUTINE Add(IEnumerable<ICoroutine> coroutine)
+        {
+            var add = new COROUTINE(coroutine);
+            Add(add);
+            return add;
         }
         public void Update(float time)
         {
