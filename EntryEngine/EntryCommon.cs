@@ -99,7 +99,7 @@ namespace EntryEngine
 			lock (coroutines)
 			{
 				COROUTINE newCoroutine = new COROUTINE(coroutine);
-				newCoroutine.PoolIndex = coroutines.Add(newCoroutine);
+				coroutines.Add(newCoroutine);
 				return newCoroutine;
 			}
 		}
@@ -108,7 +108,7 @@ namespace EntryEngine
 			lock (coroutines)
 			{
 				COROUTINE newCoroutine = new COROUTINE(coroutine);
-				newCoroutine.PoolIndex = coroutines.Add(newCoroutine);
+				coroutines.Add(newCoroutine);
 				return newCoroutine;
 			}
 		}
@@ -117,7 +117,7 @@ namespace EntryEngine
 			lock (coroutines)
 			{
 				COROUTINE newCoroutine = new COROUTINE(coroutine);
-				newCoroutine.PoolIndex = coroutines.Add(newCoroutine);
+				coroutines.Add(newCoroutine);
 				return newCoroutine;
 			}
 		}
@@ -1250,7 +1250,9 @@ namespace EntryEngine
     /// <summary>要用到池的对象应该继承此类型以便快速进行池内的增删改</summary>
 	public class PoolItem
 	{
-		internal int PoolIndex;
+        internal int poolIndex;
+        /// <summary>池对象在池中的索引</summary>
+        public int PoolIndex { get { return poolIndex; } }
 	}
     public delegate void ActionRef<T>(ref T action);
     /// <summary>池数据结构，可以循环利用对象，减少new对象的次数</summary>
@@ -1310,7 +1312,7 @@ namespace EntryEngine
 
 			PoolItem item = target as PoolItem;
 			if (item != null)
-				item.PoolIndex = index;
+				item.poolIndex = index;
 			return index;
 		}
         /// <summary>从池里取出一个空闲的对象</summary>
