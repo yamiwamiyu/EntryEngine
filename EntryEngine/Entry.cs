@@ -7555,7 +7555,7 @@ namespace EntryEngine
         Triangle,
     }
     /// <summary>基础图片对象</summary>
-    public class Sprite
+    public class Sprite : PoolItem
     {
         public TEXTURE Texture;
         public VECTOR2 Position;
@@ -7577,7 +7577,7 @@ namespace EntryEngine
         }
     }
     /// <summary>基础文字对象</summary>
-    public class SpriteText
+    public class SpriteText : PoolItem
     {
         public FONT Font = FONT.Default;
         public string Text;
