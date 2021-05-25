@@ -1871,6 +1871,18 @@ namespace EntryEngine.UI
             location = VECTOR2.Subtract(location, CalcPivotPoint(textSize, alignment));
             return location;
         }
+        /// <summary>文字只能左上角开始绘制，这里计算文字应用了对齐之后的左上角位置</summary>
+        /// <param name="bound">文字绘制的区域</param>
+        /// <param name="textSize">文字计算出的绘制尺寸，一般由Font.MeasureString乘以缩放计算得出</param>
+        /// <param name="alignment">文字对齐方式</param>
+        /// <param name="result">计算得出的文字渲染用的左上角位置</param>
+        public static void TextAlign(ref RECT bound, ref VECTOR2 textSize, EPivot alignment, out VECTOR2 result)
+        {
+            int pivotx = PivotX(alignment);
+            int pivoty = PivotY(alignment);
+            result.X = bound.X + (bound.Width - textSize.X) * pivotx * 0.5f;
+            result.Y = bound.Y + (bound.Height - textSize.Y) * pivoty * 0.5f;
+        }
         public static UIElement FindElementByPosition(UIElement Parent, VECTOR2 screenPosition)
         {
             return FindChildPriority(Parent, e => !e.IsVisible, e => e.IsContains(screenPosition));

@@ -7554,6 +7554,53 @@ namespace EntryEngine
         Line,
         Triangle,
     }
+    /// <summary>基础图片对象</summary>
+    public class Sprite
+    {
+        public TEXTURE Texture;
+        public VECTOR2 Position;
+        public RECT Source = GRAPHICS.NullSource;
+        public COLOR Color = Entry._GRAPHICS.DefaultColor;
+        public float Rotation;
+        public VECTOR2 Scale = VECTOR2.One;
+        public VECTOR2 Pivot = VECTOR2.Half;
+        public EFlip Flip;
+
+        public void Draw()
+        {
+            if (Texture == null) return;
+            var g = Entry._GRAPHICS;
+            g.BaseDraw(Texture, Position.X, Position.Y, Scale.X, Scale.Y, 
+                true, Source.X, Source.Y, Source.Width, Source.Height, 
+                true, Color.R, Color.G, Color.B, Color.A, 
+                Rotation, Pivot.X, Pivot.Y, Flip);
+        }
+    }
+    /// <summary>基础文字对象</summary>
+    public class SpriteText
+    {
+        public FONT Font = FONT.Default;
+        public string Text;
+        /// <summary>文字显示的区域，宽高为0时，将自动设置文字区域</summary>
+        public RECT Area;
+        public UI.EPivot Alignment = EPivot.MiddleCenter;
+        public COLOR Color = Entry._GRAPHICS.DefaultColor;
+        public float Scale = 1;
+
+        public void Draw()
+        {
+            if (Font == null || string.IsNullOrEmpty(Text)) return;
+            var g = Entry._GRAPHICS;
+            VECTOR2 size = Font.MeasureString(Text);
+            if (Scale != 1)
+            {
+                size.X *= Scale;
+                size.Y *= Scale;
+            }
+            UI.UIElement.TextAlign(ref Area, ref size, Alignment, out size);
+            g.BaseDrawFont(Font, Text, size.X, size.Y, Color, Scale);
+        }
+    }
     /// <summary>精灵渲染参数</summary>
     public struct SpriteVertex
     {
