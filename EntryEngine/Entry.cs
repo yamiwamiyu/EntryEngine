@@ -6233,7 +6233,7 @@ namespace EntryEngine
         }
         /// <summary>计算单个文字的宽度</summary>
         protected internal abstract float CharWidth(char c);
-        protected internal abstract void Draw(GRAPHICS spriteBatch, string text, VECTOR2 location, COLOR color, float scale);
+        protected internal abstract void Draw(GRAPHICS spriteBatch, string text, float x, float y, COLOR color, float scale);
 
         public static Func<Type, VariableObject, Func<ByteRefReader, object>> Deserializer(ContentManager content, List<AsyncLoadContent> list)
         {
@@ -6724,9 +6724,9 @@ namespace EntryEngine
         {
             return Base.CharWidth(c);
         }
-        protected internal override void Draw(EntryEngine.GRAPHICS spriteBatch, string text, EntryEngine.VECTOR2 location, EntryEngine.COLOR color, float scale)
+        protected internal override void Draw(EntryEngine.GRAPHICS spriteBatch, string text, float x, float y, EntryEngine.COLOR color, float scale)
         {
-            Base.Draw(spriteBatch, text, location, color, scale);
+            Base.Draw(spriteBatch, text, x, y, color, scale);
         }
         protected internal override void InternalDispose()
         {
@@ -6896,12 +6896,11 @@ namespace EntryEngine
             cache.Maps.TryGetValue(c, out buffer);
             return buffer;
         }
-        protected internal override void Draw(GRAPHICS spriteBatch, string text, VECTOR2 location, COLOR color, float scale)
+        protected internal override void Draw(GRAPHICS spriteBatch, string text, float x, float y, COLOR color, float scale)
         {
             RECT area;
-            area.X = location.X;
-            area.Y = location.Y;
-            float y = location.Y;
+            area.X = x;
+            area.Y = y;
             float height = lineHeight;
             //RECT uv = RECT.Empty;
             int count = text.Length;
@@ -6910,7 +6909,7 @@ namespace EntryEngine
                 char c = text[i];
                 if (c == LINE_BREAK)
                 {
-                    area.X = location.X;
+                    area.X = x;
                     area.Y += height + Spacing.Y * scale;
                     y = area.Y;
                 }
@@ -7017,25 +7016,10 @@ namespace EntryEngine
         {
             return base.GetCharWidth(width) * scale;
         }
-        //protected internal override void Draw(GRAPHICS spriteBatch, string text, VECTOR2 location, COLOR color, float scale)
-        //{
-        //    //bool scaled = scale != 1;
-        //    //if (scaled)
-        //    //{
-        //    //    spriteBatch.BeginFromPrevious(MATRIX2x3.CreateScale(scale, scale) * MATRIX2x3.CreateTranslation(location.X, location.Y));
-        //    //    location.X = 0;
-        //    //    location.Y = 0;
-        //    //}
-
-        //    base.Draw(spriteBatch, text, location, color, scale * this.scale);
-
-        //    //if (scaled)
-        //    //    spriteBatch.End();
-        //}
-        protected internal override void Draw(GRAPHICS spriteBatch, string text, VECTOR2 location, COLOR color, float scale)
+        protected internal override void Draw(GRAPHICS spriteBatch, string text, float x, float y, COLOR color, float scale)
         {
             scale *= this.scale;
-            base.Draw(spriteBatch, text, location, color, scale);
+            base.Draw(spriteBatch, text, x, y, color, scale);
         }
         protected override void CopyTo(FontTexture target)
         {
@@ -8566,38 +8550,20 @@ namespace EntryEngine
         }
         public void Draw(FONT font, string text, VECTOR2 location, COLOR color)
         {
-            Draw(font, text, location, color, 1);
+            BaseDrawFont(font, text, location.X, location.Y, color, 1);
         }
         public void Draw(FONT font, string text, VECTOR2 location, COLOR color, float scale)
         {
-            if (Culling)
-            {
-                VECTOR2 size = font.MeasureString(text);
-                RECT desc;
-                desc.X = location.X;
-                desc.Y = location.Y;
-                desc.Width = size.X * scale;
-                desc.Height = size.Y * scale;
-
-                // 超出视口部分不绘制
-                MATRIX2x3 matrix = CurrentTransform;
-                RECT viewport = CurrentGraphics;
-                if (!matrix.IsIdentity())
-                    RECT.CreateBoundingBox(ref desc, ref matrix, out desc);
-                if (viewport.Intersects(desc))
-                {
-                    BaseDrawFont(font, text, location, color, scale);
-                }
-            }
-            else
-            {
-                BaseDrawFont(font, text, location, color, scale);
-            }
+            BaseDrawFont(font, text, location.X, location.Y, color, scale);
+        }
+        public void Draw(FONT font, string text, float x, float y, float scale)
+        {
+            BaseDrawFont(font, text, x, y, DefaultColor, scale);
         }
         public void Draw(FONT font, string text, RECT bound, COLOR color, UI.EPivot alignment)
         {
             VECTOR2 location = UI.UIElement.TextAlign(bound, font.MeasureString(text), alignment);
-            Draw(font, text, location, color, 1);
+            BaseDrawFont(font, text, location.X, location.Y, color, 1);
         }
         /// <summary>绘制文字</summary>
         /// <param name="font">字体</param>
@@ -8609,11 +8575,33 @@ namespace EntryEngine
         public void Draw(FONT font, string text, RECT bound, COLOR color, UI.EPivot alignment, float scale)
         {
             VECTOR2 location = UI.UIElement.TextAlign(bound, font.MeasureString(text) * scale, alignment);
-            Draw(font, text, location, color, scale);
+            BaseDrawFont(font, text, location.X, location.Y, color, scale);
         }
-        protected virtual void BaseDrawFont(FONT font, string text, VECTOR2 location, COLOR color, float scale)
+        public void BaseDrawFont(FONT font, string text, float x, float y, COLOR color, float scale)
         {
-            font.Draw(this, text, location, color, scale);
+            if (Culling)
+            {
+                VECTOR2 size = font.MeasureString(text);
+                RECT desc;
+                desc.X = x;
+                desc.Y = y;
+                desc.Width = size.X * scale;
+                desc.Height = size.Y * scale;
+
+                // 超出视口部分不绘制
+                MATRIX2x3 matrix = CurrentTransform;
+                RECT viewport = CurrentGraphics;
+                if (!matrix.IsIdentity())
+                    RECT.CreateBoundingBox(ref desc, ref matrix, out desc);
+                if (viewport.Intersects(desc))
+                {
+                    font.Draw(this, text, x, y, color, scale);
+                }
+            }
+            else
+            {
+                font.Draw(this, text, x, y, color, scale);
+            }
         }
         protected internal virtual void Render()
         {
