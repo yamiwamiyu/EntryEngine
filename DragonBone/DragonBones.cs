@@ -105,6 +105,10 @@ namespace EntryEngine.DragonBones
         [Code(ECode.BUG)]
         Transform tempTransform = new Transform();
 
+        public override bool IsEnd
+        {
+            get { return Proxy.Animation.isCompleted; }
+        }
         public override int Width
         {
             get { return (int)Proxy.Armature._armatureData.aabb.width; }
@@ -289,7 +293,7 @@ namespace EntryEngine.DragonBones
             var armature = PipelineDragonBones.factory.BuildArmature(null, this.DragonBonesData, this.TextureData);
             var cache = (DRAGONBONES)armature.display;
             cache._Key = this._Key;
-            cache.Proxy.Animation.Play();
+            cache.Proxy.Animation.Play(null, 0);
             return cache;
         }
     }
