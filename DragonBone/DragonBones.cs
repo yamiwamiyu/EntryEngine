@@ -293,7 +293,7 @@ namespace EntryEngine.DragonBones
             var armature = PipelineDragonBones.factory.BuildArmature(null, this.DragonBonesData, this.TextureData);
             var cache = (DRAGONBONES)armature.display;
             cache._Key = this._Key;
-            cache.Proxy.Animation.Play(null, 0);
+            cache.Proxy.Animation.Play();
             return cache;
         }
     }
