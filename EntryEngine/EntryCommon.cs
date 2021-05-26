@@ -3505,7 +3505,7 @@ namespace EntryEngine
         }
         public void Update(float elapsed)
         {
-            Current += elapsed;
+            Current += elapsed * 1000;
         }
         public void Update(GameTime time)
         {
