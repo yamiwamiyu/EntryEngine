@@ -7047,7 +7047,7 @@ namespace EntryEngine
 
         protected internal override Content Load(string file)
         {
-            string name = Path.GetFileNameWithoutExtension(file);
+            string name = file.WithoutExtention();
             ByteReader reader = new ByteReader(IO.ReadByte(file));
 
             float size;
@@ -7083,7 +7083,7 @@ namespace EntryEngine
         }
         protected internal override void LoadAsync(AsyncLoadContent async)
         {
-            string name = Path.GetFileNameWithoutExtension(async.File);
+            string name = async.File.WithoutExtention();
             Wait(async, IO.ReadAsync(async.File),
                 wait =>
                 {

@@ -230,6 +230,13 @@ namespace EntryEngine
         }
 
 
+        /// <summary>文件名去掉后缀名</summary>
+        public static string WithoutExtention(this string filepath)
+        {
+            int index = filepath.LastIndexOf('.');
+            if (index == -1) return filepath;
+            else return filepath.Substring(0, index);
+        }
         public static string PathCombine(string p1, string p2)
         {
             if (!string.IsNullOrEmpty(p1))

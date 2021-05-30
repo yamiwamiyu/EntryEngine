@@ -256,13 +256,6 @@ namespace EntryBuilder
                 builder.Append("return ");
             AppendMethodInvoke(builder, (MethodBase)method, instance, methodName, startParam, endParam);
         }
-        /// <summary>文件名去掉后缀名</summary>
-        public static string WithoutExtention(this string filepath)
-        {
-            int index = filepath.LastIndexOf('.');
-            if (index == -1) return filepath;
-            else return filepath.Substring(0, index);
-        }
 
         public static void Draw<T>(this AVLTreeBase<T> tree, string output)
         {
