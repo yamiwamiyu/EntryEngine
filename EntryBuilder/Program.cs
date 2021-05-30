@@ -505,7 +505,7 @@ namespace EntryBuilder
         [STAThread]
 		static void Main(string[] args)
         {
-            //TexFontFromExcel("图片字体.xlsx", "");
+            //TexFontFromExcel("图片字体.xlsx");
             //PSD2JS("首页.psd", @"C:\Yamiwamiyu\Project\YMHY2\gaming-center\dist\", true);
             //_LOG._Logger = new LoggerConsole();
 
@@ -4115,7 +4115,7 @@ namespace EntryBuilder
         {
             [ASummary("多个文字组成的大图，每个文字要求不重叠")]
             public string 文字图片;
-            [ASummary("输出字体的路径，带文件名不带后缀，不带文件名默认使用第一章文字图片的名字")]
+            [ASummary("输出字体的路径，不填则和文字图片路径一致")]
             public string 输出路径;
             [ASummary("图片上的文字内容，文字顺序应与图上的文字从左到右，从上到下一致")]
             public string 文字内容;
@@ -10269,6 +10269,7 @@ namespace EntryBuilder
             {
                 using (Bitmap map = (Bitmap)Image.FromFile(item.文字图片))
                 {
+                    Console.WriteLine("拆分大图：{0}", item.文字图片);
                     // 大图裁切成小图
                     var splits = Split(map, new Size(2, 2), 2);
                     if (splits.Count != item.文字内容.Length)
@@ -10281,6 +10282,7 @@ namespace EntryBuilder
                     // 统一尺寸
                     if (item.等宽字体)
                     {
+                        Console.WriteLine("等宽字体：{0}", item.文字图片);
                         Point n = Point.Empty;
                         foreach (var m in splits)
                         {
@@ -10320,6 +10322,7 @@ namespace EntryBuilder
                         size.Width = width;
                     if (height > 0)
                         size.Height += height;
+                    Console.WriteLine("重组大图：{0} 宽：{1} 高：{2}", item.文字图片, size.Width, size.Height);
                     // 小图组合成大图
                     using (Bitmap result = new Bitmap(size.Width, size.Height))
                     {
@@ -10350,15 +10353,12 @@ namespace EntryBuilder
                             string output = item.输出路径;
                             if (string.IsNullOrEmpty(output) || output.EndsWith("/") || output.EndsWith("\\"))
                                 // 目录
-                                output += Path.GetFileNameWithoutExtension(item.文字图片) + "." + suffix;
-                            else
-                                // 文件名
-                                output = Path.ChangeExtension(output, suffix);
-                            File.WriteAllBytes(output, writer.GetBuffer());
-                            result.Save(string.Format("{0}_0.png", Path.GetFileNameWithoutExtension(output)), ImageFormat.Png);
+                                output += item.文字图片;
+                            File.WriteAllBytes(Path.ChangeExtension(output, suffix), writer.GetBuffer());
+                            result.Save(string.Format("{0}_0.png", output.WithoutExtention()), ImageFormat.Png);
                         }
                     }
-                    _LOG.Debug("生成字体{0}", item.文字图片);
+                    Console.WriteLine("生成字体{0}", item.文字图片);
                 }
             }
         }
