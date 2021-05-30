@@ -8145,9 +8145,7 @@ namespace EntryEngine
             path.TryGetValue(target, out result);
             return result;
         }
-        /// <summary>
-        /// 广度优先循环图节点
-        /// </summary>
+        /// <summary>广度优先循环图节点</summary>
         /// <param name="start">开始节点</param>
         /// <param name="breadth">广度，-1则循环整个图</param>
         /// <param name="visitable">节点是否可以访问</param>

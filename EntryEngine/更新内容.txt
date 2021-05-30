@@ -1,4 +1,10 @@
-﻿2020/05/20
+﻿2020/05/30
+1. EntryBuilder整理Cut和Split公用方法
+2. 新增EntryBuilder.TexFontFromExcel将图片文字批量转换为字体文件
+3. 修改了PipelineFontStatic加载字体的数据格式内容，后缀改为tfont
+*. PipelineFontStatic不再支持旧格式的静态图片文字字体
+
+2020/05/20
 1. 将ICoroutine.Update(GameTime)改为实现IUpdatable接口的Update(float)
 2. Content.Cache改为public
 3. 修复部分资源Cache没有将内部资源Cache的BUG

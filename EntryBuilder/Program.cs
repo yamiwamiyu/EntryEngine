@@ -505,6 +505,7 @@ namespace EntryBuilder
         [STAThread]
 		static void Main(string[] args)
         {
+            TexFontFromExcel("图片字体.xlsx", "");
             //PSD2JS("首页.psd", @"C:\Yamiwamiyu\Project\YMHY2\gaming-center\dist\", true);
             //_LOG._Logger = new LoggerConsole();
 
@@ -3644,6 +3645,157 @@ namespace EntryBuilder
                 }
             }
         }
+        /// <summary>将一张大图分解成多张小图</summary>
+        /// <param name="source">原始大图</param>
+        /// <param name="border">边界像素尺寸，像素周围指定的范围内有空像素时视为边界像素</param>
+        /// <param name="skip">跳过拆分后宽高低于指定尺寸的图，宽高小于等于0时，不忽略任何图片</param>
+        /// <returns>拆分后的小图</returns>
+        private static List<Bitmap> Split(Bitmap source, Size skip, int border = 2)
+        {
+            List<Bitmap> results = new List<Bitmap>();
+            int border2 = border * 2 + 1;
+
+            int width = source.Width;
+            int height = source.Height;
+            int stride = width * 4;
+
+            byte[] buffer = GetData(source);
+            Func<int, int, bool> HasAlpha = (x, y) =>
+            {
+                return buffer[(y * stride) + (x << 2) + 3] > 0;
+            };
+
+            Pixel[] pixeles = new Pixel[width * height];
+            for (int i = 0; i < pixeles.Length; i++)
+            {
+                pixeles[i] = new Pixel()
+                {
+                    Alpha = buffer[(i << 2) + 3],
+                    X = (ushort)(i % width),
+                    Y = (ushort)(i / width),
+                };
+            }
+            GraphMap4444<Pixel> map = new GraphMap4444<Pixel>();
+            map.Build(pixeles, width);
+
+            {
+                //int x = 0, y = 0;
+                while (true)
+                {
+                    //Pixel.GPS(map[x, y], -1, p => p.Alpha > 0, p =>
+                    //{
+                    //    x = p.Node.X;
+                    //    y = p.Node.Y;
+                    //    return true;
+                    //});
+                    int x = 0, y;
+                    for (y = 0; y < height; y += 10)
+                    {
+                        for (x = 0; x < width; x += 3)
+                            // 刷全图，从刷到的像素开始扫描对象
+                            if (HasAlpha(x, y))
+                                break;
+                        if (x < width)
+                            break;
+                    }
+                    if (y >= height && x >= width)
+                        // 已经全部拆分完成，没有残留像素在图上
+                        break;
+
+                    SplitArea split = new SplitArea();
+                    while (true)
+                    {
+                        // 找到边缘位置
+                        while (y > 0 && HasAlpha(x, y - 1))
+                            y--;
+                        // 设定初始位置
+                        split.SetPos(x, y);
+
+                        Pixel.GPS(map[x, y], -1,
+                            p =>
+                            {
+                                // 本身有像素
+                                if (p.Alpha > 0)
+                                {
+                                    // 周围都需要没有像素(边缘像素)
+                                    for (int sx = p.X - border, a = 0; a < border2; a++, sx++)
+                                    {
+                                        if (sx < 0 || sx >= width)
+                                            return true;
+                                        for (int sy = p.Y - border, b = 0; b < border2; b++, sy++)
+                                        {
+                                            if (sy < 0 || sy >= height)
+                                                return true;
+                                            if (map[sx, sy].Alpha == 0)
+                                                return true;
+                                        }
+                                    }
+                                }
+                                return false;
+                            },
+                            p =>
+                            {
+                                split.SetPos(p.Node.X, p.Node.Y);
+                                return false;
+                            });
+
+                        int minX, minY, maxX, maxY;
+                        split.Resolve(out minX, out minY, out maxX, out maxY);
+
+                        // 扫描矩形范围内未被扫描到的部分
+                        // 如果有其它颜色，则那个颜色使用同样的扫描方式得出矩形范围
+                        // 两个矩形范围取并集得出新的矩形范围
+                        bool flag = false;
+                        for (y = minY; y <= maxY; y++)
+                        {
+                            ScanLine line = split.Lines[y];
+                            for (x = minX; x < line.Min; x++)
+                            {
+                                if (HasAlpha(x, y))
+                                {
+                                    flag = true;
+                                    break;
+                                }
+                            }
+                            if (flag) break;
+                            for (x = line.Max + 1; x <= maxX; x++)
+                            {
+                                if (HasAlpha(x, y))
+                                {
+                                    flag = true;
+                                    break;
+                                }
+                            }
+                            if (flag) break;
+                        }
+                        if (!flag)
+                        {
+                            // 过小的分离像素不进行拆分
+                            if (split.Area.Width * split.Area.Height >= 20)
+                            {
+                                Bitmap frame = new Bitmap(split.Area.Width, split.Area.Height);
+                                ImageDraw(frame, g =>
+                                {
+                                    g.DrawImage(
+                                        source,
+                                        new Rectangle(0, 0, frame.Width, frame.Height),
+                                        split.Area,
+                                        GraphicsUnit.Pixel);
+                                });
+                                results.Add(frame);
+                            }
+
+                            // 删除掉像素，让下次刷全图找像素时不会找到重复的图案
+                            for (int i = minY; i <= maxY; i++)
+                                for (int j = minX; j <= maxX; j++)
+                                    buffer[(i * stride) + (j << 2) + 3] = 0;
+                            break;
+                        }
+                    }// end of split of one piece
+                }// end of split of a hole map
+            }
+            return results;
+        }
 		private static Rectangle[] Put(Point[] sizes, Point size, bool widthPriority)
 		{
 			Rectangle[] results;
@@ -3958,6 +4110,17 @@ namespace EntryBuilder
         {
             public Bitmap Texture;
             public RECT Padding;
+        }
+        private class TexFont
+        {
+            [ASummary("多个文字组成的大图，每个文字要求不重叠")]
+            public string 文字图片;
+            [ASummary("输出字体的路径，带文件名不带后缀，不带文件名默认使用第一章文字图片的名字")]
+            public string 输出路径;
+            [ASummary("图片上的文字内容，文字顺序应与图上的文字从左到右，从上到下一致")]
+            public string 文字内容;
+            [ASummary("单个文字尺寸是否要整理成一样，长短文字中文字间间隔会看起来一致")]
+            public bool 等宽字体;
         }
 
         private class CodeResolve
@@ -10078,6 +10241,129 @@ namespace EntryBuilder
             }
             Console.WriteLine("生成平铺图完毕");
         }
+        public static void TexFontFromExcel(string inputXLSX, string outputDir)
+        {
+            CSVWriter csv = new CSVWriter();
+            if (!File.Exists(inputXLSX))
+            {
+                var fields = typeof(TexFont).GetFields();
+                StringTable table1 = new StringTable();
+                foreach (var item in fields)
+                    table1.AddColumn(item.Name);
+                foreach (var item in fields)
+                    table1.AddValue(item.FieldType.CodeName());
+                foreach (var item in fields)
+                    table1.AddValue(item.GetAttribute<ASummary>().Note);
+                csv.WriteTable(table1);
+                File.WriteAllText(Path.ChangeExtension(inputXLSX, "csv"), csv.Result, CSVWriter.CSVEncoding);
+                Console.WriteLine("已生成CSV文档，请新建Excel文档按照CSV表头格式填写数据后再试");
+                return;
+            }
+
+            BuildDir(ref outputDir);
+
+            var table = LoadTableFromExcel(inputXLSX);
+            csv.WriteTable(table);
+            CSVReader reader = new CSVReader(csv.Result);
+            var fonts = reader.ReadObject<TexFont[]>();
+            string suffix = new PipelineFontStatic().FileType;
+            foreach (var item in fonts)
+            {
+                using (Bitmap map = (Bitmap)Image.FromFile(item.文字图片))
+                {
+                    // 大图裁切成小图
+                    var splits = Split(map, new Size(2, 2), 2);
+                    if (splits.Count != item.文字内容.Length)
+                    {
+                        _LOG.Warning("{0}未能生成字体，图像和内容文字数量不符！图像文字：{1} 内容文字：{2}", item.文字图片, splits.Count, item.文字内容.Length);
+                        foreach (var m in splits)
+                            m.Dispose();
+                        continue;
+                    }
+                    // 统一尺寸
+                    if (item.等宽字体)
+                    {
+                        Point n = Point.Empty;
+                        foreach (var m in splits)
+                        {
+                            if (m.Width > 255 || m.Height > 255)
+                                throw new ArgumentException("单字图片尺寸不能超过255x255");
+                            if (m.Width > n.X)
+                                n.X = m.Width;
+                            if (m.Height > n.Y)
+                                n.Y = m.Height;
+                        }
+                        Cut(splits, n);
+                    }
+                    // 输出图片和配置文件
+                    ByteWriter writer = new ByteWriter();
+                    writer.Write(splits[0].Height / 1.5f);
+                    writer.Write((float)splits[0].Height);
+                    writer.Write(splits.Count);
+                    Size size = new Size();
+                    int width = 0;
+                    int height = 0;
+                    for (int i = 0; i < splits.Count; i++)
+                    {
+                        if (splits[i].Height > height)
+                            height = splits[i].Height;
+                        if (width + splits[i].Width > 2048)
+                        {
+                            if (width > size.Width)
+                                size.Width = width;
+                            size.Height += height;
+                            width = 0;
+                            height = 0;
+                        }
+                        else
+                            width += splits[i].Width;
+                    }
+                    if (width > size.Width)
+                        size.Width = width;
+                    if (height > 0)
+                        size.Height += height;
+                    // 小图组合成大图
+                    using (Bitmap result = new Bitmap(size.Width, size.Height))
+                    {
+                        using (Graphics graphics = Graphics.FromImage(result))
+                        {
+                            width = 0;
+                            height = 0;
+                            ushort y = 0;
+                            for (int i = 0; i < splits.Count; i++)
+                            {
+                                graphics.DrawImage(splits[i], new Point(width, y));
+                                writer.Write(item.文字内容[i]);
+                                writer.Write((byte)0);
+                                if (splits[i].Height > height)
+                                    height = splits[i].Height;
+                                if (width + splits[i].Width > 2048)
+                                {
+                                    y = (ushort)(y + height);
+                                    width = 0;
+                                    height = 0;
+                                }
+                                writer.Write((ushort)width);
+                                width += splits[i].Width;
+                                writer.Write(y);
+                                writer.Write((byte)splits[i].Width);
+                                writer.Write((byte)splits[i].Height);
+                            }
+                            string output = item.输出路径;
+                            if (string.IsNullOrEmpty(output) || output.EndsWith("/") || output.EndsWith("\\"))
+                                // 目录
+                                output += Path.GetFileNameWithoutExtension(item.文字图片) + "." + suffix;
+                            else
+                                // 文件名
+                                output = Path.ChangeExtension(output, suffix);
+                            File.WriteAllBytes(output, writer.GetBuffer());
+                            result.Save(string.Format("{0}_0.png", Path.GetFileNameWithoutExtension(output)), ImageFormat.Png);
+                        }
+                    }
+                    _LOG.Debug("生成字体{0}", item.文字图片);
+                }
+            }
+        }
         public static void TexFontFromText(string inputTextOrEmptyForAllChar, string fontName, byte fontSize, byte fontStyle, string outputFileName)
         {
             Font font;
@@ -10103,7 +10389,6 @@ namespace EntryBuilder
             }
 
             ByteWriter writer = new ByteWriter();
-            writer.Write(font.Name);
             writer.Write(font.Size);
             float height = font.Height;
             writer.Write(height);
@@ -10117,7 +10402,6 @@ namespace EntryBuilder
                     graphics.TextRenderingHint = System.Drawing.Text.TextRenderingHint.AntiAlias;
                     Brush brush = Brushes.White;
                     StringFormat format = StringFormat.GenericTypographic;
-                    string outputDir = Path.GetDirectoryName(Path.GetFullPath(outputFileName));
                     float x = 0;
                     float y = 0;
                     string c;
@@ -10141,7 +10425,7 @@ namespace EntryBuilder
                             if (y + h + h > bitmap.Height)
                             {
                                 // save
-                                string file = string.Format("{0}\\{1}_{2}_{3}.png", outputDir, font.Name, font.Size, index);
+                                string file = string.Format("{0}_{1}.png", font.Name, index);
                                 bitmap.Save(file, ImageFormat.Png);
 
                                 index++;
@@ -10174,7 +10458,7 @@ namespace EntryBuilder
 
                         x += w;
                     }
-                    bitmap.Save(string.Format("{0}\\{1}_{2}_{3}.png", outputDir, font.Name, font.Size, index), ImageFormat.Png);
+                    bitmap.Save(string.Format("{0}_{1}.png", font.Name, index), ImageFormat.Png);
                 }
             }
 
@@ -10190,7 +10474,6 @@ namespace EntryBuilder
             string fontName = Path.GetFileNameWithoutExtension(outputFileName);
 
             ByteWriter writer = new ByteWriter();
-            writer.Write(fontName);
             writer.Write((float)fontSize);
             writer.Write((float)fontSize * 1.5f);
             int count = text.Length;
@@ -10203,7 +10486,6 @@ namespace EntryBuilder
                     graphics.TextRenderingHint = System.Drawing.Text.TextRenderingHint.AntiAlias;
                     Brush brush = Brushes.White;
                     StringFormat format = StringFormat.GenericTypographic;
-                    string outputDir = Path.GetDirectoryName(Path.GetFullPath(outputFileName));
                     int x = 0;
                     int y = 0;
                     string c;
@@ -10224,7 +10506,7 @@ namespace EntryBuilder
                             if (y + h + h > bitmap.Height)
                             {
                                 // save
-                                string file = string.Format("{0}\\{1}_{2}_{3}.png", outputDir, fontName, fontSize, index);
+                                string file = string.Format("{0}_{1}.png", fontName, index);
                                 bitmap.Save(file, ImageFormat.Png);
 
                                 index++;
@@ -10257,7 +10539,7 @@ namespace EntryBuilder
 
                         x += w;
                     }
-                    bitmap.Save(string.Format("{0}\\{1}_{2}_{3}.png", outputDir, fontName, fontSize, index), ImageFormat.Png);
+                    bitmap.Save(string.Format("{0}_{1}.png", fontName, index), ImageFormat.Png);
                 }
             }
 
@@ -10517,9 +10799,6 @@ namespace EntryBuilder
 		}
         public static void TexSplit(string inputDirOrFile, string outputDir)
         {
-            int STEP = 2;
-            int STEP2 = STEP * 2 + 1;
-
             BuildDir(ref outputDir);
 
             bool isFile = inputDirOrFile.Contains('.');
@@ -10542,142 +10821,15 @@ namespace EntryBuilder
                     if (!Directory.Exists(dir))
                         Directory.CreateDirectory(dir);
 
-                    int width = sourceMap.Width;
-                    int height = sourceMap.Height;
-                    int stride = width * 4;
                     int count = 0;
-
-                    byte[] buffer = GetData(sourceMap);
-                    Func<int, int, bool> HasAlpha = (x, y) =>
+                    foreach (var item in Split(sourceMap, new Size(5, 5), 2))
                     {
-                        return buffer[(y * stride) + (x << 2) + 3] > 0;
-                    };
-
-                    Pixel[] pixeles = new Pixel[width * height];
-                    for (int i = 0; i < pixeles.Length; i++)
-                    {
-                        pixeles[i] = new Pixel()
+                        using (item)
                         {
-                            Alpha = buffer[(i << 2) + 3],
-                            X = (ushort)(i % width),
-                            Y = (ushort)(i / width),
-                        };
-                    }
-                    GraphMap4444<Pixel> map = new GraphMap4444<Pixel>();
-                    map.Build(pixeles, width);
-
-                    while (true)
-                    {
-                        int x = 0, y;
-                        for (y = 0; y < height; y+=3)
-                        {
-                            for (x = 0; x < width; x+=3)
-                                // 刷全图，从刷到的像素开始扫描对象
-                                if (HasAlpha(x, y))
-                                    break;
-                            if (x < width)
-                                break;
+                            string output = string.Format("{0}{1:000}.png", dir, count++);
+                            item.Save(output, ImageFormat.Png);
                         }
-                        if (y >= height && x >= width)
-                            // 已经全部拆分完成，没有残留像素在图上
-                            break;
-
-                        SplitArea split = new SplitArea();
-                        while (true)
-                        {
-                            // 找到边缘位置
-                            while (y > 0 && HasAlpha(x, y - 1))
-                                y--;
-                            // 设定初始位置
-                            split.SetPos(x, y);
-
-                            Pixel.GPS(map[x, y], -1,
-                                p =>
-                                {
-                                    // 本身有像素
-                                    if (p.Alpha > 0)
-                                    {
-                                        // 周围都需要没有像素(边缘像素)
-                                        for (int sx = p.X - STEP, a = 0; a < STEP2; a++, sx++)
-                                        {
-                                            if (sx < 0 || sx >= width)
-                                                return true;
-                                            for (int sy = p.Y - 2, b = 0; b < STEP2; b++, sy++)
-                                            {
-                                                if (sy < 0 || sy >= height)
-                                                    return true;
-                                                if (map[sx, sy].Alpha == 0)
-                                                    return true;
-                                            }
-                                        }
-                                    }
-                                    return false;
-                                },
-                                p =>
-                                {
-                                    split.SetPos(p.Node.X, p.Node.Y);
-                                    return false;
-                                });
-
-                            int minX, minY, maxX, maxY;
-                            split.Resolve(out minX, out minY, out maxX, out maxY);
-
-                            // 扫描矩形范围内未被扫描到的部分
-                            // 如果有其它颜色，则那个颜色使用同样的扫描方式得出矩形范围
-                            // 两个矩形范围取并集得出新的矩形范围
-                            bool flag = false;
-                            for (y = minY; y <= maxY; y++)
-                            {
-                                ScanLine line = split.Lines[y];
-                                for (x = minX; x < line.Min; x++)
-                                {
-                                    if (HasAlpha(x, y))
-                                    {
-                                        flag = true;
-                                        break;
-                                    }
-                                }
-                                if (flag) break;
-                                for (x = line.Max + 1; x <= maxX; x++)
-                                {
-                                    if (HasAlpha(x, y))
-                                    {
-                                        flag = true;
-                                        break;
-                                    }
-                                }
-                                if (flag) break;
-                            }
-                            if (!flag)
-                            {
-                                // 过小的分离像素不进行拆分
-                                if (split.Area.Width * split.Area.Height >= 20)
-                                {
-                                    using (Bitmap frame = new Bitmap(split.Area.Width, split.Area.Height))
-                                    {
-                                        ImageDraw(frame, g =>
-                                        {
-                                            g.DrawImage(
-                                                sourceMap,
-                                                new Rectangle(0, 0, frame.Width, frame.Height),
-                                                split.Area,
-                                                GraphicsUnit.Pixel);
-                                        });
-
-                                        string output = string.Format("{0}{1:000}.png", dir, count++);
-                                        frame.Save(output, ImageFormat.Png);
-                                        //Console.WriteLine("Save {0} completed.", output);
-                                    }
-                                }
-
-                                // 删除掉像素，让下次刷全图找像素时不会找到重复的图案
-                                for (int i = minY; i <= maxY; i++)
-                                    for (int j = minX; j <= maxX; j++)
-                                        buffer[(i * stride) + (j << 2) + 3] = 0;
-                                break;
-                            }
-                        }// end of split of one piece
-                    }// end of split of a hole map
+                    }
                 }// end of using map
                 Console.WriteLine("拆分图片[{0}]完成", file);
 

@@ -6808,7 +6808,7 @@ namespace EntryEngine
     {
         public const ushort BUFFER_SIZE = 1024;
 
-        public class Buffer
+        [AReflexible]public class Buffer
         {
             public byte Index;
             internal ushort x;
@@ -7040,19 +7040,15 @@ namespace EntryEngine
         {
             get { return null; }
         }
-        /// <summary>
-        /// mtsfont: Metadata of static font
-        /// </summary>
         public override string FileType
         {
-            get { return "mtsfont"; }
+            get { return "tfont"; }
         }
 
         protected internal override Content Load(string file)
         {
+            string name = Path.GetFileNameWithoutExtension(file);
             ByteReader reader = new ByteReader(IO.ReadByte(file));
-            string name;
-            reader.Read(out name);
 
             float size;
             float height;
@@ -7079,23 +7075,19 @@ namespace EntryEngine
                     index++;
             }
 
-            string directory = Path.GetDirectoryName(file);
-            if (!string.IsNullOrEmpty(directory))
-                directory += "\\";
             TEXTURE[] textures = new TEXTURE[index + 1];
             for (int i = 0; i <= index; i++)
-                textures[i] = Manager.Load<TEXTURE>(string.Format("{0}{1}_{2}_{3}.png", directory, name, size, index));
+                textures[i] = Manager.Load<TEXTURE>(string.Format("{0}_{1}.png", name, index));
 
             return new FontStatic(size, height, maps, textures);
         }
         protected internal override void LoadAsync(AsyncLoadContent async)
         {
+            string name = Path.GetFileNameWithoutExtension(async.File);
             Wait(async, IO.ReadAsync(async.File),
                 wait =>
                 {
                     ByteReader reader = new ByteReader(wait.Data);
-                    string name;
-                    reader.Read(out name);
 
                     float size;
                     float height;
@@ -7122,15 +7114,12 @@ namespace EntryEngine
                             index++;
                     }
 
-                    string directory = Path.GetDirectoryName(async.File);
-                    if (!string.IsNullOrEmpty(directory))
-                        directory += "\\";
                     TEXTURE[] textures = new TEXTURE[index + 1];
                     Wait(async,
                         Enumerable.Range(0, textures.Length).
                             Select(i =>
                                 Manager.LoadAsync<TEXTURE>(
-                                    string.Format("{0}{1}_{2}_{3}.png", directory, name, size, index),
+                                    string.Format("{0}_{1}.png", name, index),
                                     result => textures[i] = result)),
                         () => new FontStatic(size, height, maps, textures));
                 });

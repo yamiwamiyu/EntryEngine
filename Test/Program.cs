@@ -20,17 +20,29 @@ namespace Test
 {
     class TestScene : UIScene
     {
-        DRAGONBONES db;
+        SpriteText st1 = new SpriteText();
+        SpriteText st2 = new SpriteText();
         protected override IEnumerable<ICoroutine> Loading()
         {
             this.Background = TEXTURE.Pixel;
-            db = Content.Load<DRAGONBONES>("dragonbones/牧师.dbs");
+            st1.Font = Content.Load<FONT>("数值.tfont");
+            st1.Text = "0123456789+-";
+            st1.Area.X = 200;
+            st1.Area.Y = 200;
+            st1.Alignment = EPivot.TopLeft;
+            st2.Font = Content.Load<FONT>("等宽数值.tfont");
+            st2.Text = "0123456789+-";
+            st2.Area.X = 200;
+            st2.Area.Y = 400;
+            st2.Alignment = EPivot.TopLeft;
             return base.Loading();
         }
         protected override void InternalDraw(GRAPHICS spriteBatch, Entry e)
         {
             base.InternalDraw(spriteBatch, e);
-            spriteBatch.Draw(db, new VECTOR2(300, 300));
+            st1.Draw();
+            st2.Draw();
+
         }
     }
 
