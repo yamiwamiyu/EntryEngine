@@ -505,7 +505,7 @@ namespace EntryBuilder
         [STAThread]
 		static void Main(string[] args)
         {
-            TexFontFromExcel("图片字体.xlsx", "");
+            //TexFontFromExcel("图片字体.xlsx", "");
             //PSD2JS("首页.psd", @"C:\Yamiwamiyu\Project\YMHY2\gaming-center\dist\", true);
             //_LOG._Logger = new LoggerConsole();
 
@@ -10241,7 +10241,7 @@ namespace EntryBuilder
             }
             Console.WriteLine("生成平铺图完毕");
         }
-        public static void TexFontFromExcel(string inputXLSX, string outputDir)
+        public static void TexFontFromExcel(string inputXLSX)
         {
             CSVWriter csv = new CSVWriter();
             if (!File.Exists(inputXLSX))
@@ -10259,8 +10259,6 @@ namespace EntryBuilder
                 Console.WriteLine("已生成CSV文档，请新建Excel文档按照CSV表头格式填写数据后再试");
                 return;
             }
-
-            BuildDir(ref outputDir);
 
             var table = LoadTableFromExcel(inputXLSX);
             csv.WriteTable(table);
