@@ -3613,16 +3613,11 @@ namespace EntryBuilder
                 areaOfPixel.Width,
                 areaOfPixel.Height);
 
-            if (normalizeSize.X > 0 && normalizeSize.Y > 0)
-            {
-                // 标准化到同一尺寸
-                //border.X = _MATH.Nature(normalizeSize.X - areaOfPixel.Width);
-                //border.Y = _MATH.Nature(normalizeSize.Y - areaOfPixel.Height);
-                int borderX = normalizeSize.X - areaOfPixel.Width;
-                int borderY = normalizeSize.Y - areaOfPixel.Height;
-                desc.Width += borderX;
-                desc.Height += borderY;
-            }
+            // 标准化到同一尺寸
+            if (normalizeSize.X > 0)
+                desc.Width += normalizeSize.X - areaOfPixel.Width;
+            if (normalizeSize.Y > 0)
+                desc.Height += normalizeSize.Y - areaOfPixel.Height;
 
             for (int i = 0; i < textures.Count; i++)
             {
@@ -4119,7 +4114,7 @@ namespace EntryBuilder
             public string 输出路径;
             [ASummary("图片上的文字内容，文字顺序应与图上的文字从左到右，从上到下一致")]
             public string 文字内容;
-            [ASummary("单个文字尺寸是否要整理成一样，长短文字中文字间间隔会看起来一致")]
+            [ASummary("0:文字高度相等 / 1:文字宽高都相等")]
             public bool 等宽字体;
         }
 
@@ -10280,21 +10275,29 @@ namespace EntryBuilder
                         continue;
                     }
                     // 统一尺寸
-                    if (item.等宽字体)
+                    Point n = Point.Empty;
+                    foreach (var m in splits)
                     {
-                        Console.WriteLine("等宽字体：{0}", item.文字图片);
-                        Point n = Point.Empty;
-                        foreach (var m in splits)
-                        {
-                            if (m.Width > 255 || m.Height > 255)
-                                throw new ArgumentException("单字图片尺寸不能超过255x255");
-                            if (m.Width > n.X)
-                                n.X = m.Width;
-                            if (m.Height > n.Y)
-                                n.Y = m.Height;
-                        }
-                        Cut(splits, n);
+                        if (m.Width > 255 || m.Height > 255)
+                            throw new ArgumentException("单字图片尺寸不能超过255x255");
+                        if (m.Width > n.X)
+                            n.X = m.Width;
+                        if (m.Height > n.Y)
+                            n.Y = m.Height;
                     }
+                    // 不等宽则仅统一高度
+                    if (!item.等宽字体)
+                    {
+                        n.X = 0;
+                        for (int i = 0; i < splits.Count; i++)
+                        {
+                            var array = _SARRAY<Bitmap>.GetSingleArray(splits[i]);
+                            Cut(array, n);
+                            splits[i] = array[0];
+                        }
+                    }
+                    else
+                        Cut(splits, n);
                     // 输出图片和配置文件
                     ByteWriter writer = new ByteWriter();
                     writer.Write(splits[0].Height / 1.5f);
