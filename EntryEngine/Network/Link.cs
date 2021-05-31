@@ -1791,7 +1791,7 @@ namespace EntryEngine.Network
         {
             get { return Request != null; }
         }
-        internal HttpWebRequest Request
+        public HttpWebRequest Request
         {
             get;
             private set;
