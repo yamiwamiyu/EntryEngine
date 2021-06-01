@@ -187,7 +187,7 @@ namespace EditorUI
             Document.ScaleChanged += new Action<float>(Document_ScaleChanged);
             pv.DrawBeforeEnd += ViewportDrawLines;
             pv.DrawAfterBegin = BeginScale;
-            pv.DrawBeforeEnd = EndScale;
+            pv.DrawBeforeEnd += EndScale;
 
             pvc.Add(pv);
 
