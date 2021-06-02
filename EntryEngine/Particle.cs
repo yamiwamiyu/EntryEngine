@@ -677,7 +677,7 @@ namespace EntryEngine
             return vary;
         }
     }
-    [ASummaryP("改变：速度", "粒子运动速度改变", EParticleStreamType.变化)]
+    [ASummaryP("改变：速度", "粒子运动速度改变（单位每秒）", EParticleStreamType.变化)]
     [AReflexible]public class PSSpeedAdd : PSPropertyAdd
     {
         public override bool Update(Particle p, ParticleEmitter ps, float elapsed)
@@ -685,12 +685,12 @@ namespace EntryEngine
             float vary = VaryValue(p.speed);
             if (vary != 0)
             {
-                p.Speed += vary;
+                p.Speed += vary * elapsed;
             }
             return true;
         }
     }
-    [ASummaryP("改变：方向", "粒子运动方向改变", EParticleStreamType.变化)]
+    [ASummaryP("改变：方向", "粒子运动方向改变（单位每秒）", EParticleStreamType.变化)]
     [AReflexible]public class PSDirectionAdd : PSPropertyAdd
     {
         public override bool Update(Particle p, ParticleEmitter ps, float elapsed)
@@ -698,32 +698,32 @@ namespace EntryEngine
             float vary = VaryValue(p.direction);
             if (vary != 0)
             {
-                p.Direction += vary;
+                p.Direction += vary * elapsed;
             }
             return true;
         }
     }
-    [ASummaryP("改变：旋转", "粒子旋转方向改变", EParticleStreamType.变化)]
+    [ASummaryP("改变：旋转", "粒子旋转方向改变（单位每秒）", EParticleStreamType.变化)]
     [AReflexible]public class PSRotateAdd : PSPropertyAdd
     {
         public override bool Update(Particle p, ParticleEmitter ps, float elapsed)
         {
-            p.Rotate += VaryValue(p.Rotate);
+            p.Rotate += VaryValue(p.Rotate) * elapsed;
             return true;
         }
     }
-    [ASummaryP("改变：朝向", "粒子朝向改变", EParticleStreamType.变化)]
+    [ASummaryP("改变：朝向", "粒子朝向改变（单位每秒）", EParticleStreamType.变化)]
     [AReflexible]public class PSRotationForward : ParticleStream
     {
-        [ASummary("朝向偏移", "粒子朝向运动方向后增加的一个偏移角度")]
+        [ASummary("朝向偏移", "粒子朝向运动方向后增加的一个偏移角度（单位每秒）")]
         public float Offset;
         public override bool Update(Particle p, ParticleEmitter ps, float elapsed)
         {
-            p.Rotation = _MATH.ToRadian(p.direction + Offset);
+            p.Rotation = _MATH.ToRadian(p.direction + Offset * elapsed);
             return true;
         }
     }
-    [ASummaryP("改变：颜色", "粒子颜色改变", EParticleStreamType.变化)]
+    [ASummaryP("改变：颜色", "粒子颜色改变（单位每秒）", EParticleStreamType.变化)]
     [AReflexible]public class PSColorAdd : PSPropertyAdd
     {
         [ASummary("变色", "指定需要改变的颜色")]
@@ -732,7 +732,7 @@ namespace EntryEngine
         {
             if (VaryP == 0 && VaryPFrom == 0)
             {
-                float vary = VaryValue(0);
+                float vary = VaryValue(0) * elapsed;
                 if (vary != 0)
                 {
                     if ((Change & EPSColor.红) != EPSColor.无)
@@ -748,18 +748,18 @@ namespace EntryEngine
             else
             {
                 if ((Change & EPSColor.红) != EPSColor.无)
-                    p.Color.R = _MATH.InByte(p.Color.R + VaryValue(p.Color.R));
+                    p.Color.R = _MATH.InByte(p.Color.R + VaryValue(p.Color.R) * elapsed);
                 if ((Change & EPSColor.绿) != EPSColor.无)
-                    p.Color.G = _MATH.InByte(p.Color.G + VaryValue(p.Color.G));
+                    p.Color.G = _MATH.InByte(p.Color.G + VaryValue(p.Color.G) * elapsed);
                 if ((Change & EPSColor.蓝) != EPSColor.无)
-                    p.Color.B = _MATH.InByte(p.Color.B + VaryValue(p.Color.B));
+                    p.Color.B = _MATH.InByte(p.Color.B + VaryValue(p.Color.B) * elapsed);
                 if ((Change & EPSColor.不透明) != EPSColor.无)
-                    p.Color.A = _MATH.InByte(p.Color.A + VaryValue(p.Color.A));
+                    p.Color.A = _MATH.InByte(p.Color.A + VaryValue(p.Color.A) * elapsed);
             }
             return true;
         }
     }
-    [ASummaryP("改变：大小", "粒子大小改变", EParticleStreamType.变化)]
+    [ASummaryP("改变：大小", "粒子大小改变（单位每秒）", EParticleStreamType.变化)]
     [AReflexible]public class PSScaleAdd : PSPropertyAdd
     {
         [ASummary("横向缩放", "")]
@@ -770,22 +770,22 @@ namespace EntryEngine
         {
             if (ScaleX && ScaleY)
             {
-                float value = VaryValue(p.Scale.X);
+                float value = VaryValue(p.Scale.X) * elapsed;
                 p.Scale.X += value;
                 p.Scale.Y += value;
             }
             else if (ScaleX)
-                p.Scale.X += VaryValue(p.Scale.X);
+                p.Scale.X += VaryValue(p.Scale.X) * elapsed;
             else if (ScaleY)
-                p.Scale.Y += VaryValue(p.Scale.Y);
+                p.Scale.Y += VaryValue(p.Scale.Y) * elapsed;
             return true;
         }
     }
 
-    [ASummaryP("运动：风", "平行风使粒子按照风的方向运动", EParticleStreamType.变化)]
+    [ASummaryP("运动：风", "平行风使粒子按照风的方向运动（单位每秒）", EParticleStreamType.变化)]
     [AReflexible]public class PSWind : ParticleStream
     {
-        [ASummary("风", "向量代表了风的大小和方向，右键可以在屏幕上点击选择一个点")]
+        [ASummary("风", "向量代表了风的大小和方向，右键可以在屏幕上点击选择一个点（单位每秒）")]
         public VECTOR2 Force;
         public override bool Update(Particle p, ParticleEmitter ps, float elapsed)
         {
