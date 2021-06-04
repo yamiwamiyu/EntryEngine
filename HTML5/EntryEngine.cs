@@ -1107,7 +1107,7 @@ namespace EntryEngine.HTML5
 
             //HTML5Gate.TestTime++;
         }
-        public override void DrawPrimitives(EPrimitiveType ptype, TextureVertex[] vertices, int offset, int count, short[] indexes, int indexOffset, int primitiveCount)
+        protected override void InternalDrawPrimitives(EPrimitiveType ptype, TextureVertex[] vertices, int offset, int count, short[] indexes, int indexOffset, int primitiveCount)
         {
             if (indexOffset != 0)
                 throw new NotImplementedException();

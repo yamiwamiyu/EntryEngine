@@ -274,7 +274,7 @@ namespace EntryEngine.Xna
             }
             Device.Textures[textureIndex] = t2d;
         }
-        public override void DrawPrimitives(EPrimitiveType ptype, TextureVertex[] vertices, int offset, int count, short[] indexes, int indexOffset, int primitiveCount)
+        protected override void InternalDrawPrimitives(EPrimitiveType ptype, TextureVertex[] vertices, int offset, int count, short[] indexes, int indexOffset, int primitiveCount)
         {
             PrimitiveType resultType = ptype == EPrimitiveType.Point ? PrimitiveType.PointList :
                 (ptype == EPrimitiveType.Line) ? PrimitiveType.LineList : PrimitiveType.TriangleList;
@@ -425,11 +425,6 @@ namespace EntryEngine.Xna
 				effect = null;
 			}
 		}
-		public SHADER Clone()
-		{
-			return new ShaderXna(effect.Clone(effect.GraphicsDevice));
-		}
-
         protected override void InternalBegin(GRAPHICS g)
         {
             effect.Begin();
@@ -512,13 +507,6 @@ namespace EntryEngine.Xna
             for (int i = 0; i < result.Length; i++)
                 result[i] = value[i].GetVector4();
             effect.Parameters[property].SetValue(result);
-        }
-
-        public Content Cache()
-        {
-            ShaderXna copy = new ShaderXna(effect);
-            copy._Key = this._Key;
-            return copy;
         }
     }
     public class PipelineShaderXna : PipelineShader

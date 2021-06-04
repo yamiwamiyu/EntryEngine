@@ -7410,24 +7410,31 @@ namespace EntryEngine
                 if (defaultShader != null)
                     return defaultShader;
                 if (!string.IsNullOrEmpty(DefaultShaderText))
-                {
-                    foreach (var item in Entry._ContentManager.ContentPipelines)
-                        if (item is PipelineShader)
-                        {
-                            defaultShader = (SHADER)((PipelineShader)item).LoadFromText(DefaultShaderText);
-                            break;
-                        }
-                    if (defaultShader == null)
-                        DefaultShaderText = null;
-                }
+                    defaultShader = LoadShader(ref DefaultShaderText);
                 return defaultShader;
             }
+        }
+        /// <summary>通过着色器代码加载一个着色器，之后将着色器代码清除</summary>
+        public static SHADER LoadShader(ref string text)
+        {
+            if (string.IsNullOrEmpty(text)) return null;
+            SHADER shader = null;
+            foreach (var item in Entry._ContentManager.ContentPipelines)
+                if (item is PipelineShader)
+                {
+                    shader = (SHADER)((PipelineShader)item).LoadFromText(DefaultShaderText);
+                    break;
+                }
+            text = null;
+            return shader;
         }
 
         /// <summary>效果开启前调用</summary>
         public Action<GRAPHICS> OnBegin;
         /// <summary>渲染绑定图片时</summary>
         public Action<TEXTURE> OnTexture;
+        /// <summary>渲染片元时</summary>
+        public Action<EPrimitiveType, TextureVertex[], int, int> OnDraw;
         /// <summary>效果结束后调用</summary>
         public Action<GRAPHICS> OnEnd;
         private int currentPass;
@@ -7497,6 +7504,7 @@ namespace EntryEngine
             get { return shader; }
             set
             {
+                if (shader == value) return;
                 shader = value;
                 if (value != null)
                 {
@@ -7522,6 +7530,10 @@ namespace EntryEngine
     }
     /// <summary>渐变色</summary>
     public class ShaderGradient
+    {
+    }
+    /// <summary>变亮</summary>
+    public class ShaderLightening
     {
     }
 
@@ -8781,7 +8793,14 @@ namespace EntryEngine
         /// <param name="indexes">顶点顺序</param>
         /// <param name="indexOffset">片元索引偏移</param>
         /// <param name="primitiveCount">片元数量，传小于等于0时，会根据片元类型和顶点数量自动设置</param>
-        public abstract void DrawPrimitives(EPrimitiveType ptype, TextureVertex[] vertices, int offset, int count, short[] indexes, int indexOffset, int primitiveCount);
+        public void DrawPrimitives(EPrimitiveType ptype, TextureVertex[] vertices, int offset, int count, short[] indexes, int indexOffset, int primitiveCount)
+        {
+            var shader = CurrentRenderState.Shader;
+            if (shader != null && shader.OnDraw != null)
+                shader.OnDraw(ptype, vertices, offset, count);
+            InternalDrawPrimitives(ptype, vertices, offset, count, indexes, indexOffset, primitiveCount);
+        }
+        protected abstract void InternalDrawPrimitives(EPrimitiveType ptype, TextureVertex[] vertices, int offset, int count, short[] indexes, int indexOffset, int primitiveCount);
         /// <summary>为片元着色器设置smapler2D</summary>
         /// <param name="textureIndex">暂未实现参数</param>
         public void DrawPrimitivesBegin(TEXTURE texture, EPrimitiveType ptype, int textureIndex)

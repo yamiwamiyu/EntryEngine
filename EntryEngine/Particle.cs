@@ -1148,13 +1148,18 @@ namespace EntryEngine
                 }
                 if (sprite.Texture != null)
                 {
-                    graphics.Draw(sprite.Texture, pos, GRAPHICS.NullSource, sprite.Color, sprite.Rotation, sprite.Origin, sprite.Scale, sprite.Flip);
+                    //graphics.Draw(sprite.Texture, pos, GRAPHICS.NullSource, sprite.Color, sprite.Rotation, sprite.Origin, sprite.Scale, sprite.Flip);
+                    graphics.BaseDraw(sprite.Texture, pos.X, pos.Y, 1, 1, true, 0, 0, sprite.Texture.Width, sprite.Texture.Height,
+                        true, sprite.Color.R, sprite.Color.G, sprite.Color.B, sprite.Color.A,
+                        sprite.Rotation, sprite.Origin.X, sprite.Origin.Y, sprite.Flip);
                 }
                 if (sprite.Font != null && !string.IsNullOrEmpty(sprite.Text))
                 {
-                    pos.X -= sprite.TextOffset.X;
-                    pos.Y -= sprite.TextOffset.Y;
-                    graphics.Draw(sprite.Font, sprite.Text, pos, sprite.Color, 1);
+                    float scale = sprite.Scale.X;
+                    pos.X -= sprite.TextOffset.X * scale;
+                    pos.Y -= sprite.TextOffset.Y * scale;
+                    //graphics.Draw(sprite.Font, sprite.Text, pos, sprite.Color, scale);
+                    graphics.BaseDrawFont(sprite.Font, sprite.Text, pos.X, pos.Y, sprite.Color, scale);
                 }
             });
         }
