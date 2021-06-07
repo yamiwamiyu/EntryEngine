@@ -1149,7 +1149,7 @@ namespace EntryEngine
                 if (sprite.Texture != null)
                 {
                     //graphics.Draw(sprite.Texture, pos, GRAPHICS.NullSource, sprite.Color, sprite.Rotation, sprite.Origin, sprite.Scale, sprite.Flip);
-                    graphics.BaseDraw(sprite.Texture, pos.X, pos.Y, 1, 1, true, 0, 0, sprite.Texture.Width, sprite.Texture.Height,
+                    graphics.BaseDraw(sprite.Texture, pos.X, pos.Y, sprite.Scale.X, sprite.Scale.Y, true, 0, 0, sprite.Texture.Width, sprite.Texture.Height,
                         true, sprite.Color.R, sprite.Color.G, sprite.Color.B, sprite.Color.A,
                         sprite.Rotation, sprite.Origin.X, sprite.Origin.Y, sprite.Flip);
                 }
