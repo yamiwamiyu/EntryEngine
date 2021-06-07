@@ -3355,6 +3355,18 @@ namespace EntryEngine
         {
             get { return new CorDelegate((t) => IsAsyncLoadComplete); }
         }
+        /// <summary>当前正在等待异步加载的数量</summary>
+        public int AsyncCount { get { return asyncs.Count; } }
+        /// <summary>异步加载进度，0~1，1f/AsyncCount</summary>
+        public float AsyncProgress
+        {
+            get
+            {
+                int count = AsyncCount;
+                if (count == 0) return 1;
+                return 1f / count;
+            }
+        }
 
         [ADeviceNew]
         public ContentManager()
