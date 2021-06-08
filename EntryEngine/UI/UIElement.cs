@@ -2433,8 +2433,7 @@ namespace EntryEngine.UI
     {
         /// <summary>显示的文字内容</summary>
         public string Text = "";
-        /// <summary>字体</summary>
-        public FONT Font = FONT.Default;
+        private FONT font = FONT.Default;
         /// <summary>文字显示的颜色</summary>
         public COLOR FontColor = COLOR.Default;
         /// <summary>文字对齐方式</summary>
@@ -2446,11 +2445,27 @@ namespace EntryEngine.UI
         /// <summary>文字缩放，缩放过大可能会使文字模糊</summary>
         public float Scale = 1f;
 
+        /// <summary>字体</summary>
+        public FONT Font
+        {
+            get { return font; }
+            set
+            {
+                if (font == null || value == null)
+                    font = value;
+                else
+                {
+                    float fontSize = font.FontSize;
+                    font = value;
+                    font.FontSize = fontSize;
+                }
+            }
+        }
         /// <summary>修改字体尺寸大小</summary>
         public float FontSize
         {
-            get { return Font == null ? 0 : Font.FontSize; }
-            set { if (Font != null) Font.FontSize = value; }
+            get { return font == null ? 0 : font.FontSize; }
+            set { if (font != null) font.FontSize = value; }
         }
 
         public void GetPaddingClip(ref RECT rect)
@@ -2466,7 +2481,7 @@ namespace EntryEngine.UI
         {
             int x = UIElement.PivotX(TextAlignment);
             int y = UIElement.PivotY(TextAlignment);
-            VECTOR2 size = Font.MeasureString(Text);
+            VECTOR2 size = font.MeasureString(Text);
             offsetX = (rect.Width - size.X) * 0.5f * x;
             offsetY = (rect.Height - size.Y) * 0.5f * y;
             rect.X += offsetX;
@@ -2485,7 +2500,7 @@ namespace EntryEngine.UI
             rect.Y += Padding.Y * 0.5f;
             rect.Height -= Padding.Y;
 
-            VECTOR2 size = Font.MeasureString(Text) * Scale;
+            VECTOR2 size = font.MeasureString(Text) * Scale;
             float offsetX = (rect.Width - size.X) * 0.5f * x;
             float offsetY = (rect.Height - size.Y) * 0.5f * y;
             rect.X += offsetX;
@@ -2498,18 +2513,18 @@ namespace EntryEngine.UI
         }
         public void Draw(GRAPHICS spriteBatch, RECT rect)
         {
-            if (Font != null && !string.IsNullOrEmpty(Text))
+            if (font != null && !string.IsNullOrEmpty(Text))
             {
                 VECTOR2 location = GetTextClip(rect).Location;
                 bool effect = false;
                 if (TextShader != null)
                 {
-                    FontTexture ft = Font as FontTexture;
+                    FontTexture ft = font as FontTexture;
                     if (ft == null)
                     {
                         if (TextShader.IsShader)
                         {
-                            spriteBatch.Draw(Font, Text, VECTOR2.Add(location, TextShader.Offset), TextShader.Color, Scale);
+                            spriteBatch.Draw(font, Text, VECTOR2.Add(location, TextShader.Offset), TextShader.Color, Scale);
                         }
                         // 不支持描边
                     }
@@ -2518,10 +2533,10 @@ namespace EntryEngine.UI
                         ft.Effect = TextShader;
                     }
                 }
-                spriteBatch.Draw(Font, Text, location, FontColor, Scale);
+                spriteBatch.Draw(font, Text, location, FontColor, Scale);
                 if (effect)
                 {
-                    ((FontTexture)Font).Effect = null;
+                    ((FontTexture)font).Effect = null;
                 }
             }
         }
