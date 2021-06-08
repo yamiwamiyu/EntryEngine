@@ -10269,7 +10269,7 @@ namespace EntryBuilder
                     var splits = Split(map, new Size(2, 2), 2);
                     if (splits.Count != item.文字内容.Length)
                     {
-                        _LOG.Warning("{0}未能生成字体，图像和内容文字数量不符！图像文字：{1} 内容文字：{2}", item.文字图片, splits.Count, item.文字内容.Length);
+                        Console.WriteLine("{0}未能生成字体，图像和内容文字数量不符！图像文字：{1} 内容文字：{2}", item.文字图片, splits.Count, item.文字内容.Length);
                         foreach (var m in splits)
                             m.Dispose();
                         continue;
