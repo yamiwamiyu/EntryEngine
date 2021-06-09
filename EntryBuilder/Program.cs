@@ -615,6 +615,7 @@ namespace EntryBuilder
 		private static Type GetDllType(string dllAndType)
 		{
 			// path\Dll.dll\Namespace.Class
+            dllAndType = dllAndType.Replace('/', '\'');
 			int index = dllAndType.LastIndexOf('\\');
 			string lib = Path.GetFullPath(dllAndType.Substring(0, index));
             string libName = Path.GetFileNameWithoutExtension(lib);

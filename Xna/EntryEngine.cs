@@ -511,30 +511,13 @@ namespace EntryEngine.Xna
     }
     public class PipelineShaderXna : PipelineShader
     {
-        ///// <summary>VS语法版本</summary>
-        //public static ShaderProfile VS = ShaderProfile.VS_2_0;
-        ///// <summary>PS语法版本</summary>
-        //public static ShaderProfile PS = ShaderProfile.PS_2_0;
         public override Content LoadFromText(string text)
         {
             var effect = Effect.CompileEffectFromSource(text, new CompilerMacro[0], null, CompilerOptions.None, TargetPlatform.Windows);
-
-            //var compile = ShaderCompiler.CompileFromSource(text,
-            //    null, null, CompilerOptions.None,
-            //    "vs", VS, TargetPlatform.Windows);
-            //byte[] code = compile.GetShaderCode();
-            //var vs = new VertexShader(XnaGate.Gate.GraphicsDevice, code);
-
-            //compile = ShaderCompiler.CompileFromSource(text,
-            //    null, null, CompilerOptions.None,
-            //    "ps", PS, TargetPlatform.Windows);
-            //code = compile.GetShaderCode();
-            //var ps = new PixelShader(XnaGate.Gate.GraphicsDevice, code);
             if (!effect.Success)
             {
                 throw new Exception(effect.ErrorsAndWarnings);
             }
-
             return new ShaderXna(new Effect(XnaGate.Gate.GraphicsDevice, effect.GetEffectCode(), CompilerOptions.None, null));
         }
     }
@@ -1417,9 +1400,46 @@ namespace EntryEngine.Xna
             ContentManager = NewContentManager();
             ContentManager.IODevice = _iO;
 
-//            var preShader = new PipelineShaderXna();
-//            ShaderStroke.Shader = (SHADER)preShader.LoadFromText(
-//@"");
+            var preShader = new PipelineShaderXna();
+            ShaderStroke.Shader = (SHADER)preShader.LoadFromText(
+@"");
+            ShaderLightening.Shader = (SHADER)preShader.LoadFromText(
+@"uniform float4x4 View;
+struct VS_OUTPUT
+{
+    float4 Position   : POSITION; 
+    float4 Color      : COLOR0;
+    float2 UV		  : TEXCOORD0;
+};
+VS_OUTPUT vs
+    (
+	    float3 Position : POSITION,
+	    float4 Color : COLOR0,
+	    float2 Coord : TEXCOORD0
+    )
+{
+	VS_OUTPUT output;
+	output.Position = mul(float4(Position, 1), View);
+	output.Color = Color;
+	output.UV = Coord;
+	return output;
+};
+// 图片
+uniform sampler Texture;
+uniform float3 l = float3(0,0,0);
+float4 ps(float4 Color : COLOR0, float2 UV : TEXCOORD0) : COLOR
+{ 
+	// 顶点插值颜色可以实现渐变，最终输出顶点颜色与图片上颜色的叠加颜色
+	return float4(l,0) + Color * tex2D(Texture, UV);
+};
+technique Technique1
+{
+	pass Pass1
+	{
+		VertexShader = compile vs_1_1 vs();
+		PixelShader = compile ps_1_1 ps();
+	}
+}");
         }
         
         protected override TEXTURE InternalNewTEXTURE(int width, int height)

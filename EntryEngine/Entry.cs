@@ -7506,6 +7506,103 @@ namespace EntryEngine
             get { yield return SUFFIX; }
         }
     }
+    public abstract class SHADER_Link : EntryEngine.SHADER
+    {
+        public virtual EntryEngine.SHADER Base { get; set; }
+        public override int PassCount
+        {
+            get { return Base.PassCount; }
+        }
+        public override bool IsDisposed
+        {
+            get { return Base.IsDisposed; }
+        }
+
+        public SHADER_Link() { }
+        public SHADER_Link(EntryEngine.SHADER Base) { this.Base = Base; }
+
+        public override bool HasProperty(string name)
+        {
+            return Base.HasProperty(name);
+        }
+        public override void SetValue(string property, bool value)
+        {
+            Base.SetValue(property, value);
+        }
+        public override void SetValue(string property, bool[] value)
+        {
+            Base.SetValue(property, value);
+        }
+        public override void SetValue(string property, float value)
+        {
+            Base.SetValue(property, value);
+        }
+        public override void SetValue(string property, float[] value)
+        {
+            Base.SetValue(property, value);
+        }
+        public override void SetValue(string property, int value)
+        {
+            Base.SetValue(property, value);
+        }
+        public override void SetValue(string property, int[] value)
+        {
+            Base.SetValue(property, value);
+        }
+        public override void SetValue(string property, EntryEngine.MATRIX value)
+        {
+            Base.SetValue(property, value);
+        }
+        public override void SetValue(string property, EntryEngine.MATRIX[] value)
+        {
+            Base.SetValue(property, value);
+        }
+        public override void SetValue(string property, EntryEngine.TEXTURE value)
+        {
+            Base.SetValue(property, value);
+        }
+        public override void SetValue(string property, EntryEngine.VECTOR2 value)
+        {
+            Base.SetValue(property, value);
+        }
+        public override void SetValue(string property, EntryEngine.VECTOR2[] value)
+        {
+            Base.SetValue(property, value);
+        }
+        public override void SetValue(string property, EntryEngine.VECTOR3 value)
+        {
+            Base.SetValue(property, value);
+        }
+        public override void SetValue(string property, EntryEngine.VECTOR3[] value)
+        {
+            Base.SetValue(property, value);
+        }
+        public override void SetValue(string property, EntryEngine.VECTOR4 value)
+        {
+            Base.SetValue(property, value);
+        }
+        public override void SetValue(string property, EntryEngine.VECTOR4[] value)
+        {
+            Base.SetValue(property, value);
+        }
+        protected internal override void InternalDispose()
+        {
+            Base.InternalDispose();
+        }
+        public override EntryEngine.Content Cache()
+        {
+            return Base.Cache();
+        }
+
+        protected override void InternalBegin(GRAPHICS g)
+        {
+            Base.Begin(g);
+        }
+        protected override void InternalEnd(GRAPHICS g)
+        {
+            Base.End(g);
+        }
+    }
     /// <summary>描边</summary>
     public class ShaderStroke
     {
@@ -7532,6 +7629,10 @@ namespace EntryEngine
         /// <summary>羽化</summary>
         public float Smooth;
 
+        public ShaderStroke()
+        {
+        }
+
         /// <summary>将参数设置到Shader</summary>
         public void ToShader(SHADER shader)
         {
@@ -7545,8 +7646,35 @@ namespace EntryEngine
     {
     }
     /// <summary>变亮</summary>
-    public class ShaderLightening
+    public class ShaderLightening : SHADER_Link
     {
+        private static SHADER shader;
+        /// <summary>描边的着色器，为空时无法使用描边效果</summary>
+        public static SHADER Shader
+        {
+            get { return shader; }
+            set
+            {
+                if (shader == value) return;
+                shader = value;
+            }
+        }
+
+        /// <summary>0~1，XYZ分别代表RGB的变亮，例如原本R为128，X为0.5时，红色就会变为255</summary>
+        public VECTOR3 Lightening = new VECTOR3(0.2f, 0.2f, 0.2f);
+
+        public ShaderLightening()
+        {
+            if (shader == null)
+                throw new ArgumentNullException("没有着色器，请先用SHADER.LoadShader加载着色器到Shader变量中");
+            Base = shader;
+        }
+
+        protected override void InternalBegin(GRAPHICS g)
+        {
+            Base.SetValue("Lightening", Lightening);
+            base.InternalBegin(g);
+        }
     }
 
 

@@ -1,4 +1,9 @@
-﻿2020/05/30
+﻿2020/06/09
+1. 修改GetDllType支持'\'和'/'路径
+2. 对SHADER生成SHADER_Link
+3. 实现着色器变亮ShaderLightening
+
+2020/05/30
 1. EntryBuilder整理Cut和Split公用方法
 2. 新增EntryBuilder.TexFontFromExcel将图片文字批量转换为字体文件
 3. 修改了PipelineFontStatic加载字体的数据格式内容，后缀改为tfont
