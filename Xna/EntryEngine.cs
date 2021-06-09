@@ -1401,8 +1401,8 @@ namespace EntryEngine.Xna
             ContentManager.IODevice = _iO;
 
             var preShader = new PipelineShaderXna();
-            ShaderStroke.Shader = (SHADER)preShader.LoadFromText(
-@"");
+//            ShaderStroke.Shader = (SHADER)preShader.LoadFromText(
+//@"");
             ShaderLightening.Shader = (SHADER)preShader.LoadFromText(
 @"uniform float4x4 View;
 struct VS_OUTPUT
@@ -1412,11 +1412,11 @@ struct VS_OUTPUT
     float2 UV		  : TEXCOORD0;
 };
 VS_OUTPUT vs
-    (
-	    float3 Position : POSITION,
-	    float4 Color : COLOR0,
-	    float2 Coord : TEXCOORD0
-    )
+	(
+		float3 Position : POSITION,
+		float4 Color : COLOR0,
+		float2 Coord : TEXCOORD0
+	)
 {
 	VS_OUTPUT output;
 	output.Position = mul(float4(Position, 1), View);
@@ -1424,13 +1424,11 @@ VS_OUTPUT vs
 	output.UV = Coord;
 	return output;
 };
-// 图片
 uniform sampler Texture;
-uniform float3 l = float3(0,0,0);
+uniform float3 Lightening = float3(0, 0, 0);
 float4 ps(float4 Color : COLOR0, float2 UV : TEXCOORD0) : COLOR
 { 
-	// 顶点插值颜色可以实现渐变，最终输出顶点颜色与图片上颜色的叠加颜色
-	return float4(l,0) + Color * tex2D(Texture, UV);
+	return float4(Lightening, 0) + Color * tex2D(Texture, UV);
 };
 technique Technique1
 {

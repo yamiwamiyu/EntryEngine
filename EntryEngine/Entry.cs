@@ -7506,6 +7506,7 @@ namespace EntryEngine
             get { yield return SUFFIX; }
         }
     }
+    /// <summary>继承于此的着色器应当包含uniform float4x4 View变量</summary>
     public abstract class SHADER_Link : EntryEngine.SHADER
     {
         public virtual EntryEngine.SHADER Base { get; set; }
@@ -7596,6 +7597,7 @@ namespace EntryEngine
 
         protected override void InternalBegin(GRAPHICS g)
         {
+            Base.SetValue("View", (MATRIX)g.GraphicsToCartesianMatrix());
             Base.Begin(g);
         }
         protected override void InternalEnd(GRAPHICS g)
