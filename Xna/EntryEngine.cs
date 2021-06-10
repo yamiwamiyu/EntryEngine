@@ -1438,6 +1438,79 @@ technique Technique1
 		PixelShader = compile ps_1_1 ps();
 	}
 }");
+            ShaderStroke.Shader = (SHADER)preShader.LoadFromText(
+@"uniform float4x4 View;
+struct VS_OUTPUT
+{
+    float4 Position   : POSITION; 
+    float4 Color      : COLOR0;
+    float2 UV		  : TEXCOORD0;
+};
+VS_OUTPUT vs
+	(
+		float3 Position : POSITION,
+		float4 Color : COLOR0,
+		float2 Coord : TEXCOORD0
+	)
+{
+	VS_OUTPUT output;
+	output.Position = mul(float4(Position, 1), View);
+	output.Color = Color;
+	output.UV = Coord;
+	return output;
+};
+uniform sampler Texture;
+uniform float2 Delta;
+uniform float4 BorderColor;
+uniform float Stroke;
+uniform float Smooth;
+float PickSample(float2 uv[9])
+{
+    float g[9] = {0.03448,  0.13793,  0.03448,
+				  0.13793,  0.31034,  0.13793,
+				  0.03448,  0.13793,  0.03448};
+    float a;
+    float edge = 0;
+	bool a0 = false;
+	bool a1 = false;
+	for (int i = 0; i < 9; i++)
+	{
+		a = tex2D(Texture, uv[i]).a;
+		if (a == 0)
+			a0 = true;
+		else
+			a1 = true;
+		edge += a * g[i];
+	}
+	if (a0 && a1)
+		return 1 - edge;
+	else
+		return 0;
+}
+float4 ps(float4 Color : COLOR0, float2 UV : TEXCOORD0) : COLOR
+{
+	float4 c = tex2D(Texture, UV);
+	if (c.a != 1)
+	{
+		float2 uv[9] = {float2(UV.x-Delta.x*Stroke,UV.y-Delta.y*Stroke), float2(UV.x,UV.y-Delta.y*Stroke), float2(UV.x+Delta.x*Stroke,UV.y-Delta.y*Stroke),
+						float2(UV.x-Delta.x*Stroke,UV.y), UV, float2(UV.x+Delta.x*Stroke,UV.y),
+						float2(UV.x-Delta.x*Stroke,UV.y+Delta.y*Stroke), float2(UV.x,UV.y+Delta.y*Stroke), float2(UV.x+Delta.x*Stroke,UV.y+Delta.y*Stroke)};
+		float edge = PickSample(uv);
+		if (edge != 0)
+			c = float4(BorderColor.rgb, BorderColor.a * edge);
+	}
+	else
+		c = Color * c;
+	return c;
+};
+technique Technique1
+{
+	pass Pass1
+	{
+		VertexShader = compile vs_3_0 vs();
+		PixelShader = compile ps_3_0 ps();
+	}
+}");
         }
         
         protected override TEXTURE InternalNewTEXTURE(int width, int height)

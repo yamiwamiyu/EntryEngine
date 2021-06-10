@@ -2354,11 +2354,11 @@ namespace EntryEngine.UI
                 Entry.Close(this, state);
         }
         /// <summary>场景在其它场景里时，被Remove或Clear时需要关闭此场景</summary>
-        protected override void OnRemovedBy(UIElement parent)
-        {
-            base.OnRemovedBy(parent);
-            Close(true);
-        }
+        //protected override void OnRemovedBy(UIElement parent)
+        //{
+        //    base.OnRemovedBy(parent);
+        //    Close(true);
+        //}
         /// <summary>层级显示到最前面</summary>
         public override void ToFront()
         {
@@ -2440,6 +2440,8 @@ namespace EntryEngine.UI
         public EPivot TextAlignment;
         /// <summary>文字阴影</summary>
         public TextShader TextShader;
+        /// <summary>描边</summary>
+        public ShaderStroke Stroke;
         /// <summary>相对于父容器的间隔</summary>
         public VECTOR2 Padding;
         /// <summary>文字缩放，缩放过大可能会使文字模糊</summary>
@@ -2516,28 +2518,13 @@ namespace EntryEngine.UI
             if (font != null && !string.IsNullOrEmpty(Text))
             {
                 VECTOR2 location = GetTextClip(rect).Location;
-                bool effect = false;
-                if (TextShader != null)
-                {
-                    FontTexture ft = font as FontTexture;
-                    if (ft == null)
-                    {
-                        if (TextShader.IsShader)
-                        {
-                            spriteBatch.Draw(font, Text, VECTOR2.Add(location, TextShader.Offset), TextShader.Color, Scale);
-                        }
-                        // 不支持描边
-                    }
-                    else
-                    {
-                        ft.Effect = TextShader;
-                    }
-                }
-                spriteBatch.Draw(font, Text, location, FontColor, Scale);
-                if (effect)
-                {
-                    ((FontTexture)font).Effect = null;
-                }
+                if (TextShader != null && TextShader.HasOffset)
+                    spriteBatch.BaseDrawFont(font, Text, location.X + TextShader.Offset.X, location.Y + TextShader.Offset.Y, TextShader.Color, Scale);
+                if (Stroke != null)
+                    spriteBatch.Begin(Stroke);
+                spriteBatch.BaseDrawFont(font, Text, location.X, location.Y, FontColor, Scale);
+                if (Stroke != null)
+                    spriteBatch.End();
             }
         }
     }

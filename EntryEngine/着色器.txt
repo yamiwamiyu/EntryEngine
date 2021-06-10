@@ -2,6 +2,7 @@
 // 1. 显卡渲染一次只会用到一个顶点着色器和片元着色器
 // 2. HLSL多个PASS理论上是将多个顶点着色器和片元着色器封装在了一个文件里，减少重复编码
 // 3. 切换PASS实际就是切换使用不同的顶点着色器和片元着色器
+// HLSL语法教程：https://docs.microsoft.com/zh-cn/windows/win32/direct3dhlsl/dx-graphics-hlsl-language-syntax
 
 // HLSL示例
 // 矩阵投影，vs输出的坐标是笛卡尔坐标，可以通过此矩阵将屏幕坐标系转换成笛卡尔坐标系

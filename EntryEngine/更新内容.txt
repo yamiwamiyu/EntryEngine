@@ -1,4 +1,9 @@
-﻿2020/06/09
+﻿2020/06/10
+1. UIScene在被移除时，不再调用Close
+2. 新增外描边ShaderStroke
+3. UI编辑器可使用描边效果
+
+2020/06/09
 1. 修改GetDllType支持'\'和'/'路径
 2. 对SHADER生成SHADER_Link
 3. 实现着色器变亮ShaderLightening

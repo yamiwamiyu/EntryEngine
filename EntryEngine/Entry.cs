@@ -6768,6 +6768,11 @@ namespace EntryEngine
         public VECTOR2 Offset;
         /// <summary>阴影颜色</summary>
         public COLOR Color;
+        /// <summary>是否有可见的描边，Offset不为0，颜色A不为0</summary>
+        public bool HasOffset
+        {
+            get { return (Offset.X != 0 || Offset.Y != 0) && Color.A != 0; }
+        }
         public TextShader()
         {
             this.Color.A = 128; 
@@ -6787,12 +6792,6 @@ namespace EntryEngine
             this.Offset = copy.Offset;
             this.Color = copy.Color;
         }
-        public bool IsStroke { get { return Offset.X == 0 && Offset.Y == 0; } }
-        public bool IsShader { get { return Offset.X != 0 || Offset.Y != 0; } }
-        public static TextShader CreateStroke(COLOR color)
-        {
-            return new TextShader(0, 0, color);
-        }
         public static TextShader CreateShader()
         {
             return new TextShader(2, 2, new COLOR(128, 128, 128, 128));
@@ -6800,19 +6799,6 @@ namespace EntryEngine
         public static TextShader CreateShader(COLOR color)
         {
             return new TextShader(2, 2, color);
-        }
-        internal static float _Stroke = 2;
-        internal static float _Stroke2 = _Stroke * 2;
-        public static float Stroke
-        {
-            get { return _Stroke; }
-            set
-            {
-                if (value < 1 || value > 4)
-                    throw new ArgumentException("Stroke must be 1~4.");
-                _Stroke = value;
-                _Stroke2 = value * 2;
-            }
         }
     }
     /// <summary>静态的图片文字字体</summary>
@@ -6936,19 +6922,9 @@ namespace EntryEngine
                     //area.Y = y + height - uv.Height;
                     area.Width = buffer.W * scale;
                     area.Height = buffer.H * scale;
-                    if (Effect != null)
-                    {
-                        if (Effect.IsStroke)
-                        {
-                            // 假描边，字的尺寸不大的话效果还可以
-                            spriteBatch.BaseDraw(cache.Textures[buffer.Index], area.X - TextShader.Stroke, area.Y - TextShader.Stroke, area.Width + TextShader._Stroke2, area.Height + TextShader._Stroke2, false, buffer.x, buffer.y, buffer.W, buffer.H, true, Effect.Color.R, Effect.Color.G, Effect.Color.B, Effect.Color.A, 0, 0, 0, EFlip.None);
-                        }
-                        else
-                        {
-                            // 阴影
-                            spriteBatch.BaseDraw(cache.Textures[buffer.Index], area.X + Effect.Offset.X, area.Y + Effect.Offset.Y, area.Width, area.Height, false, buffer.x, buffer.y, buffer.W, buffer.H, true, Effect.Color.R, Effect.Color.G, Effect.Color.B, Effect.Color.A, 0, 0, 0, EFlip.None);
-                        }
-                    }
+                    if (Effect != null && Effect.HasOffset)
+                        // 阴影
+                        spriteBatch.BaseDraw(cache.Textures[buffer.Index], area.X + Effect.Offset.X, area.Y + Effect.Offset.Y, area.Width, area.Height, false, buffer.x, buffer.y, buffer.W, buffer.H, true, Effect.Color.R, Effect.Color.G, Effect.Color.B, Effect.Color.A, 0, 0, 0, EFlip.None);
                     spriteBatch.BaseDraw(cache.Textures[buffer.Index], area.X, area.Y, area.Width, area.Height, false, buffer.x, buffer.y, buffer.W, buffer.H, true, color.R, color.G, color.B, color.A, 0, 0, 0, EFlip.None);
                     //spriteBatch.Draw(texture, area, uv, color);
                     area.X += buffer.Space * scale + Spacing.X;
@@ -7519,8 +7495,12 @@ namespace EntryEngine
             get { return Base.IsDisposed; }
         }
 
-        public SHADER_Link() { }
-        public SHADER_Link(EntryEngine.SHADER Base) { this.Base = Base; }
+        public SHADER_Link()
+        {
+            this.OnTexture = BaseOnTexture;
+            this.OnDraw = BaseOnDraw;
+        }
+        public SHADER_Link(EntryEngine.SHADER Base) : this() { this.Base = Base; }
 
         public override bool HasProperty(string name)
         {
@@ -7590,10 +7570,6 @@ namespace EntryEngine
         {
             Base.InternalDispose();
         }
-        public override EntryEngine.Content Cache()
-        {
-            return Base.Cache();
-        }
 
         protected override void InternalBegin(GRAPHICS g)
         {
@@ -7604,9 +7580,19 @@ namespace EntryEngine
         {
             Base.End(g);
         }
+        public void BaseOnTexture(TEXTURE texture)
+        {
+            if (Base.OnTexture != null)
+                Base.OnTexture(texture);
+        }
+        public void BaseOnDraw(EPrimitiveType type, TextureVertex[] vertices, int offset, int count)
+        {
+            if (Base.OnDraw != null)
+                Base.OnDraw(type, vertices, offset, count);
+        }
     }
     /// <summary>描边</summary>
-    public class ShaderStroke
+    public class ShaderStroke : SHADER_Link
     {
         private static SHADER shader;
         /// <summary>描边的着色器，为空时无法使用描边效果</summary>
@@ -7625,22 +7611,25 @@ namespace EntryEngine
         }
 
         /// <summary>描边的颜色</summary>
-        public COLOR Color;
+        public COLOR BorderColor = COLOR.Black;
         /// <summary>描边厚度，单位像素</summary>
-        public int Stroke = 2;
+        public float Stroke = 1;
         /// <summary>羽化</summary>
         public float Smooth;
 
         public ShaderStroke()
         {
+            if (shader == null)
+                throw new ArgumentNullException("没有着色器，请先用SHADER.LoadShader加载着色器到Shader变量中");
+            this.Base = shader;
         }
 
-        /// <summary>将参数设置到Shader</summary>
-        public void ToShader(SHADER shader)
+        protected override void InternalBegin(GRAPHICS g)
         {
-            shader.SetValue("Color", Color.ToFloat());
-            shader.SetValue("Stroke", Stroke);
-            shader.SetValue("Smooth", Smooth);
+            Base.SetValue("BorderColor", BorderColor.ToFloat());
+            Base.SetValue("Stroke", Stroke);
+            Base.SetValue("Smooth", Smooth);
+            base.InternalBegin(g);
         }
     }
     /// <summary>渐变色</summary>
@@ -7722,13 +7711,22 @@ namespace EntryEngine
     /// <summary>基础文字对象</summary>
     public class SpriteText : PoolItem
     {
+        /// <summary>字体</summary>
         public FONT Font = FONT.Default;
+        /// <summary>显示的文字内容</summary>
         public string Text;
         /// <summary>文字显示的区域，宽高为0时，将自动设置文字区域</summary>
         public RECT Area;
+        /// <summary>文字对齐方式</summary>
         public UI.EPivot Alignment = EPivot.MiddleCenter;
-        public COLOR Color = Entry._GRAPHICS.DefaultColor;
+        /// <summary>文字显示的颜色</summary>
+        public COLOR Color = COLOR.Default;
+        /// <summary>文字缩放，缩放过大可能会使文字模糊</summary>
         public float Scale = 1;
+        /// <summary>文字阴影</summary>
+        public TextShader TextShader;
+        /// <summary>描边</summary>
+        public ShaderStroke Stroke;
 
         public void Draw()
         {
@@ -7741,7 +7739,13 @@ namespace EntryEngine
                 size.Y *= Scale;
             }
             UI.UIElement.TextAlign(ref Area, ref size, Alignment, out size);
+            if (TextShader != null && TextShader.HasOffset)
+                g.BaseDrawFont(Font, Text, size.X + TextShader.Offset.X, size.Y + TextShader.Offset.Y, TextShader.Color, Scale);
+            if (Stroke != null)
+                g.Begin(Stroke);
             g.BaseDrawFont(Font, Text, size.X, size.Y, Color, Scale);
+            if (Stroke != null)
+                g.End();
         }
     }
     /// <summary>精灵渲染参数</summary>

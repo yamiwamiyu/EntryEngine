@@ -44,12 +44,42 @@
         <NickName>阴影</NickName>
       </e>
       <e>
+        <VariableName>Stroke</VariableName>
+        <NickName>描边</NickName>
+      </e>
+      <e>
         <VariableName>Padding</VariableName>
         <NickName>边界距离</NickName>
       </e>
       <e>
         <VariableName>FontSize</VariableName>
         <NickName>字体尺寸</NickName>
+      </e>
+    </Variables>
+  </e>
+  <e>
+    <Type>EntryEngine.EntryEngine.ShaderStroke</Type>
+    <Variables>
+      <e>
+        <VariableName>BorderColor</VariableName>
+        <NickName>描边颜色</NickName>
+      </e>
+      <e>
+        <VariableName>Stroke</VariableName>
+        <NickName>描边像素</NickName>
+      </e>
+    </Variables>
+  </e>
+  <e>
+    <Type>EntryEngine.EntryEngine.TextShader</Type>
+    <Variables>
+      <e>
+        <VariableName>Color</VariableName>
+        <NickName>阴影颜色</NickName>
+      </e>
+      <e>
+        <VariableName>Offset</VariableName>
+        <NickName>阴影偏移</NickName>
       </e>
     </Variables>
   </e>
