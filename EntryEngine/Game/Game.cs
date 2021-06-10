@@ -320,8 +320,10 @@ namespace EntryEngine.Game
 
     #region 掉落系统
 
-    public interface IDrop : IBagItem
+    public interface IDrop
     {
+        int ItemID { get; }
+        int Count { get; }
         int Weight { get; }
     }
     public struct DROP
