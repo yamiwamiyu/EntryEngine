@@ -320,10 +320,8 @@ namespace EntryEngine.Game
 
     #region 掉落系统
 
-    public interface IDrop
+    public interface IDrop : IBagItem
     {
-        int ItemID { get; }
-        int Count { get; }
         int Weight { get; }
     }
     public struct DROP
@@ -338,7 +336,7 @@ namespace EntryEngine.Game
         }
     }
     /// <summary>掉落权重变化在_MATH.WeightVary</summary>
-    public struct ITEM
+    public struct ITEM : IBagItem
     {
         public int ID;
         public int Count;
@@ -448,6 +446,12 @@ namespace EntryEngine.Game
             }
             throw new InvalidOperationException("掉落不能没掉出东西");
         }
+
+        int IBagItem.ItemID
+        {
+            get { return ID; }
+        }
+        int IBagItem.Count { get { return this.Count; } set { this.Count = value; } }
     }
 
     #endregion
