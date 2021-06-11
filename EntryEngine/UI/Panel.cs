@@ -52,9 +52,11 @@ namespace EntryEngine.UI
         private float dragFriction = 0.95f;
         /// <summary>鼠标滑轮的滑动像素，0则不能使用鼠标滑轮</summary>
         public float ScrollWheelSpeed = 100;
+        /// <summary>滚动事件</summary>
 		public event DUpdate<Panel> Scroll;
 		public event DUpdate<Panel> ScrollBarChanged;
 
+        /// <summary>滚动条显示</summary>
 		public EScrollOrientation ScrollOrientation
 		{
 			get { return scrollOrientation; }
@@ -188,10 +190,12 @@ namespace EntryEngine.UI
                 UpdateScrollScope(true);
 			}
 		}
+        /// <summary>横向内容能否滚动</summary>
 		public bool CanScrollHorizontal
 		{
 			get { return offsetScope.X > 0; }
 		}
+        /// <summary>纵向内容能否滚动</summary>
 		public bool CanScrollVertical
 		{
 			get { return offsetScope.Y > 0; }

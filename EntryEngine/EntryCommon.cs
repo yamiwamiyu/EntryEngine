@@ -1787,12 +1787,12 @@ namespace EntryEngine
         /// <summary>当前节点的首个子节点</summary>
         public T First
         {
-            get { return Childs.First(); }
+            get { return Childs[0]; }
         }
         /// <summary>当前节点的末尾子节点</summary>
         public T Last
         {
-            get { return Childs.Last(); }
+            get { return Childs[Childs.Count - 1]; }
         }
         public T this[int index]
         {

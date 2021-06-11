@@ -1896,6 +1896,33 @@ namespace EntryEngine.UI
         {
             return !target.isHover;
         }
+        /// <summary>向容器里添加一个组件，总体居中对齐，后续添加的向右放</summary>
+        /// <param name="space">组件间的间隔</param>
+        public static void AddCenterX(UIElement parent, UIElement child, float space)
+        {
+            parent.Add(child);
+            int count = parent.ChildCount;
+            if (count == 1)
+            {
+                // 第一个居中对齐
+                child.X = parent.Width * 0.5f + (child.PivotAlignmentX - 1) * child.Width * 0.5f;
+                child.Y = parent.Height * 0.5f + (child.PivotAlignmentY - 1) * child.Height * 0.5f;
+            }
+            else
+            {
+                var last = parent[count - 2];
+                child.X = last.X + last.Width + space;
+                child.Y = last.Y;
+                // 前面的组件全部向前移
+                float left = (last.Width + space) * 0.5f;
+                // 最前面一个不能减到负数，即组件过多时，居左对齐
+                if (parent[0].X < left)
+                    left = parent[0].X;
+                if (left > 0)
+                    for (int i = 0; i < count; i++)
+                        parent[i].X -= left;
+            }
+        }
     }
 
     /// <summary>场景流程
