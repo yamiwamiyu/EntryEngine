@@ -1744,7 +1744,8 @@ namespace EntryEngine.UI
         protected bool OnClicked(Entry e)
         {
             // e.INPUT.Pointer.IsRelease(e.INPUT.Pointer.DefaultKey)
-            return isHover && isClick && e.INPUT.Pointer.IsTap(e.INPUT.Pointer.DefaultKey);
+            // e.INPUT.Pointer.IsTap(e.INPUT.Pointer.DefaultKey)
+            return isHover && isClick && e.INPUT.Pointer.IsRelease(e.INPUT.Pointer.DefaultKey);
         }
         private void DoClicked(Entry e)
         {
@@ -1821,8 +1822,8 @@ namespace EntryEngine.UI
         {
             if (!child.Visible)
                 return RECT.Empty;
-            if (child is UIScene && ((UIScene)child).IsInStage)
-                return RECT.Empty;
+            //if (child is UIScene && ((UIScene)child).IsInStage)
+            //    return RECT.Empty;
             RECT rect = child.InParentClip;
             if (!child.isClip)
             {
