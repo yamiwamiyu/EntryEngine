@@ -1743,7 +1743,8 @@ namespace EntryEngine.UI
         }
         protected bool OnClicked(Entry e)
         {
-            return isHover && isClick && e.INPUT.Pointer.IsRelease(e.INPUT.Pointer.DefaultKey);
+            // e.INPUT.Pointer.IsRelease(e.INPUT.Pointer.DefaultKey)
+            return isHover && isClick && e.INPUT.Pointer.IsTap(e.INPUT.Pointer.DefaultKey);
         }
         private void DoClicked(Entry e)
         {
