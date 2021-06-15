@@ -232,6 +232,20 @@ namespace EntryEngine.UI
 			this.Clicked += OnClicked;
 		}
 
+        protected override void UpdateClip(ref RECT finalClip, ref RECT finalViewClip, ref MATRIX2x3 transform, ref MATRIX2x3 localToWorld)
+        {
+            base.UpdateClip(ref finalClip, ref finalViewClip, ref transform, ref localToWorld);
+            if (IsAutoWidth)
+            {
+                finalClip.Width += uitext.Padding.X;
+                finalViewClip.Width += uitext.Padding.X;
+            }
+            if (IsAutoHeight)
+            {
+                finalClip.Height += uitext.Padding.Y;
+                finalViewClip.Height += uitext.Padding.Y;
+            }
+        }
         public void ChangeCheck(bool isChecked)
         {
             if (Checked == isChecked)

@@ -300,7 +300,7 @@ namespace EntryEngine.DragonBones
     public class PipelineDragonBones : ContentPipeline
     {
         /// <summary>龙骨骼文件加载的后缀名dbs</summary>
-        public const string SUFFIX = "dbs";
+        public const string SUFFIX = "json";
         internal static DBFactory factory = new DBFactory();
         static PipelineDragonBones()
         {
@@ -314,7 +314,10 @@ namespace EntryEngine.DragonBones
 
         protected override Content Load(string file)
         {
-            string temp = file.Substring(0, file.LastIndexOf('.'));
+            int index = file.LastIndexOf('_');
+            if (index == -1)
+                index = file.LastIndexOf('.');
+            string temp = file.Substring(0, index);
             string filename = Path.GetFileNameWithoutExtension(file);
 
             string loadfile = temp + "_ske.json";
@@ -335,7 +338,10 @@ namespace EntryEngine.DragonBones
         protected override void LoadAsync(AsyncLoadContent async)
         {
             string file = async.File;
-            string temp = file.Substring(0, file.LastIndexOf('.'));
+            int index = file.LastIndexOf('_');
+            if (index == -1)
+                index = file.LastIndexOf('.');
+            string temp = file.Substring(0, index);
             string filename = Path.GetFileNameWithoutExtension(file);
 
             string loadfile = temp + "_ske.json";

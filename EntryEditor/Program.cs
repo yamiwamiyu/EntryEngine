@@ -110,6 +110,13 @@ namespace EntryEditor
                 using (XnaGate gate = new XnaGate())
                 {
 					//gate.OnCreateEntry += () => new EntryCPU();
+                    gate.OnInitialize += entry =>
+                        {
+                            entry.OnNewContentManager += (content) =>
+                            {
+                                content.AddPipeline(new EntryEngine.DragonBones.PipelineDragonBones());
+                            };
+                        };
                     gate.OnInitialized += entry =>
                         {
                             entry.SetCoroutine(Program.Initialize());

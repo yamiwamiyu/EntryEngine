@@ -10,30 +10,32 @@ namespace EntryEngine.UI
     /// <summary>屏幕中央弹出提示文字，常用于提示错误信息</summary>
     public class STextHint : UIScene
     {
-        TIME showTime = new TIME(2000);
         public Label HintLabel;
         public string HintContent
         {
             get { return HintLabel.Text; }
             set { HintLabel.Text = value; }
         }
-        public int ShowTime
-        {
-            get { return showTime.Interval; }
-            set { showTime.Interval = value; }
-        }
+        /// <summary>显示时间，单位秒</summary>
+        public int ShowTime = 2;
+        private float shownTime;
         
         public STextHint()
         {
             this.ShowPosition = EShowPosition.ParentCenter;
-            this.Height = 34;
+            this.Height = 0;
 
             HintLabel = new Label();
             HintLabel.Pivot = EPivot.MiddleLeft;
             HintLabel.UIText.TextAlignment = EPivot.MiddleCenter;
             HintLabel.UIText.Padding.X = 40;
+            HintLabel.UIText.Padding.Y = 20;
+            HintLabel.UIText.FontColor = COLOR.White;
+            HintLabel.SourceNormal = TEXTURE.Pixel;
+            HintLabel.Color = new COLOR(64, 64, 64, 64);
             HintLabel.Width = Width;
-            HintLabel.FontSize = 28;
+            HintLabel.Height = 0;
+            HintLabel.FontSize = 44;
             HintLabel.BreakLine = true;
             Add(HintLabel);
 
@@ -42,37 +44,49 @@ namespace EntryEngine.UI
 
         float y
         {
-            get { return HintLabel.Y - (Height * 0.5f); }
-            set { HintLabel.Y = value + (Height * 0.5f); }
+            get { return HintLabel.Y - HintLabel.Height * 0.5f; }
+            set { HintLabel.Y = value + HintLabel.Height * 0.5f; }
         }
         void HintScene_PhaseShowing(UIScene arg1)
         {
-            y = 30;
-            HintLabel.UIText.FontColor.A = 15;
+            HintLabel.UIText.FontColor.A = 0;
             Close(EState.None, false);
         }
         protected internal override IEnumerable<ICoroutine> Ending()
         {
-            while (y > -10)
+            var size = HintLabel.UIText.Font.MeasureString(HintLabel.Text);
+            this.Height = size.Y + HintLabel.UIText.Padding.Y;
+            yield return null;
+            HintLabel.Y = HintLabel.Height * 2;
+            shownTime = 0;
+            while (shownTime < 0.1f)
             {
-                y -= 5;
-                HintLabel.UIText.FontColor.A += 15;
+                shownTime += GameTime.Time.ElapsedSecond;
+                y -= GameTime.Time.ElapsedSecond * 1 / 0.1f * HintLabel.Height * 2.2f;
+                HintLabel.UIText.FontColor.A = (byte)(HintLabel.UIText.FontColor.A + GameTime.Time.ElapsedSecond * 1 / 0.2f * 255);
                 yield return null;
             }
-            while (y < 0)
+            shownTime = 0;
+            while (HintLabel.Y < size.Y)
             {
-                y += 5;
-                HintLabel.UIText.FontColor.A += 15;
+                shownTime += GameTime.Time.ElapsedSecond;
+                y += GameTime.Time.ElapsedSecond * 1 / 0.1f * HintLabel.Height * 2f;
+                HintLabel.UIText.FontColor.A = _MATH.InByte(HintLabel.UIText.FontColor.A + GameTime.Time.ElapsedSecond * 1 / 0.2f * 255);
                 yield return null;
             }
             y = 0;
             HintLabel.UIText.FontColor.A = 255;
-            showTime.Reset();
-            yield return showTime;
-            while (y < 30)
+            shownTime = 0;
+            while (shownTime < ShowTime)
             {
-                y += 5;
-                HintLabel.UIText.FontColor.A -= 35;
+                shownTime += GameTime.Time.ElapsedSecond;
+                yield return null;
+            }
+            shownTime = 0;
+            while (shownTime < 0.05f)
+            {
+                y += GameTime.Time.ElapsedSecond * 1 / 0.1f * HintLabel.Height;
+                HintLabel.UIText.FontColor.A = (byte)(HintLabel.UIText.FontColor.A - GameTime.Time.ElapsedSecond * 1 / 0.2f * 255);
                 yield return null;
             }
         }
@@ -144,6 +158,8 @@ namespace EntryEngine.UI
             }
         }
 
+        /// <summary>黑屏切换</summary>
+        /// <param name="onFadeOut">一般调用ShowMainScene显示新的主场景</param>
         public static SFade ShowBlack(Action onFadeOut)
         {
             SFade fade = Entry.Instance.ShowDialogScene<SFade>(EState.Dialog);
@@ -151,6 +167,8 @@ namespace EntryEngine.UI
             fade.OnFadeOutOver = onFadeOut;
             return fade;
         }
+        /// <summary>白屏切换</summary>
+        /// <param name="onFadeOut">一般调用ShowMainScene显示新的主场景</param>
         public static SFade ShowWhite(Action onFadeOut)
         {
             SFade fade = Entry.Instance.ShowDialogScene<SFade>(EState.Dialog);
