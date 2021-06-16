@@ -1126,39 +1126,45 @@ namespace EntryEngine.Serialize
 			}
 		}
 	}
+    /// <summary>像流一样的形式一点点解析字符串</summary>
     public class StringStreamReader
     {
+        /// <summary>被视为空格的字符（字符串里的每一个字符）</summary>
         public string WHITE_SPACE = " \t\n\r";
+        /// <summary>被视为单词分隔符的字符（字符串里的每一个字符）</summary>
 		public string WORD_BREAK;
 
+        /// <summary>需要解析的字符串</summary>
         public string str;
 		protected int pos;
 		protected int len;
 
+        /// <summary>当前字符串是否已经解析完毕</summary>
 		public bool IsEnd
 		{
 			get { return pos >= len; }
 		}
+        /// <summary>获取下一个字符，流不进行</summary>
 		public char PeekChar
 		{
 			get { return Peek(); }
 		}
+        /// <summary>获取下一个单词，流不进行</summary>
 		public string PeekNextWord
 		{
 			get { return PeekNext(WORD_BREAK); }
 		}
+        /// <summary>获取下一行字符串，流不进行</summary>
 		public string PeekNextLine
 		{
 			get { return PeekNext("\n"); }
 		}
-		public string PeekNextEnd
-		{
-			get { return PeekNext(";"); }
-		}
+        /// <summary>还未解析的后续字符串</summary>
         public string Tail
         {
             get { return str.Substring(pos); }
         }
+        /// <summary>当前解析到的字符串索引位置</summary>
         public int Pos
         {
             get { return pos; }
@@ -1182,6 +1188,9 @@ namespace EntryEngine.Serialize
             SetContent(content, startIndex);
         }
 
+        /// <summary>设置需要解析的字符串</summary>
+        /// <param name="content">字符串</param>
+        /// <param name="startIndex">设定默认起始位置</param>
         public void SetContent(string content, int startIndex)
         {
             if (content == null)
@@ -1194,22 +1203,27 @@ namespace EntryEngine.Serialize
             this.len = content.Length;
             this.pos = startIndex;
         }
+        /// <summary>读取下一个字符，流不进行</summary>
         public char Peek()
 		{
 			return str[pos];
 		}
+        /// <summary>读取一个字符，流进行</summary>
         public char Read()
 		{
 			return str[pos++];
 		}
+        /// <summary>读取下一行字符串，流进行</summary>
 		public string ReadLine()
 		{
             return Next("\n");
 		}
+        /// <summary>读取下一行字符串，索引停在\n字符后</summary>
         public string EatLine()
         {
             return Eat("\n");
         }
+        /// <summary>读取下一个单词，与Next不同是索引停在字符后</summary>
         public string Eat(string filter)
 		{
             //EatWhitespace();
@@ -1219,10 +1233,17 @@ namespace EntryEngine.Serialize
 				pos++;
 			return next;
 		}
+        /// <summary>读取下一个单词，索引停在字符处，默认会清空所有空格符</summary>
+        /// <param name="filter">遇到此字符串中任意字符时停止</param>
+        /// <returns>读取到的下一个单词</returns>
         public string Next(string filter)
         {
             return Next(filter, true);
         }
+        /// <summary>读取下一个单词，索引停在字符处</summary>
+        /// <param name="filter">遇到此字符串中任意字符时停止</param>
+        /// <param name="eatWhitespace">查找单词之前，是否需要清空所有空格符</param>
+        /// <returns>读取到的下一个单词</returns>
         public string Next(string filter, bool eatWhitespace)
 		{
 			if (eatWhitespace)
@@ -1243,14 +1264,17 @@ namespace EntryEngine.Serialize
 
 			return str.Substring(start, pos - start);
 		}
+        /// <summary>以WORD_BREAK作为filter，读取下一个单词</summary>
         public string NextWord()
         {
             return Next(WORD_BREAK, true);
         }
+        /// <summary>参见Next，流不进行</summary>
         public string PeekNext(string filter)
 		{
             return PeekNext(filter, true);
 		}
+        /// <summary>参见Next，流不进行</summary>
         public string PeekNext(string filter, bool eatWhitespace)
         {
             int start = pos;
@@ -1258,10 +1282,13 @@ namespace EntryEngine.Serialize
             pos = start;
             return next;
         }
+        /// <summary>清空WHITE_SPACE指定的空格符</summary>
         public void EatWhitespace()
         {
             EatWhitespace(null);
         }
+        /// <summary>清空WHITE_SPACE指定的空格符</summary>
+        /// <param name="filter">不被视为空格符的字符</param>
         public void EatWhitespace(string filter)
 		{
             if (IsEnd)
@@ -1273,15 +1300,22 @@ namespace EntryEngine.Serialize
 					break;
 		}
 
-
+        /// <summary>获取指定索引的字符</summary>
         public char GetChar(int pos)
         {
             return str[pos];
         }
+        /// <summary>找到下个单词的位置</summary>
+        /// <param name="filter">遇到此字符串中任意字符时停止</param>
+        /// <returns>找到的位置</returns>
         public int NextPosition(string filter)
         {
             return NextPosition(filter, 0);
         }
+        /// <summary>找到下个单词的位置</summary>
+        /// <param name="filter">遇到此字符串中任意字符时停止</param>
+        /// <param name="skipIndex">需要跳过前几个字符的个数</param>
+        /// <returns>找到的位置</returns>
         public int NextPosition(string filter, int skipIndex)
         {
             int p = pos + skipIndex;
@@ -1290,6 +1324,7 @@ namespace EntryEngine.Serialize
                     break;
             return p;
         }
+        /// <summary>设定索引位置，返回当前位置到索引位置的字符串</summary>
         public string ToPosition(int index)
         {
             if (index < pos)
@@ -1308,6 +1343,10 @@ namespace EntryEngine.Serialize
         {
             return IsNext(filter, skipIndex, true);
         }
+        /// <summary>接下来的字符是否是指定的字符</summary>
+        /// <param name="filter">指定的字符</param>
+        /// <param name="skipIndex">需要跳过前几个字符的个数</param>
+        /// <param name="eatWhiteSpace">查找单词之前，是否需要清空所有空格符</param>
         public bool IsNext(string filter, int skipIndex, bool eatWhiteSpace)
         {
             int temp = pos;
@@ -1322,6 +1361,7 @@ namespace EntryEngine.Serialize
             pos = temp;
             return filter.Contains(str[p]);
         }
+        /// <summary>接下来的字符是否是指定的字符</summary>
         public bool IsNextSign(char c)
         {
             EatWhitespace();
@@ -1333,6 +1373,9 @@ namespace EntryEngine.Serialize
         {
             return IsNextSign(word, 0);
         }
+        /// <summary>接下来的字符串是否是指定的字符串</summary>
+        /// <param name="word">指定的字符串</param>
+        /// <param name="skipIndex">需要跳过前几个字符的个数</param>
         public bool IsNextSign(string word, int skipIndex)
         {
             int temp = pos;
@@ -1352,14 +1395,17 @@ namespace EntryEngine.Serialize
                     return false;
             return true;
         }
+        /// <summary>读取下一个段落，直到出现指定单词为止，光标停在单词之前</summary>
         public string NextToSign(string sign)
         {
             return ToSign(sign, false, false);
         }
+        /// <summary>读取下一个段落(包含指定单词)，直到出现指定标识单词为止，光标停在单词之后</summary>
         public string NextAfterSign(string sign)
         {
             return ToSign(sign, true, true);
         }
+        /// <summary>读取下一个段落(不包含指定单词)，直到出现指定标识单词为止，光标停在单词之后</summary>
         public string NextToSignAfter(string sign)
         {
             return ToSign(sign, false, true);
@@ -1375,18 +1421,21 @@ namespace EntryEngine.Serialize
             }
             return null;
         }
+        /// <summary>进行到下个指定单词的位置，光标停在单词之前</summary>
         public void EatToSign(string sign)
         {
             int index = str.IndexOf(sign, pos);
             if (index != -1)
                 pos = index;
         }
+        /// <summary>进行到下个指定单词的位置，光标停在单词之后</summary>
         public void EatAfterSign(string sign)
         {
             int index = str.IndexOf(sign, pos);
             if (index != -1)
                 pos = index + sign.Length;
         }
+        /// <summary>若接下来是指定单词，进行到指定单词的位置，光标停在单词之后</summary>
         public bool EatAfterSignIfIs(string sign)
         {
             bool result = IsNextSign(sign);
@@ -1394,6 +1443,7 @@ namespace EntryEngine.Serialize
                 pos += sign.Length;
             return result;
         }
+        /// <summary>若接下来是指定单词，进行到指定单词的位置，光标停在单词之后</summary>
         public bool EatAfterWordIfIs(string word)
         {
             int temp = pos;
