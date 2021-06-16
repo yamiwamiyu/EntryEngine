@@ -108,8 +108,8 @@
 
 	<e>
 		<Icon>ElementList&#92;button.png</Icon>
-		<Name>Button</Name>
-		<Description>Button with background of nine patch</Description>
+		<Name>按钮</Name>
+		<Description>普通按钮</Description>
 		<Type>EntryEngine.EntryEngine.UI.Button</Type>
     <Variables>
       <e>
@@ -175,8 +175,8 @@
 	</e>
 	<e>
 		<Icon>ElementList&#92;checkbox.png</Icon>
-		<Name>CheckBox</Name>
-		<Description>Multiple/Single selectable box</Description>
+		<Name>单选/复选框</Name>
+		<Description>单选/复选框</Description>
 		<Type>EntryEngine.EntryEngine.UI.CheckBox</Type>
     <Variables>
       <e>
@@ -250,8 +250,8 @@
 	</e>
   <e>
     <Icon>ElementList&#92;checkbox.png</Icon>
-    <Name>TabPage</Name>
-    <Description>Multiple/Single selectable box</Description>
+    <Name>页签</Name>
+    <Description>很少使用，单选切换页签</Description>
     <Type>EntryEngine.EntryEngine.UI.TabPage</Type>
     <Variables>
       <e>
@@ -325,8 +325,8 @@
   </e>
 	<e>
 		<Icon>ElementList&#92;popuplist.png</Icon>
-		<Name>DropDown</Name>
-		<Description>Selectable list</Description>
+		<Name>下拉</Name>
+		<Description>下拉列表</Description>
 		<Type>EntryEngine.EntryEngine.UI.DropDown</Type>
     <Variables>
       <e>
@@ -399,8 +399,8 @@
 	</e>
 	<e>
 		<Icon>ElementList&#92;text.png</Icon>
-		<Name>Label</Name>
-		<Description>Text view</Description>
+		<Name>标签</Name>
+		<Description>常用于显示文字</Description>
 		<Type>EntryEngine.EntryEngine.UI.Label</Type>
     <Variables>
       <e>
@@ -453,8 +453,8 @@
 	</e>
 	<e>
 		<Icon>ElementList&#92;scrollpanel.png</Icon>
-		<Name>Panel</Name>
-		<Description>Common container</Description>
+		<Name>面板</Name>
+		<Description>通用的容器</Description>
 		<Type>EntryEngine.EntryEngine.UI.Panel</Type>
     <Variables>
       <e>
@@ -500,8 +500,8 @@
 	</e>
 	<e>
 		<Icon>ElementList&#92;slider.png</Icon>
-		<Name>ScrollBarHorizontal</Name>
-		<Description>Scroll bar by horizontal</Description>
+		<Name>横向滚动条</Name>
+		<Description>很少使用</Description>
 		<Type>EntryEngine.EntryEngine.UI.ScrollBarHorizontal</Type>
     <Variables>
       <e>
@@ -566,8 +566,8 @@
 	</e>
   <e>
     <Icon>ElementList&#92;slider.png</Icon>
-    <Name>ScrollBarVertical</Name>
-    <Description>Scroll bar by vertical</Description>
+    <Name>纵向滚动条</Name>
+    <Description>很少使用</Description>
     <Type>EntryEngine.EntryEngine.UI.ScrollBarVertical</Type>
     <Variables>
       <e>
@@ -632,8 +632,8 @@
   </e>
 	<e>
 		<Icon>ElementList&#92;editabletext.png</Icon>
-		<Name>TextBox</Name>
-		<Description>Editable text</Description>
+		<Name>文本框</Name>
+		<Description>可编辑文字</Description>
 		<Type>EntryEngine.EntryEngine.UI.TextBox</Type>
     <Variables>
       <e>
@@ -729,8 +729,8 @@
 	</e>
 	<e>
 		<Icon>ElementList&#92;image.png</Icon>
-		<Name>TextureBox</Name>
-		<Description></Description>
+		<Name>图片框</Name>
+		<Description>显示图片</Description>
 		<Type>EntryEngine.EntryEngine.UI.TextureBox</Type>
     <Variables>
       <e>
@@ -776,8 +776,8 @@
 	</e>
 <e>
 		<Icon>ElementList&#92;CustomPanel.png</Icon>
-		<Name>UIScene</Name>
-		<Description>Base stage of UI</Description>
+		<Name>场景</Name>
+		<Description>很少使用，无特别需求，建议使用面板</Description>
 		<Type>EntryEngine.EntryEngine.UI.UIScene</Type>
     <Variables>
       <e>
@@ -827,8 +827,8 @@
 	</e>
 	<e>
 		<Icon>ElementList&#92;CustomPanel.png</Icon>
-		<Name>Selectable</Name>
-		<Description>Selectable</Description>
+		<Name>选择框</Name>
+		<Description>很少使用，一般配合下拉控件作为列表使用</Description>
 		<Type>EntryEngine.EntryEngine.UI.Selectable</Type>
     <Variables>
       <e>

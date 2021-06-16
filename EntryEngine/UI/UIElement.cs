@@ -1215,11 +1215,17 @@ namespace EntryEngine.UI
             {
                 if (!pointer.Position.IsNaN())
                 {
-                    isHover = IsContains(pointer.Position);
+                    if (FinalVisible)
+                        isHover = IsContains(pointer.Position);
+                    else
+                        isHover = false;
                 }
                 else if (!pointer.PositionPrevious.IsNaN())
                 {
-                    isHover = IsContains(pointer.PositionPrevious);
+                    if (FinalVisible)
+                        isHover = IsContains(pointer.PositionPrevious);
+                    else
+                        isHover = false;
                 }
                 else
                 {

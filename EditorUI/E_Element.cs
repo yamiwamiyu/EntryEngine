@@ -187,12 +187,14 @@ namespace EditorUI
             ElementLib[] widgets = reader.ReadObject<ElementLib[]>();
 
             libs = widgets.ToDictionary(l => UtilityEditor.GetDllType(l.Type));
+            var tip = Entry.ShowDialogScene<STip>(EState.None);
             for (int i = 0; i < widgets.Length; i++)
             {
                 if (string.IsNullOrEmpty(widgets[i].Name))
                     continue;
                 Panel panel = BuildPreElement(UtilityEditor.GetDllType(widgets[i].Type));
                 panel.Y = panel.Height * collapse.Panel.ChildCount;
+                tip.SetTip(panel, widgets[i].Description);
                 collapse.Panel.Add(panel);
             }
             LibUIElement = libs.FirstOrDefault(l => l.Key.FullName == typeof(UIElement).FullName).Value;
@@ -546,6 +548,7 @@ namespace EditorUI
         public string Icon;
         public string Name;
         public string Type;
+        public string Description;
         public ElementVariable[] Variables;
     }
 }
