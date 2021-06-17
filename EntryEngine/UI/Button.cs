@@ -33,7 +33,7 @@ namespace EntryEngine.UI
 		private UIText uitext = new UIText();
         /// <summary>没有被选中的状态下被选中时触发</summary>
         public event DUpdate<Button> OnChecked;
-        /// <summary>没有被选中的状态下被选中时触发</summary>
+        /// <summary>Checked状态发生变化时触发</summary>
 		public event DUpdate<Button> CheckedChanged;
 
         /// <summary>文字属性</summary>
