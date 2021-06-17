@@ -6,6 +6,7 @@ using System.IO;
 using System.Linq;
 using EntryEngine.Serialize;
 using EntryEngine.UI;
+using System.Text;
 
 namespace EntryEngine
 {
@@ -3013,7 +3014,7 @@ namespace EntryEngine
     /// <summary>游戏中的一类资源，例如图片，帧动画，粒子特效，3D模型等</summary>
     public abstract class Content : IDisposable
     {
-        internal ContentManager ContentManager;
+        protected internal ContentManager ContentManager;
         protected internal string _Key;
         /// <summary>Cache不会被Dispose</summary>
         internal bool IsMain;
@@ -6749,6 +6750,253 @@ namespace EntryEngine
             return Base.Cache();
         }
     }
+    /// <summary>简单富文本字体
+    /// 字符串格式为&lt;Color=255;255;255;255; Font=路径/字体.tfont; Event=自定义标记;>富文本内容&lt;/>
+    /// Font=;可以使用FONT.Default
+    /// </summary>
+    public class FontRich : FONT_Link
+    {
+        static KeyParser[] parsers = new KeyParser[]
+            {
+                new ParserColor(),
+                new ParserFont(),
+                new ParserEvent(),
+            };
+        /// <summary>Value都需要以';'结尾</summary>
+        abstract class KeyParser
+        {
+            public abstract string Key { get; }
+            public abstract void ParseValue(Part part, StringStreamReader reader);
+            protected void CheckValueEnd(StringStreamReader reader)
+            {
+                if (!reader.EatAfterSignIfIs(";"))
+                    throw new Exception("数值后面缺少';'");
+            }
+        }
+        class ParserColor : KeyParser
+        {
+            public override string Key { get { return "Color"; } }
+            public override void ParseValue(Part part, StringStreamReader reader)
+            {
+                part.Color.R = byte.Parse(reader.NextToSign(";"));
+                CheckValueEnd(reader);
+                part.Color.G = byte.Parse(reader.NextToSign(";"));
+                CheckValueEnd(reader);
+                part.Color.B = byte.Parse(reader.NextToSign(";"));
+                CheckValueEnd(reader);
+                part.Color.A = byte.Parse(reader.NextToSign(";"));
+                CheckValueEnd(reader);
+            }
+        }
+        class ParserFont : KeyParser
+        {
+            public override string Key { get { return "Font"; } }
+            public override void ParseValue(Part part, StringStreamReader reader)
+            {
+                part.font = reader.NextToSign(";");
+                CheckValueEnd(reader);
+            }
+        }
+        class ParserEvent : KeyParser
+        {
+            public override string Key { get { return "Event"; } }
+            public override void ParseValue(Part part, StringStreamReader reader)
+            {
+                part.Event = reader.NextToSign(";");
+                CheckValueEnd(reader);
+            }
+        }
+        public class Part
+        {
+            public string Text;
+            public COLOR Color;
+            internal string font;
+            public FONT Font { get; internal set; }
+            public string Event;
+
+            /// <summary>栈形式嵌套富文本样式时，栈顶下一层会被截断成两截</summary>
+            internal Part Clone()
+            {
+                Part clone = new Part();
+                clone.Color = Color;
+                clone.font = font;
+                clone.Event = Event;
+                return clone;
+            }
+        }
+        private static List<Part> InternalParse(string text)
+        {
+            StringStreamReader reader = new StringStreamReader(text);
+
+            List<Part> ret = new List<Part>();
+            Stack<Part> stack = new Stack<Part>();
+            stack.Push(new Part());
+            string temp = string.Empty;
+
+            while (true)
+            {
+                temp += reader.Next("<", false);
+                if (reader.IsEnd)
+                {
+                    // 没有特殊样式'<'
+                    stack.Peek().Text = temp;
+                    ret.Add(stack.Pop());
+                    break;
+                }
+                else if (reader.EatAfterSignIfIs("</>"))
+                {
+                    var last = stack.Pop();
+                    last.Text = temp;
+                    if (reader.IsEnd)
+                        break;
+                    else
+                    {
+                        temp = string.Empty;
+                        ret.Add(last);
+                        stack.Push(stack.Pop().Clone());
+                        //ret.Add(stack.Peek());
+                        continue;
+                    }
+                }
+
+                int flag = 0;
+                while (true)
+                {
+                    int tempFlag = flag;
+                    // key=value
+                    for (int i = 0; i < parsers.Length; i++)
+                    {
+                        if (reader.IsNextSign(parsers[i].Key, 1))
+                        {
+                            // 带样式的新段落
+                            if (flag == 0)
+                            {
+                                var last = stack.Peek();
+                                last.Text = temp;
+                                ret.Add(last);
+                                temp = string.Empty;
+                                stack.Push(new Part());
+                            }
+                            flag++;
+                            reader.EatAfterSign(parsers[i].Key);
+                            if (!reader.EatAfterSignIfIs("="))
+                                throw new Exception("KEY后面缺少符号'='");
+                            parsers[i].ParseValue(stack.Peek(), reader);
+                        }
+                    }
+                    // 没有解析任何的KEY
+                    if (flag == 0)
+                    {
+                        // '<'可能是文字内容，不属于富文本
+                        temp += reader.Read();
+                        break;
+                    }
+                    else
+                    {
+                        if (tempFlag == flag)
+                        {
+                            // 正常解析完毕
+                            if (!reader.EatAfterSignIfIs(">"))
+                                throw new Exception("");
+                            break;
+                        }
+                        else
+                            // 可能还有尚未解析完的部分
+                            continue;
+                    }
+                }
+            }
+
+            // 有换行符时，换行被视为单独一段
+            //List<Part> results = new List<Part>();
+            //foreach (var item in results)
+            //{
+            //    string[] splits = item.Text.Split('\n');
+            //    int count = splits.Length;
+            //    if (count > 1)
+            //    {
+            //    }
+            //}
+            return ret;
+        }
+
+
+        public FontRich() { }
+        public FontRich(FONT _base) : base(_base) { }
+
+        /// <summary>解析富文本</summary>
+        /// <param name="text">原富文本</param>
+        /// <param name="_text">去掉富文本标记后的最终文本</param>
+        /// <returns>采用了不同样式的段落</returns>
+        public List<Part> Parse(string text, out string _text)
+        {
+            var content = ContentManager;
+            if (content == null)
+                content = Entry._ContentManager;
+            if (content == null)
+                throw new NotImplementedException("富文本缺少ContentManager加载字体");
+            var list = InternalParse(text);
+            StringBuilder builder = new StringBuilder();
+            foreach (var item in list)
+            {
+                if (item.font == string.Empty)
+                {
+                    item.Font = FONT.Default;
+                }
+                else if (item.font != null)
+                {
+                    if (content == null)
+                        throw new NotImplementedException("富文本缺少ContentManager加载字体");
+                    var temp = item;
+                    content.LoadAsync<FONT>(item.font, f => temp.Font = f);
+                }
+                if (!string.IsNullOrEmpty(item.Text))
+                    builder.Append(item.Text);
+            }
+            _text = builder.ToString();
+            return list;
+        }
+        public void Draw(GRAPHICS spriteBatch, List<Part> parts, string _text, float x, float y, COLOR color, float scale)
+        {
+            if (parts.Count == 0) return;
+            float _x = x;
+            foreach (var item in parts)
+            {
+                if (string.IsNullOrEmpty(item.Text)) continue;
+                if (item.Color.R == 0 && item.Color.G == 0 && item.Color.B == 0 && item.Color.A == 0)
+                    item.Color = color;
+                if (item.Font == null)
+                    item.Font = Base;
+                else
+                    item.Font.FontSize = Base.FontSize;
+                if (item.Font == null) continue;
+                if (item.Text == "\n")
+                {
+                    y += Base.MeasureString(item.Text).Y * scale;
+                    _x = x;
+                    continue;
+                }
+                string[] lines = item.Text.Split('\n');
+                for (int i = 0, e = lines.Length - 1; i <= e; i++)
+                {
+                    VECTOR2 size = item.Font.MeasureString(lines[i]);
+                    spriteBatch.BaseDrawFont(item.Font, lines[i], _x, y, item.Color, scale);
+                    if (i != e)
+                    {
+                        _x = x;
+                        y += size.Y * scale;
+                    }
+                    else
+                        _x += size.X * scale;
+                }
+            }
+        }
+        protected internal override void Draw(GRAPHICS spriteBatch, string text, float x, float y, COLOR color, float scale)
+        {
+            string _text;
+            Draw(spriteBatch, Parse(text, out _text), _text, x, y, color, scale);
+        }
+    }
     internal sealed class FONT_DELAY : FONT_Link
     {
         public AsyncLoadContent Async;
@@ -6837,7 +7085,7 @@ namespace EntryEngine
         }
         public override float LineHeight
         {
-            get { return lineHeight; }
+            get { return lineHeight + Spacing.Y; }
         }
         public override bool IsDisposed
         {
