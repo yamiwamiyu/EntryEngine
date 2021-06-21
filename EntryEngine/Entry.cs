@@ -160,12 +160,13 @@ namespace EntryEngine
             return scene;
         }
         /// <summary>打开一个主场景，会替换掉之前的主场景</summary>
-        public void ShowMainScene(UIScene scene)
+        public UIScene ShowMainScene(UIScene scene)
         {
             if (scenes.Count > 0)
                 scenes.ForFirstToLast((item) => item.OnPhaseEnding());
             InternalShowScene(scene, EState.None, true);
             //phase = EPhase.Ending;
+            return scene;
         }
         /// <summary>使用过场场景切换场景</summary>
         /// <typeparam name="T">要切换的主场景类型</typeparam>
@@ -192,13 +193,15 @@ namespace EntryEngine
             ShowDialogScene(scene, dialogState);
             return (T)scene;
         }
-        public void ShowDialogScene(UIScene scene)
+        public UIScene ShowDialogScene(UIScene scene)
         {
             InternalShowScene(scene, EState.None, false);
+            return scene;
         }
-        public void ShowDialogScene(UIScene scene, EState state)
+        public UIScene ShowDialogScene(UIScene scene, EState state)
         {
             InternalShowScene(scene, state, false);
+            return scene;
         }
         private void InternalShowScene(UIScene scene, EState dialogState, bool isMain)
         {
