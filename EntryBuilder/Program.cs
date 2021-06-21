@@ -2099,7 +2099,9 @@ private AsyncData<string> send<T>(string url, string data, Action<T> callback)")
                     builder.AppendBlock(() =>
                     {
                         builder.AppendLine(
-@"AsyncData<string> result = new AsyncData<string>();
+@"_LOG.Debug(""{0} {1}"", url, data);
+
+AsyncData<string> result = new AsyncData<string>();
 
 var request = new HttpRequestPost();
 var requestURL = Host + url;
