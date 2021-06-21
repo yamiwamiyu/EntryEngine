@@ -46,7 +46,10 @@ namespace EntryEngine.UI
         public TEXTURE BackgroundFull;
         /// <summary>拖拽模式</summary>
 		public EDragMode DragMode;
+        /// <summary>拖拽时的惯性缩放值，例如鼠标移动5px，乘以这个缩放值来施加给惯性</summary>
         public float DragInertia;
+        /// <summary>惯性拖动碰撞到边缘时的反弹力度的缩放，0时不反弹，1时原力度反弹</summary>
+        public float Rebound;
         /// <summary>惯性移动量，拖拽时会自动维护，也可以自定义设置这个值</summary>
         public VECTOR2 Inertia;
         private float dragFriction = 0.95f;
@@ -555,9 +558,9 @@ namespace EntryEngine.UI
                         temp.X -= Inertia.X;
                         temp.Y -= Inertia.Y;
                         if (temp.X < 0 || temp.X > offsetScope.X)
-                            Inertia.X = -Inertia.X;
+                            Inertia.X = -Inertia.X * Rebound;
                         if (temp.Y < 0 || temp.Y > offsetScope.Y)
-                            Inertia.Y = -Inertia.Y;
+                            Inertia.Y = -Inertia.Y * Rebound;
                         Offset = temp;
                         break;
 
@@ -565,9 +568,9 @@ namespace EntryEngine.UI
                         bool bx, by;
                         DoMove(Inertia.X, Inertia.Y, out bx, out by);
                         if (bx)
-                            Inertia.X = -Inertia.X;
+                            Inertia.X = -Inertia.X * Rebound;
                         if (by)
-                            Inertia.Y = -Inertia.Y;
+                            Inertia.Y = -Inertia.Y * Rebound;
                         break;
                 }
                 Inertia.X *= dragFriction;
