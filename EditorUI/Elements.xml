@@ -496,6 +496,10 @@
         <VariableName>DragInertia</VariableName>
         <NickName>拖拽惯性</NickName>
       </e>
+      <e>
+        <VariableName>Rebound</VariableName>
+        <NickName>反弹惯性</NickName>
+      </e>
     </Variables>
 	</e>
 	<e>
