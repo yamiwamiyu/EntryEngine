@@ -4155,7 +4155,7 @@ return result;"
         /// <summary>内容使用rem为单位，根据根节点的这个字体大小来计算</summary>
         const int REM = 14;
         /// <summary>像素转Rem</summary>
-        public static string Px2Rem(double px)
+        private static string Px2Rem(double px)
         {
             double value = px / REM;
             if (value == (int)value)
@@ -4174,7 +4174,7 @@ return result;"
                         return ((ivalue / 10 + 1) / 100.0).ToString("0.00") + "rem";
             }
         }
-        public static string JSColor(PsdColor color)
+        private static string JSColor(PsdColor color)
         {
             return string.Format("#{0:x2}{1:x2}{2:x2}{3}", color.R, color.G, color.B, color.A == 255 ? string.Empty : color.A.ToString("x2"));
         }
