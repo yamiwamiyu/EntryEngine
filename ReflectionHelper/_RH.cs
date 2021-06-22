@@ -141,7 +141,7 @@ namespace EntryEngine
                 {
                     Type utype = Enum.GetUnderlyingType(type);
                     //value = string.Format("{0}.{1}", type.Name, obj);
-                    value = string.Format("({0}){1}", type.DeclaringType == null ? type.Name : type.FullName.Replace('+', '.'), Convert.ChangeType(obj, utype));
+                    value = string.Format("({0})({1})", type.DeclaringType == null ? type.Name : type.FullName.Replace('+', '.'), Convert.ChangeType(obj, utype));
                 }
                 else if (type == typeof(string))
                     //value = string.Format("\"{0}\"", _SERIALIZE.StringToCode(obj.ToString()));
