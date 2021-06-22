@@ -6,13 +6,20 @@ using System.Linq;
 
 namespace EntryEngine.UI
 {
+    /// <summary>选中框覆盖类型</summary>
+    public enum ECheckedOverlay : sbyte
+    {
+        普通覆盖选中 = -1,
+        不覆盖,
+        选中覆盖普通 = 1,
+    }
     /// <summary>单选 / 多选</summary>
 	public class CheckBox : Button
 	{
         /// <summary>true: 单选框 / false: 多选框</summary>
 		public bool IsRadioButton;
-        /// <summary>true: 选中状态下，显示普通和选中两个状态的图片，选中覆盖普通</summary>
-		public bool CheckedOverlayNormal;
+        /// <summary>不为0: 选中状态下，显示普通和选中两个状态的图片</summary>
+        public ECheckedOverlay CheckedOverlayNormal;
         public event Action<CheckBox> GroupSelectionChanged;
 
         /// <summary>在相同父级中的框</summary>
@@ -215,15 +222,16 @@ namespace EntryEngine.UI
         {
             EButtonState state = ButtonState;
 
-            TEXTURE current = this[state];
-            if (current != null)
-            {
-				spriteBatch.Draw(current, ViewClip, Color);
-            }
-            if (SourceClicked != null && Checked && state != EButtonState.Clicked && CheckedOverlayNormal)
-			{
+            bool drawChecked = SourceClicked != null && Checked;
+            if (drawChecked && CheckedOverlayNormal == ECheckedOverlay.普通覆盖选中)
                 spriteBatch.Draw(SourceClicked, ViewClip, Color);
-            }
+
+            TEXTURE current = this[drawChecked && CheckedOverlayNormal != ECheckedOverlay.不覆盖 ? EButtonState.Normal : state];
+            if (current != null)
+				spriteBatch.Draw(current, ViewClip, Color);
+
+            if (drawChecked && CheckedOverlayNormal == ECheckedOverlay.选中覆盖普通)
+                spriteBatch.Draw(SourceClicked, ViewClip, Color);
 
             DrawFont(spriteBatch, e);
         }

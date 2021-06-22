@@ -454,7 +454,7 @@ namespace EntryEngine.UI
             pageItem.Width = BUTTON_SIZE;
             pageItem.Height = BUTTON_SIZE;
             pageItem.X = (pageItem.Width + BUTTON_SPACE) * pPages.ChildCount;
-            pageItem.CheckedOverlayNormal = true;
+            pageItem.CheckedOverlayNormal = ECheckedOverlay.选中覆盖普通;
             pageItem.IsRadioButton = true;
             pageItem.SourceNormal = PATCH.GetNinePatch(COLOR.TransparentBlack, new COLOR(220, 220, 220), 1);
             pageItem.SourceClicked = PATCH.GetNinePatch(new COLOR(77, 160, 254), COLOR.TransparentBlack, 1);

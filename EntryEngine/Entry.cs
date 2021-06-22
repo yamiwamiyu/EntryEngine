@@ -51,6 +51,8 @@ namespace EntryEngine
                 }
             }
         }
+        /// <summary>舞台中打开的对话框场景数量</summary>
+        public int DialogCount { get { return scenes.Count - 1; } }
         /// <summary>舞台中当前打开的主场景，主场景只能同时打开一个</summary>
         public UIScene Scene
         {
@@ -64,6 +66,8 @@ namespace EntryEngine
         }
         /// <summary>舞台中之前打开的主场景，可以用来做返回等</summary>
         public UIScene PrevMainScene { get; private set; }
+        /// <summary>舞台中场景的生命周期步骤状态</summary>
+        public EPhase Phase { get { return phase; } }
 
         public Entry()
         {

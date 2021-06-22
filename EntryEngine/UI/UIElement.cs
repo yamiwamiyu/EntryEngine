@@ -330,7 +330,7 @@ namespace EntryEngine.UI
             }
             item.Width = 24;
             item.Height = 24;
-            item.CheckedOverlayNormal = true;
+            item.CheckedOverlayNormal = ECheckedOverlay.选中覆盖普通;
 
             COLOR colorUnable = ToLight(defaultColor, 0.6f);
             COLOR colorUnableChecked = ToLight(checkedFontColor, 0.6f);
