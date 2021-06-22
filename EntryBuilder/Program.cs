@@ -505,9 +505,11 @@ namespace EntryBuilder
         [STAThread]
 		static void Main(string[] args)
         {
+            _LOG._Logger = new LoggerConsole();
+
             //TexFontFromExcel("图片字体.xlsx");
             //PSD2JS("首页.psd", @"C:\Yamiwamiyu\Project\YMHY2\gaming-center\dist\", true);
-            //_LOG._Logger = new LoggerConsole();
+            
 
             //GaussianBlur gauss = new GaussianBlur(15);
             //using (Bitmap bitmap = new Bitmap("Test.png"))
