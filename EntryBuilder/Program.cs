@@ -3509,7 +3509,7 @@ return result;"
                         {
                             using (source)
                             {
-                                Bitmap texture = new Bitmap(width, height, Graphics.FromImage(source));
+                                Bitmap texture = new Bitmap(width, height);
                                 ImageDraw(texture, graphics =>
                                 {
                                     graphics.DrawImage(source, new Rectangle(
@@ -3648,10 +3648,10 @@ return result;"
                 {
                     if (maxX == 0 || maxY == 0)
                     {
-                        textures[i] = new Bitmap(1, 1, Graphics.FromImage(source));
+                        textures[i] = new Bitmap(1, 1);
                         continue;
                     }
-                    Bitmap texture = new Bitmap(desc.Width, desc.Height, Graphics.FromImage(source));
+                    Bitmap texture = new Bitmap(desc.Width, desc.Height);
                     ImageDraw(texture, graphics =>
                     {
                         graphics.DrawImage(source,
