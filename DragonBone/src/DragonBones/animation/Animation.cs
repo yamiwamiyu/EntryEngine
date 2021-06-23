@@ -371,7 +371,7 @@ namespace DragonBones
             AnimationData animationData;
             if (!(this._animations.TryGetValue(animationName, out animationData)))
             {
-                return null;
+                throw new KeyNotFoundException("没有名字为" + animationName + "的动作");
             }
 
             if (animationConfig.fadeOutMode == AnimationFadeOutMode.Single)
