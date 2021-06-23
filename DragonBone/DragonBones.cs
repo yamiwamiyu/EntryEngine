@@ -318,7 +318,6 @@ namespace EntryEngine.DragonBones
             if (index == -1)
                 index = file.LastIndexOf('.');
             string temp = file.Substring(0, index);
-            string filename = Path.GetFileNameWithoutExtension(file);
 
             string loadfile = temp + "_ske.json";
             string stringdata = Manager.IODevice.ReadText(loadfile);
@@ -342,7 +341,6 @@ namespace EntryEngine.DragonBones
             if (index == -1)
                 index = file.LastIndexOf('.');
             string temp = file.Substring(0, index);
-            string filename = Path.GetFileNameWithoutExtension(file);
 
             string loadfile = temp + "_ske.json";
             Wait(async, Manager.IODevice.ReadAsync(loadfile), r1 =>
