@@ -22,7 +22,7 @@ namespace EntryEngine.Game
         int ItemID { get; }
         int Count { get; set; }
     }
-    public class BAG<T> where T : IBagItem
+    public class BAG<T> : IEnumerable<T> where T : IBagItem
     {
         const int CAPCITY = 128;
 
@@ -302,6 +302,16 @@ namespace EntryEngine.Game
         public bool Save(List<BAG_PACKAGE> output)
         {
             return Save(output, BAG_PACKAGE.BATCH, new StringBuilder(), new List<object>());
+        }
+
+        public IEnumerator<T> GetEnumerator()
+        {
+            foreach (var item in bag)
+                yield return item.Value;
+        }
+        System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator()
+        {
+            return this.GetEnumerator();
         }
     }
     public struct BAG_PACKAGE
