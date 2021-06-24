@@ -21,6 +21,8 @@ using Ntreev.Library.Psd;
 
 namespace EntryBuilder
 {
+    // todo: 2. CSV生成cs代码时，字段引用其它表时，新增属性可以直接获取该类型的字段
+
     partial class Program
 	{
 		private static MethodInfo[] Methods;
@@ -522,6 +524,7 @@ namespace EntryBuilder
             //PublishToPC(@"D:\Project\xss\xss\Launch\Client", @"D:\Project\xss\xss\Launch\Client");
             //PublishToWebGL(@"C:\Yamiwamiyu\Project\EntryEngineGit\trunk\", @"C:\Yamiwamiyu\Project\ChamberH5New\Code\Client", "", @"C:\Yamiwamiyu\Project\ChamberH5New\Publish\WebGL\index.html", false, 1);
             //PublishToWebGL(@"C:\Yamiwamiyu\Project\EntryEngineGit\trunk\", @"C:\Yamiwamiyu\Project\IslandChronicle\Code\Client", "", @"C:\Yamiwamiyu\Project\ChamberH5New\Publish\WebGL\index.html", false, 1);
+            //PublishToWebGL(@"C:\Yamiwamiyu\Project\EntryEngineGit\trunk\", @"C:\Yamiwamiyu\Project\hdcq3\Code\Client", "", @"C:\Yamiwamiyu\Project\ChamberH5New\Publish\WebGL\index.html", false, 1);
             //BuildTableTranslate("", "");
             //BuildDatabaseMysql(@"C:\Yamiwamiyu\Project\YMHY\Code\Protocol\Protocol\bin\Release\Protocol.dll", "Server._DB", @"C:\Yamiwamiyu\Project\YMHY\Code\Server\Server\_DB.design.cs", "", "", false);
             //BuildProtocolAgentHttp(@"D:\Desktop\hdcq2\Code\Client\Client", @"D:\Desktop\hdcq2\Code\Server\Server", @"D:\Desktop\hdcq2\Code\Protocol\Protocol\bin\Debug\Protocol.dll", 0);
@@ -3627,8 +3630,8 @@ return result;"
 
             Rectangle areaOfPixel = new Rectangle(
                 minX, minY,
-                maxX - minX,
-                maxY - minY);
+                maxX - minX + 1,
+                maxY - minY + 1);
             //Console.WriteLine("minX: {0}, minY: {1}, maxX: {2}, maxY: {3}", minX, minY, maxX, maxY);
 
             Rectangle desc = new Rectangle(
@@ -3814,7 +3817,163 @@ return result;"
             }
             return results;
         }
-		private static Rectangle[] Put(Point[] sizes, Point size, bool widthPriority)
+        /// <summary>拆分文字图片，得出每行的每个字体</summary>
+        private static List<List<Bitmap>> SplitText(Bitmap source)
+        {
+            List<List<Bitmap>> results = new List<List<Bitmap>>();
+            int border = 2;
+            int border2 = 2 * border + 1;
+
+            int width = source.Width;
+            int height = source.Height;
+            int stride = width * 4;
+
+            byte[] buffer = GetData(source);
+
+            Pixel[] pixeles = new Pixel[width * height];
+            for (int i = 0; i < pixeles.Length; i++)
+            {
+                pixeles[i] = new Pixel()
+                {
+                    Alpha = buffer[(i << 2) + 3],
+                    X = (ushort)(i % width),
+                    Y = (ushort)(i / width),
+                };
+            }
+            GraphMap4444<Pixel> map = new GraphMap4444<Pixel>();
+            map.Build(pixeles, width);
+
+            // 扫描找到一行文字中最下方有像素的一行，然后逐行向上扫描找到最上方有像素的一行，得出行高
+            // 在行高内从左往右扫描并拆分每个字符
+            int _y = 0;     // 开始扫描的y值
+            while (true)
+            {
+                int _minY = -1;  // 最上一行有像素的y值
+                int _maxY = -1;  // 最下一行有像素的y值
+                for (int i = _y; i < height; i++)
+                {
+                    // 刚开始，没有经过有像素的行
+                    if (_minY == -1)
+                    {
+                        int index = i * width;
+                        for (int j = 0; j < width; j++)
+                        {
+                            if (pixeles[index].Alpha != 0)
+                            {
+                                _minY = i;
+                                break;
+                            }
+                            index++;
+                        }
+                        if (_minY == -1) continue;
+                    }
+                    // 有了起始有像素的行，向下找到没有像素的行
+                    else
+                    {
+                        // 当前行是否全部没有像素
+                        bool flag = true;
+                        int index = i * width;
+                        for (int j = 0; j < width; j++)
+                        {
+                            if (pixeles[index].Alpha != 0)
+                            {
+                                flag = false;
+                                break;
+                            }
+                            index++;
+                        }
+                        if (flag)
+                        {
+                            // 下次从当前行开始扫描
+                            _y = i + 1;
+                            _maxY = i - 1;
+                            // 开始扫描行高内的每个文字
+                            List<Bitmap> lineText = new List<Bitmap>();
+                            results.Add(lineText);
+
+                            // 从左往右开始扫描
+                            for (int j = 0; j < width; j++)
+                            {
+                                // 扫描行高内的每一行，找到有像素的第一个文字
+                                for (int k = _minY; k <= _maxY; k++)
+                                {
+                                    index = k * width + j;
+                                    if (pixeles[index].Alpha != 0)
+                                    {
+                                        SplitArea split = new SplitArea();
+                                        split.SetPos(j, k);
+
+                                        // 从扫描到的第一个像素点开始广度扩散，找到整个文字的全部像素
+                                        Pixel.GPS(map[j, k], -1,
+                                            p =>
+                                            {
+                                                // 本身有像素
+                                                if (p.Alpha > 0)
+                                                {
+                                                    // 周围都需要没有像素(边缘像素)
+                                                    for (int sx = p.X - border, a = 0; a < border2; a++, sx++)
+                                                    {
+                                                        if (sx < 0 || sx >= width)
+                                                            return true;
+                                                        for (int sy = p.Y - border, b = 0; b < border2; b++, sy++)
+                                                        {
+                                                            if (sy < 0 || sy >= height)
+                                                                return true;
+                                                            if (map[sx, sy].Alpha == 0)
+                                                                return true;
+                                                        }
+                                                    }
+                                                }
+                                                return false;
+                                            },
+                                            p =>
+                                            {
+                                                split.SetPos(p.Node.X, p.Node.Y);
+                                                return false;
+                                            });
+
+                                        int minX, minY, maxX, maxY;
+                                        split.Resolve(out minX, out minY, out maxX, out maxY);
+
+                                        // 过小的分离像素不进行拆分
+                                        if (split.Area.Width * split.Area.Height >= 20)
+                                        {
+                                            // 让文字保持一行的高度
+                                            split.Area.Y = _minY;
+                                            split.Area.Height = _maxY - _minY + 1;
+                                            Bitmap frame = new Bitmap(split.Area.Width, split.Area.Height);
+                                            ImageDraw(frame, g =>
+                                            {
+                                                g.DrawImage(
+                                                    source,
+                                                    new Rectangle(0, 0, frame.Width, frame.Height),
+                                                    split.Area,
+                                                    GraphicsUnit.Pixel);
+                                            });
+                                            lineText.Add(frame);
+                                        }
+
+                                        // 删除掉像素，让下次刷全图找像素时不会找到重复的图案
+                                        for (int o = minY; o <= maxY; o++)
+                                            for (int p = minX; p <= maxX; p++)
+                                                map[p, o].Alpha = 0;
+                                    }
+                                }
+                                index++;
+                            }
+
+                            break;
+                        }
+                    }
+                }
+                // 全图已经扫描完了
+                if (_minY == -1 || _maxY == -1)
+                    break;
+            }
+
+            return results;
+        }
+        private static Rectangle[] Put(Point[] sizes, Point size, bool widthPriority)
 		{
 			Rectangle[] results;
 			if (!widthPriority)
@@ -3908,7 +4067,7 @@ return result;"
 		{
 			if (!Directory.Exists(dir))
 				Directory.CreateDirectory(dir);
-			string output = string.Format("{0}{1}", dir, Path.GetFileName(file));
+			string output = Path.Combine(dir, Path.GetFileName(file));
 			//texture.Save(output, texture.RawFormat);
 			string suffix = Path.GetExtension(file).ToLower();
 			ImageFormat format;
@@ -5231,6 +5390,7 @@ return result;"
                 build(type);
             }
         }
+        /// <summary>加密素材</summary>
         public static void BuildEncrypt(string dirOrFile, string outputDir)
         {
             dirOrFile = Path.GetFullPath(dirOrFile);
@@ -10289,51 +10449,84 @@ return result;"
                 {
                     Console.WriteLine("拆分大图：{0}", item.文字图片);
                     // 大图裁切成小图
-                    var splits = Split(map, new Size(2, 2), 2);
-                    if (splits.Count != item.文字内容.Length)
+                    var lines = SplitText(map);
+                    int count1 = lines.Sum(l => l.Count);
+                    int count2 = item.文字内容.Replace("\n", "").Replace("\r", "").Length;
+                    if (count1 != count2)
                     {
-                        Console.WriteLine("{0}未能生成字体，图像和内容文字数量不符！图像文字：{1} 内容文字：{2}", item.文字图片, splits.Count, item.文字内容.Length);
-                        foreach (var m in splits)
-                            m.Dispose();
+                        Console.WriteLine("{0}未能生成字体，图像和内容文字数量不符！图像文字：{1} 内容文字：{2}", count1, count2);
+                        foreach (var line in lines)
+                            foreach (var m in line)
+                                m.Dispose();
                         continue;
                     }
-                    // 统一尺寸
-                    Point n = Point.Empty;
-                    foreach (var m in splits)
+                    // 逐行统一尺寸
+                    // 高度每行统一
+                    int _height = 0;
+                    foreach (var m in lines.SelectMany(l => l))
+                        if (m.Height > _height)
+                            _height = m.Height;
+                    foreach (var line in lines)
                     {
-                        if (m.Width > 255 || m.Height > 255)
-                            throw new ArgumentException("单字图片尺寸不能超过255x255");
-                        if (m.Width > n.X)
-                            n.X = m.Width;
-                        if (m.Height > n.Y)
-                            n.Y = m.Height;
-                    }
-                    // 不等宽则仅统一高度
-                    if (!item.等宽字体)
-                    {
-                        n.X = 0;
-                        for (int i = 0; i < splits.Count; i++)
+                        // 统一尺寸
+                        int _width = 0;
+                        foreach (var m in line)
                         {
-                            var array = _SARRAY<Bitmap>.GetSingleArray(splits[i]);
-                            Cut(array, n);
-                            splits[i] = array[0];
+                            if (m.Width > 255 || m.Height > 255)
+                                throw new ArgumentException("单字图片尺寸不能超过255x255");
+                            if (m.Width > _width)
+                                _width = m.Width;
+                        }
+                        // 等宽则本行统一宽度
+                        if (item.等宽字体)
+                        {
+                            for (int i = 0; i < line.Count; i++)
+                            {
+                                if (line[i].Width == _width && line[i].Height == _height)
+                                    continue;
+                                using (line[i])
+                                {
+                                    // 横向居中绘制到等宽图片上
+                                    Bitmap normalize = new Bitmap(_width, _height);
+                                    ImageDraw(normalize, g =>
+                                    {
+                                        g.DrawImage(line[i],
+                                            new RectangleF((_width - line[i].Width) * 0.5f, 
+                                                (_height - line[i].Height) * 0.5f,
+                                                line[i].Width, line[i].Height));
+                                    });
+                                    SavePng(normalize, "testoutput",  lines.IndexOf(line) + "_" + i + ".png", false);
+                                    line[i] = normalize;
+                                }
+                            }
                         }
                     }
-                    else
-                        Cut(splits, n);
+                    var splits = lines.SelectMany(l => l).ToList();
                     // 输出图片和配置文件
+                    int lineheight = splits.Max(s => s.Height);
                     ByteWriter writer = new ByteWriter();
-                    writer.Write(splits[0].Height / 1.5f);
-                    writer.Write((float)splits[0].Height);
-                    writer.Write(splits.Count);
+                    writer.Write(lineheight / 1.5f);
+                    writer.Write((float)lineheight);
+                    // 最终要输出的文字图片，去除重复的文字
+                    Dictionary<char, Bitmap> text = new Dictionary<char, Bitmap>();
+                    // 图片的索引
+                    int tindex = -1;
+                    foreach (var c in item.文字内容)
+                    {
+                        if (c == '\n' || c == '\r') continue;
+                        tindex++;
+                        if (text.ContainsKey(c)) continue;
+                        text.Add(c, splits[tindex]);
+                    }
+                    writer.Write(text.Count);
                     Size size = new Size();
                     int width = 0;
                     int height = 0;
-                    for (int i = 0; i < splits.Count; i++)
+                    foreach (var c in text)
                     {
-                        if (splits[i].Height > height)
-                            height = splits[i].Height;
-                        if (width + splits[i].Width > 2048)
+                        if (c.Value.Height > height)
+                            height = c.Value.Height;
+                        if (width + c.Value.Width > 2048)
                         {
                             if (width > size.Width)
                                 size.Width = width;
@@ -10342,7 +10535,7 @@ return result;"
                             height = 0;
                         }
                         else
-                            width += splits[i].Width;
+                            width += c.Value.Width;
                     }
                     if (width > size.Width)
                         size.Width = width;
@@ -10357,29 +10550,31 @@ return result;"
                             width = 0;
                             height = 0;
                             ushort y = 0;
-                            for (int i = 0; i < splits.Count; i++)
+                            foreach (var c in text)
                             {
-                                graphics.DrawImage(splits[i], new Point(width, y));
-                                writer.Write(item.文字内容[i]);
+                                graphics.DrawImage(c.Value, new Point(width, y));
+                                writer.Write(c);
                                 writer.Write((byte)0);
-                                if (splits[i].Height > height)
-                                    height = splits[i].Height;
-                                if (width + splits[i].Width > 2048)
+                                if (c.Value.Height > height)
+                                    height = c.Value.Height;
+                                if (width + c.Value.Width > 2048)
                                 {
                                     y = (ushort)(y + height);
                                     width = 0;
                                     height = 0;
                                 }
                                 writer.Write((ushort)width);
-                                width += splits[i].Width;
+                                width += c.Value.Width;
                                 writer.Write(y);
-                                writer.Write((byte)splits[i].Width);
-                                writer.Write((byte)splits[i].Height);
+                                writer.Write((byte)c.Value.Width);
+                                writer.Write((byte)c.Value.Height);
                             }
                             string output = item.输出路径;
-                            if (string.IsNullOrEmpty(output) || output.EndsWith("/") || output.EndsWith("\\"))
+                            if (string.IsNullOrEmpty(output))
                                 // 目录
-                                output += item.文字图片;
+                                output = item.文字图片;
+                            else if (output.EndsWith("/") || output.EndsWith("\\"))
+                                output += Path.GetFileName(item.文字图片);
                             File.WriteAllBytes(Path.ChangeExtension(output, suffix), writer.GetBuffer());
                             result.Save(string.Format("{0}_0.png", output.WithoutExtention()), ImageFormat.Png);
                         }
