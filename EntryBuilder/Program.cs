@@ -10495,7 +10495,7 @@ return result;"
                                                 (_height - line[i].Height) * 0.5f,
                                                 line[i].Width, line[i].Height));
                                     });
-                                    SavePng(normalize, "testoutput",  lines.IndexOf(line) + "_" + i + ".png", false);
+                                    //SavePng(normalize, "testoutput",  lines.IndexOf(line) + "_" + i + ".png", false);
                                     line[i] = normalize;
                                 }
                             }
@@ -10553,7 +10553,7 @@ return result;"
                             foreach (var c in text)
                             {
                                 graphics.DrawImage(c.Value, new Point(width, y));
-                                writer.Write(c);
+                                writer.Write(c.Key);
                                 writer.Write((byte)0);
                                 if (c.Value.Height > height)
                                     height = c.Value.Height;
