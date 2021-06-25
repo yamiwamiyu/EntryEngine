@@ -197,12 +197,12 @@ namespace EntryEngine
             ShowDialogScene(scene, dialogState);
             return (T)scene;
         }
-        public UIScene ShowDialogScene(UIScene scene)
+        public T ShowDialogScene<T>(T scene) where T : UIScene
         {
             InternalShowScene(scene, EState.None, false);
             return scene;
         }
-        public UIScene ShowDialogScene(UIScene scene, EState state)
+        public T ShowDialogScene<T>(T scene, EState state) where T : UIScene
         {
             InternalShowScene(scene, state, false);
             return scene;

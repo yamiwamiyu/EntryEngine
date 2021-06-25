@@ -58,7 +58,7 @@ namespace EntryEngine
                         coroutine.Dispose();
                     }
 #else
-                    coroutine.Update(gameTime);
+                    coroutine.Update(gameTime.ElapsedSecond);
 #endif
                 }
             }
