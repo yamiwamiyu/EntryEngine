@@ -6854,12 +6854,12 @@ namespace EntryEngine
                 {
                     var last = stack.Pop();
                     last.Text = temp;
+                    ret.Add(last);
                     if (reader.IsEnd)
                         break;
                     else
                     {
                         temp = string.Empty;
-                        ret.Add(last);
                         stack.Push(stack.Pop().Clone());
                         //ret.Add(stack.Peek());
                         continue;
