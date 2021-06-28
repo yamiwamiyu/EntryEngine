@@ -1,25 +1,3 @@
-/**
- * The MIT License (MIT)
- *
- * Copyright (c) 2012-2017 DragonBones team and other contributors
- *
- * Permission is hereby granted, free of charge, to any person obtaining a copy of
- * this software and associated documentation files (the "Software"), to deal in
- * the Software without restriction, including without limitation the rights to
- * use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
- * the Software, and to permit persons to whom the Software is furnished to do so,
- * subject to the following conditions:
- * 
- * The above copyright notice and this permission notice shall be included in all
- * copies or substantial portions of the Software.
- * 
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
- * FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
- * COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
- * IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
- * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
- */
 using System;
 using System.Collections.Generic;
 
@@ -245,7 +223,7 @@ namespace DragonBones
                 }
                 else
                 {
-                    this._actions.Insert(0, action);                    
+                    this._actions.Insert(0, action);
                 }
             }
         }
@@ -396,6 +374,10 @@ namespace DragonBones
 
             this._proxy.DBUpdate();
         }
+        public void InvalidUpdate()
+        {
+            InvalidUpdate(null, false);
+        }
         /// <summary>
         /// - Forces a specific bone or its owning slot to update the transform or display property in the next frame.
         /// </summary>
@@ -415,7 +397,7 @@ namespace DragonBones
         /// <see cref="DragonBones.Slot.InvalidUpdate()"/>
         /// <version>DragonBones 3.0</version>
         /// <language>zh_CN</language>
-        public void InvalidUpdate(string boneName = null, bool updateSlot = false)
+        public void InvalidUpdate(string boneName, bool updateSlot)
         {
             if (!string.IsNullOrEmpty(boneName))
             {
@@ -515,9 +497,9 @@ namespace DragonBones
         /// <version>DragonBones 5.0</version>
         /// <language>zh_CN</language>
         public Slot IntersectsSegment(float xA, float yA, float xB, float yB,
-                                       Point intersectionPointA = null,
-                                       Point intersectionPointB = null,
-                                       Point normalRadians = null)
+                                       Point intersectionPointA,
+                                       Point intersectionPointB,
+                                       Point normalRadians)
         {
             var isV = xA == xB;
             var dMin = 0.0f;

@@ -1,26 +1,4 @@
-/**
- * The MIT License (MIT)
- *
- * Copyright (c) 2012-2017 DragonBones team and other contributors
- *
- * Permission is hereby granted, free of charge, to any person obtaining a copy of
- * this software and associated documentation files (the "Software"), to deal in
- * the Software without restriction, including without limitation the rights to
- * use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
- * the Software, and to permit persons to whom the Software is furnished to do so,
- * subject to the following conditions:
- * 
- * The above copyright notice and this permission notice shall be included in all
- * copies or substantial portions of the Software.
- * 
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
- * FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
- * COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
- * IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
- * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
- */
-﻿using System;
+using System;
 
 namespace DragonBones
 {
@@ -55,7 +33,7 @@ namespace DragonBones
         {
             value = (value + PI) % (PI * 2.0f);
 
-           
+
             value += value > 0.0f ? -PI : PI;
 
             return value;
@@ -137,12 +115,12 @@ namespace DragonBones
         /// <private/>
         public Transform()
         {
-            
+
         }
 
         public override string ToString()
         {
-            return "[object dragonBones.Transform] x:" + this.x + " y:" + this.y + " skew:" + this.skew* 180.0 / PI + " rotation:" + this.rotation* 180.0 / PI + " scaleX:" + this.scaleX + " scaleY:" + this.scaleY;
+            return "[object dragonBones.Transform] x:" + this.x + " y:" + this.y + " skew:" + this.skew * 180.0 / PI + " rotation:" + this.rotation * 180.0 / PI + " scaleX:" + this.scaleX + " scaleY:" + this.scaleY;
         }
 
         /// <private/>
@@ -206,14 +184,14 @@ namespace DragonBones
             var skewX = (float)Math.Atan(-matrix.c / matrix.d);
             this.rotation = (float)Math.Atan(matrix.b / matrix.a);
 
-            if(float.IsNaN(skewX))
+            if (float.IsNaN(skewX))
             {
                 skewX = 0.0f;
             }
 
-            if(float.IsNaN(this.rotation))
+            if (float.IsNaN(this.rotation))
             {
-                this.rotation = 0.0f; 
+                this.rotation = 0.0f;
             }
 
             this.scaleX = (float)((this.rotation > -PI_Q && this.rotation < PI_Q) ? matrix.a / Math.Cos(this.rotation) : matrix.b / Math.Sin(this.rotation));
@@ -239,7 +217,7 @@ namespace DragonBones
         /// <private/>
         public Transform ToMatrix(Matrix matrix)
         {
-            if(this.rotation == 0.0f)
+            if (this.rotation == 0.0f)
             {
                 matrix.a = 1.0f;
                 matrix.b = 0.0f;
@@ -250,7 +228,7 @@ namespace DragonBones
                 matrix.b = (float)Math.Sin(this.rotation);
             }
 
-            if(this.skew == 0.0f)
+            if (this.skew == 0.0f)
             {
                 matrix.c = -matrix.b;
                 matrix.d = matrix.a;
@@ -261,13 +239,13 @@ namespace DragonBones
                 matrix.d = (float)Math.Cos(this.skew + this.rotation);
             }
 
-            if(this.scaleX != 1.0f)
+            if (this.scaleX != 1.0f)
             {
                 matrix.a *= this.scaleX;
                 matrix.b *= this.scaleX;
             }
 
-            if(this.scaleY != 1.0f)
+            if (this.scaleY != 1.0f)
             {
                 matrix.c *= this.scaleY;
                 matrix.d *= this.scaleY;

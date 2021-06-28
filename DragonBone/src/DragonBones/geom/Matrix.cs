@@ -1,25 +1,3 @@
-/**
- * The MIT License (MIT)
- *
- * Copyright (c) 2012-2017 DragonBones team and other contributors
- *
- * Permission is hereby granted, free of charge, to any person obtaining a copy of
- * this software and associated documentation files (the "Software"), to deal in
- * the Software without restriction, including without limitation the rights to
- * use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
- * the Software, and to permit persons to whom the Software is furnished to do so,
- * subject to the following conditions:
- * 
- * The above copyright notice and this permission notice shall be included in all
- * copies or substantial portions of the Software.
- * 
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
- * FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
- * COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
- * IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
- * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
- */
 ﻿using System;
 using System.Collections.Generic;
 
@@ -145,7 +123,7 @@ namespace DragonBones
         }
 
         /// <private/>
-        public Matrix CopyFromArray(List<float> value, int offset = 0)
+        public Matrix CopyFromArray(List<float> value, int offset)
         {
             this.a = value[offset];
             this.b = value[offset + 1];
@@ -157,20 +135,20 @@ namespace DragonBones
             return this;
         }
 
-    /// <summary>
-    /// - Convert to unit matrix.
-    /// The resulting matrix has the following properties: a=1, b=0, c=0, d=1, tx=0, ty=0.
-    /// </summary>
-    /// <version>DragonBones 3.0</version>
-    /// <language>en_US</language>
+        /// <summary>
+        /// - Convert to unit matrix.
+        /// The resulting matrix has the following properties: a=1, b=0, c=0, d=1, tx=0, ty=0.
+        /// </summary>
+        /// <version>DragonBones 3.0</version>
+        /// <language>en_US</language>
 
-    /// <summary>
-    /// - 转换为单位矩阵。
-    /// 该矩阵具有以下属性：a=1、b=0、c=0、d=1、tx=0、ty=0。
-    /// </summary>
-    /// <version>DragonBones 3.0</version>
-    /// <language>zh_CN</language>
-    public Matrix Identity()
+        /// <summary>
+        /// - 转换为单位矩阵。
+        /// 该矩阵具有以下属性：a=1、b=0、c=0、d=1、tx=0、ty=0。
+        /// </summary>
+        /// <version>DragonBones 3.0</version>
+        /// <language>zh_CN</language>
+        public Matrix Identity()
         {
             this.a = this.d = 1.0f;
             this.b = this.c = 0.0f;
@@ -290,6 +268,10 @@ namespace DragonBones
         /// <version>DragonBones 3.0</version>
         /// <language>en_US</language>
 
+        public void TransformPoint(float x, float y, Point result)
+        {
+            TransformPoint(x, y, result, false);
+        }
         /// <summary>
         /// - 将矩阵转换应用于特定点。
         /// </summary>
@@ -299,7 +281,7 @@ namespace DragonBones
         /// <param name="delta">- 是否忽略 tx，ty 对点的转换。</param>
         /// <version>DragonBones 3.0</version>
         /// <language>zh_CN</language>
-        public void TransformPoint(float x, float y, Point result, bool delta = false)
+        public void TransformPoint(float x, float y, Point result, bool delta)
         {
             result.x = this.a * x + this.c * y;
             result.y = this.b * x + this.d * y;
@@ -312,7 +294,7 @@ namespace DragonBones
         }
 
         /// <private/>
-        public void TransformRectangle(Rectangle rectangle, bool delta = false)
+        public void TransformRectangle(Rectangle rectangle, bool delta)
         {
             var a = this.a;
             var b = this.b;
@@ -349,7 +331,7 @@ namespace DragonBones
                 x2 = x3;
                 x3 = tmp;
             }
-            
+
             rectangle.x = (float)Math.Floor(x0 < x2 ? x0 : x2);
             rectangle.width = (float)Math.Ceiling((x1 > x3 ? x1 : x3) - rectangle.x);
 

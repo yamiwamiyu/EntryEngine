@@ -5,19 +5,23 @@ namespace DragonBones
 {
     internal class BinaryDataWriter : BinaryWriter
     {
-        public BinaryDataWriter() : base(new MemoryStream(0x100))
+        public BinaryDataWriter()
+            : base(new MemoryStream(0x100))
         {
         }
 
-        internal BinaryDataWriter(Stream stream) : base(stream)
+        internal BinaryDataWriter(Stream stream)
+            : base(stream)
         {
         }
 
-        public BinaryDataWriter(Encoding encoding) : base(new MemoryStream(0x100), encoding)
+        public BinaryDataWriter(Encoding encoding)
+            : base(new MemoryStream(0x100), encoding)
         {
         }
 
-        internal BinaryDataWriter(Stream stream, Encoding encoding) : base(stream, encoding)
+        internal BinaryDataWriter(Stream stream, Encoding encoding)
+            : base(stream, encoding)
         {
         }
 

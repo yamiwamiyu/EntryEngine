@@ -1,25 +1,3 @@
-/**
- * The MIT License (MIT)
- *
- * Copyright (c) 2012-2017 DragonBones team and other contributors
- *
- * Permission is hereby granted, free of charge, to any person obtaining a copy of
- * this software and associated documentation files (the "Software"), to deal in
- * the Software without restriction, including without limitation the rights to
- * use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
- * the Software, and to permit persons to whom the Software is furnished to do so,
- * subject to the following conditions:
- * 
- * The above copyright notice and this permission notice shall be included in all
- * copies or substantial portions of the Software.
- * 
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
- * FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
- * COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
- * IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
- * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
- */
 using System.Collections.Generic;
 
 namespace DragonBones
@@ -311,6 +289,10 @@ namespace DragonBones
             this._animationStates.Clear();
             this._lastAnimationState = null;
         }
+        public void Stop()
+        {
+            Stop(null);
+        }
         /// <summary>
         /// - Pause a specific animation state.
         /// </summary>
@@ -326,7 +308,7 @@ namespace DragonBones
         /// <see cref="DragonBones.AnimationState"/>
         /// <version>DragonBones 3.0</version>
         /// <language>zh_CN</language>
-        public void Stop(string animationName = null)
+        public void Stop(string animationName)
         {
             if (animationName != null)
             {
@@ -507,6 +489,10 @@ namespace DragonBones
 
             return animationState;
         }
+        public AnimationState Play()
+        {
+            return Play(null, -1);
+        }
         /// <summary>
         /// - Play a specific animation.
         /// </summary>
@@ -536,7 +522,7 @@ namespace DragonBones
         /// </example>
         /// <version>DragonBones 3.0</version>
         /// <language>zh_CN</language>
-        public AnimationState Play(string animationName = null, int playTimes = -1)
+        public AnimationState Play(string animationName, int playTimes)
         {
             this._animationConfig.Clear();
             this._animationConfig.resetToPose = true;
@@ -568,6 +554,10 @@ namespace DragonBones
             }
 
             return this._lastAnimationState;
+        }
+        public AnimationState FadeIn(string animationName)
+        {
+            return FadeIn(animationName, -1.0f, -1, 0, null, AnimationFadeOutMode.SameLayerAndGroup);
         }
         /// <summary>
         /// - Fade in a specific animation.
@@ -608,9 +598,9 @@ namespace DragonBones
         /// </example>
         /// <version>DragonBones 4.5</version>
         /// <language>zh_CN</language>
-        public AnimationState FadeIn(string animationName, float fadeInTime = -1.0f, int playTimes = -1,
-                                    int layer = 0, string group = null,
-                                    AnimationFadeOutMode fadeOutMode = AnimationFadeOutMode.SameLayerAndGroup)
+        public AnimationState FadeIn(string animationName, float fadeInTime, int playTimes,
+                                    int layer, string group,
+                                    AnimationFadeOutMode fadeOutMode)
         {
             this._animationConfig.Clear();
             this._animationConfig.fadeOutMode = fadeOutMode;
@@ -641,7 +631,7 @@ namespace DragonBones
         /// <returns>播放的动画状态。</returns>
         /// <version>DragonBones 4.5</version>
         /// <language>zh_CN</language>
-        public AnimationState GotoAndPlayByTime(string animationName, float time = 0.0f, int playTimes = -1)
+        public AnimationState GotoAndPlayByTime(string animationName, float time, int playTimes)
         {
             this._animationConfig.Clear();
             this._animationConfig.resetToPose = true;
@@ -671,7 +661,7 @@ namespace DragonBones
         /// <returns>播放的动画状态。</returns>
         /// <version>DragonBones 4.5</version>
         /// <language>zh_CN</language>
-        public AnimationState GotoAndPlayByFrame(string animationName, uint frame = 0, int playTimes = -1)
+        public AnimationState GotoAndPlayByFrame(string animationName, uint frame, int playTimes)
         {
             this._animationConfig.Clear();
             this._animationConfig.resetToPose = true;
@@ -706,7 +696,7 @@ namespace DragonBones
         /// <returns>播放的动画状态。</returns>
         /// <version>DragonBones 4.5</version>
         /// <language>zh_CN</language>
-        public AnimationState GotoAndPlayByProgress(string animationName, float progress = 0.0f, int playTimes = -1)
+        public AnimationState GotoAndPlayByProgress(string animationName, float progress, int playTimes)
         {
             this._animationConfig.Clear();
             this._animationConfig.resetToPose = true;
@@ -739,7 +729,7 @@ namespace DragonBones
         /// <returns>播放的动画状态。</returns>
         /// <version>DragonBones 4.5</version>
         /// <language>zh_CN</language>
-        public AnimationState GotoAndStopByTime(string animationName, float time = 0.0f)
+        public AnimationState GotoAndStopByTime(string animationName, float time)
         {
             var animationState = this.GotoAndPlayByTime(animationName, time, 1);
             if (animationState != null)
@@ -766,7 +756,7 @@ namespace DragonBones
         /// <returns>播放的动画状态。</returns>
         /// <version>DragonBones 4.5</version>
         /// <language>zh_CN</language>
-        public AnimationState GotoAndStopByFrame(string animationName, uint frame = 0)
+        public AnimationState GotoAndStopByFrame(string animationName, uint frame)
         {
             var animationState = this.GotoAndPlayByFrame(animationName, frame, 1);
             if (animationState != null)
@@ -793,7 +783,7 @@ namespace DragonBones
         /// <returns>播放的动画状态。</returns>
         /// <version>DragonBones 4.5</version>
         /// <language>zh_CN</language>
-        public AnimationState GotoAndStopByProgress(string animationName, float progress = 0.0f)
+        public AnimationState GotoAndStopByProgress(string animationName, float progress)
         {
             var animationState = this.GotoAndPlayByProgress(animationName, progress, 1);
             if (animationState != null)

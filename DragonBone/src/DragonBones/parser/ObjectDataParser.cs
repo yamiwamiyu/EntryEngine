@@ -514,7 +514,7 @@ namespace DragonBones
                 { // 
                     skinName = DataParser.DEFAULT_NAME;
                 }
-                
+
                 var shareMesh = armature.GetMesh(skinName, "", shareName) as MeshDisplayData; // TODO slot;
                 if (shareMesh == null)
                 {
@@ -1086,7 +1086,7 @@ namespace DragonBones
                     {
                         skinName = ObjectDataParser.DEFAULT_NAME;
                     }
-                    
+
                     this._slot = this._armature.GetSlot(slotName);
                     this._mesh = this._armature.GetMesh(skinName, slotName, displayName) as MeshDisplayData;
                     if (this._slot == null || this._mesh == null)

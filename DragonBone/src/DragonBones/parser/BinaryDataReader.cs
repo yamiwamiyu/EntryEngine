@@ -8,11 +8,13 @@ namespace DragonBones
         private int i;
         private int readLength;
 
-        internal BinaryDataReader(Stream stream) : base(stream)
+        internal BinaryDataReader(Stream stream)
+            : base(stream)
         {
         }
 
-        internal BinaryDataReader(Stream stream, Encoding encoding) : base(stream, encoding)
+        internal BinaryDataReader(Stream stream, Encoding encoding)
+            : base(stream, encoding)
         {
         }
 

@@ -1,25 +1,3 @@
-/**
- * The MIT License (MIT)
- *
- * Copyright (c) 2012-2017 DragonBones team and other contributors
- *
- * Permission is hereby granted, free of charge, to any person obtaining a copy of
- * this software and associated documentation files (the "Software"), to deal in
- * the Software without restriction, including without limitation the rights to
- * use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
- * the Software, and to permit persons to whom the Software is furnished to do so,
- * subject to the following conditions:
- * 
- * The above copyright notice and this permission notice shall be included in all
- * copies or substantial portions of the Software.
- * 
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
- * FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
- * COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
- * IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
- * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
- */
 using System.Collections.Generic;
 using System;
 
@@ -82,7 +60,7 @@ namespace DragonBones
         /// </summary>
         /// <version>DragonBones 3.0</version>
         /// <language>zh_CN</language>
-        public BaseFactory(DataParser dataParser = null)
+        public BaseFactory(DataParser dataParser)
         {
             if (BaseFactory._objectParser == null)
             {
@@ -423,7 +401,7 @@ namespace DragonBones
         /// <see cref="DragonBones.DragonBonesData"/>
         /// <version>DragonBones 4.5</version>
         /// <language>zh_CN</language>
-        public DragonBonesData ParseDragonBonesData(object rawData, string name = null, float scale = 1.0f)
+        public DragonBonesData ParseDragonBonesData(object rawData, string name, float scale)
         {
             var dataParser = rawData is byte[] ? BaseFactory._binaryParser : this._dataParser;
             DragonBonesData dragonBonesData = dataParser.ParseDragonBonesData(rawData, scale);
@@ -478,7 +456,7 @@ namespace DragonBones
         /// <see cref="DragonBones.TextureAtlasData"/>
         /// <version>DragonBones 4.5</version>
         /// <language>zh_CN</language>
-        public TextureAtlasData ParseTextureAtlasData(Dictionary<string, object> rawData, object textureAtlas, string name = null, float scale = 1.0f)
+        public TextureAtlasData ParseTextureAtlasData(Dictionary<string, object> rawData, object textureAtlas, string name, float scale)
         {
             var textureAtlasData = this._BuildTextureAtlasData(null, null);
             this._dataParser.ParseTextureAtlasData(rawData, textureAtlasData, scale);
@@ -552,7 +530,7 @@ namespace DragonBones
         /// <see cref="DragonBones.DragonBonesData"/>
         /// <version>DragonBones 3.0</version>
         /// <language>zh_CN</language>
-        public void AddDragonBonesData(DragonBonesData data, string name = null)
+        public void AddDragonBonesData(DragonBonesData data, string name)
         {
             name = !string.IsNullOrEmpty(name) ? name : data.name;
             if (this._dragonBonesDataMap.ContainsKey(name))
@@ -590,7 +568,7 @@ namespace DragonBones
         /// <see cref="DragonBones.DragonBonesData"/>
         /// <version>DragonBones 3.0</version>
         /// <language>zh_CN</language>
-        public virtual void RemoveDragonBonesData(string name, bool disposeData = true)
+        public virtual void RemoveDragonBonesData(string name, bool disposeData)
         {
             if (this._dragonBonesDataMap.ContainsKey(name))
             {
@@ -650,7 +628,7 @@ namespace DragonBones
         /// <see cref="DragonBones.TextureAtlasData"/>
         /// <version>DragonBones 3.0</version>
         /// <language>zh_CN</language>
-        public void AddTextureAtlasData(TextureAtlasData data, string name = null)
+        public void AddTextureAtlasData(TextureAtlasData data, string name)
         {
             name = !string.IsNullOrEmpty(name) ? name : data.name;
             var textureAtlasList = (this._textureAtlasDataMap.ContainsKey(name)) ?
@@ -684,7 +662,7 @@ namespace DragonBones
         /// <see cref="DragonBones.TextureAtlasData"/>
         /// <version>DragonBones 3.0</version>
         /// <language>zh_CN</language>
-        public virtual void RemoveTextureAtlasData(string name, bool disposeData = true)
+        public virtual void RemoveTextureAtlasData(string name, bool disposeData)
         {
             if (this._textureAtlasDataMap.ContainsKey(name))
             {
@@ -717,7 +695,7 @@ namespace DragonBones
         /// <see cref="DragonBones.ArmatureData"/>
         /// <version>DragonBones 5.1</version>
         /// <language>zh_CN</language>
-        public virtual ArmatureData GetArmatureData(string name, string dragonBonesName = "")
+        public virtual ArmatureData GetArmatureData(string name, string dragonBonesName)
         {
             var dataPackage = new BuildArmaturePackage();
             if (!this._FillBuildArmaturePackage(dataPackage, dragonBonesName, name, "", ""))
@@ -740,7 +718,7 @@ namespace DragonBones
         /// <param name="disposeData">- 是否释放数据。</param>
         /// <version>DragonBones 4.5</version>
         /// <language>zh_CN</language>
-        public virtual void Clear(bool disposeData = true)
+        public virtual void Clear(bool disposeData)
         {
             if (disposeData)
             {
@@ -831,7 +809,7 @@ namespace DragonBones
             return armature;
         }
         /// <private/>
-        public virtual void ReplaceDisplay(Slot slot, DisplayData displayData, int displayIndex = -1)
+        public virtual void ReplaceDisplay(Slot slot, DisplayData displayData, int displayIndex)
         {
             if (displayIndex < 0)
             {
@@ -922,7 +900,7 @@ namespace DragonBones
                                         string armatureName,
                                         string slotName,
                                         string displayName,
-                                        Slot slot, int displayIndex = -1)
+                                        Slot slot, int displayIndex)
         {
             var armatureData = this.GetArmatureData(armatureName, dragonBonesName);
             if (armatureData == null || armatureData.defaultSkin == null)
@@ -1008,7 +986,7 @@ namespace DragonBones
         /// <see cref="DragonBones.SkinData"/>
         /// <version>DragonBones 5.6</version>
         /// <language>zh_CN</language>
-        public bool ReplaceSkin(Armature armature, SkinData skin, bool isOverride = false, List<string> exclude = null)
+        public bool ReplaceSkin(Armature armature, SkinData skin, bool isOverride, List<string> exclude)
         {
             var success = false;
             var defaultSkin = skin.parent.defaultSkin;
@@ -1107,7 +1085,7 @@ namespace DragonBones
         /// <language>zh_CN</language>
         public bool ReplaceAnimation(Armature armature,
                                     ArmatureData armatureData,
-                                    bool isOverride = true)
+                                    bool isOverride)
         {
 
             var skinData = armatureData.defaultSkin;
@@ -1202,7 +1180,7 @@ namespace DragonBones
         /// </summary>
         /// <language>zh_CN</language>
         [System.Obsolete("")]
-        public bool ChangeSkin(Armature armature, SkinData skin, List<string> exclude = null)
+        public bool ChangeSkin(Armature armature, SkinData skin, List<string> exclude)
         {
             return ReplaceSkin(armature, skin, false, exclude);
         }

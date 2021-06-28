@@ -7,7 +7,7 @@ using DragonBones;
 using System.IO;
 using EntryEngine.Serialize;
 
-namespace EntryEngine.DragonBones
+namespace EntryEngine.DragonBone
 {
     class DBTextureAtlasData : TextureAtlasData
     {
@@ -61,7 +61,9 @@ namespace EntryEngine.DragonBones
     }
     class DBFactory : BaseFactory
     {
-        internal static global::DragonBones.DragonBones _dragonBonesInstance = new global::DragonBones.DragonBones(null);
+        internal static DragonBones.DragonBones _dragonBonesInstance = new DragonBones.DragonBones(null);
+
+        public DBFactory() : base(null) { }
 
         protected override TextureAtlasData _BuildTextureAtlasData(TextureAtlasData textureAtlasData, object textureAtlas)
         {
@@ -304,7 +306,7 @@ namespace EntryEngine.DragonBones
         internal static DBFactory factory = new DBFactory();
         static PipelineDragonBones()
         {
-            global::DragonBones.DragonBones.yDown = true;
+            DragonBones.DragonBones.yDown = true;
         }
 
         public override IEnumerable<string> SuffixProcessable
@@ -328,7 +330,7 @@ namespace EntryEngine.DragonBones
 
             loadfile = temp + "_tex.json";
             stringdata = Manager.IODevice.ReadText(loadfile);
-            var textureData = factory.ParseTextureAtlasData(new JsonReader(stringdata).ReadDictionary(), texture);
+            var textureData = factory.ParseTextureAtlasData(new JsonReader(stringdata).ReadDictionary(), texture, null, 1);
 
             var armature = factory.BuildArmature(null, dragonbonesData, textureData);
             var result = (DRAGONBONES)armature.display;
@@ -355,7 +357,7 @@ namespace EntryEngine.DragonBones
                     Wait(async, Manager.IODevice.ReadAsync(loadfile), r3 =>
                     {
                         stringdata = Manager.IODevice.ReadPreambleText(r3.Data);
-                        var textureData = factory.ParseTextureAtlasData(new JsonReader(stringdata).ReadDictionary(), r2);
+                        var textureData = factory.ParseTextureAtlasData(new JsonReader(stringdata).ReadDictionary(), r2, null, 1);
 
                         var armature = factory.BuildArmature(null, dragonbonesData, textureData);
                         var result = (DRAGONBONES)armature.display;

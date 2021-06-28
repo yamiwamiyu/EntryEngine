@@ -1,25 +1,3 @@
-/**
- * The MIT License (MIT)
- *
- * Copyright (c) 2012-2017 DragonBones team and other contributors
- *
- * Permission is hereby granted, free of charge, to any person obtaining a copy of
- * this software and associated documentation files (the "Software"), to deal in
- * the Software without restriction, including without limitation the rights to
- * use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
- * the Software, and to permit persons to whom the Software is furnished to do so,
- * subject to the following conditions:
- * 
- * The above copyright notice and this permission notice shall be included in all
- * copies or substantial portions of the Software.
- * 
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
- * FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
- * COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
- * IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
- * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
- */
 using System;
 using System.Collections.Generic;
 
@@ -1012,7 +990,7 @@ namespace DragonBones
                     if (this.autoFadeOutTime >= 0.0f)
                     {
                         // Auto fade out.
-                        this.FadeOut(this.autoFadeOutTime);
+                        this.FadeOut(this.autoFadeOutTime, true);
                     }
                 }
             }
@@ -1063,7 +1041,7 @@ namespace DragonBones
         /// <param name="pausePlayhead">- 淡出时是否暂停播放。</param>
         /// <version>DragonBones 3.0</version>
         /// <language>zh_CN</language>
-        public void FadeOut(float fadeOutTime, bool pausePlayhead = true)
+        public void FadeOut(float fadeOutTime, bool pausePlayhead)
         {
             if (fadeOutTime < 0.0f)
             {
@@ -1146,7 +1124,7 @@ namespace DragonBones
         /// <param name="recursive">- 是否为该骨骼的子骨骼添加遮罩。</param>
         /// <version>DragonBones 3.0</version>
         /// <language>zh_CN</language>
-        public void AddBoneMask(string boneName, bool recursive = true)
+        public void AddBoneMask(string boneName, bool recursive)
         {
             var currentBone = this._armature.GetBone(boneName);
             if (currentBone == null)
@@ -1189,7 +1167,7 @@ namespace DragonBones
         /// <param name="recursive">- 是否删除该骨骼的子骨骼遮罩。</param>
         /// <version>DragonBones 3.0</version>
         /// <language>zh_CN</language>
-        public void RemoveBoneMask(string boneName, bool recursive = true)
+        public void RemoveBoneMask(string boneName, bool recursive)
         {
             if (this._boneMask.Contains(boneName))
             {

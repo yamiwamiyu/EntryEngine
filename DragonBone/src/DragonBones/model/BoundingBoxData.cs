@@ -1,25 +1,3 @@
-/**
- * The MIT License (MIT)
- *
- * Copyright (c) 2012-2017 DragonBones team and other contributors
- *
- * Permission is hereby granted, free of charge, to any person obtaining a copy of
- * this software and associated documentation files (the "Software"), to deal in
- * the Software without restriction, including without limitation the rights to
- * use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
- * the Software, and to permit persons to whom the Software is furnished to do so,
- * subject to the following conditions:
- * 
- * The above copyright notice and this permission notice shall be included in all
- * copies or substantial portions of the Software.
- * 
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
- * FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
- * COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
- * IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
- * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
- */
 ﻿using System;
 using System.Collections.Generic;
 
@@ -95,9 +73,9 @@ namespace DragonBones
         /// <version>DragonBones 5.0</version>
         /// <language>zh_CN</language>
         public abstract int IntersectsSegment(float xA, float yA, float xB, float yB,
-                                                Point intersectionPointA = null,
-                                                Point intersectionPointB = null,
-                                                Point normalRadians = null);
+                                                Point intersectionPointA,
+                                                Point intersectionPointB,
+                                                Point normalRadians);
     }
 
     /// <summary>
@@ -162,9 +140,9 @@ namespace DragonBones
         /// <private/>
         public static int RectangleIntersectsSegment(float xA, float yA, float xB, float yB,
                                                         float xMin, float yMin, float xMax, float yMax,
-                                                        Point intersectionPointA = null,
-                                                        Point intersectionPointB = null,
-                                                        Point normalRadians = null)
+                                                        Point intersectionPointA,
+                                                        Point intersectionPointB,
+                                                        Point normalRadians)
         {
             var inSideA = xA > xMin && xA < xMax && yA > yMin && yA < yMax;
             var inSideB = xB > xMin && xB < xMax && yB > yMin && yB < yMax;
@@ -357,9 +335,9 @@ namespace DragonBones
 
         /// <inheritDoc/>
         public override int IntersectsSegment(float xA, float yA, float xB, float yB,
-                                             Point intersectionPointA = null,
-                                             Point intersectionPointB = null,
-                                             Point normalRadians = null)
+                                             Point intersectionPointA,
+                                             Point intersectionPointB,
+                                             Point normalRadians)
         {
             var widthH = this.width * 0.5f;
             var heightH = this.height * 0.5f;
@@ -390,9 +368,9 @@ namespace DragonBones
         /// <private/>
         public static int EllipseIntersectsSegment(float xA, float yA, float xB, float yB,
                                                     float xC, float yC, float widthH, float heightH,
-                                                    Point intersectionPointA = null,
-                                                    Point intersectionPointB = null,
-                                                    Point normalRadians = null)
+                                                    Point intersectionPointA,
+                                                    Point intersectionPointB,
+                                                    Point normalRadians)
         {
             var d = widthH / heightH;
             var dd = d * d;
@@ -562,9 +540,9 @@ namespace DragonBones
         /// <private/>
         public static int PolygonIntersectsSegment(float xA, float yA, float xB, float yB,
                                                     List<float> vertices,
-                                                    Point intersectionPointA = null,
-                                                    Point intersectionPointB = null,
-                                                    Point normalRadians = null)
+                                                    Point intersectionPointA,
+                                                    Point intersectionPointB,
+                                                    Point normalRadians)
         {
             if (xA == xB)
             {
@@ -787,9 +765,9 @@ namespace DragonBones
 
         /// <inheritDoc/>
         public override int IntersectsSegment(float xA, float yA, float xB, float yB,
-                                                Point intersectionPointA = null,
-                                                Point intersectionPointB = null,
-                                                Point normalRadians = null)
+                                                Point intersectionPointA,
+                                                Point intersectionPointB,
+                                                Point normalRadians)
         {
             var intersectionCount = 0;
             if (RectangleBoundingBoxData.RectangleIntersectsSegment(xA, yA, xB, yB, this.x, this.y, this.x + this.width, this.y + this.height, null, null, null) != 0)
