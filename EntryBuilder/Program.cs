@@ -3818,11 +3818,12 @@ return result;"
             return results;
         }
         /// <summary>拆分文字图片，得出每行的每个字体</summary>
-        private static List<List<Bitmap>> SplitText(Bitmap source)
+        private static List<List<Bitmap>> SplitText(Bitmap source, int border2)
         {
+            if (border2 <= 0)
+                border2 = 2;
+
             List<List<Bitmap>> results = new List<List<Bitmap>>();
-            int border = 2;
-            int border2 = 2 * border + 1;
 
             int width = source.Width;
             int height = source.Height;
@@ -3900,56 +3901,58 @@ return result;"
                                     index = k * width + j;
                                     if (pixeles[index].Alpha != 0)
                                     {
-                                        SplitArea split = new SplitArea();
-                                        split.SetPos(j, k);
-
-                                        // 从扫描到的第一个像素点开始广度扩散，找到整个文字的全部像素
-                                        Pixel.GPS(map[j, k], -1,
-                                            p =>
+                                        // 纵向扫描，横向向右，扫描到整个文字
+                                        int minX = width, minY = width, maxX = -1, maxY = -1;
+                                        int whiteCol = 0;
+                                        for (int col = j; col < width; col++)
+                                        {
+                                            bool whiteFlag = true;
+                                            for (int row = _minY; row <= _maxY; row++)
                                             {
-                                                // 本身有像素
-                                                if (p.Alpha > 0)
+                                                index = row * width + col;
+                                                if (map[col, row].Alpha != 0)
                                                 {
-                                                    // 周围都需要没有像素(边缘像素)
-                                                    for (int sx = p.X - border, a = 0; a < border2; a++, sx++)
-                                                    {
-                                                        if (sx < 0 || sx >= width)
-                                                            return true;
-                                                        for (int sy = p.Y - border, b = 0; b < border2; b++, sy++)
-                                                        {
-                                                            if (sy < 0 || sy >= height)
-                                                                return true;
-                                                            if (map[sx, sy].Alpha == 0)
-                                                                return true;
-                                                        }
-                                                    }
+                                                    if (col < minX)
+                                                        minX = col;
+                                                    if (col > maxX)
+                                                        maxX = col;
+                                                    if (row < minY)
+                                                        minY = row;
+                                                    if (row > maxY)
+                                                        maxY = row;
+                                                    whiteFlag = false;
                                                 }
-                                                return false;
-                                            },
-                                            p =>
+                                            }
+                                            if (whiteFlag)
                                             {
-                                                split.SetPos(p.Node.X, p.Node.Y);
-                                                return false;
-                                            });
+                                                whiteCol++;
+                                                // 5像素列空白像素则认为是单独文字
+                                                if (whiteCol > border2)
+                                                    break;
+                                            }
+                                            else
+                                                whiteCol = 0;
+                                        }
 
-                                        int minX, minY, maxX, maxY;
-                                        split.Resolve(out minX, out minY, out maxX, out maxY);
+                                        // 类似于斜体的三点水，三点从下到上，越来越靠右，会生成三个三点水和一个去字
 
                                         // 过小的分离像素不进行拆分
-                                        if (split.Area.Width * split.Area.Height >= 20)
+                                        Rectangle area = new Rectangle(minX, minY, maxX - minX + 1, maxY - minY + 1);
+                                        if (area.Width * area.Height >= 20)
                                         {
                                             // 让文字保持一行的高度
-                                            split.Area.Y = _minY;
-                                            split.Area.Height = _maxY - _minY + 1;
-                                            Bitmap frame = new Bitmap(split.Area.Width, split.Area.Height);
+                                            area.Y = _minY;
+                                            area.Height = _maxY - _minY + 1;
+                                            Bitmap frame = new Bitmap(area.Width, area.Height);
                                             ImageDraw(frame, g =>
                                             {
                                                 g.DrawImage(
                                                     source,
                                                     new Rectangle(0, 0, frame.Width, frame.Height),
-                                                    split.Area,
+                                                    area,
                                                     GraphicsUnit.Pixel);
                                             });
+                                            //SavePng(frame, "testoutput", lineText.Count + ".png", false);
                                             lineText.Add(frame);
                                         }
 
@@ -3959,7 +3962,6 @@ return result;"
                                                 map[p, o].Alpha = 0;
                                     }
                                 }
-                                index++;
                             }
 
                             break;
@@ -4298,6 +4300,8 @@ return result;"
             public string 文字内容;
             [ASummary("0:文字高度相等 / 1:文字宽高都相等")]
             public bool 等宽字体;
+            [ASummary("两个文字间的间隔像素值，类似于\"法\"字，偏旁与文字挨得比较近，文字间隔应该取大一点，不填默认为2像素")]
+            public int 文字间隔;
         }
 
         private class CodeResolve
@@ -10447,17 +10451,18 @@ return result;"
             {
                 using (Bitmap map = (Bitmap)Image.FromFile(item.文字图片))
                 {
-                    Console.WriteLine("拆分大图：{0}", item.文字图片);
+                    _LOG.Info("拆分大图：{0}", item.文字图片);
                     // 大图裁切成小图
-                    var lines = SplitText(map);
+                    var lines = SplitText(map, item.文字间隔);
                     int count1 = lines.Sum(l => l.Count);
                     int count2 = item.文字内容.Replace("\n", "").Replace("\r", "").Length;
                     if (count1 != count2)
                     {
                         _LOG.Warning("\"{0}\" 未能生成字体，图像和内容文字数量不符！图像文字：{1} 内容文字：{2}", item.文字图片, count1, count2);
+                        int tempIndex = 0;
                         foreach (var line in lines)
                             foreach (var m in line)
-                                m.Dispose();
+                                SavePng(m, "未能生成字体", tempIndex++ + ".png", true);
                         continue;
                     }
                     // 逐行统一尺寸
@@ -10541,7 +10546,7 @@ return result;"
                         size.Width = width;
                     if (height > 0)
                         size.Height += height;
-                    Console.WriteLine("重组大图：{0} 宽：{1} 高：{2}", item.文字图片, size.Width, size.Height);
+                    _LOG.Info("重组大图：{0} 宽：{1} 高：{2}", item.文字图片, size.Width, size.Height);
                     // 小图组合成大图
                     using (Bitmap result = new Bitmap(size.Width, size.Height))
                     {
@@ -10579,7 +10584,7 @@ return result;"
                             result.Save(string.Format("{0}_0.png", output.WithoutExtention()), ImageFormat.Png);
                         }
                     }
-                    Console.WriteLine("生成字体{0}", item.文字图片);
+                    _LOG.Info("生成字体{0}", item.文字图片);
                 }
             }
         }
