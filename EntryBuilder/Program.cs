@@ -524,7 +524,7 @@ namespace EntryBuilder
             //PublishToPC(@"D:\Project\xss\xss\Launch\Client", @"D:\Project\xss\xss\Launch\Client");
             //PublishToWebGL(@"C:\Yamiwamiyu\Project\EntryEngineGit\trunk\", @"C:\Yamiwamiyu\Project\ChamberH5New\Code\Client", "", @"C:\Yamiwamiyu\Project\ChamberH5New\Publish\WebGL\index.html", false, 1);
             //PublishToWebGL(@"C:\Yamiwamiyu\Project\EntryEngineGit\trunk\", @"C:\Yamiwamiyu\Project\IslandChronicle\Code\Client", "", @"C:\Yamiwamiyu\Project\ChamberH5New\Publish\WebGL\index.html", false, 1);
-            //PublishToWebGL(@"C:\Yamiwamiyu\Project\EntryEngineGit\trunk\", @"C:\Yamiwamiyu\Project\hdcq3\Code\Client", "", @"C:\Yamiwamiyu\Project\ChamberH5New\Publish\WebGL\index.html", false, 1);
+            //PublishToWebGL(@"C:\Yamiwamiyu\Project\EntryEngineGit\trunk\", @"C:\Yamiwamiyu\Project\hdcq3\Code\Client", @"C:\Yamiwamiyu\Project\hdcq3\Code\Protocol;C:\Yamiwamiyu\Project\EntryEngineGit\trunk\DragonBone", @"C:\Yamiwamiyu\Project\ChamberH5New\Publish\WebGL\index.html", false, 1);
             //BuildTableTranslate("", "");
             //BuildDatabaseMysql(@"C:\Yamiwamiyu\Project\YMHY\Code\Protocol\Protocol\bin\Release\Protocol.dll", "Server._DB", @"C:\Yamiwamiyu\Project\YMHY\Code\Server\Server\_DB.design.cs", "", "", false);
             //BuildProtocolAgentHttp(@"D:\Desktop\hdcq2\Code\Client\Client", @"D:\Desktop\hdcq2\Code\Server\Server", @"D:\Desktop\hdcq2\Code\Protocol\Protocol\bin\Debug\Protocol.dll", 0);
@@ -10454,7 +10454,7 @@ return result;"
                     int count2 = item.文字内容.Replace("\n", "").Replace("\r", "").Length;
                     if (count1 != count2)
                     {
-                        Console.WriteLine("{0}未能生成字体，图像和内容文字数量不符！图像文字：{1} 内容文字：{2}", count1, count2);
+                        _LOG.Warning("\"{0}\" 未能生成字体，图像和内容文字数量不符！图像文字：{1} 内容文字：{2}", item.文字图片, count1, count2);
                         foreach (var line in lines)
                             foreach (var m in line)
                                 m.Dispose();
