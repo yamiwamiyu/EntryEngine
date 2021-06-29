@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 
-namespace DragonBones
+namespace EntryEngine.DragonBone.DBCore
 {
     /// <summary>
     /// - The animation player is used to play the animation data and manage the animation states.
@@ -492,6 +492,10 @@ namespace DragonBones
         public AnimationState Play()
         {
             return Play(null, -1);
+        }
+        public AnimationState Play(string animationName)
+        {
+            return Play(animationName, -1);
         }
         /// <summary>
         /// - Play a specific animation.

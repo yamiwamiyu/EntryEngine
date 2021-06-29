@@ -2,7 +2,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System;
 
-namespace DragonBones
+namespace EntryEngine.DragonBone.DBCore
 {
     /// <internal/>
     /// <private/>

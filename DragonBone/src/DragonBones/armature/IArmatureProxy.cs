@@ -1,4 +1,4 @@
-namespace DragonBones
+namespace EntryEngine.DragonBone.DBCore
 {
     public enum EEventType
     {

@@ -1,4 +1,4 @@
-﻿namespace DragonBones
+﻿namespace EntryEngine.DragonBone.DBCore
  {
      /// <summary>
      /// - The Point object represents a location in a two-dimensional coordinate system.

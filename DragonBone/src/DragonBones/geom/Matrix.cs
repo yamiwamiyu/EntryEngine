@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace DragonBones
+namespace EntryEngine.DragonBone.DBCore
 {
     /// <summary>
     /// - 2D Transform matrix.

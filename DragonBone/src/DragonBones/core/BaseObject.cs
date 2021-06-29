@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 using System;
 
-namespace DragonBones
+namespace EntryEngine.DragonBone.DBCore
 {
     /// <summary>
     /// - The BaseObject is the base class for all objects in the DragonBones framework.

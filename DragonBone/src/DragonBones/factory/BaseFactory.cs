@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using System;
 
-namespace DragonBones
+namespace EntryEngine.DragonBone.DBCore
 {
     public class BuildArmaturePackage
     {
@@ -35,10 +35,9 @@ namespace DragonBones
     /// <see cref="DragonBones.Armature"/>
     /// <version>DragonBones 3.0</version>
     /// <language>zh_CN</language>
-    public abstract class BaseFactory
+    internal abstract class BaseFactory
     {
         internal static ObjectDataParser _objectParser = null;
-        protected static BinaryDataParser _binaryParser = null;
         /// <private/>
         public bool autoSearch = false;
         /// <private/>
@@ -65,11 +64,6 @@ namespace DragonBones
             if (BaseFactory._objectParser == null)
             {
                 BaseFactory._objectParser = new ObjectDataParser();
-            }
-
-            if (BaseFactory._binaryParser == null)
-            {
-                BaseFactory._binaryParser = new BinaryDataParser();
             }
 
             this._dataParser = dataParser != null ? dataParser : BaseFactory._objectParser;
@@ -403,7 +397,7 @@ namespace DragonBones
         /// <language>zh_CN</language>
         public DragonBonesData ParseDragonBonesData(object rawData, string name, float scale)
         {
-            var dataParser = rawData is byte[] ? BaseFactory._binaryParser : this._dataParser;
+            var dataParser = this._dataParser;
             DragonBonesData dragonBonesData = dataParser.ParseDragonBonesData(rawData, scale);
 
             while (true)

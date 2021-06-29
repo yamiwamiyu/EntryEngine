@@ -1,4 +1,4 @@
-namespace DragonBones
+namespace EntryEngine.DragonBone.DBCore
 {
     /// <summary>
     /// - Play animation interface. (Both Armature and Wordclock implement the interface)

@@ -1,4 +1,4 @@
-﻿namespace DragonBones
+﻿namespace EntryEngine.DragonBone.DBCore
  {
      /// <summary>
      /// - A Rectangle object is an area defined by its position, as indicated by its top-left corner point (x, y) and by its

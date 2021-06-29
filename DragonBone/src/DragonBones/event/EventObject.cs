@@ -1,4 +1,4 @@
-namespace DragonBones
+namespace EntryEngine.DragonBone.DBCore
 {
     /// <summary>
     /// - The properties of the object carry basic information about an event,

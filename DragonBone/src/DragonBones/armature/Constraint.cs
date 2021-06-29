@@ -1,6 +1,6 @@
 using System;
 
-namespace DragonBones
+namespace EntryEngine.DragonBone.DBCore
 {
     internal abstract class Constraint : BaseObject
     {

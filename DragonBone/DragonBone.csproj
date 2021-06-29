@@ -75,9 +75,6 @@
     <Compile Include="src\DragonBones\model\SkinData.cs" />
     <Compile Include="src\DragonBones\model\TextureAtlasData.cs" />
     <Compile Include="src\DragonBones\model\UserData.cs" />
-    <Compile Include="src\DragonBones\parser\BinaryDataParser.cs" />
-    <Compile Include="src\DragonBones\parser\BinaryDataReader.cs" />
-    <Compile Include="src\DragonBones\parser\BinaryDataWriter.cs" />
     <Compile Include="src\DragonBones\parser\DataParser.cs" />
     <Compile Include="src\DragonBones\parser\ObjectDataParser.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

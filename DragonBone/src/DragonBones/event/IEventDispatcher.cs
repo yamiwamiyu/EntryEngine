@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 using System;
-namespace DragonBones
+namespace EntryEngine.DragonBone.DBCore
 {
     public delegate void ListenerDelegate<T>(string type, T eventObject);
     /// <summary>

@@ -26,7 +26,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text;
 
-namespace DragonBones
+namespace EntryEngine.DragonBone.DBCore
 {
     /// <internal/>
     /// <private/>
@@ -257,7 +257,7 @@ namespace DragonBones
         //{
         //    return a.frameStart > b.frameStart? 1 : -1;
         //}
-        private void _ParseActionDataInFrame(object rawData, int frameStart, BoneData bone = null, SlotData slot = null)
+        private void _ParseActionDataInFrame(object rawData, int frameStart, BoneData bone, SlotData slot)
         {
             Dictionary<string, object> rawDic = rawData as Dictionary<string, object>;
             if (rawDic == null)
@@ -290,7 +290,7 @@ namespace DragonBones
                 this._MergeActionFrame(rawDic[ObjectDataParser.ACTIONS], frameStart, ActionType.Play, bone, slot);
             }
         }
-        private void _MergeActionFrame(object rawData, int frameStart, ActionType type, BoneData bone = null, SlotData slot = null)
+        private void _MergeActionFrame(object rawData, int frameStart, ActionType type, BoneData bone, SlotData slot)
         {
             var actionOffset = this._armature.actions.Count;
             var actions = this._ParseActionData(rawData, type, bone, slot);
@@ -1878,7 +1878,7 @@ namespace DragonBones
             return frameOffset;
         }
 
-        protected List<ActionData> _ParseActionData(object rawData, ActionType type, BoneData bone = null, SlotData slot = null)
+        protected List<ActionData> _ParseActionData(object rawData, ActionType type, BoneData bone, SlotData slot)
         {
             var actions = new List<ActionData>();
             if (rawData is string)
@@ -2060,36 +2060,45 @@ namespace DragonBones
             var l6 = this._timelineArray.Count * Helper.UINT16_SIZE;
             var lTotal = l1 + l2 + l3 + l4 + l5 + l6;
 
-            using (MemoryStream ms = new MemoryStream(lTotal))
-            using (BinaryDataWriter writer = new BinaryDataWriter(ms))
-            using (BinaryDataReader reader = new BinaryDataReader(ms))
+            //using (MemoryStream ms = new MemoryStream(lTotal))
+            //using (BinaryDataWriter writer = new BinaryDataWriter(ms))
+            //using (BinaryDataReader reader = new BinaryDataReader(ms))
+            //{
+
+            //    //ToWrite
+            //    writer.Write(_intArray.ToArray());
+            //    writer.Write(_floatArray.ToArray());
+            //    writer.Write(_frameIntArray.ToArray());
+            //    writer.Write(_frameFloatArray.ToArray());
+            //    writer.Write(_frameArray.ToArray());
+            //    writer.Write(_timelineArray.ToArray());
+
+            //    ms.Position = 0;
+
+            //    //ToRead
+            //    this._data.binary = ms.GetBuffer();
+            //    this._data.intArray = reader.ReadInt16s(0, this._intArray.Count);
+            //    this._data.floatArray = reader.ReadSingles(0, this._floatArray.Count);
+            //    this._data.frameIntArray = reader.ReadInt16s(0, this._frameIntArray.Count);
+            //    this._data.frameFloatArray = reader.ReadSingles(0, this._frameFloatArray.Count);
+            //    this._data.frameArray = reader.ReadInt16s(0, this._frameArray.Count);
+            //    this._data.timelineArray = reader.ReadUInt16s(0, this._timelineArray.Count);
+
+            //    ms.Close();
+            //}
+
             {
-
-                //ToWrite
-                writer.Write(_intArray.ToArray());
-                writer.Write(_floatArray.ToArray());
-                writer.Write(_frameIntArray.ToArray());
-                writer.Write(_frameFloatArray.ToArray());
-                writer.Write(_frameArray.ToArray());
-                writer.Write(_timelineArray.ToArray());
-
-                ms.Position = 0;
-
-                //ToRead
-                this._data.binary = ms.GetBuffer();
-                this._data.intArray = reader.ReadInt16s(0, this._intArray.Count);
-                this._data.floatArray = reader.ReadSingles(0, this._floatArray.Count);
-                this._data.frameIntArray = reader.ReadInt16s(0, this._frameIntArray.Count);
-                this._data.frameFloatArray = reader.ReadSingles(0, this._frameFloatArray.Count);
-                this._data.frameArray = reader.ReadInt16s(0, this._frameArray.Count);
-                this._data.timelineArray = reader.ReadUInt16s(0, this._timelineArray.Count);
-
-                ms.Close();
+                this._data.intArray = _intArray.ToArray();
+                this._data.floatArray = _floatArray.ToArray();
+                this._data.frameIntArray = _frameIntArray.ToArray();
+                this._data.frameFloatArray = _frameFloatArray.ToArray();
+                this._data.frameArray = _frameArray.ToArray();
+                this._data.timelineArray = _timelineArray.ToArray();
             }
 
             this._defaultColorOffset = -1;
         }
-        public override DragonBonesData ParseDragonBonesData(object rawObj, float scale = 1.0f)
+        public override DragonBonesData ParseDragonBonesData(object rawObj, float scale)
         {
             var rawData = rawObj as Dictionary<string, object>;
             if (rawData == null)
@@ -2158,7 +2167,7 @@ namespace DragonBones
             }
         }
 
-        public override bool ParseTextureAtlasData(object rawObj, TextureAtlasData textureAtlasData, float scale = 1.0f)
+        public override bool ParseTextureAtlasData(object rawObj, TextureAtlasData textureAtlasData, float scale)
         {
             var rawData = rawObj as Dictionary<string, object>;
             if (rawData == null)

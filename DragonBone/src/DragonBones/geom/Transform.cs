@@ -1,6 +1,6 @@
 using System;
 
-namespace DragonBones
+namespace EntryEngine.DragonBone.DBCore
 {
     /// <summary>
     /// - 2D Transform.

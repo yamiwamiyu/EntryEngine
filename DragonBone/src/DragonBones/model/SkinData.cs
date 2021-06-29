@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 
- namespace DragonBones
+ namespace EntryEngine.DragonBone.DBCore
 {
     /// <summary>
     /// - The skin data, typically a armature data instance contains at least one skinData.

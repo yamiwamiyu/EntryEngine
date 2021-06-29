@@ -3,9 +3,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using EntryEngine;
-using DragonBones;
 using System.IO;
 using EntryEngine.Serialize;
+using EntryEngine.DragonBone.DBCore;
 
 namespace EntryEngine.DragonBone
 {
@@ -61,7 +61,7 @@ namespace EntryEngine.DragonBone
     }
     class DBFactory : BaseFactory
     {
-        internal static DragonBones.DragonBones _dragonBonesInstance = new DragonBones.DragonBones(null);
+        internal static DragonBones _dragonBonesInstance = new DragonBones(null);
 
         public DBFactory() : base(null) { }
 
@@ -306,7 +306,7 @@ namespace EntryEngine.DragonBone
         internal static DBFactory factory = new DBFactory();
         static PipelineDragonBones()
         {
-            DragonBones.DragonBones.yDown = true;
+            DragonBones.yDown = true;
         }
 
         public override IEnumerable<string> SuffixProcessable
@@ -323,7 +323,7 @@ namespace EntryEngine.DragonBone
 
             string loadfile = temp + "_ske.json";
             string stringdata = Manager.IODevice.ReadText(loadfile);
-            var dragonbonesData = BaseFactory._objectParser.ParseDragonBonesData(new JsonReader(stringdata).ReadDictionary());
+            var dragonbonesData = BaseFactory._objectParser.ParseDragonBonesData(new JsonReader(stringdata).ReadDictionary(), 1);
 
             loadfile = temp + "_tex.png";
             var texture = Manager.Load<TEXTURE>(loadfile);
@@ -348,7 +348,7 @@ namespace EntryEngine.DragonBone
             Wait(async, Manager.IODevice.ReadAsync(loadfile), r1 =>
             {
                 string stringdata = Manager.IODevice.ReadPreambleText(r1.Data);
-                var dragonbonesData = BaseFactory._objectParser.ParseDragonBonesData(new JsonReader(stringdata).ReadDictionary());
+                var dragonbonesData = BaseFactory._objectParser.ParseDragonBonesData(new JsonReader(stringdata).ReadDictionary(), 1);
 
                 loadfile = temp + "_tex.png";
                 Manager.LoadAsync<TEXTURE>(loadfile, r2 =>

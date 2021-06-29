@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 
-namespace DragonBones
+namespace EntryEngine.DragonBone.DBCore
 {
     /// <summary>
     /// - The animation config is used to describe all the information needed to play an animation state.

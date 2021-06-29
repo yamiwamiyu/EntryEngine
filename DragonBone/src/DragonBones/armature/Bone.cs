@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace DragonBones
+namespace EntryEngine.DragonBone.DBCore
 {
     /// <summary>
     /// - Bone is one of the most important logical units in the armature animation system,

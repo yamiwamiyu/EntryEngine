@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 
-namespace DragonBones
+namespace EntryEngine.DragonBone.DBCore
 {
     /// <internal/>
     /// <private/>
