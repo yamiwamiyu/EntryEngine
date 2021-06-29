@@ -103,6 +103,14 @@ public partial class @_string : String
     //    //}
     //    //return str;
     //}
+    public string ToUpper()
+    {
+        return toUpperCase();
+    }
+    public string ToLower()
+    {
+        return toLowerCase();
+    }
 
     public extern int IndexOf(string str);
     // IndexOf改名为JS类型的indexOf

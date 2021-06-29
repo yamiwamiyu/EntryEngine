@@ -54,6 +54,8 @@ public class String
     public extern string substring(int start, int end);
     public extern string valueOf();
     public extern static string fromCharCode(params char[] unicodes);
+    public extern string toUpperCase();
+    public extern string toLowerCase();
 }
 public class RegExp
 {

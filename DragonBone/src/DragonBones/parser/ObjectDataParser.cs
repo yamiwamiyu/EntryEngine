@@ -59,13 +59,12 @@ namespace EntryEngine.DragonBone.DBCore
                 }
                 else
                 {
-                    return Convert.ToBoolean(value);
+                    return (bool)Convert.ChangeType(value, typeof(bool));
                 }
             }
 
             return defaultValue;
         }
-
         protected static uint _GetNumber(Dictionary<string, object> rawData, string key, uint defaultValue)
         {
             if (rawData.ContainsKey(key))
@@ -82,14 +81,13 @@ namespace EntryEngine.DragonBone.DBCore
                     return (uint)value;
                 }
 
-                return Convert.ToUInt32(value);
+                return (uint)Convert.ChangeType(value, typeof(uint));
 
             }
 
             return defaultValue;
         }
-
-        protected static int _GetNumber(Dictionary<string, object> rawData, string key, int defaultValue)
+        protected static int _GetInt32(Dictionary<string, object> rawData, string key, int defaultValue)
         {
             if (rawData.ContainsKey(key))
             {
@@ -105,12 +103,54 @@ namespace EntryEngine.DragonBone.DBCore
                     return (int)value;
                 }
 
-                return Convert.ToInt32(value);
+                return (int)Convert.ChangeType(value, typeof(int));
             }
 
             return defaultValue;
         }
-        protected static float _GetNumber(Dictionary<string, object> rawData, string key, float defaultValue)
+        protected static List<short> _GetInt16(Dictionary<string, object> rawData, string key)
+        {
+            List<short> results = new List<short>();
+
+            object raw;
+            if (rawData.TryGetValue(key, out raw))
+            {
+                var value = (List<object>)raw;
+
+                if (value == null)
+                    return results;
+
+                var t = typeof(short);
+                results = new List<short>(value.Count);
+                for (int i = 0; i < value.Count; i++)
+                    results.Add((short)Convert.ChangeType(value[i], t));
+                return results;
+            }
+
+            return results;
+        }
+        protected static List<int> _GetInt32(Dictionary<string, object> rawData, string key)
+        {
+            List<int> results = new List<int>();
+
+            object raw;
+            if (rawData.TryGetValue(key, out raw))
+            {
+                var value = (List<object>)raw;
+
+                if (value == null)
+                    return results;
+
+                var t = typeof(int);
+                results = new List<int>(value.Count);
+                for (int i = 0; i < value.Count; i++)
+                    results.Add((int)Convert.ChangeType(value[i], t));
+                return results;
+            }
+
+            return results;
+        }
+        protected static float _GetSingle(Dictionary<string, object> rawData, string key, float defaultValue)
         {
             if (rawData.ContainsKey(key))
             {
@@ -126,21 +166,48 @@ namespace EntryEngine.DragonBone.DBCore
                     return (float)value;
                 }
 
-                return Convert.ToSingle(value);
+                return (float)Convert.ChangeType(value, typeof(float));
             }
 
             return defaultValue;
         }
+        protected static List<float> _GetSingle(Dictionary<string, object> rawData, string key)
+        {
+            List<float> results = new List<float>();
 
+            object raw;
+            if (rawData.TryGetValue(key, out raw))
+            {
+                var value = (List<object>)raw;
+
+                if (value == null)
+                    return results;
+
+                var t = typeof(float);
+                results = new List<float>(value.Count);
+                for (int i = 0; i < value.Count; i++)
+                    results.Add((float)Convert.ChangeType(value[i], t));
+                return results;
+            }
+
+            return results;
+        }
         protected static string _GetString(Dictionary<string, object> rawData, string key, string defaultValue)
         {
             if (rawData.ContainsKey(key))
             {
                 var value = rawData[key];
-                var res = Convert.ToString(value);
+                string res;
                 if (value is string)
                 {
                     res = (string)value;
+                }
+                else
+                {
+                    if (value == null)
+                        res = null;
+                    else
+                        res = value.ToString();
                 }
 
                 if (!string.IsNullOrEmpty(res))
@@ -150,6 +217,29 @@ namespace EntryEngine.DragonBone.DBCore
             }
 
             return defaultValue;
+        }
+        protected static List<string> _GetString(Dictionary<string, object> rawData, string key)
+        {
+            List<string> results = new List<string>();
+
+            object raw;
+            if (rawData.TryGetValue(key, out raw))
+            {
+                var value = (List<object>)raw;
+
+                if (value == null)
+                    return results;
+
+                results = new List<string>(value.Count);
+                for (int i = 0; i < value.Count; i++)
+                    if (value[i] == null)
+                        results.Add(null);
+                    else
+                        results.Add(value[i].ToString());
+                return results;
+            }
+
+            return results;
         }
 
         protected int _rawTextureAtlasIndex = 0;
@@ -380,7 +470,7 @@ namespace EntryEngine.DragonBone.DBCore
             }
             else
             {
-                armature.type = (ArmatureType)ObjectDataParser._GetNumber(rawData, ObjectDataParser.TYPE.ToString(), (int)ArmatureType.Armature);
+                armature.type = (ArmatureType)ObjectDataParser._GetInt32(rawData, ObjectDataParser.TYPE.ToString(), (int)ArmatureType.Armature);
             }
 
             if (armature.frameRate == 0)
@@ -406,11 +496,11 @@ namespace EntryEngine.DragonBone.DBCore
                     canvas.hasBackground = false;
                 }
 
-                canvas.color = ObjectDataParser._GetNumber(rawCanvas, ObjectDataParser.COLOR, 0);
-                canvas.x = ObjectDataParser._GetNumber(rawCanvas, ObjectDataParser.X, 0) * armature.scale;
-                canvas.y = ObjectDataParser._GetNumber(rawCanvas, ObjectDataParser.Y, 0) * armature.scale;
-                canvas.width = ObjectDataParser._GetNumber(rawCanvas, ObjectDataParser.WIDTH, 0) * armature.scale;
-                canvas.height = ObjectDataParser._GetNumber(rawCanvas, ObjectDataParser.HEIGHT, 0) * armature.scale;
+                canvas.color = ObjectDataParser._GetInt32(rawCanvas, ObjectDataParser.COLOR, 0);
+                canvas.x = ObjectDataParser._GetInt32(rawCanvas, ObjectDataParser.X, 0) * armature.scale;
+                canvas.y = ObjectDataParser._GetInt32(rawCanvas, ObjectDataParser.Y, 0) * armature.scale;
+                canvas.width = ObjectDataParser._GetInt32(rawCanvas, ObjectDataParser.WIDTH, 0) * armature.scale;
+                canvas.height = ObjectDataParser._GetInt32(rawCanvas, ObjectDataParser.HEIGHT, 0) * armature.scale;
 
                 armature.canvas = canvas;
             }
@@ -418,10 +508,10 @@ namespace EntryEngine.DragonBone.DBCore
             if (rawData.ContainsKey(ObjectDataParser.AABB))
             {
                 var rawAABB = rawData[AABB] as Dictionary<string, object>;
-                armature.aabb.x = ObjectDataParser._GetNumber(rawAABB, ObjectDataParser.X, 0.0f) * armature.scale;
-                armature.aabb.y = ObjectDataParser._GetNumber(rawAABB, ObjectDataParser.Y, 0.0f) * armature.scale;
-                armature.aabb.width = ObjectDataParser._GetNumber(rawAABB, ObjectDataParser.WIDTH, 0.0f) * armature.scale;
-                armature.aabb.height = ObjectDataParser._GetNumber(rawAABB, ObjectDataParser.HEIGHT, 0.0f) * armature.scale;
+                armature.aabb.x = ObjectDataParser._GetSingle(rawAABB, ObjectDataParser.X, 0.0f) * armature.scale;
+                armature.aabb.y = ObjectDataParser._GetSingle(rawAABB, ObjectDataParser.Y, 0.0f) * armature.scale;
+                armature.aabb.width = ObjectDataParser._GetSingle(rawAABB, ObjectDataParser.WIDTH, 0.0f) * armature.scale;
+                armature.aabb.height = ObjectDataParser._GetSingle(rawAABB, ObjectDataParser.HEIGHT, 0.0f) * armature.scale;
             }
 
             if (rawData.ContainsKey(ObjectDataParser.BONE))
@@ -586,7 +676,7 @@ namespace EntryEngine.DragonBone.DBCore
             bone.inheritRotation = ObjectDataParser._GetBoolean(rawData, ObjectDataParser.INHERIT_ROTATION, true);
             bone.inheritScale = ObjectDataParser._GetBoolean(rawData, ObjectDataParser.INHERIT_SCALE, true);
             bone.inheritReflection = ObjectDataParser._GetBoolean(rawData, ObjectDataParser.INHERIT_REFLECTION, true);
-            bone.length = ObjectDataParser._GetNumber(rawData, ObjectDataParser.LENGTH, 0) * scale;
+            bone.length = ObjectDataParser._GetInt32(rawData, ObjectDataParser.LENGTH, 0) * scale;
             bone.name = ObjectDataParser._GetString(rawData, ObjectDataParser.NAME, "");
 
             if (rawData.ContainsKey(ObjectDataParser.TRANSFORM))
@@ -613,12 +703,12 @@ namespace EntryEngine.DragonBone.DBCore
             var constraint = BaseObject.BorrowObject<IKConstraintData>();
             constraint.scaleEnabled = ObjectDataParser._GetBoolean(rawData, ObjectDataParser.SCALE, false);
             constraint.bendPositive = ObjectDataParser._GetBoolean(rawData, ObjectDataParser.BEND_POSITIVE, true);
-            constraint.weight = ObjectDataParser._GetNumber(rawData, ObjectDataParser.WEIGHT, 1.0f);
+            constraint.weight = ObjectDataParser._GetSingle(rawData, ObjectDataParser.WEIGHT, 1.0f);
             constraint.name = ObjectDataParser._GetString(rawData, ObjectDataParser.NAME, "");
             constraint.bone = bone;
             constraint.target = target;
 
-            var chain = ObjectDataParser._GetNumber(rawData, ObjectDataParser.CHAIN, 0);
+            var chain = ObjectDataParser._GetInt32(rawData, ObjectDataParser.CHAIN, 0);
             if (chain > 0 && bone.parent != null)
             {
                 constraint.root = bone.parent;
@@ -636,7 +726,7 @@ namespace EntryEngine.DragonBone.DBCore
         private SlotData _ParseSlot(Dictionary<string, object> rawData, int zOrder)
         {
             var slot = BaseObject.BorrowObject<SlotData>();
-            slot.displayIndex = ObjectDataParser._GetNumber(rawData, ObjectDataParser.DISPLAY_INDEX, 0);
+            slot.displayIndex = ObjectDataParser._GetInt32(rawData, ObjectDataParser.DISPLAY_INDEX, 0);
             slot.zOrder = zOrder;
             slot.name = ObjectDataParser._GetString(rawData, ObjectDataParser.NAME, "");
             slot.parent = this._armature.GetBone(ObjectDataParser._GetString(rawData, ObjectDataParser.PARENT, "")); //
@@ -647,7 +737,7 @@ namespace EntryEngine.DragonBone.DBCore
             }
             else
             {
-                slot.blendMode = (BlendMode)ObjectDataParser._GetNumber(rawData, ObjectDataParser.BLEND_MODE, (int)BlendMode.Normal);
+                slot.blendMode = (BlendMode)ObjectDataParser._GetInt32(rawData, ObjectDataParser.BLEND_MODE, (int)BlendMode.Normal);
             }
 
             if (rawData.ContainsKey(ObjectDataParser.COLOR))
@@ -718,7 +808,7 @@ namespace EntryEngine.DragonBone.DBCore
             }
             else
             {
-                type = (DisplayType)ObjectDataParser._GetNumber(rawData, ObjectDataParser.TYPE, (int)type);
+                type = (DisplayType)ObjectDataParser._GetInt32(rawData, ObjectDataParser.TYPE, (int)type);
             }
 
             switch (type)
@@ -806,8 +896,8 @@ namespace EntryEngine.DragonBone.DBCore
             if (rawData.ContainsKey(ObjectDataParser.PIVOT))
             {
                 var rawPivot = rawData[ObjectDataParser.PIVOT] as Dictionary<string, object>;
-                display.pivot.x = ObjectDataParser._GetNumber(rawPivot, ObjectDataParser.X, 0.0f);
-                display.pivot.y = ObjectDataParser._GetNumber(rawPivot, ObjectDataParser.Y, 0.0f);
+                display.pivot.x = ObjectDataParser._GetSingle(rawPivot, ObjectDataParser.X, 0.0f);
+                display.pivot.y = ObjectDataParser._GetSingle(rawPivot, ObjectDataParser.Y, 0.0f);
             }
             else
             {
@@ -817,11 +907,11 @@ namespace EntryEngine.DragonBone.DBCore
         }
         protected virtual void _ParseMesh(Dictionary<string, object> rawData, MeshDisplayData mesh)
         {
-            var rawVertices = (rawData[ObjectDataParser.VERTICES] as List<object>).ConvertAll<float>(Convert.ToSingle);//float
-            var rawUVs = (rawData[ObjectDataParser.UVS] as List<object>).ConvertAll<float>(Convert.ToSingle);//float
-            var rawTriangles = (rawData[ObjectDataParser.TRIANGLES] as List<object>).ConvertAll<short>(Convert.ToInt16);//uint
-            var vertexCount = (rawVertices.Count / 2); // uint
-            var triangleCount = (rawTriangles.Count / 3); // uint
+            var rawVertices = _GetSingle(rawData, VERTICES);
+            var rawUVs = _GetSingle(rawData, UVS);
+            var rawTriangles = _GetInt16(rawData, TRIANGLES);
+            var vertexCount = (rawVertices.Count / 2);
+            var triangleCount = (rawTriangles.Count / 3);
             var vertexOffset = this._floatArray.Count;
             var uvOffset = vertexOffset + vertexCount * 2;
             var meshOffset = this._intArray.Count;
@@ -848,14 +938,14 @@ namespace EntryEngine.DragonBone.DBCore
 
             if (rawData.ContainsKey(ObjectDataParser.WEIGHTS))
             {
-                var rawWeights = (rawData[ObjectDataParser.WEIGHTS] as List<object>).ConvertAll<float>(Convert.ToSingle); // float;
-                var rawSlotPose = (rawData[ObjectDataParser.SLOT_POSE] as List<object>).ConvertAll<float>(Convert.ToSingle); // float;
-                var rawBonePoses = (rawData[ObjectDataParser.BONE_POSE] as List<object>).ConvertAll<float>(Convert.ToSingle); //float ;
+                var rawWeights = _GetSingle(rawData, WEIGHTS);
+                var rawSlotPose = _GetSingle(rawData, SLOT_POSE);
+                var rawBonePoses = _GetSingle(rawData, BONE_POSE);
                 //var sortedBones = this._armature.sortedBones;
                 var weightBoneIndices = new List<uint>();
                 var weightBoneCount = rawBonePoses.Count / 7; // uint
                 var floatOffset = this._floatArray.Count;
-                var weightCount = (int)Math.Floor((double)rawWeights.Count - (double)vertexCount) / 2; // uint
+                var weightCount = (rawWeights.Count - vertexCount) / 2; // uint
                 var weightOffset = this._intArray.Count;
                 var weight = BaseObject.BorrowObject<WeightData>();
 
@@ -943,8 +1033,8 @@ namespace EntryEngine.DragonBone.DBCore
                 boundingBox.color = ObjectDataParser._GetNumber(rawData, ObjectDataParser.COLOR, (uint)0x000000);
                 if (boundingBox.type == BoundingBoxType.Rectangle || boundingBox.type == BoundingBoxType.Ellipse)
                 {
-                    boundingBox.width = ObjectDataParser._GetNumber(rawData, ObjectDataParser.WIDTH, 0.0f);
-                    boundingBox.height = ObjectDataParser._GetNumber(rawData, ObjectDataParser.HEIGHT, 0.0f);
+                    boundingBox.width = ObjectDataParser._GetSingle(rawData, ObjectDataParser.WIDTH, 0.0f);
+                    boundingBox.height = ObjectDataParser._GetSingle(rawData, ObjectDataParser.HEIGHT, 0.0f);
                 }
             }
 
@@ -957,7 +1047,7 @@ namespace EntryEngine.DragonBone.DBCore
             if (rawData.ContainsKey(ObjectDataParser.VERTICES))
             {
                 float scale = this._armature.scale;
-                var rawVertices = (rawData[ObjectDataParser.VERTICES] as List<object>).ConvertAll<float>(Convert.ToSingle);
+                var rawVertices = _GetSingle(rawData, VERTICES);
                 var vertices = polygonBoundingBox.vertices;
 
                 vertices.ResizeList(rawVertices.Count, 0.0f);
@@ -1013,11 +1103,11 @@ namespace EntryEngine.DragonBone.DBCore
         {
             var animation = BaseObject.BorrowObject<AnimationData>();
 
-            animation.frameCount = (uint)Math.Max(ObjectDataParser._GetNumber(rawData, ObjectDataParser.DURATION, 1), 1);
-            animation.playTimes = (uint)ObjectDataParser._GetNumber(rawData, ObjectDataParser.PLAY_TIMES, 1);
+            animation.frameCount = (uint)Math.Max(ObjectDataParser._GetInt32(rawData, ObjectDataParser.DURATION, 1), 1);
+            animation.playTimes = (uint)ObjectDataParser._GetInt32(rawData, ObjectDataParser.PLAY_TIMES, 1);
             animation.duration = (float)animation.frameCount / (float)this._armature.frameRate;// float
-            animation.fadeInTime = ObjectDataParser._GetNumber(rawData, ObjectDataParser.FADE_IN_TIME, 0.0f);
-            animation.scale = ObjectDataParser._GetNumber(rawData, ObjectDataParser.SCALE, 1.0f);
+            animation.fadeInTime = ObjectDataParser._GetSingle(rawData, ObjectDataParser.FADE_IN_TIME, 0.0f);
+            animation.scale = ObjectDataParser._GetSingle(rawData, ObjectDataParser.SCALE, 1.0f);
             animation.name = ObjectDataParser._GetString(rawData, ObjectDataParser.NAME, ObjectDataParser.DEFAULT_NAME);
 
             if (animation.name.Length == 0)
@@ -1041,7 +1131,7 @@ namespace EntryEngine.DragonBone.DBCore
                     {
                         var rawFrame = rawFrames[i] as Dictionary<string, object>;
                         this._ParseActionDataInFrame(rawFrame, frameStart, null, null);
-                        frameStart += ObjectDataParser._GetNumber(rawFrame, ObjectDataParser.DURATION, 1);
+                        frameStart += ObjectDataParser._GetInt32(rawFrame, ObjectDataParser.DURATION, 1);
                     }
                 }
             }
@@ -1227,8 +1317,8 @@ namespace EntryEngine.DragonBone.DBCore
             this._timelineArray.ResizeList(this._timelineArray.Count + 1 + 1 + 1 + 1 + 1 + keyFrameCount, (ushort)0);
             if (rawData != null)
             {
-                this._timelineArray[timelineOffset + (int)BinaryOffset.TimelineScale] = (ushort)Math.Round(ObjectDataParser._GetNumber(rawData, ObjectDataParser.SCALE, 1.0f) * 100);
-                this._timelineArray[timelineOffset + (int)BinaryOffset.TimelineOffset] = (ushort)Math.Round(ObjectDataParser._GetNumber(rawData, ObjectDataParser.OFFSET, 0.0f) * 100);
+                this._timelineArray[timelineOffset + (int)BinaryOffset.TimelineScale] = (ushort)Math.Round(ObjectDataParser._GetSingle(rawData, ObjectDataParser.SCALE, 1.0f) * 100);
+                this._timelineArray[timelineOffset + (int)BinaryOffset.TimelineOffset] = (ushort)Math.Round(ObjectDataParser._GetSingle(rawData, ObjectDataParser.OFFSET, 0.0f) * 100);
             }
             else
             {
@@ -1281,7 +1371,7 @@ namespace EntryEngine.DragonBone.DBCore
                     {
                         var rawFrame = rawFrames[iK] as Dictionary<string, object>;
                         frameStart = i;
-                        frameCount = ObjectDataParser._GetNumber(rawFrame, ObjectDataParser.DURATION, 1);
+                        frameCount = ObjectDataParser._GetInt32(rawFrame, ObjectDataParser.DURATION, 1);
                         if (iK == keyFrameCount - 1)
                         {
                             frameCount = (int)this._animation.frameCount - frameStart;
@@ -1450,9 +1540,10 @@ namespace EntryEngine.DragonBone.DBCore
                     this._helpArray.ResizeList(sampleCount, 0.0f);
                     var rawCurve = rawData[ObjectDataParser.CURVE] as List<object>;
                     var curve = new float[rawCurve.Count];
+                    var t = typeof(float);
                     for (int i = 0, l = rawCurve.Count; i < l; ++i)
                     {
-                        curve[i] = Convert.ToSingle(rawCurve[i]);
+                        curve[i] = (float)Convert.ChangeType(rawCurve[i], t);
                     }
                     this._SamplingEasingCurve(curve, this._helpArray);
 
@@ -1470,7 +1561,7 @@ namespace EntryEngine.DragonBone.DBCore
                     var tweenEasing = noTween;
                     if (rawData.ContainsKey(ObjectDataParser.TWEEN_EASING))
                     {
-                        tweenEasing = ObjectDataParser._GetNumber(rawData, ObjectDataParser.TWEEN_EASING, noTween);
+                        tweenEasing = ObjectDataParser._GetSingle(rawData, ObjectDataParser.TWEEN_EASING, noTween);
                     }
 
                     if (tweenEasing == noTween)
@@ -1517,7 +1608,7 @@ namespace EntryEngine.DragonBone.DBCore
 
             if (rawData.ContainsKey(ObjectDataParser.Z_ORDER))
             {
-                var rawZOrder = (rawData[ObjectDataParser.Z_ORDER] as List<object>).ConvertAll<int>(Convert.ToInt32);
+                var rawZOrder = _GetInt32(rawData, Z_ORDER);
 
                 if (rawZOrder.Count > 0)
                 {
@@ -1625,7 +1716,7 @@ namespace EntryEngine.DragonBone.DBCore
                 }
             }
 
-            this._prevClockwise = ObjectDataParser._GetNumber(rawData, ObjectDataParser.TWEEN_ROTATE, 0);
+            this._prevClockwise = ObjectDataParser._GetInt32(rawData, ObjectDataParser.TWEEN_ROTATE, 0);
             this._prevRotation = rotation;
 
             var frameOffset = this._ParseTweenFrame(rawData, frameStart, frameCount);
@@ -1648,15 +1739,15 @@ namespace EntryEngine.DragonBone.DBCore
 
             var frameFloatOffset = this._frameFloatArray.Count;
             this._frameFloatArray.ResizeList(this._frameFloatArray.Count + 2);
-            this._frameFloatArray[frameFloatOffset++] = ObjectDataParser._GetNumber(rawData, ObjectDataParser.X, 0.0f);
-            this._frameFloatArray[frameFloatOffset++] = ObjectDataParser._GetNumber(rawData, ObjectDataParser.Y, 0.0f);
+            this._frameFloatArray[frameFloatOffset++] = ObjectDataParser._GetSingle(rawData, ObjectDataParser.X, 0.0f);
+            this._frameFloatArray[frameFloatOffset++] = ObjectDataParser._GetSingle(rawData, ObjectDataParser.Y, 0.0f);
 
             return frameOffset;
         }
         protected int _ParseBoneRotateFrame(Dictionary<string, object> rawData, int frameStart, int frameCount)
         {
             // Modify rotation.
-            var rotation = ObjectDataParser._GetNumber(rawData, ObjectDataParser.ROTATE, 0.0f) * Transform.DEG_RAD;
+            var rotation = ObjectDataParser._GetSingle(rawData, ObjectDataParser.ROTATE, 0.0f) * Transform.DEG_RAD;
             if (frameStart != 0)
             {
                 if (this._prevClockwise == 0)
@@ -1674,14 +1765,14 @@ namespace EntryEngine.DragonBone.DBCore
                 }
             }
 
-            this._prevClockwise = ObjectDataParser._GetNumber(rawData, ObjectDataParser.CLOCK_WISE, 0);
+            this._prevClockwise = ObjectDataParser._GetInt32(rawData, ObjectDataParser.CLOCK_WISE, 0);
             this._prevRotation = rotation;
 
             var frameOffset = this._ParseTweenFrame(rawData, frameStart, frameCount);
             var frameFloatOffset = this._frameFloatArray.Count;
             this._frameFloatArray.ResizeList(this._frameFloatArray.Count + 2);
             this._frameFloatArray[frameFloatOffset++] = rotation;
-            this._frameFloatArray[frameFloatOffset++] = ObjectDataParser._GetNumber(rawData, ObjectDataParser.SKEW, 0.0f) * Transform.DEG_RAD;
+            this._frameFloatArray[frameFloatOffset++] = ObjectDataParser._GetSingle(rawData, ObjectDataParser.SKEW, 0.0f) * Transform.DEG_RAD;
 
             return frameOffset;
         }
@@ -1691,8 +1782,8 @@ namespace EntryEngine.DragonBone.DBCore
 
             var frameFloatOffset = this._frameFloatArray.Count;
             this._frameFloatArray.ResizeList(this._frameFloatArray.Count + 2);
-            this._frameFloatArray[frameFloatOffset++] = ObjectDataParser._GetNumber(rawData, ObjectDataParser.X, 1.0f);
-            this._frameFloatArray[frameFloatOffset++] = ObjectDataParser._GetNumber(rawData, ObjectDataParser.Y, 1.0f);
+            this._frameFloatArray[frameFloatOffset++] = ObjectDataParser._GetSingle(rawData, ObjectDataParser.X, 1.0f);
+            this._frameFloatArray[frameFloatOffset++] = ObjectDataParser._GetSingle(rawData, ObjectDataParser.Y, 1.0f);
 
             return frameOffset;
         }
@@ -1704,11 +1795,11 @@ namespace EntryEngine.DragonBone.DBCore
 
             if (rawData.ContainsKey(ObjectDataParser.VALUE))
             {
-                this._frameArray[frameOffset + 1] = (short)ObjectDataParser._GetNumber(rawData, ObjectDataParser.VALUE, 0);
+                this._frameArray[frameOffset + 1] = (short)ObjectDataParser._GetInt32(rawData, ObjectDataParser.VALUE, 0);
             }
             else
             {
-                this._frameArray[frameOffset + 1] = (short)ObjectDataParser._GetNumber(rawData, ObjectDataParser.DISPLAY_INDEX, 0);
+                this._frameArray[frameOffset + 1] = (short)ObjectDataParser._GetInt32(rawData, ObjectDataParser.DISPLAY_INDEX, 0);
             }
 
             this._ParseActionDataInFrame(rawData, frameStart, this._slot.parent, this._slot);
@@ -1772,8 +1863,10 @@ namespace EntryEngine.DragonBone.DBCore
         {
             var frameFloatOffset = this._frameFloatArray.Count;
             var frameOffset = this._ParseTweenFrame(rawData, frameStart, frameCount);
-            var rawVertices = rawData.ContainsKey(ObjectDataParser.VERTICES) ? (rawData[ObjectDataParser.VERTICES] as List<object>).ConvertAll<float>(Convert.ToSingle) : null;
-            var offset = ObjectDataParser._GetNumber(rawData, ObjectDataParser.OFFSET, 0); // uint
+            var rawVertices = _GetSingle(rawData, VERTICES);
+            if (rawVertices.Count == 0)
+                rawVertices = null;
+            var offset = ObjectDataParser._GetInt32(rawData, ObjectDataParser.OFFSET, 0); // uint
             var vertexCount = this._intArray[this._mesh.vertices.offset + (int)BinaryOffset.MeshVertexCount];
             var meshName = this._mesh.parent.name + "_" + this._slot.name + "_" + this._mesh.name;
             var weight = this._mesh.vertices.weight;
@@ -1873,7 +1966,7 @@ namespace EntryEngine.DragonBone.DBCore
             var frameIntOffset = this._frameIntArray.Count;
             this._frameIntArray.ResizeList(this._frameIntArray.Count + 2);
             this._frameIntArray[frameIntOffset++] = (short)(ObjectDataParser._GetBoolean(rawData, ObjectDataParser.BEND_POSITIVE, true) ? 1 : 0);
-            this._frameIntArray[frameIntOffset++] = (short)Math.Round(ObjectDataParser._GetNumber(rawData, ObjectDataParser.WEIGHT, 1.0f) * 100.0);
+            this._frameIntArray[frameIntOffset++] = (short)Math.Round(ObjectDataParser._GetSingle(rawData, ObjectDataParser.WEIGHT, 1.0f) * 100.0);
 
             return frameOffset;
         }
@@ -1944,7 +2037,7 @@ namespace EntryEngine.DragonBone.DBCore
                             userData = BaseObject.BorrowObject<UserData>();
                         }
 
-                        var rawInts = (rawAction[ObjectDataParser.INTS] as List<object>).ConvertAll<int>(Convert.ToInt32);
+                        var rawInts = _GetInt32(rawAction, INTS);
                         foreach (var rawValue in rawInts)
                         {
                             userData.AddInt(rawValue);
@@ -1958,7 +2051,7 @@ namespace EntryEngine.DragonBone.DBCore
                             userData = BaseObject.BorrowObject<UserData>();
                         }
 
-                        var rawFloats = (rawAction[ObjectDataParser.FLOATS] as List<object>).ConvertAll<float>(Convert.ToSingle);
+                        var rawFloats = _GetSingle(rawAction, FLOATS);
                         foreach (var rawValue in rawFloats)
                         {
                             userData.AddFloat(rawValue);
@@ -1972,7 +2065,7 @@ namespace EntryEngine.DragonBone.DBCore
                             userData = BaseObject.BorrowObject<UserData>();
                         }
 
-                        var rawStrings = (rawAction[ObjectDataParser.STRINGS] as List<object>).ConvertAll<string>(Convert.ToString);
+                        var rawStrings = _GetString(rawAction, STRINGS);
                         foreach (var rawValue in rawStrings)
                         {
                             userData.AddString(rawValue);
@@ -1989,34 +2082,34 @@ namespace EntryEngine.DragonBone.DBCore
 
         protected void _ParseTransform(Dictionary<string, object> rawData, Transform transform, float scale)
         {
-            transform.x = ObjectDataParser._GetNumber(rawData, ObjectDataParser.X, 0.0f) * scale;
-            transform.y = ObjectDataParser._GetNumber(rawData, ObjectDataParser.Y, 0.0f) * scale;
+            transform.x = ObjectDataParser._GetSingle(rawData, ObjectDataParser.X, 0.0f) * scale;
+            transform.y = ObjectDataParser._GetSingle(rawData, ObjectDataParser.Y, 0.0f) * scale;
 
             if (rawData.ContainsKey(ObjectDataParser.ROTATE) || rawData.ContainsKey(ObjectDataParser.SKEW))
             {
-                transform.rotation = Transform.NormalizeRadian(ObjectDataParser._GetNumber(rawData, ObjectDataParser.ROTATE, 0.0f) * Transform.DEG_RAD);
-                transform.skew = Transform.NormalizeRadian(ObjectDataParser._GetNumber(rawData, ObjectDataParser.SKEW, 0.0f) * Transform.DEG_RAD);
+                transform.rotation = Transform.NormalizeRadian(ObjectDataParser._GetSingle(rawData, ObjectDataParser.ROTATE, 0.0f) * Transform.DEG_RAD);
+                transform.skew = Transform.NormalizeRadian(ObjectDataParser._GetSingle(rawData, ObjectDataParser.SKEW, 0.0f) * Transform.DEG_RAD);
             }
             else if (rawData.ContainsKey(ObjectDataParser.SKEW_X) || rawData.ContainsKey(ObjectDataParser.SKEW_Y))
             {
-                transform.rotation = Transform.NormalizeRadian(ObjectDataParser._GetNumber(rawData, ObjectDataParser.SKEW_Y, 0.0f) * Transform.DEG_RAD);
-                transform.skew = Transform.NormalizeRadian(ObjectDataParser._GetNumber(rawData, ObjectDataParser.SKEW_X, 0.0f) * Transform.DEG_RAD) - transform.rotation;
+                transform.rotation = Transform.NormalizeRadian(ObjectDataParser._GetSingle(rawData, ObjectDataParser.SKEW_Y, 0.0f) * Transform.DEG_RAD);
+                transform.skew = Transform.NormalizeRadian(ObjectDataParser._GetSingle(rawData, ObjectDataParser.SKEW_X, 0.0f) * Transform.DEG_RAD) - transform.rotation;
             }
 
-            transform.scaleX = ObjectDataParser._GetNumber(rawData, ObjectDataParser.SCALE_X, 1.0f);
-            transform.scaleY = ObjectDataParser._GetNumber(rawData, ObjectDataParser.SCALE_Y, 1.0f);
+            transform.scaleX = ObjectDataParser._GetSingle(rawData, ObjectDataParser.SCALE_X, 1.0f);
+            transform.scaleY = ObjectDataParser._GetSingle(rawData, ObjectDataParser.SCALE_Y, 1.0f);
         }
 
         protected void _ParseColorTransform(Dictionary<string, object> rawData, ColorTransform color)
         {
-            color.alphaMultiplier = ObjectDataParser._GetNumber(rawData, ObjectDataParser.ALPHA_MULTIPLIER, 100) * 0.01f;
-            color.redMultiplier = ObjectDataParser._GetNumber(rawData, ObjectDataParser.RED_MULTIPLIER, 100) * 0.01f;
-            color.greenMultiplier = ObjectDataParser._GetNumber(rawData, ObjectDataParser.GREEN_MULTIPLIER, 100) * 0.01f;
-            color.blueMultiplier = ObjectDataParser._GetNumber(rawData, ObjectDataParser.BLUE_MULTIPLIER, 100) * 0.01f;
-            color.alphaOffset = ObjectDataParser._GetNumber(rawData, ObjectDataParser.ALPHA_OFFSET, 0);
-            color.redOffset = ObjectDataParser._GetNumber(rawData, ObjectDataParser.RED_OFFSET, 0);
-            color.greenOffset = ObjectDataParser._GetNumber(rawData, ObjectDataParser.GREEN_OFFSET, 0);
-            color.blueOffset = ObjectDataParser._GetNumber(rawData, ObjectDataParser.BLUE_OFFSET, 0);
+            color.alphaMultiplier = ObjectDataParser._GetInt32(rawData, ObjectDataParser.ALPHA_MULTIPLIER, 100) * 0.01f;
+            color.redMultiplier = ObjectDataParser._GetInt32(rawData, ObjectDataParser.RED_MULTIPLIER, 100) * 0.01f;
+            color.greenMultiplier = ObjectDataParser._GetInt32(rawData, ObjectDataParser.GREEN_MULTIPLIER, 100) * 0.01f;
+            color.blueMultiplier = ObjectDataParser._GetInt32(rawData, ObjectDataParser.BLUE_MULTIPLIER, 100) * 0.01f;
+            color.alphaOffset = ObjectDataParser._GetInt32(rawData, ObjectDataParser.ALPHA_OFFSET, 0);
+            color.redOffset = ObjectDataParser._GetInt32(rawData, ObjectDataParser.RED_OFFSET, 0);
+            color.greenOffset = ObjectDataParser._GetInt32(rawData, ObjectDataParser.GREEN_OFFSET, 0);
+            color.blueOffset = ObjectDataParser._GetInt32(rawData, ObjectDataParser.BLUE_OFFSET, 0);
         }
 
         protected virtual void _ParseArray(Dictionary<string, object> rawData)
@@ -2191,7 +2284,7 @@ namespace EntryEngine.DragonBone.DBCore
             // Texture format.
             textureAtlasData.width = ObjectDataParser._GetNumber(rawData, ObjectDataParser.WIDTH, uint.MinValue);
             textureAtlasData.height = ObjectDataParser._GetNumber(rawData, ObjectDataParser.HEIGHT, uint.MinValue);
-            textureAtlasData.scale = scale == 1.0f ? (1.0f / ObjectDataParser._GetNumber(rawData, ObjectDataParser.SCALE, 1.0f)) : scale;
+            textureAtlasData.scale = scale == 1.0f ? (1.0f / ObjectDataParser._GetSingle(rawData, ObjectDataParser.SCALE, 1.0f)) : scale;
             textureAtlasData.name = ObjectDataParser._GetString(rawData, ObjectDataParser.NAME, "");
             textureAtlasData.imagePath = ObjectDataParser._GetString(rawData, ObjectDataParser.IMAGE_PATH, "");
 
@@ -2205,18 +2298,18 @@ namespace EntryEngine.DragonBone.DBCore
                     var textureData = textureAtlasData.CreateTexture();
                     textureData.rotated = ObjectDataParser._GetBoolean(rawTexture, ObjectDataParser.ROTATED, false);
                     textureData.name = ObjectDataParser._GetString(rawTexture, ObjectDataParser.NAME, "");
-                    textureData.region.x = ObjectDataParser._GetNumber(rawTexture, ObjectDataParser.X, 0.0f);
-                    textureData.region.y = ObjectDataParser._GetNumber(rawTexture, ObjectDataParser.Y, 0.0f);
-                    textureData.region.width = ObjectDataParser._GetNumber(rawTexture, ObjectDataParser.WIDTH, 0.0f);
-                    textureData.region.height = ObjectDataParser._GetNumber(rawTexture, ObjectDataParser.HEIGHT, 0.0f);
+                    textureData.region.x = ObjectDataParser._GetSingle(rawTexture, ObjectDataParser.X, 0.0f);
+                    textureData.region.y = ObjectDataParser._GetSingle(rawTexture, ObjectDataParser.Y, 0.0f);
+                    textureData.region.width = ObjectDataParser._GetSingle(rawTexture, ObjectDataParser.WIDTH, 0.0f);
+                    textureData.region.height = ObjectDataParser._GetSingle(rawTexture, ObjectDataParser.HEIGHT, 0.0f);
 
-                    var frameWidth = ObjectDataParser._GetNumber(rawTexture, ObjectDataParser.FRAME_WIDTH, -1.0f);
-                    var frameHeight = ObjectDataParser._GetNumber(rawTexture, ObjectDataParser.FRAME_HEIGHT, -1.0f);
+                    var frameWidth = ObjectDataParser._GetSingle(rawTexture, ObjectDataParser.FRAME_WIDTH, -1.0f);
+                    var frameHeight = ObjectDataParser._GetSingle(rawTexture, ObjectDataParser.FRAME_HEIGHT, -1.0f);
                     if (frameWidth > 0.0 && frameHeight > 0.0)
                     {
                         textureData.frame = TextureData.CreateRectangle();
-                        textureData.frame.x = ObjectDataParser._GetNumber(rawTexture, ObjectDataParser.FRAME_X, 0.0f);
-                        textureData.frame.y = ObjectDataParser._GetNumber(rawTexture, ObjectDataParser.FRAME_Y, 0.0f);
+                        textureData.frame.x = ObjectDataParser._GetSingle(rawTexture, ObjectDataParser.FRAME_X, 0.0f);
+                        textureData.frame.y = ObjectDataParser._GetSingle(rawTexture, ObjectDataParser.FRAME_Y, 0.0f);
                         textureData.frame.width = frameWidth;
                         textureData.frame.height = frameHeight;
                     }

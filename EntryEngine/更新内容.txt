@@ -4,6 +4,7 @@
 3. 新增List<T>.Sort的支持
 4. 新增Array.Sort的支持
 5. 修复语义解析internal修饰符成员调用的BUG
+6. 修复代码解析-(Cast)Method(Parameter)的BUG
 
 2021/06/24
 1. 新TexFontFromExcel，解决字体被裁切后对不齐的BUG

@@ -759,6 +759,28 @@ using __System.Text;
         }
         return array;
     }
+    public string ToUpper()
+    {
+        char[] chars = ToCharArray();
+        int len = chars.Length;
+        for (int i = 0; i < len; i++)
+        {
+            if (chars[i] >= 97 && chars[i] <= 122)
+                chars[i] = (char)(chars[i] - 32);
+        }
+        return new string(chars);
+    }
+    public string ToLower()
+    {
+        char[] chars = ToCharArray();
+        int len = chars.Length;
+        for (int i = 0; i < len; i++)
+        {
+            if (chars[i] >= 65 && chars[i] <= 90)
+                chars[i] = (char)(chars[i] + 32);
+        }
+        return new string(chars);
+    }
     public string Trim()
     {
 #if !DEBUG

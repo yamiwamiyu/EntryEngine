@@ -273,7 +273,7 @@ namespace EntryEditor
             collapse.X = -WIDTH;
             collapse.Width = WIDTH;
             collapse.Height = HEIGHT;
-            collapse.CheckedOverlayNormal = true;
+            collapse.CheckedOverlayNormal = ECheckedOverlay.选中覆盖普通;
             collapse.CheckedChanged += CollapseSwitch;
             AddChildFirst(collapse);
 

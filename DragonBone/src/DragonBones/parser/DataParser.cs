@@ -11,7 +11,7 @@ namespace EntryEngine.DragonBone.DBCore
         protected const string DATA_VERSION_5_0 = "5.0";
         protected const string DATA_VERSION_5_5 = "5.5";
         protected const string DATA_VERSION = DATA_VERSION_5_5;
-        protected static readonly List<string> DATA_VERSIONS = new List<string>()
+        protected static readonly string[] DATA_VERSIONS = new string[]
         {
             DATA_VERSION_5_5,
             DATA_VERSION_5_0,

@@ -249,7 +249,8 @@ namespace EntryEngine.DragonBone.DBCore
             }
 
             determinant = 1.0f / determinant;
-            var k = this.a = dA * determinant;
+            float k;
+            k = this.a = dA * determinant;
             bA = this.b = -bA * determinant;
             cA = this.c = -cA * determinant;
             dA = this.d = aA * determinant;

@@ -1511,7 +1511,9 @@ namespace EntryBuilder.CodeAnalysis.Syntax
                     r.EatAfterSign(")");
                     if (expression is ReferenceMember)
                     {
-                        var expression2 = ParseExpressionFront();
+                        // -(float)Math.Sin(value);此时Cast的Expression应该是InvokeMethod，而不是ReferenceMember
+                        //var expression2 = ParseExpressionFront();
+                        var expression2 = ParseExpression();
                         // 可能只是(Member)
                         if (expression2 != null)
                         {
@@ -13248,7 +13250,7 @@ namespace EntryBuilder.CodeAnalysis.Refactoring
                     {
                         var current = parents.Pop();
                         // todo: test
-                        if (current.Name.Name == "action" && definingMember != null && definingMember.Name.Name == "_OnCrossFrame")
+                        if (current.Name.Name == "c" && definingMember != null && definingMember.Name.Name == "ToMatrix")
                         {
                             CSharpMember member2 = definingType.Members.FirstOrDefault(f => f.Name.Name == current.Name.Name);
                         }
@@ -13928,6 +13930,7 @@ namespace EntryBuilder.CodeAnalysis.Refactoring
                 if (node.IsAutoType)
                 {
                     // var: 以表达式值的类型作为其类型
+                    // bug: var k = this.a = 5 * 10; this.a = 5 * 10会返回null，导致k的var类型解析不到
                     type = Calc(node.Value);
                     AddRef(node.Type, type, node.Type.Name);
                 }
