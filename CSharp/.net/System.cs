@@ -1907,6 +1907,7 @@ namespace __System
         public extern static double Sin(double value);
         public extern static double Cos(double value);
         public extern static double Pow(double x, double y);
+        public extern static double Round(double value);
     }
     public static class Environment
     {

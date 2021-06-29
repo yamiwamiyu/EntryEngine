@@ -942,8 +942,8 @@ namespace EntryEngine.DragonBone.DBCore
                 var rawSlotPose = _GetSingle(rawData, SLOT_POSE);
                 var rawBonePoses = _GetSingle(rawData, BONE_POSE);
                 //var sortedBones = this._armature.sortedBones;
-                var weightBoneIndices = new List<uint>();
                 var weightBoneCount = rawBonePoses.Count / 7; // uint
+                var weightBoneIndices = new int[weightBoneCount];
                 var floatOffset = this._floatArray.Count;
                 var weightCount = (rawWeights.Count - vertexCount) / 2; // uint
                 var weightOffset = this._intArray.Count;
@@ -952,7 +952,6 @@ namespace EntryEngine.DragonBone.DBCore
                 weight.count = weightCount;
                 weight.offset = weightOffset;
 
-                weightBoneIndices.ResizeList(weightBoneCount, uint.MinValue);
                 this._intArray.ResizeList(this._intArray.Count + 1 + 1 + weightBoneCount + vertexCount + weight.count, (short)0);
                 this._intArray[weightOffset + (int)BinaryOffset.WeigthFloatOffset] = (short)floatOffset;
 
@@ -961,7 +960,7 @@ namespace EntryEngine.DragonBone.DBCore
                     var rawBoneIndex = (int)rawBonePoses[i * 7]; // uint
                     var bone = this._rawBones[(int)rawBoneIndex];
                     weight.AddBone(bone);
-                    weightBoneIndices[i] = (uint)rawBoneIndex;
+                    weightBoneIndices[i] = rawBoneIndex;
 
                     this._intArray[weightOffset + (int)BinaryOffset.WeigthBoneIndices + i] = (short)this._armature.sortedBones.IndexOf(bone);
                 }
@@ -971,7 +970,7 @@ namespace EntryEngine.DragonBone.DBCore
                 for (int i = 0, iW = 0, iB = weightOffset + (int)BinaryOffset.WeigthBoneIndices + weightBoneCount, iV = floatOffset; i < vertexCount; ++i)
                 {
                     var iD = i * 2;
-                    var vertexBoneCount = this._intArray[iB++] = short.Parse(rawWeights[iW++].ToString()); // uint
+                    short vertexBoneCount = this._intArray[iB++] = short.Parse(rawWeights[iW++].ToString()); // uint
 
                     var x = this._floatArray[vertexOffset + iD];
                     var y = this._floatArray[vertexOffset + iD + 1];
@@ -981,7 +980,7 @@ namespace EntryEngine.DragonBone.DBCore
 
                     for (var j = 0; j < vertexBoneCount; ++j)
                     {
-                        var rawBoneIndex = (uint)rawWeights[iW++]; // uint
+                        var rawBoneIndex = (int)rawWeights[iW++]; // uint
                         var boneIndex = weightBoneIndices.IndexOf(rawBoneIndex);
                         this._helpMatrixB.CopyFromArray(rawBonePoses, weightBoneIndices.IndexOf(rawBoneIndex) * 7 + 1);
                         this._helpMatrixB.Invert();
@@ -1227,7 +1226,7 @@ namespace EntryEngine.DragonBone.DBCore
 
             if (this._actionFrames.Count > 0)
             {
-                var timeline = this._animation.actionTimeline = BaseObject.BorrowObject<TimelineData>();
+                TimelineData timeline = this._animation.actionTimeline = BaseObject.BorrowObject<TimelineData>();
                 var keyFrameCount = this._actionFrames.Count;
                 timeline.type = TimelineType.Action;
                 timeline.offset = (uint)this._timelineArray.Count;
