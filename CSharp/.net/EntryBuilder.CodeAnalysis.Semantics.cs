@@ -711,7 +711,17 @@ namespace EntryBuilder.CodeAnalysis.Semantics
                 }
                 else
                 {
-                    if (!typeArguments[i].Equals(typeArguments2[i]))
+                    if (this.DefiningType.TypeParameters[i].IsCovariant)
+                    {
+                        if (!typeArguments[i].Is(typeArguments2[i]))
+                            return false;
+                    }
+                    else if (this.DefiningType.TypeParameters[i].IsContravariant)
+                    {
+                        if (!typeArguments2[i].Is(typeArguments[i]))
+                            return false;
+                    }
+                    else if (!typeArguments[i].Equals(typeArguments2[i]))
                     {
                         return false;
                     }

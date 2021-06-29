@@ -654,6 +654,16 @@ namespace __System.Collections.Generic
             Array.Copy(this._items, 0, array, 0, this._size);
             return array;
         }
+        public void Sort(Comparison<T> comparison)
+        {
+            #if !DEBUG
+            if (this._size > 0)
+            {
+                IComparer<T> comparer = new Array.FunctorComparer<T>(comparison);
+                Array.Sort(this._items, 0, this._size, comparer);
+            }
+            #endif
+        }
         public IEnumerator<T> GetEnumerator()
         {
             return new Enumerator(this);

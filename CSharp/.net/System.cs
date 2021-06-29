@@ -1580,8 +1580,59 @@ namespace __System
                 array = array3;
             }
         }
+        static int Partition<T>(IList<T> array, int low, int high, IComparer<T> comparer)
+        {
+            T temp = array[low];
+            int compare;
+
+            while (low < high)
+            {
+                compare = comparer.Compare(temp, array[high]);
+                if (compare < 0)
+                {
+                    high--;
+                }
+                array[low] = array[high];
+                compare = comparer.Compare(temp, array[low]);
+                if (low < high && compare > 0)
+                {
+                    low++;
+                }
+                array[high] = array[low];
+            }
+
+            array[low] = temp;
+            return low;
+        }
+        public static void Sort<T>(T[] array, IComparer<T> comparer)
+        {
+            Sort(array, 0, array.Length - 1, comparer);
+        }
+        public static void Sort<T>(T[] array, int low, int high, IComparer<T> comparer)
+        {
+            int pivotLoc = 0;
+            if (low < high)
+            {
+                pivotLoc = Partition(array, low, high, comparer);
+                Sort(array, low, pivotLoc - 1, comparer);
+                Sort(array, pivotLoc + 1, high, comparer);
+            }
+        }
+        internal class FunctorComparer<T> : IComparer<T>
+        {
+            public Comparison<T> Comparison;
+            public FunctorComparer(Comparison<T> comparison)
+            {
+                this.Comparison = comparison;
+            }
+            public int Compare(T x, T y)
+            {
+                return Comparison(x, y);
+            }
+        }
     }
 #endif
+
     public abstract class Enum : ValueType
     {
         public static Type GetUnderlyingType(Type enumType)

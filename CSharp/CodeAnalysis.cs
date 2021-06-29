@@ -343,6 +343,7 @@ namespace EntryBuilder.CodeAnalysis.Syntax
             StringBuilder builder = null;
             while (!r.IsEnd)
             {
+                r.EatWhitespace();
                 if (r.IsNextSign("//"))
                 {
                     r.EatLine();
@@ -1910,8 +1911,12 @@ namespace EntryBuilder.CodeAnalysis.Syntax
                             break;
                     }
 
+                    ParseComment();
                     while (!r.IsNextSign("case") && !r.IsNextSign("}") && !r.IsNextSign("default"))
+                    {
                         case1.Statements.Add(ParseStatement());
+                        ParseComment();
+                    }
                     switch1.Cases.Add(case1);
                 }
                 return switch1;
@@ -2138,7 +2143,7 @@ namespace EntryBuilder.CodeAnalysis.Syntax
             // NotSupported: 会把new 类型()当做Modifier读掉，虽然还有volatile等，目前只能用const
             //var modifier = ParseModifier();
             EModifier modifier = EModifier.None;
-            if (r.EatAfterSignIfIs("const"))
+            if (r.EatAfterSignIfIs("const "))
                 modifier = EModifier.Const;
 
             var expression = ParseExpression();
@@ -12525,8 +12530,8 @@ namespace EntryBuilder.CodeAnalysis.Refactoring
                         //    Calculator.Type = Calculator.Builder.DefiningType;
                         if (_member.IsPublic)
                             return true;
-                        //if ((_member.IsProtectedOrInternal || _member.IsInternal) && _member.Assembly != type.Assembly)
-                        if (_member.IsInternal && _member.Assembly != type.Assembly)
+                        // internal的情况，应该是被访问_member所在程序集等于当前正在解析程序集
+                        if (_member.IsInternal && _member.Assembly != this.Calculator.Builder.assembly)
                             return false;
                         if (_member.IsPrivate)
                         {
@@ -12928,7 +12933,8 @@ namespace EntryBuilder.CodeAnalysis.Refactoring
                                     // 取参数类型最合适的方法
                                     for (int j = pindex; j < parameters.Count; j++)
                                     {
-                                        if (MatchedTargetType(matchedParameters[j].Type, parameters[j].Type))
+                                        // int和object取int，所以这里要忽略掉object类型
+                                        if (parameters[j].Type != CSharpType.OBJECT && MatchedTargetType(matchedParameters[j].Type, parameters[j].Type))
                                         {
                                             matchedMember = member;
                                             matchedParameters = parameters;
@@ -13242,7 +13248,7 @@ namespace EntryBuilder.CodeAnalysis.Refactoring
                     {
                         var current = parents.Pop();
                         // todo: test
-                        if (current.Name.Name == "Sqrt" && definingMember != null && definingMember.Name.Name == "IsPrime")
+                        if (current.Name.Name == "action" && definingMember != null && definingMember.Name.Name == "_OnCrossFrame")
                         {
                             CSharpMember member2 = definingType.Members.FirstOrDefault(f => f.Name.Name == current.Name.Name);
                         }
