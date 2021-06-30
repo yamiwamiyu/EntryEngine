@@ -1,0 +1,1 @@
+..\..\EntryBuilder.exe RemoveDuplicateChar "" true
