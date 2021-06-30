@@ -6225,30 +6225,36 @@ namespace EntryEngine
         {
         }
 
+        protected internal virtual void OnText(ref string text) { }
         /// <summary>计算文字内容的尺寸</summary>
-        public virtual VECTOR2 MeasureString(string text)
+        public VECTOR2 MeasureString(string text)
         {
+            OnText(ref text);
             return MeasureString(CharWidth, LineHeight, text);
         }
         /// <summary>将文字内容按照一定的宽度自动换行</summary>
         public string BreakLine(string text, float width, out string[] lines)
         {
+            OnText(ref text);
             return BreakLine(CharWidth, LineHeight, text, width, out lines);
         }
         /// <summary>将文字内容按照一定的宽度自动换行</summary>
         public string BreakLine(string text, float width)
         {
+            OnText(ref text);
             string[] lines;
             return BreakLine(CharWidth, LineHeight, text, width, out lines);
         }
         /// <summary>获取光标在一段文字中指定索引的位置</summary>
         public VECTOR2 Cursor(string text, int index)
         {
+            OnText(ref text);
             return Cursor(CharWidth, LineHeight, text, index);
         }
         /// <summary>获取一个位置在一段文字中的光标索引位置</summary>
         public int CursorIndex(string text, VECTOR2 mouse)
         {
+            OnText(ref text);
             return CursorIndex(CharWidth, LineHeight, text, mouse);
         }
         /// <summary>计算单个文字的宽度</summary>
@@ -6736,9 +6742,9 @@ namespace EntryEngine
         public FONT_Link() { }
         public FONT_Link(EntryEngine.FONT Base) { this.Base = Base; }
 
-        public override EntryEngine.VECTOR2 MeasureString(string text)
+        protected internal override void OnText(ref string text)
         {
-            return Base.MeasureString(text);
+            Base.OnText(ref text);
         }
         protected internal override float CharWidth(char c)
         {
@@ -6930,6 +6936,12 @@ namespace EntryEngine
         public FontRich() { }
         public FontRich(FONT _base) : base(_base) { }
 
+        protected internal override void OnText(ref string text)
+        {
+            if (!string.IsNullOrEmpty(text))
+                Parse(text, out text);
+            base.OnText(ref text);
+        }
         /// <summary>解析富文本</summary>
         /// <param name="text">原富文本</param>
         /// <param name="_text">去掉富文本标记后的最终文本</param>
@@ -6961,11 +6973,6 @@ namespace EntryEngine
             }
             _text = builder.ToString();
             return list;
-        }
-        public override VECTOR2 MeasureString(string text)
-        {
-            Parse(text, out text);
-            return Base.MeasureString(text);
         }
         public void Draw(GRAPHICS spriteBatch, List<Part> parts, string _text, float x, float y, COLOR color, float scale)
         {
@@ -7497,10 +7504,10 @@ namespace EntryEngine
             foreach (char c in text)
                 GetBuffer(c);
         }
-        public override VECTOR2 MeasureString(string text)
+        protected internal override void OnText(ref string text)
         {
+            base.OnText(ref text);
             RequestString(text);
-            return base.MeasureString(text);
         }
         protected sealed override Buffer GetBuffer(char c)
         {

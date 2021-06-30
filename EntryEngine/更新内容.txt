@@ -1,4 +1,9 @@
-﻿2021/06/29
+﻿2021/06/30
+1. 修改Utility.LengthFloat将不足的位数用0补齐
+2. 删除Utility不用的一些方法
+3. FONT新增OnText方法代替MeasureString的virtual修饰符
+
+2021/06/29
 1. 修复代码解析变量名const开头的BUG
 2. 增加语义解析协变逆变的解析
 3. 新增List<T>.Sort的支持

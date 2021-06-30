@@ -55,37 +55,25 @@ namespace EntryEngine
 			}
 			return new string(chars);
 		}
-		/// <summary>
-		/// 显示指定小数点位数的float值
-		/// </summary>
+        /// <summary>显示指定小数点位数的float值，不足的位数会用0补齐</summary>
 		/// <param name="value">值</param>
 		/// <param name="length">要显示的小数点后面的位数</param>
 		/// <returns>指定位数的float字符串</returns>
 		public static string LengthFloat(float value, int length)
 		{
-			if (length <= 0)
-				return ((int)value).ToString();
-			string v = value.ToString();
-			int sep = v.IndexOf('.') + 1;
-            if (sep == 0) return value.ToString();
-			return LengthString(v, sep + length);
-		}
-		/// <summary>
-		/// 显示指定长度的字符串
-		/// </summary>
-		/// <param name="value">字符串</param>
-		/// <param name="length">要显示的长度</param>
-		/// <returns>截取长度后的字符串</returns>
-		public static string LengthString(string value, int length)
-		{
-			if (value.Length > length)
-			{
-				return value.Substring(0, length);
-			}
-			else
-			{
-				return value;
-			}
+            string v = value.ToString();
+            int sep = v.IndexOf('.');
+            if (sep == -1)
+                return v;
+            int l = sep + 1 + length;
+            if (v.Length < l)
+            {
+                for (int i = v.Length; i < l; i++)
+                    v += "0";
+                return v;
+            }
+            else
+                return v.Substring(0, l);
 		}
         public static string ToPercent(float value)
         {
@@ -106,16 +94,6 @@ namespace EntryEngine
             return str;
             //return value.ToString("0.00");
 		}
-		/// <summary>
-		/// 获得一个浮点数的位数
-		/// </summary>
-		/// <param name="value">一个浮点值</param>
-		/// <returns>浮点数的位数</returns>
-		public static int GetFloatLength(float value)
-		{
-			string s = value.ToString();
-			return s.Length - s.IndexOf('.') - 1;
-		}
         public static int GetNumber(string str, int index)
         {
             int value = 0;
@@ -129,72 +107,6 @@ namespace EntryEngine
             }
             return value;
         }
-		/// <summary>
-		/// 切换排序
-		/// </summary>
-		/// <typeparam name="T">任意类型</typeparam>
-		/// <param name="list">要切换的集合</param>
-		/// <param name="order">切换的顺序</param>
-		public static void Switch<T>(List<T> list, bool order)
-		{
-			if (list != null && list.Count > 0)
-			{
-				T temp;
-				int index;
-				if (order)
-				{
-					// 将第一个元素放到最后面
-					index = 0;
-					temp = list[index];
-					list.RemoveAt(index);
-					list.Add(temp);
-				}
-				else
-				{
-					// 将最后一个元素拿到最前面
-					index = list.Count - 1;
-					temp = list[index];
-					list.RemoveAt(index);
-					list.Insert(0, temp);
-				}
-			}
-		}
-		public static void RemovePrevious<T>(List<T> current, List<T> previous)
-		{
-			for (int i = 0; i < previous.Count; i++)
-			{
-				if (current.Contains(previous[i]))
-				{
-					current.Remove(previous[i]);
-				}
-			}
-		}
-		public static void RemoveSame<T>(List<T> targets)
-		{
-			List<T> copy = new List<T>();
-			for (int i = 0; i < targets.Count; i++)
-			{
-				if (copy.Contains(targets[i]))
-				{
-					targets.RemoveAt(i);
-					i--;
-				}
-				else
-				{
-					copy.Add(targets[i]);
-				}
-			}
-		}
-		public static void AddCurrent<T>(List<T> current, List<T> previous)
-		{
-			for (int i = 0; i < current.Count; i++)
-			{
-				if (!previous.Contains(current[i]))
-				{
-					previous.Add(current[i]);
-				}
-			}
-		}
 
 
 		#region Array Expand Method
@@ -286,64 +198,6 @@ namespace EntryEngine
 			}
 			return -1;
 		}
-        //public static IEnumerable<T> Distinct<T>(this IEnumerable<T> array)
-        //{
-        //    return Linq.Distinct(array);
-        //}
-        //public static T[] ToArray<T>(this IEnumerable<T> source)
-        //{
-        //    ICollection<T> collection = source as ICollection<T>;
-        //    T[] array;
-        //    if (collection == null)
-        //    {
-        //        array = new T[4];
-        //        int num = 0;
-        //        foreach (T current in source)
-        //        {
-        //            if (array.Length == num)
-        //            {
-        //                T[] array2 = new T[num * 2];
-        //                Array.Copy(array, 0, array2, 0, num);
-        //                array = array2;
-        //            }
-        //            array[num] = current;
-        //            num++;
-        //        }
-        //        if (array.Length != num)
-        //        {
-        //            Array.Resize(ref array, num);
-        //        }
-        //    }
-        //    else
-        //    {
-        //        array = new T[collection.Count];
-        //        collection.CopyTo(array, 0);
-        //    }
-        //    return array;
-        //}
-        //public static List<T> ToList<T>(this IEnumerable<T> source)
-        //{
-        //    return new List<T>(source);
-        //}
-        //public static IEnumerable<U> Select<T, U>(this IEnumerable<T> array, Func<T, U> method)
-        //{
-        //    foreach (T item in array)
-        //        yield return method(item);
-        //}
-        //public static U[] Select<T, U>(this T[] array, Func<T, U> method)
-        //{
-        //    int count = array.Length;
-        //    U[] items = new U[count];
-        //    for (int i = 0; i < count; i++)
-        //        items[i] = method(array[i]);
-        //    return items;
-        //}
-        //public static IEnumerable<T> Where<T>(this IEnumerable<T> array, Func<T, bool> method)
-        //{
-        //    foreach (T item in array)
-        //        if (method(item))
-        //            yield return item;
-        //}
 		public static List<T> WhereAndRemove<T>(this IEnumerable<T> array, Func<T, bool> method, out List<T> other)
 		{
 			List<T> results = new List<T>();
@@ -361,20 +215,6 @@ namespace EntryEngine
 			}
 			return results;
 		}
-        //public static T FirstOrDefault<T>(this IEnumerable<T> array, Func<T, bool> method)
-        //{
-        //    foreach (T item in array)
-        //        if (method == null || method(item))
-        //            return item;
-        //    return default(T);
-        //}
-        //public static Dictionary<T, U> ToDictionary<T, U>(this IEnumerable<U> array, Func<U, T> method)
-        //{
-        //    Dictionary<T, U> dic = new Dictionary<T, U>();
-        //    foreach (U item in array)
-        //        dic[method(item)] = item;
-        //    return dic;
-        //}
 		public static int IndexOf<T>(this IEnumerable<T> array, T target)
 		{
 			return IndexOf(array, target, (p1, p2) => { return p1.Equals(p2); });
@@ -512,10 +352,6 @@ namespace EntryEngine
 			//for (int i = fromIndex, j = toIndex; j < toIndex + length; i++, j++)
 			//    target[j] = reff[i];
 		}
-        //public static bool Contains<T>(this IEnumerable<T> array, T target)
-        //{
-        //    return IndexOf(array, target) != -1;
-        //}
 		public static bool Contains<T, U>(this IEnumerable<T> array, T target, Func<T, U> comparer)
 		{
 			return IndexOf(array, target, comparer) != -1;
@@ -546,17 +382,6 @@ namespace EntryEngine
 		{
 			return Current(current, previous, (t1, t2) => t1.Equals(t2));
 		}
-        //public static IEnumerable<T> Distinct<T>(this IEnumerable<T> array, Func<T, T, bool> comparer)
-        //{
-        //    List<T> set = new List<T>();
-        //    foreach (var item in array)
-        //    {
-        //        if (set.Contains(i => comparer(i, item)))
-        //            continue;
-        //        yield return item;
-        //        set.Add(item);
-        //    }
-        //}
         public static IEnumerable<T> Distinct<T, U>(this IEnumerable<T> array, Func<T, U> comparer)
         {
             HashSet<U> set = new HashSet<U>();
@@ -758,25 +583,6 @@ namespace EntryEngine
 		{
 			return array.Count - 1;
 		}
-        //public static T Last<T>(this IList<T> array)
-        //{
-        //    return array[array.LastIndex()];
-        //}
-        //public static T LastOrDefault<T>(this IList<T> array, Func<T, bool> method)
-        //{
-        //    int count = array.Count;
-        //    for (int i = count - 1; i > -1; i--)
-        //        if (method == null || method(array[i]))
-        //            return array[i];
-        //    return default(T);
-        //}
-        //public static T LastOrDefault<T>(this IEnumerable<T> array, Func<T, bool> method)
-        //{
-        //    if (array is IList<T>)
-        //        return LastOrDefault((IList<T>)array, method);
-        //    else
-        //        return LastOrDefault(array.ToArray(), method);
-        //}
         public static int MedianIndex<T>(this ICollection<T> array)
 		{
 			return array.Count / 2;
@@ -1010,9 +816,7 @@ namespace EntryEngine
 		{
 			SortQuit(array, index, _MATH.Min(index + count, array.Count) - 1, asc, comparer);
 		}
-		/// <summary>
-		/// 快速排序
-		/// </summary>
+        /// <summary>快速排序</summary>
 		/// <typeparam name="T">排序类型</typeparam>
 		/// <param name="array">要排序的数组</param>
 		/// <param name="low">排序起始项索引</param>
@@ -1029,9 +833,7 @@ namespace EntryEngine
 				SortQuit(array, pivotLoc + 1, high, asc, comparer);
 			}
 		}
-		/// <summary>
-		/// 稳定排序，同分时顺序不变
-		/// </summary>
+        /// <summary>稳定排序，同分时顺序不变</summary>
 		public static void SortOrderDesc<T>(this IList<T> array, Func<T, int> comparer)
 		{
             SortOrder(array, (p1, p2) => comparer(p1) < comparer(p2));
