@@ -6927,7 +6927,6 @@ namespace EntryEngine
             return ret;
         }
 
-
         public FontRich() { }
         public FontRich(FONT _base) : base(_base) { }
 
@@ -6962,6 +6961,11 @@ namespace EntryEngine
             }
             _text = builder.ToString();
             return list;
+        }
+        public override VECTOR2 MeasureString(string text)
+        {
+            Parse(text, out text);
+            return Base.MeasureString(text);
         }
         public void Draw(GRAPHICS spriteBatch, List<Part> parts, string _text, float x, float y, COLOR color, float scale)
         {
