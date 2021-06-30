@@ -11443,6 +11443,24 @@ return result;"
 
             Clipboard.SetText(builder.ToString());
         }
+        public static void RemoveDuplicateChar(string str, bool orderByAscii)
+        {
+            HashSet<char> set = new HashSet<char>();
+            List<char> list = new List<char>();
+            if (string.IsNullOrEmpty(str))
+                str = Clipboard.GetText();
+            foreach (var item in str)
+            {
+                if (set.Add(item))
+                    list.Add(item);
+            }
+            if (orderByAscii)
+                list.Sort();
+            string result = new string(list.ToArray());
+            Clipboard.SetText(result);
+            _LOG.Info(result);
+            _LOG.Info("去除重复文字{0}个", str.Length - list.Count);
+        }
         public static void ReplaceText(string file, string old, string replace)
         {
             string text = File.ReadAllText(file);
