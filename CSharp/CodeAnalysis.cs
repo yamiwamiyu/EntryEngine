@@ -1558,6 +1558,7 @@ namespace EntryBuilder.CodeAnalysis.Syntax
             {
                 New method = new New();
                 // 表达式：new object(param).method()
+                // 注意情况：new int[3][]，new int[] { 1, 2, 3 }
                 var referenceMethod = ParseReference();
                 if (referenceMethod.ArrayDimension > 0)
                 {
@@ -5894,9 +5895,7 @@ namespace EntryBuilder.CodeAnalysis.Refactoring
             return result;
         }
     }
-    /// <summary>
-    /// todo: 按类型，成员区分作用域，进一步让类型，成员，临时变量的名字长度更短
-    /// </summary>
+    /// <summary>todo: 按类型，成员区分作用域，进一步让类型，成员，临时变量的名字长度更短</summary>
     internal class Renamer : SyntaxWalker
     {
         private Renamer() { }
@@ -8315,7 +8314,7 @@ namespace EntryBuilder.CodeAnalysis.Refactoring
             }
             else if (value is float || value is double)
             {
-                string svalue = value.ToString();
+                string svalue = Convert.ToDecimal(value).ToString();
                 builder.Append(svalue);
                 if (svalue.IndexOf('.') == -1)
                     builder.Append(".0");
@@ -8522,7 +8521,8 @@ namespace EntryBuilder.CodeAnalysis.Refactoring
                             if (node.IsGeneric)
                             {
                                 // (List(int)).constructor
-                                builder.Append("(");
+                                // 注意情况：new Array.FunctorComparer<T>() -> new (Array.FunctorComparer<T>())
+                                //builder.Append("(");
                             }
                             // 例如JS定义的类型Date，调用其无参构造函数将变成new Date.Date()导致报错
                             defineOnly = IsDefineOnly(member.ContainingType);
@@ -8621,8 +8621,8 @@ namespace EntryBuilder.CodeAnalysis.Refactoring
             if (member != null && member.IsConstructor)
             {
                 // (List(int)).constructor
-                if (node.IsGeneric)
-                    builder.Append(")");
+                //if (node.IsGeneric)
+                //    builder.Append(")");
                 // 防止new Date();变成new Date.Date();
                 if (!defineOnly)
                     builder.Append(".");
@@ -8985,7 +8985,9 @@ namespace EntryBuilder.CodeAnalysis.Refactoring
                     initializing = true;
                     foreach (var item in node.Initializer)
                     {
-                        builder.Append("{0}.", ANONYMOUS_OBJ);
+                        // 初始化属性时，应为会变成闭包调用，闭包的bind参数应该改为ANONYMOUS_OBJ
+                        if (!members[item].IsProperty)
+                            builder.Append("{0}.", ANONYMOUS_OBJ);
                         Visit(item);
                         builder.AppendLine(";");
                     }
@@ -9030,15 +9032,6 @@ namespace EntryBuilder.CodeAnalysis.Refactoring
                 }
             }
             builder.Append("new ");
-            //ReferenceMember rt = node.Type;
-            //REF r = syntax[rt];
-            //if (r.Definition.Define is CSharpMember)
-            //{
-            //    // 显示声明的构造函数是类型的静态成员 例如A的默认构造函数调用为new A.A0()
-            //    CSharpMember member = (CSharpMember)r.Definition.Define;
-            //    builder.Append("{0}.", GetTypeName(member.ContainingType));
-            //}
-            // else: 未显示声明的默认无参构造函数
             WriteInvoke(node.Method);
         }
         public override void Visit(As node)
