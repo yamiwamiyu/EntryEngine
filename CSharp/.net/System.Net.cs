@@ -360,6 +360,10 @@ namespace __System.Net
         {
             get { return request.Method; }
         }
+        public string StatusDescription
+        {
+            get { return GetStatusDescription(__api); }
+        }
         internal HttpWebResponse(HttpWebRequest request)
         {
             this.request = request;
@@ -391,6 +395,7 @@ namespace __System.Net
         [ASystemAPI]private static object Provide(object requestPrivode) { return null; }
         [ASystemAPI]private static int GetContentLength(object provide) { return 0; }
         [ASystemAPI]private static int GetStatusCode(object provide) { return 0; }
+        [ASystemAPI]private static string GetStatusDescription(object provide) { return null; }
         [ASystemAPI]private static byte[] GetResponse(object provide) { return null; }
     }
 

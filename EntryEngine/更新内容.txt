@@ -1,4 +1,10 @@
-﻿2021/06/30
+﻿2021/06/31
+1. System.Net.HttpWebResponse新增StatusDescription
+2. 数组支持协变
+3. 解析器修复-(Cast)Method(Parameter)的BUG
+4. 编译器修复误调用扩展方法的BUG
+
+2021/06/30
 1. 修改Utility.LengthFloat将不足的位数用0补齐
 2. 删除Utility不用的一些方法
 3. FONT新增OnText方法代替MeasureString的virtual修饰符

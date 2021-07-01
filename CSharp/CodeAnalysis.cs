@@ -1339,18 +1339,24 @@ namespace EntryBuilder.CodeAnalysis.Syntax
             if (expression == null)
                 return null;
             // !(a + 5).ToString() 或者 (int)new List<int>().Count 等一元运算符的
+            // 特殊情况：-(float)Math.Sin(value) -> UnaryOperator((Cast)Method(Parameter))
             WithExpressionExpression cast = null;
-            if (expression is UnaryOperator || expression is Cast)
+            WithExpressionExpression castRoot = null;
+            while (expression is UnaryOperator || expression is Cast)
+            {
                 cast = (WithExpressionExpression)expression;
+                if (castRoot == null)
+                    castRoot = cast;
+                expression = cast.Expression;
+            }
             while (true)
             {
                 var expression2 = ParseExpressionBack(expression);
                 if (expression == expression2)
                 {
-                    if (cast != null && cast.Expression == null)
+                    if (cast != null)
                     {
-                        cast.Expression = expression;
-                        return cast;
+                        return castRoot;
                     }
                     return expression;
                 }
@@ -1358,6 +1364,12 @@ namespace EntryBuilder.CodeAnalysis.Syntax
                 if (expression2 is BinaryOperator)
                 {
                     BinaryOperator o1 = (BinaryOperator)expression2;
+                    if (cast != null && o1.Left == cast.Expression)
+                    {
+                        // 特殊情况1/2/3，此时BinaryOperation的Left需要是整个(Cast)表达式
+                        o1.Left = cast;
+                        cast = null;
+                    }
                     BinaryOperator o2 = o1.Right as BinaryOperator;
                     if (o2 != null && (o1.Operator < o2.Operator ||
                         // 赋值号"="应该先执行右边的再执行左边的
@@ -1369,20 +1381,22 @@ namespace EntryBuilder.CodeAnalysis.Syntax
                         expression2 = o2;
                     }
                 }
+                if (cast != null)
+                    cast.Expression = expression2;
                 // 整理一元运算符顺序（方法重载的特殊情况-VECTOR2.Transform()
-                if (cast != null && cast.Expression != null)
-                {
-                    if (expression2 is InvokeMethod)
-                    {
-                        ((InvokeMethod)expression2).Target = cast.Expression;
-                        cast.Expression = null;
-                    }
-                    else if (expression2 is ReferenceMember)
-                    {
-                        ((ReferenceMember)expression2).Target = cast.Expression;
-                        cast.Expression = null;
-                    }
-                }
+                //if (cast != null && cast.Expression != null)
+                //{
+                //    if (expression2 is InvokeMethod)
+                //    {
+                //        ((InvokeMethod)expression2).Target = cast.Expression;
+                //        cast.Expression = null;
+                //    }
+                //    else if (expression2 is ReferenceMember)
+                //    {
+                //        ((ReferenceMember)expression2).Target = cast.Expression;
+                //        cast.Expression = null;
+                //    }
+                //}
                 expression = expression2;
             }
         }
@@ -1479,7 +1493,7 @@ namespace EntryBuilder.CodeAnalysis.Syntax
             }
             #endregion
 
-            #region 括号 | Lambda表达式
+            #region 括号 | 强制类型转换 | Lambda表达式
             if (r.IsNextSign('('))
             {
                 bool isLambda = false;
@@ -1512,8 +1526,8 @@ namespace EntryBuilder.CodeAnalysis.Syntax
                     if (expression is ReferenceMember)
                     {
                         // -(float)Math.Sin(value);此时Cast的Expression应该是InvokeMethod，而不是ReferenceMember
-                        //var expression2 = ParseExpressionFront();
-                        var expression2 = ParseExpression();
+                        var expression2 = ParseExpressionFront();
+                        //var expression2 = ParseExpression();
                         // 可能只是(Member)
                         if (expression2 != null)
                         {
@@ -1530,15 +1544,16 @@ namespace EntryBuilder.CodeAnalysis.Syntax
             }
             #endregion
 
-            // 匿名方法 delegate(Type arg1) { }
+            #region 匿名方法 delegate(Type arg1) { }
             if (r.IsNextSign("delegate") && r.IsNextSign("(", 8))
             {
                 DefineMethod method = new DefineMethod();
                 ParseDefineMethod(method);
                 return method;
             }
+            #endregion
 
-            // 构造函数创建对象
+            #region 构造函数创建对象
             if (r.EatAfterSignIfIs("new "))
             {
                 New method = new New();
@@ -1572,8 +1587,9 @@ namespace EntryBuilder.CodeAnalysis.Syntax
                 }
                 return method;
             }
+            #endregion
 
-            // 数组值 { 1, 2, 3 }
+            #region 数组值 { 1, 2, 3 }
             if (r.EatAfterSignIfIs("{"))
             {
                 ArrayValue array = new ArrayValue();
@@ -1585,6 +1601,7 @@ namespace EntryBuilder.CodeAnalysis.Syntax
                 }
                 return array;
             }
+            #endregion
 
             // 引用对象的定义：字段，方法
             // 可能是定义变量的Lambda表达式 item => { }
@@ -6694,7 +6711,11 @@ namespace EntryBuilder.CodeAnalysis.Refactoring
                                 // base.调用的成员需要生成[base_成员]作为类型的成员保留
                                 for (int i = 0; i < baseMembers.Length; i++)
                                     if (baseMembers[i].IsField)
-                                        throw new InvalidCastException("不应与base的字段重名");
+                                    {
+                                        //throw new InvalidCastException("不应与base的字段重名");
+                                        _LOG.Warning("没特殊需求，请不要用base调用字段！{0}", GetRenamedMemberOriginName(baseMembers[i]));
+                                        continue;
+                                    }
                                     else if (baseMembers[i].IsProperty || baseMembers[i].IsIndexer)
                                     {
                                         builder.AppendLine("this._{0}{1}{2} = {3}.prototype.{1}{2};", GetInheritDepth(baseClass), GET, baseMembers[i].Name.Name, baseClassName);
@@ -8424,7 +8445,8 @@ namespace EntryBuilder.CodeAnalysis.Refactoring
                             {
                                 // 调用扩展方法： list.First(lambda) => Enumerable.First(list, lambda);
                                 builder.Append("{0}", GetTypeName(member.ContainingType));
-                                exThisParam = node.Target;
+                                if (member.IsMethod && member.Parameters.Count > 0 && member.Parameters[0].IsThis)
+                                    exThisParam = node.Target;
                                 parentFlag = true;
                             }
                         }
@@ -12282,6 +12304,7 @@ namespace EntryBuilder.CodeAnalysis.Refactoring
                     }
                     catch (Exception ex)
                     {
+                        _LOG.Warning("Lambda测试失败{0}, ex={1}", lambda, ex.StackTrace);
                         return false;
                     }
                     if (testOnly)
@@ -13250,7 +13273,7 @@ namespace EntryBuilder.CodeAnalysis.Refactoring
                     {
                         var current = parents.Pop();
                         // todo: test
-                        if (current.Name.Name == "c" && definingMember != null && definingMember.Name.Name == "ToMatrix")
+                        if (current.Name.Name == "OnReceived" && definingMember != null && definingMember.Name.Name == "send")
                         {
                             CSharpMember member2 = definingType.Members.FirstOrDefault(f => f.Name.Name == current.Name.Name);
                         }

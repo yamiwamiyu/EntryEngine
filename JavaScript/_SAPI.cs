@@ -271,6 +271,10 @@ namespace __System.Net
             return ret;
             //return SingleEncoding.Single.GetBytes(((XMLHttpRequest)provide).responseText);
         }
+        public static string GetStatusDescription(object provide)
+        {
+            return ((XMLHttpRequest)provide).statusText;
+        }
     }
 }
 

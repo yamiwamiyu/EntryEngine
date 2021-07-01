@@ -528,7 +528,10 @@ namespace EntryBuilder.CodeAnalysis.Semantics
             if (other.IsArray)
             {
                 // 不考虑协变逆变的情况下，数组类型必须完全一致
-                if (this.IsArray && other.ElementType.IsTypeParameter && this.ElementType.Is(other.ElementType))
+                // 父类[] array = new 字类[]，允许赋值
+                if (this.IsArray 
+                    && (other.ElementType.IsTypeParameter || other.ElementType.IsClass)
+                    && this.ElementType.Is(other.ElementType))
                     return this;
                 return null;
             }
