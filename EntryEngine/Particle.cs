@@ -782,7 +782,21 @@ namespace EntryEngine
         }
     }
 
-    [ASummaryP("运动：风", "平行风使粒子按照风的方向运动（单位每秒）", EParticleStreamType.变化)]
+    [ASummaryP("运动：力", "使粒子按照力的方向运动（运动速度和方向变化，单位每秒）", EParticleStreamType.变化)]
+    [AReflexible]public class PSGravity : ParticleStream
+    {
+        [ASummary("力", "向量代表了力的大小和方向，右键可以在屏幕上点击选择一个点（单位每秒）")]
+        public VECTOR2 Force = new VECTOR2(0, 100);
+        public override bool Update(Particle p, ParticleEmitter ps, float elapsed)
+        {
+            p.Vector.X += Force.X * elapsed;
+            p.Vector.Y += Force.Y * elapsed;
+            p.speed = p.Vector.Length();
+            p.direction = (float)Math.Atan2(p.Vector.Y, p.Vector.X);
+            return true;
+        }
+    }
+    [ASummaryP("运动：风", "平行风使粒子按照风的方向运动（坐标变化，单位每秒）", EParticleStreamType.变化)]
     [AReflexible]public class PSWind : ParticleStream
     {
         [ASummary("风", "向量代表了风的大小和方向，右键可以在屏幕上点击选择一个点（单位每秒）")]

@@ -114,7 +114,7 @@ namespace EntryEditor
                         {
                             entry.OnNewContentManager += (content) =>
                             {
-                                content.AddPipeline(new EntryEngine.DragonBone.DBCore.PipelineDragonBones());
+                                content.AddPipeline(new EntryEngine.DragonBone.PipelineDragonBones());
                             };
                         };
                     gate.OnInitialized += entry =>
