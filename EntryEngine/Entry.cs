@@ -7933,6 +7933,28 @@ namespace EntryEngine
             base.InternalBegin(g);
         }
     }
+    /// <summary>褪色，取RGB最低的作为灰度色</summary>
+    public class ShaderGray : SHADER_Link
+    {
+        private static SHADER shader;
+        /// <summary>描边的着色器，为空时无法使用描边效果</summary>
+        public static SHADER Shader
+        {
+            get { return shader; }
+            set
+            {
+                if (shader == value) return;
+                shader = value;
+            }
+        }
+
+        public ShaderGray()
+        {
+            if (shader == null)
+                throw new ArgumentNullException("没有着色器，请先用SHADER.LoadShader加载着色器到Shader变量中");
+            Base = shader;
+        }
+    }
 
 
     /// <summary>图片反转</summary>

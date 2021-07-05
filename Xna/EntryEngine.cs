@@ -1511,6 +1511,46 @@ technique Technique1
 		PixelShader = compile ps_3_0 ps();
 	}
 }");
+            ShaderGray.Shader = (SHADER)preShader.LoadFromText(
+@"uniform float4x4 View;
+struct VS_OUTPUT
+{
+    float4 Position   : POSITION; 
+    float4 Color      : COLOR0;
+    float2 UV		  : TEXCOORD0;
+};
+VS_OUTPUT vs
+	(
+		float3 Position : POSITION,
+		float4 Color : COLOR0,
+		float2 Coord : TEXCOORD0
+	)
+{
+	VS_OUTPUT output;
+	output.Position = mul(float4(Position, 1), View);
+	output.Color = Color;
+	output.UV = Coord;
+	return output;
+};
+uniform sampler Texture;
+float4 ps(float4 Color : COLOR0, float2 UV : TEXCOORD0) : COLOR
+{
+	float4 c = Color * tex2D(Texture, UV);
+	float min = c.r;
+	if (c.g < min)
+		min = c.g;
+	if (c.b < min)
+		min = c.b;
+	return float4(min, min, min, c.a);
+};
+technique Technique1
+{
+	pass Pass1
+	{
+		VertexShader = compile vs_3_0 vs();
+		PixelShader = compile ps_3_0 ps();
+	}
+}");
         }
         
         protected override TEXTURE InternalNewTEXTURE(int width, int height)
