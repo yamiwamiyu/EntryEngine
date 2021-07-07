@@ -23,8 +23,11 @@ namespace EntryEngine.Serialize
 	}
     public interface IVariable
     {
+        /// <summary>Value所在实例，基元类型可能是其本身</summary>
 		object Instance { get; }
+        /// <summary>GetValue的类型</summary>
 		Type Type { get; }
+        /// <summary>类型中的字段名，基元类型为空字符串</summary>
 		string VariableName { get; }
         MemberInfo MemberInfo { get; }
         object GetValue();
@@ -71,6 +74,68 @@ namespace EntryEngine.Serialize
         public void SetValue(object value)
         {
             instance = value;
+        }
+    }
+    /// <summary>表达式变量，例如array[0]</summary>
+    public class VariableExpression : IVariable
+    {
+        private bool hasInstance;
+        private object _Instance;
+        private Type _Type;
+        private string _Key;
+        private Func<object, string, object> Getter;
+        private Action<object, string, object> Setter;
+
+        public object Instance
+        {
+            get { return hasInstance ? _Instance : GetValue(); }
+        }
+        public Type Type
+        {
+            get { return _Type; }
+        }
+        public string VariableName
+        {
+            get { return _Key; }
+        }
+        public MemberInfo MemberInfo
+        {
+            get { return null; }
+        }
+        public object GetValue()
+        {
+            return Getter(_Instance, _Key);
+        }
+        public void SetValue(object value)
+        {
+            Setter(_Instance, _Key, value);
+        }
+
+        /// <summary>自定义构造一个表达式变量</summary>
+        /// <param name="instance">例如数组，字典</param>
+        /// <param name="key">例如数组的索引，字典的Key</param>
+        /// <param name="getter">value (instance, key)</param>
+        /// <param name="setter">(instance, key, value)</param>
+        public VariableExpression(object instance,
+            Type type,
+            string key,
+            Func<object, string, object> getter,
+            Action<object, string, object> setter)
+        {
+            hasInstance = true;
+            this._Instance = instance;
+            this._Type = type;
+            this._Key = key;
+            this.Getter = getter;
+            this.Setter = setter;
+        }
+        public VariableExpression(Type type, Func<object> getter, Action<object> setter)
+        {
+            hasInstance = false;
+            this._Key = string.Empty;
+            this._Type = type;
+            this.Getter = (arg1, arg2) => getter();
+            this.Setter = (arg1, arg2, value) => setter(value);
         }
     }
     public class VariableObject : IVariable

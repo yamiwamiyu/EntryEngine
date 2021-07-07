@@ -1831,6 +1831,8 @@ namespace EntryEngine.UI
             //if (child is UIScene && ((UIScene)child).IsInStage)
             //    return RECT.Empty;
             RECT rect = child.InParentClip;
+            rect.Width = rect.Right;
+            rect.Height = rect.Bottom;
             if (!child.isClip)
             {
                 RECT clip = child.ChildClip;
@@ -1846,13 +1848,15 @@ namespace EntryEngine.UI
                 }
                 if (clip.Right > rect.Width)
                 {
-                    rect.Width = clip.Width;
+                    rect.Width = clip.Right;
                 }
                 if (clip.Bottom > rect.Height)
                 {
-                    rect.Height = clip.Height;
+                    rect.Height = clip.Bottom;
                 }
             }
+            rect.Width = rect.Width - rect.X;
+            rect.Height = rect.Height - rect.Y;
             return rect;
             //return RECT.Union(child.Clip, child.InParentChildClip);
         }

@@ -445,7 +445,7 @@ public partial class EditorParticle : SceneEditorEntry
         _LANGUAGE.Load(_IO.ReadText("Content\\LANGUAGE.csv"), "");
         _TABLE.Load("Content\\");
 
-        EditorVariable.WIDTH = 100;
+        EditorVariable.WIDTH = 118;
         EditorVariable.HEIGHT = 21;
         EditorVariable.CONTENT = Content;
         EditorVariable.GENERATOR.Generate = Generate;
@@ -665,9 +665,13 @@ public partial class EditorParticle : SceneEditorEntry
         if (variable.MemberInfo != null)
         {
             if (variable.Type == typeof(VECTOR2))
-                return new EditorPoint();
+                return new EditorEditMode<VECTOR2, EditSelectPoint>();
             else if (variable.Type == typeof(RECT))
-                return new EditorClip();
+                return new EditorEditMode<RECT, EditSelectRect>();
+            else if (variable.Type == typeof(CIRCLE))
+                return new EditorEditMode<CIRCLE, EditSelectCircle>();
+            else if (variable.Type == typeof(List<PSPosMotionPath.BonePoint>))
+                return new EditorEditMode<List<PSPosMotionPath.BonePoint>, EditSelectLine>();
         }
         return null;
     }
@@ -686,13 +690,17 @@ public partial class EditorParticle : SceneEditorEntry
     }
     void GENERATOR_OnGenerated(IVariable variable, EditorVariable ev)
     {
-        if (variable.MemberInfo == null)
+        //if (variable.MemberInfo == null)
+        //    return;
+        if (string.IsNullOrEmpty(variable.VariableName))
             return;
         ev.ValueChanged += editor_ValueChanged;
         ev.ContentSizeChanged += ReLayout;
         EditorCommon editor = new EditorCommon(ev);
-        var summary = variable.MemberInfo.GetCustomAttributes(typeof(ASummary), true);
-        if (summary.Length == 0)
+        object[] summary = null;
+        if (variable.MemberInfo != null)
+            summary = variable.MemberInfo.GetCustomAttributes(typeof(ASummary), true);
+        if (summary == null || summary.Length == 0)
             editor.Text = variable.VariableName;
         else
         {
@@ -1335,9 +1343,12 @@ public partial class EditorParticle : SceneEditorEntry
                 ps.Reset();
         }
         else
-        {
-            GameTime.Time.Still();
-        }
+            ps.Update(0);
+        //else
+        //{
+        //    GameTime.Time.Still();
+        //}
+
         TBTime.Text = GetTimeDisplay(ps.Elapsed);
 
         if (ps.Duration <= 0)

@@ -1362,7 +1362,7 @@ namespace EntryEngine.Xna
 	{
         protected override void Initialize(out AUDIO AUDIO, out ContentManager ContentManager, out FONT FONT, out GRAPHICS GRAPHICS, out INPUT INPUT, out _IO.iO iO, out IPlatform IPlatform, out TEXTURE TEXTURE)
         {
-            //_LOG._Logger = new LoggerConsole();
+            _LOG._Logger = new LoggerConsole();
             //_LOG._Logger = new LoggerFile();
 
             XnaGate xna = XnaGate.Gate;

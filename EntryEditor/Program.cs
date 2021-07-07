@@ -13,7 +13,7 @@ namespace EntryEditor
         static string Editor;
 		static IEnumerable<ICoroutine> Initialize()
 		{
-            //_LOG._Logger = new EntryEngine.Cmdline.Logger();
+            _LOG._Logger = new LoggerConsole();
 			// 编辑器翻译
             //FONT.Default = Entry.Instance.NewFONT("Consolas", 16.8f);
             FONT.Default = Entry.Instance.NewFONT("黑体", 16f);

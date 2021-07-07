@@ -30,10 +30,12 @@ public abstract class EditMode
     {
     }
 }
-public class EditSelectPoint : EditMode
+public abstract class EditSelectValue<T> : EditMode
 {
-    public Action<VECTOR2> Action;
-
+    public Action<T> OnEdit;
+}
+public class EditSelectPoint : EditSelectValue<VECTOR2>
+{
     protected internal override bool Edit(ref MATRIX2x3 matrix, GRAPHICS spriteBatch, Entry e)
     {
         VECTOR2 p2 = __INPUT.PointerPosition;
@@ -47,17 +49,16 @@ public class EditSelectPoint : EditMode
         }
         else if (__INPUT.PointerIsTap())
         {
-            Action(p2);
+            OnEdit(p2);
             return true;
         }
         return false;
     }
 }
-public class EditSelectRect : EditMode
+public class EditSelectRect : EditSelectValue<RECT>
 {
     static PATCH PATCH = PATCH.GetNinePatch(COLOR.TransparentBlack, COLOR.Lime, 2);
 
-    public Action<RECT> Action;
     private bool clicked;
 
     protected internal override bool Edit(ref MATRIX2x3 matrix, GRAPHICS spriteBatch, Entry e)
@@ -73,7 +74,7 @@ public class EditSelectRect : EditMode
             RECT.CreateRectangle(ref p1, ref p2, out area);
             if (__INPUT.PointerIsRelease(0))
             {
-                Action(area);
+                OnEdit(area);
                 return true;
             }
             spriteBatch.Draw(PATCH, area);
@@ -97,10 +98,8 @@ public class EditSelectRect : EditMode
         clicked = false;
     }
 }
-public class EditSelectCircle : EditMode
+public class EditSelectCircle : EditSelectValue<CIRCLE>
 {
-    public Action<CIRCLE> Action;
-
     protected internal override bool Edit(ref MATRIX2x3 matrix, GRAPHICS spriteBatch, Entry e)
     {
         VECTOR2 p1 = __INPUT.PointerPosition;
@@ -118,10 +117,104 @@ public class EditSelectCircle : EditMode
         }
         else if (__INPUT.PointerIsRelease(0))
         {
-            Action(circle);
+            OnEdit(circle);
             return true;
         }
         return false;
+    }
+}
+public class EditSelectLine : EditSelectValue<List<PSPosMotionPath.BonePoint>>
+{
+    List<PSPosMotionPath.BonePoint> result = new List<PSPosMotionPath.BonePoint>();
+    /// <summary>编辑的总时间</summary>
+    float time = 0;
+
+    // 绘制路径动画
+    float ptime = 0;
+
+    protected internal override bool Edit(ref MATRIX2x3 matrix, GRAPHICS spriteBatch, Entry e)
+    {
+        // 鼠标右键取消
+        if (__INPUT.PointerIsClick(1))
+            return true;
+
+        VECTOR2 p1 = __INPUT.PointerPosition;
+        VECTOR2.Transform(ref p1, ref matrix);
+
+        if (__INPUT.Pointer.IsClick(0))
+        {
+            // 鼠标点击开始
+            PSPosMotionPath.BonePoint point = new PSPosMotionPath.BonePoint();
+            point.X = p1.X;
+            point.Y = p1.Y;
+            result.Add(point);
+        }
+        else if (result.Count > 0 && __INPUT.Pointer.IsPressed(0))
+        {
+            time += GameTime.Time.ElapsedSecond;
+            // 持续绘制路径
+            var last = result.Last();
+            if (last.X != p1.X || last.Y != p1.Y)
+            {
+                PSPosMotionPath.BonePoint point = new PSPosMotionPath.BonePoint();
+                point.Time = time;
+                point.X = p1.X;
+                point.Y = p1.Y;
+                result.Add(point);
+
+                // 还在绘制时，动画实时跟上运动轨迹
+                ptime = time;
+            }
+        }
+        else if (result.Count > 0 && __INPUT.Pointer.IsRelease(0))
+        {
+            OnEdit(result);
+            return true;
+        }
+
+        // 还没开始画
+        spriteBatch.Draw(TEXTURE.Pixel, p1, GRAPHICS.NullSource, COLOR.Red, 0, new VECTOR2(0.5f), new VECTOR2(4), EFlip.None);
+        spriteBatch.Draw(FONT, p1.ToString(), p1, COLOR.Red);
+
+        if (result.Count > 0)
+        {
+            // 动画绘制路径
+            bool flagOver = true;
+            int last = result.Count - 1;
+            for (int i = 0; i < last; i++)
+            {
+                var p = result[i];
+                var p2 = result[i + 1];
+
+                float y = p.Y - p2.Y;
+                float x = p.X - p2.X;
+                float distance = (float)Math.Sqrt(y * y + x * x);
+                float radian = (float)Math.Atan2(y, x);
+                if (ptime >= p.Time)
+                {
+                    spriteBatch.BaseDraw(TEXTURE.Pixel, p.X, p.Y,
+                        distance, 3, false, 0, 0, 1, 1, true,
+                        0, 255, 0, 255, radian, 1f, 0.5f, EFlip.None);
+                }
+                else
+                {
+                    flagOver = false;
+                    break;
+                }
+            }
+            // 结束后停顿以下再重新播放动画
+            if (flagOver && ptime >= result[last].Time + 1)
+                ptime = 0;
+            else
+                ptime += e.GameTime.ElapsedSecond;
+        }
+        return false;
+    }
+    protected override void InternalStart()
+    {
+        result.Clear();
+        time = 0;
+        ptime = 0;
     }
 }
 
@@ -183,50 +276,23 @@ public class EditorCommon : Label
     //}
 }
 
-public class EditorClip : EditorAllObject
+public class EditorEditMode<T, Edit> : EditorAllObject where Edit : EditSelectValue<T>, new()
 {
-    private static EditSelectRect edit = new EditSelectRect();
-
-    public EditorClip()
-        : base(new Type[] { typeof(RECT) })
-    {
+    public EditorEditMode() : base(new Type[] { typeof(T) }, false)
+    {        
         // 编辑模式选择
-        Hover += new DUpdate<UIElement>(EditorClip_Hover);
+        Hover += new DUpdate<UIElement>(EditorEditMode_Hover);
     }
 
-    void EditorClip_Hover(UIElement sender, Entry e)
+    void EditorEditMode_Hover(UIElement sender, Entry e)
     {
         if (e.INPUT.Pointer.IsTap(1))
         {
-            edit.Action = Select;
-            edit.Start();
+            _S<Edit>.Value.OnEdit = Select;
+            _S<Edit>.Value.Start();
         }
     }
-    void Select(RECT result)
-    {
-        VariableValue = result;
-    }
-}
-public class EditorPoint : EditorAllObject
-{
-    private static EditSelectPoint edit = new EditSelectPoint();
-
-    public EditorPoint()
-        : base(new Type[] { typeof(VECTOR2) })
-    {
-        // 编辑模式选择
-        Hover += new DUpdate<UIElement>(EditorPoint_Hover);
-    }
-
-    void EditorPoint_Hover(UIElement sender, Entry e)
-    {
-        if (e.INPUT.Pointer.IsTap(1))
-        {
-            edit.Action = Select;
-            edit.Start();
-        }
-    }
-    void Select(VECTOR2 result)
+    void Select(T result)
     {
         VariableValue = result;
     }

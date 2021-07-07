@@ -1,4 +1,8 @@
-﻿2021/06/31
+﻿2021/07/07
+1. 粒子系统新增PSMotionPath和PSPosMotionPath，定制运动轨迹
+2. 粒子编辑器编辑模式修改，新增运动轨迹相关编辑模式
+
+2021/06/31
 1. System.Net.HttpWebResponse新增StatusDescription
 2. 数组支持协变
 3. 解析器修复-(Cast)Method(Parameter)的BUG

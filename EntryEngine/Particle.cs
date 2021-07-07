@@ -281,6 +281,61 @@ namespace EntryEngine
             return true;
         }
     }
+    [ASummaryP("位置：运动轨迹", "粒子按照一个运动轨迹出生", EParticleStreamType.一次性)]
+    [AReflexible]public class PSPosMotionPath : PSMotionPath
+    {
+        [ASummary("矩形区域", "相对于0,0坐标，右键可以在屏幕拖拽选择一个矩形区域")]
+        public RECT Area = new RECT();
+        [ASummary("矩形区域", "暂不支持视图操作，只能自己填数值，有矩形区域时，优先使用矩形区域")]
+        public CIRCLE Circle = new CIRCLE(0);
+
+        private _RANDOM.Random random;
+        [ASummary("随机种子", "可以让随机效果微微改变")]
+        public int Seed;
+        protected _RANDOM.Random Random
+        {
+            get
+            {
+                if (random == null)
+                    random = new RandomDotNet(Seed);
+                return random;
+            }
+        }
+
+        public PSPosMotionPath()
+        {
+            Skip = true;
+            Seed = _RANDOM.Next();
+        }
+
+        protected override float GetMotionTime(Particle p, ParticleEmitter ps, float elapsed)
+        {
+            return ps.PS.Elapsed;
+        }
+        public override bool Update(Particle p, ParticleEmitter ps, float elapsed)
+        {
+            base.Update(p, ps, elapsed);
+            if (Area.Width != 0 && Area.Height != 0)
+            {
+                float x = Random.Next(Area.Width);
+                float y = Random.Next(Area.Height);
+                p.Position.X += x + Area.X;
+                p.Position.Y += y + Area.Y;
+            }
+            else if (Circle.R != 0)
+            {
+                float radian = Random.NextRadian();
+                float r = Random.Next(Circle.R);
+                CIRCLE.ParametricEquation(ref p.Position, r, radian, out p.Position);
+            }
+            return true;
+        }
+        public override void Reset()
+        {
+            base.Reset();
+            random = null;
+        }
+    }
     [ASummaryP("绝对位置", "粒子系统位置发生变化时，之前出生的粒子保留在原来的位置\n视图内右键拖动可以看到效果", EParticleStreamType.一次性)]
     [AReflexible]public class PSPosAbsolute : PSSkip
     {
@@ -808,6 +863,111 @@ namespace EntryEngine
             return true;
         }
     }
+    [ASummaryP("运动：轨迹", "粒子按照绘制的轨迹运动", EParticleStreamType.变化)]
+    [AReflexible]public class PSMotionPath : ParticleStream
+    {
+        /// <summary>粒子随时间的出生点</summary>
+        [AReflexible]public class BonePoint
+        {
+            /// <summary>坐标点的时间，单位秒</summary>
+            public float Time;
+            public float X;
+            public float Y;
+
+            public override string ToString()
+            {
+                return string.Format("{0} - {1}, {2}", Time, X, Y);
+            }
+        }
+
+        /// <summary>运动时间线</summary>
+        [ASummary("运动时间线", "指定时间粒子出现的位置，邮件可以在屏幕上画一条运动轨迹")]
+        public List<BonePoint> Timeline = new List<BonePoint>();
+
+        /// <summary>获取当前运动的秒数</summary>
+        protected virtual float GetMotionTime(Particle p, ParticleEmitter ps, float elapsed)
+        {
+            return p.Age;
+        }
+        public override bool Update(Particle p, ParticleEmitter ps, float elapsed)
+        {
+            float px = 0;
+            float py = 0;
+            if (Timeline != null && Timeline.Count > 0)
+            {
+                float time = GetMotionTime(p, ps, elapsed);
+                BonePoint current = null;
+                BonePoint next = null;
+                int last = Timeline.Count - 1;
+                if (time <= 0)
+                {
+                    next = Timeline[0];
+                }
+                else if (time >= Timeline[last].Time)
+                {
+                    current = Timeline[last];
+                    next = current;
+                }
+                else
+                {
+                    // 每次根据time二分查找到current和next
+                    int start = 0, end = last;
+                    int median;
+
+                    while (start <= end)
+                    {
+                        median = start + ((end - start) >> 1);
+                        // 时间正好时会找到
+                        if (Timeline[median].Time == time)
+                        {
+                            current = Timeline[median];
+                            if (median == last)
+                                next = current;
+                            else
+                                next = Timeline[median + 1];
+                            break;
+                        }
+                        else if (Timeline[median].Time > time)
+                            end = median - 1;
+                        else
+                            start = median + 1;
+                    }
+                    // 没找到时start和end也定位到相关位置了
+                    if (current == null)
+                    {
+                        current = Timeline[end];
+                        next = Timeline[start];
+                    }
+                }
+
+                // 计算 当前出生点 -> 下一个出生点 的插值位置
+                if (current == next)
+                {
+                    px = current.X;
+                    py = current.Y;
+                }
+                else
+                {
+                    // current == null -> 0 ~ 第一点插值
+                    if (current == null)
+                    {
+                        float percent = time / next.Time;
+                        px = next.X * percent;
+                        py = next.Y * percent;
+                    }
+                    else
+                    {
+                        float percent = (time - current.Time) / (next.Time - current.Time);
+                        px = current.X + (next.X - current.X) * percent;
+                        py = current.Y + (next.Y - current.Y) * percent;
+                    }
+                }
+            }
+            p.Position.X = px;
+            p.Position.Y = py;
+            return true;
+        }
+    }
 
     // DISAPPEAR
     [ASummaryP("粒子消失", "让粒子直接消失", EParticleStreamType.一次性)]
@@ -866,7 +1026,8 @@ namespace EntryEngine
 
         /// <summary>粒子存在时间（秒）</summary>
         public float Life;
-        protected internal float Age;
+        /// <summary>粒子当前存在时间（秒）</summary>
+        public float Age;
         internal int StreamIndex;
 
         internal void ResetVector()
@@ -884,35 +1045,18 @@ namespace EntryEngine
         /// <summary>粒子持续时间(s)</summary>
         public float Duration;
 
+        /// <summary>粒子发射器</summary>
         public List<ParticleEmitter> Emitters { get { return emitters; } }
-        //public ParticleEmitter[] Emitters
-        //{
-        //    get { return emitters.ToArray(); }
-        //}
-        public int EmittersCount
-        {
-            get { return emitters.Count; }
-        }
-        public override int Width
-        {
-            get { return 1; }
-        }
-        public override int Height
-        {
-            get { return 1; }
-        }
-        public float Elapsed
-        {
-            get { return _elapsed; }
-        }
+        public int EmittersCount { get { return emitters.Count; } }
+        public override int Width { get { return 1; } }
+        public override int Height { get { return 1; } }
+        /// <summary>粒子系统播放经过的秒数</summary>
+        public float Elapsed { get { return _elapsed; } }
         public override bool IsEnd
         {
             get { return Duration > 0 && _elapsed >= Duration; }
         }
-        public override bool IsDisposed
-        {
-            get { return emitters == null; }
-        }
+        public override bool IsDisposed { get { return emitters == null; } }
 
         public ParticleSystem()
         {
@@ -934,12 +1078,18 @@ namespace EntryEngine
         {
             if (emitter == null || emitters.Contains(emitter))
                 return false;
+            emitter.PS = this;
             emitters.Add(emitter);
             return true;
         }
         public bool RemoveEmitter(ParticleEmitter emitter)
         {
-            return emitters.Remove(emitter);
+            if (emitters.Remove(emitter))
+            {
+                emitter.PS = null;
+                return true;
+            }
+            return false;
         }
         public void SetElapsed(float value)
         {
@@ -996,14 +1146,22 @@ namespace EntryEngine
         public override Content Cache()
         {
             var cache = new ParticleSystem();
+            cache.emitters.Capacity = this.emitters.Count;
             cache.Duration = this.Duration;
             for (int i = 0; i < emitters.Count; i++)
-                cache.emitters.Add(emitters[i].Clone());
+            {
+                var clone = emitters[i].Clone();
+                clone.PS = this;
+                cache.emitters.Add(clone);
+            }
             cache._Key = this._Key;
             return cache;
         }
         protected internal override void InternalDispose()
         {
+            if (emitters != null)
+                for (int i = 0; i < emitters.Count; i++)
+                    emitters[i].PS = null;
             emitters = null;
         }
     }
@@ -1028,10 +1186,10 @@ namespace EntryEngine
         internal int _stream;
         public ParticleStream[] Flow;
 
-        public int Count
-        {
-            get { return particles.Count; }
-        }
+        /// <summary>发射器所属粒子系统，添加进入粒子系统时赋值，否则为null</summary>
+        public ParticleSystem PS { get; internal set; }
+        /// <summary>粒子的数量</summary>
+        public int Count { get { return particles.Count; } }
 
         public Particle CreateParticle()
         {

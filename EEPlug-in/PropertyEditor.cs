@@ -7,6 +7,7 @@ using EntryEngine.Serialize;
 using EntryEngine;
 using System.Reflection;
 using EntryEditor;
+using System.Collections;
 
 namespace EntryEditor
 {
@@ -74,6 +75,12 @@ namespace EntryEditor
             }
         }
 
+        /// <summary>内部更改值，会一并修改valueMonitor</summary>
+        protected void InternalSetValue(object value)
+        {
+            variable.SetValue(value);
+            valueMonitor = value;
+        }
         protected abstract void SetValue();
         protected override void InternalUpdate(Entry e)
         {
@@ -160,7 +167,7 @@ namespace EntryEditor
             }
         }
     }
-    public class EditorObject : EditorVariable
+    internal class EditorObject : EditorVariable
     {
         public IEnumerable<EditorVariable> Editors
         {
@@ -220,9 +227,7 @@ namespace EntryEditor
             }
         }
     }
-    /// <summary>
-    /// 若Variable.Member == null则是ValueEditor的创建
-    /// </summary>
+    /// <summary>若Variable.Member == null则是ValueEditor的创建</summary>
     public class EditorAllObject : EditorComboBox
     {
         private EditorVariable valueEditor;
@@ -251,11 +256,14 @@ namespace EntryEditor
             get { return singleType; }
         }
 
-        public EditorAllObject(IList<Type> types)
+        /// <summary>创建一个多态类型的编辑器</summary>
+        /// <param name="types">总共可创建的类型</param>
+        /// <param name="isNullable">非值类型的情况下，是否允许为null</param>
+        public EditorAllObject(IList<Type> types, bool isNullable)
             : base((Array)null)
         {
             collapse = new CheckBox();
-            var texture = PATCH.GetNinePatch(COLOR.TransparentBlack, COLOR.Yellow, 1);
+            var texture = PATCH.GetNinePatch(COLOR.TransparentBlack, COLOR.DeepSkyBlue, 1);
 
             texture.Left = 2;
             texture.Top = 2;
@@ -273,7 +281,7 @@ namespace EntryEditor
             collapse.X = -WIDTH;
             collapse.Width = WIDTH;
             collapse.Height = HEIGHT;
-            collapse.CheckedOverlayNormal = ECheckedOverlay.选中覆盖普通;
+            collapse.CheckedOverlayNormal = ECheckedOverlay.不覆盖;
             collapse.CheckedChanged += CollapseSwitch;
             AddChildFirst(collapse);
 
@@ -285,7 +293,7 @@ namespace EntryEditor
                 singleType = type.IsValueType;
             }
 
-            if (!singleType)
+            if (!singleType && isNullable)
             {
                 array = array.Insert(0, (object)null);
             }
@@ -378,13 +386,16 @@ namespace EntryEditor
                 else
                 {
                     valueEditor = GENERATOR.GenerateEditor(new VariableValue(VariableValue));
-                    if (valueEditor is EditorAllObject)
+                    if (valueEditor != null)
                     {
-                        valueEditor = ((EditorAllObject)valueEditor).valueEditor;
+                        if (valueEditor is EditorAllObject)
+                        {
+                            valueEditor = ((EditorAllObject)valueEditor).valueEditor;
+                        }
+                        Add(valueEditor);
+                        if (OnCreateValueEditor != null)
+                            OnCreateValueEditor(valueEditor);
                     }
-                    Add(valueEditor);
-                    if (OnCreateValueEditor != null)
-                        OnCreateValueEditor(valueEditor);
                 }
             }
 
@@ -686,7 +697,20 @@ namespace EntryEditor
         }
         protected override void SetValue()
         {
-            comboBox.DropDownList.SelectedIndex = Select(array, VariableValue);
+            object value = VariableValue;
+            int index = Select(array, value);
+            if (comboBox.DropDownList.SelectedIndex != index)
+            {
+                if (index != -1)
+                {
+                    // 外部替换数组内的实例
+                    if (value != array.GetValue(index))
+                    {
+                        array.SetValue(value, index);
+                    }
+                }
+                comboBox.DropDownList.SelectedIndex = index;
+            }
         }
         protected virtual int Select(Array array, object value)
         {
@@ -984,6 +1008,178 @@ namespace EntryEditor
             alpha.Value = box.Color.A;
         }
     }
+    public class EditorArray : EditorVariable
+    {
+        private Label label;
+        private TabPage collapse;
+        private Type type;
+        private Type elementType;
+
+        public EditorArray(Type type, Type elementType)
+        {
+            this.type = type;
+            this.elementType = elementType;
+
+            collapse = new TabPage();
+            collapse.IsRadioButton = false;
+
+            var texture = PATCH.GetNinePatch(COLOR.TransparentBlack, COLOR.DeepSkyBlue, 1);
+
+            texture.Left = 2;
+            texture.Top = 2;
+            texture.Right = texture.Width;
+            texture.Bottom = texture.Height;
+            collapse.SourceNormal = texture;
+
+            texture = PATCH.GetNinePatch(COLOR.TransparentBlack, COLOR.Yellow, 1);
+            texture.Left = 0;
+            texture.Top = 0;
+            texture.Right = texture.Width - 2;
+            texture.Bottom = texture.Height - 2;
+            collapse.SourceClicked = texture;
+
+            collapse.X = -WIDTH;
+            collapse.Width = WIDTH;
+            collapse.Height = HEIGHT;
+            collapse.OnChecked += new DUpdate<Button>(collapse_OnChecked);
+            Add(collapse);
+
+            Panel page = new Panel();
+            page.X = 0;
+            page.Y = HEIGHT;
+            page.Width = WIDTH * 2;
+            page.Height = HEIGHT * 5;
+            page.Background = TEXTURE.Pixel;
+            page.Color = COLOR.Black;
+            collapse.Page = page;
+
+            this.Height = 0;
+
+            label = new Label();
+            label.Width = WIDTH;
+            label.Height = HEIGHT;
+            label.UIText.FontColor = COLOR.White;
+            label.Clicked += new DUpdate<UIElement>(EditorArray_Clicked);
+            Add(label);
+        }
+
+        void ResetPageSize()
+        {
+            if (collapse.Checked)
+            {
+                IList list = (IList)VariableValue;
+                int size = 0;
+                if (list != null)
+                    size = list.Count > 5 ? 5 : list.Count;
+                collapse.Page.Height = size * HEIGHT;
+                ResetLayout(VECTOR2.NaN);
+            }
+        }
+        void collapse_OnChecked(Button sender, Entry e)
+        {
+            ResetPageSize();
+        }
+        void EditorArray_Clicked(UIElement sender, Entry e)
+        {
+            IList list = (IList)VariableValue;
+            if (list == null)
+                AddValue(0);
+            else
+                AddValue(((IList)VariableValue).Count);
+        }
+        void AddValue(int i)
+        {
+            IList list = (IList)VariableValue;
+            if (list == null)
+            {
+                if (type.IsArray)
+                    list = Array.CreateInstance(elementType, 0);
+                else
+                    list = (IList)Activator.CreateInstance(type);
+                Variable.SetValue(list);
+            }
+            if (type.IsArray)
+            {
+                Array array = Array.CreateInstance(elementType, list.Count + 1);
+                Array.Copy((Array)list, array, list.Count);
+                list = array;
+                InternalSetValue(list);
+            }
+            else
+                list.Add(elementType.DefaultValue());
+            //IVariable obj = new VariableExpression(elementType, () => list[i], (v) => list[i] = v);
+            IVariable obj = new VariableExpression(null, elementType, (list.Count - 1).ToString(),
+                (a1, a2) => list[i], (a1, a2, v) => list[i] = v);
+            var editor = GENERATOR.GenerateEditor(obj);
+            //if (!(editor is EditorAllObject))
+            //{
+            //    Label label = new Label();
+            //    //label.X = WIDTH;
+            //    label.Width = 0;
+            //    label.Height = HEIGHT;
+            //    label.Pivot = EPivot.TopRight;
+            //    label.UIText.TextAlignment = EPivot.MiddleRight;
+            //    label.UIText.FontColor = COLOR.Black;
+            //    label.Text = string.Format("[{0}]", i);
+            //    editor.Add(label);
+            //}
+            collapse.Page.Add(editor);
+            editor.Hover += new DUpdate<UIElement>(editor_Hover);
+
+            ResetPage();
+        }
+        void editor_Hover(UIElement sender, Entry e)
+        {
+            if (e.INPUT.Pointer.IsClick(2))
+                RemoveAt(collapse.Page.IndexOf(sender));
+        }
+        void RemoveAt(int i)
+        {
+            IList list = (IList)VariableValue;
+            if (type.IsArray)
+            {
+                Array array = Array.CreateInstance(elementType, list.Count - 1);
+                Array.Copy((Array)list, 0, array, 0, i);
+                Array.Copy((Array)list, i + 1, array, i, list.Count - i - 1);
+                InternalSetValue(array);
+            }
+            else
+                list.RemoveAt(i);
+
+            collapse.Page.Remove(i);
+
+            ResetPage();
+        }
+        void ResetPage()
+        {
+            IList list = (IList)VariableValue;
+            this.label.Text = string.Format("{0}[{1}]", elementType.Name, list == null ? "null" : list.Count.ToString());
+            ResetPageSize();
+        }
+        protected override void SetValue()
+        {
+            collapse.Page.Clear();
+            IList list = (IList)VariableValue;
+            if (list != null)
+                for (int i = 0; i < list.Count; i++)
+                    AddValue(i);
+            ResetLayout(VECTOR2.NaN);
+            ResetPage();
+        }
+        private void ResetLayout(VECTOR2 size)
+        {
+            float y = 0;
+            foreach (EditorVariable item in collapse.Page)
+            {
+                item.ContentSizeChanged -= ResetLayout;
+                item.ContentSizeChanged += ResetLayout;
+
+                //item.X = WIDTH;
+                item.Y = y;
+                y += item.ContentSize.Y;
+            }
+        }
+    }
 
 
     public class FromFile : Button
@@ -1042,7 +1238,17 @@ namespace EntryEditor
         }
         public virtual EditorVariable GenerateArray(IVariable variable)
         {
-            throw new NotImplementedException();
+            var type = variable.Type;
+            if (type.IsArray)
+                return new EditorArray(type, type.GetElementType());
+            else
+            {
+                var interfaces = type.GetAllInterfaces();
+                foreach (var i in interfaces)
+                    if (i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IList<>))
+                        return new EditorArray(type, i.GetGenericArguments()[0]);
+                throw new NotImplementedException(string.Format("暂未实现{0}类型的编辑器", type.FullName));
+            }
         }
         public virtual EditorVariable GenerateBool(IVariable variable)
         {
@@ -1069,9 +1275,12 @@ namespace EntryEditor
         public EditorVariable GenerateEditor(IVariable variable)
         {
             var generator = InternalGenerate(variable);
-            if (OnGenerated != null)
-                OnGenerated(variable, generator);
-            generator.Variable = variable;
+            if (generator != null)
+            {
+                if (OnGenerated != null)
+                    OnGenerated(variable, generator);
+                generator.Variable = variable;
+            }
             return generator;
         }
         protected virtual EditorVariable InternalGenerate(IVariable variable)
@@ -1088,10 +1297,10 @@ namespace EntryEditor
             {
                 return GenerateEnum(variable);
             }
-            else if (type.IsArray)
-            {
-                return GenerateArray(variable);
-            }
+            //else if (type.IsArray || type.Is(typeof(IList)))
+            //{
+            //    return GenerateArray(variable);
+            //}
             else if (type == typeof(bool))
             {
                 return GenerateBool(variable);
@@ -1139,8 +1348,11 @@ namespace EntryEditor
                     types = temp;
                 }
 
+                if (types.Count == 0)
+                    return null;
+
                 var value = variable.GetValue();
-                EditorAllObject all = new EditorAllObject(types);
+                EditorAllObject all = new EditorAllObject(types, value == null);
                 if (!all.SingleType && value == null)
                     return all;
 
