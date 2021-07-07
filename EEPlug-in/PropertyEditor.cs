@@ -167,7 +167,7 @@ namespace EntryEditor
             }
         }
     }
-    internal class EditorObject : EditorVariable
+    public class EditorObject : EditorVariable
     {
         public IEnumerable<EditorVariable> Editors
         {

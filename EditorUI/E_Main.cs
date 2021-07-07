@@ -1323,7 +1323,7 @@ namespace EditorUI
     public class EditorClip : EditorAllObject
     {
         public EditorClip()
-            : base(new Type[] { typeof(RECT) })
+            : base(new Type[] { typeof(RECT) }, true)
         {
             this.OnCreateValueEditor += new Action<EditorVariable>(EditorClip_OnCreateValueEditor);
             this.OnGetValue += new Func<object, object>(EditorClip_OnGetValue);
