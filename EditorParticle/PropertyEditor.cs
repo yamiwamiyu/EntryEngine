@@ -278,6 +278,8 @@ public class EditorCommon : Label
 
 public class EditorEditMode<T, Edit> : EditorAllObject where Edit : EditSelectValue<T>, new()
 {
+    static T __copy;
+
     public EditorEditMode() : base(new Type[] { typeof(T) }, false)
     {        
         // 编辑模式选择
@@ -290,6 +292,21 @@ public class EditorEditMode<T, Edit> : EditorAllObject where Edit : EditSelectVa
         {
             _S<Edit>.Value.OnEdit = Select;
             _S<Edit>.Value.Start();
+        }
+        if (e.INPUT.Keyboard.Ctrl)
+        {
+            if (e.INPUT.Keyboard.IsClick(PCKeys.C))
+            {
+                __copy = (T)VariableValue;
+                STextHint.ShowHint("复制成功");
+                Handle();
+            }
+            if (e.INPUT.Keyboard.IsClick(PCKeys.V) && __copy != null)
+            {
+                VariableValue = __copy;
+                STextHint.ShowHint("粘贴成功");
+                Handle();
+            }
         }
     }
     void Select(T result)

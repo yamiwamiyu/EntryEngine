@@ -281,12 +281,12 @@ namespace EntryEngine
             return true;
         }
     }
-    [ASummaryP("位置：运动轨迹", "粒子按照一个运动轨迹出生", EParticleStreamType.一次性)]
+    [ASummaryP("位置：轨迹", "粒子出生的运动轨迹", EParticleStreamType.一次性)]
     [AReflexible]public class PSPosMotionPath : PSMotionPath
     {
         [ASummary("矩形区域", "相对于0,0坐标，右键可以在屏幕拖拽选择一个矩形区域")]
         public RECT Area = new RECT();
-        [ASummary("矩形区域", "暂不支持视图操作，只能自己填数值，有矩形区域时，优先使用矩形区域")]
+        [ASummary("矩形区域", "有矩形区域时，优先使用矩形区域")]
         public CIRCLE Circle = new CIRCLE(0);
 
         private _RANDOM.Random random;
@@ -881,7 +881,7 @@ namespace EntryEngine
         }
 
         /// <summary>运动时间线</summary>
-        [ASummary("运动时间线", "指定时间粒子出现的位置，邮件可以在屏幕上画一条运动轨迹")]
+        [ASummary("运动时间线", "粒子按照轨迹改变位置，右键可以在屏幕上画一条运动轨迹，鼠标悬浮状态下Ctrl+C和Ctrl+V可以复制粘贴轨迹")]
         public List<BonePoint> Timeline = new List<BonePoint>();
 
         /// <summary>获取当前运动的秒数</summary>
