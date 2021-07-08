@@ -1352,7 +1352,7 @@ namespace EntryEditor
                     return null;
 
                 var value = variable.GetValue();
-                EditorAllObject all = new EditorAllObject(types, value == null);
+                EditorAllObject all = new EditorAllObject(types, true);
                 if (!all.SingleType && value == null)
                     return all;
 
