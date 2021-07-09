@@ -707,6 +707,7 @@ namespace EntryBuilder
 		}
         private static bool PublishCopyContent(string xnaContentDir, string publishOutputDir, Action<FileInfo, string> onCopyFile)
         {
+            _LOG.Info("发布拷贝资源");
             BuildDir(ref xnaContentDir, true);
             BuildDir(ref publishOutputDir, true);
             bool isDirDifference = xnaContentDir != publishOutputDir;
@@ -5789,7 +5790,7 @@ return result;"
 			foreach (string file in files)
 			{
                 string tempName = Path.GetFileName(file);
-                if (tempName.StartsWith("_") || tempName.StartsWith("#"))
+                if (tempName.StartsWith("_") || tempName.StartsWith("#") || tempName.Contains("$_"))
                 {
                     Console.WriteLine("skip xlsx: {0}", file);
                     continue;
@@ -10557,22 +10558,24 @@ return result;"
                             ushort y = 0;
                             foreach (var c in text)
                             {
-                                graphics.DrawImage(c.Value, new Point(width, y));
-                                writer.Write(c.Key);
-                                writer.Write((byte)0);
-                                if (c.Value.Height > height)
-                                    height = c.Value.Height;
                                 if (width + c.Value.Width > 2048)
                                 {
                                     y = (ushort)(y + height);
                                     width = 0;
                                     height = 0;
                                 }
+
+                                graphics.DrawImage(c.Value, new Point(width, y));
+                                writer.Write(c.Key);
+                                writer.Write((byte)0);
                                 writer.Write((ushort)width);
-                                width += c.Value.Width;
                                 writer.Write(y);
                                 writer.Write((byte)c.Value.Width);
                                 writer.Write((byte)c.Value.Height);
+
+                                width += c.Value.Width;
+                                if (c.Value.Height > height)
+                                    height = c.Value.Height;
                             }
                             string output = item.输出路径;
                             if (string.IsNullOrEmpty(output))
