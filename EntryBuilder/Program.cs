@@ -10463,7 +10463,7 @@ return result;"
                         int tempIndex = 0;
                         foreach (var line in lines)
                             foreach (var m in line)
-                                SavePng(m, "未能生成字体", tempIndex++ + ".png", true);
+                                SavePng(m, "#未能生成字体", tempIndex++ + ".png", true);
                         continue;
                     }
                     // 逐行统一尺寸
