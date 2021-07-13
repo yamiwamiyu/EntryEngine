@@ -79,7 +79,7 @@ namespace EntryEngine
     {
         private float _remain;
         [ASummary("秒粒子个数", "1秒产生粒子的个数")]
-        public int BornPerSecond = 60;
+        public float BornPerSecond = 60;
         [ASummary("粒子上限", "产生出的粒子数量的上限，为0时不限制粒子产生")]
         public ushort LimitCount;
         private float _time;
@@ -106,7 +106,7 @@ namespace EntryEngine
 
         public override bool Update(Particle p, ParticleEmitter ps, float elapsed)
         {
-            int born = 0;
+            float born = 0;
             float previous = _time;
             _time += elapsed;
             if (_time >= StartTime)
