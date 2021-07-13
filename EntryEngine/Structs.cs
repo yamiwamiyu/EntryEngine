@@ -74,6 +74,10 @@ namespace EntryEngine
         {
             return this.X.GetHashCode() + this.Y.GetHashCode();
         }
+        public bool IsZero()
+        {
+            return X == 0 && Y == 0;
+        }
 		public bool IsNaN()
 		{
 			return float.IsNaN(X) || float.IsNaN(Y);

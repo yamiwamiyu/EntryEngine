@@ -1301,7 +1301,9 @@ public partial class EditorParticle : SceneEditorEntry
 
         #region 操作粒子系统视图
 
-        if (TBTimelineBottom.IsClick && __INPUT.PointerIsPressed(0))
+        if (TBTimelineBottom.IsClick
+            && (__INPUT.PointerIsClick(0) ||
+                (__INPUT.PointerIsPressed(0) && !__INPUT.PointerDeltaPosition.IsZero())))
         {
             VECTOR2 pos = TBTimelineBottom.ConvertGraphicsToLocal(__INPUT.PointerPosition);
             ps.SetElapsed(_MATH.Clamp(pos.X, 0, TBTimelineBottom.Width) / TBTimelineBottom.Width * ps.Duration);

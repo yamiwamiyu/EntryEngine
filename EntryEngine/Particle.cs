@@ -157,6 +157,18 @@ namespace EntryEngine
             return clone;
         }
     }
+    [ASummaryP("跳转子流", "让粒子的流系统跳转到指定位置", EParticleStreamType.出生)]
+    [AReflexible]public class PBGoto : ParticleStream
+    {
+        [ASummary("流位置", "参见编辑器流后的数字")]
+        public int StreamIndex = 2;
+        
+        public override bool Update(Particle p, ParticleEmitter ps, float elapsed)
+        {
+            p.StreamIndex = StreamIndex - 1;
+            return false;
+        }
+    }
 
     // APPEAR | SKIP
     [ASummaryP("跳过", "本节点执行过一次后，除了根节点，本节点前面的所有节点都将不再执行", EParticleStreamType.一次性)]
@@ -227,6 +239,7 @@ namespace EntryEngine
         {
             p.Texture = Texture;
             p.Color = Color;
+            p.Color2RGBA();
             p.Origin = Origin;
             p.Flip = Flip;
             return true;
@@ -496,6 +509,9 @@ namespace EntryEngine
                 else
                     p.Color.A = From.A;
             }
+
+            p.Color2RGBA();
+
             return true;
         }
     }
@@ -655,16 +671,16 @@ namespace EntryEngine
             float value = GetParticleValue(p);
             switch (OP)
             {
-                case EPSCheck.等于: return p.speed == Value;
-                case EPSCheck.大于: return p.speed > Value;
-                case EPSCheck.大于等于: return p.speed >= Value;
-                case EPSCheck.小于: return p.speed < Value;
-                case EPSCheck.小于等于: return p.speed <= Value;
+                case EPSCheck.等于: return value == Value;
+                case EPSCheck.大于: return value > Value;
+                case EPSCheck.大于等于: return value >= Value;
+                case EPSCheck.小于: return value < Value;
+                case EPSCheck.小于等于: return value <= Value;
                 default: return true;
             }
         }
     }
-    [ASummaryP("范围：速度", "粒子移动速度是否在范围内，比较值为每秒移动的像素值", EParticleStreamType.条件)]
+    [ASummaryP("范围：速度", "粒子移动速度是否在范围内", EParticleStreamType.条件)]
     [AReflexible]public class PSSpeedCheck : PSCheck
     {
         public override float GetParticleValue(Particle p)
@@ -672,7 +688,7 @@ namespace EntryEngine
             return p.speed;
         }
     }
-    [ASummaryP("范围：大小", "粒子大小是否在范围内，比较值为粒子的大小", EParticleStreamType.条件)]
+    [ASummaryP("范围：大小", "粒子大小是否在范围内", EParticleStreamType.条件)]
     [AReflexible]public class PSScaleCheck : PSCheck
     {
         [ASummary("横向", "")]
@@ -684,6 +700,14 @@ namespace EntryEngine
                 return p.Scale.X;
             else
                 return p.Scale.Y;
+        }
+    }
+    [ASummaryP("范围：不透明度", "粒子不透明度是否在范围内", EParticleStreamType.条件)]
+    [AReflexible]public class PSAlphaCheck : PSCheck
+    {
+        public override float GetParticleValue(Particle p)
+        {
+            return p.A;
         }
     }
 
@@ -791,25 +815,35 @@ namespace EntryEngine
                 if (vary != 0)
                 {
                     if ((Change & EPSColor.红) != EPSColor.无)
-                        p.Color.R = _MATH.InByte(p.Color.R + vary);
+                        p.R += vary;
+                        //p.Color.R = _MATH.InByte(p.Color.R + vary);
                     if ((Change & EPSColor.绿) != EPSColor.无)
-                        p.Color.G = _MATH.InByte(p.Color.G + vary);
+                        p.G += vary;
+                        //p.Color.G = _MATH.InByte(p.Color.G + vary);
                     if ((Change & EPSColor.蓝) != EPSColor.无)
-                        p.Color.B = _MATH.InByte(p.Color.B + vary);
+                        p.B += vary;
+                        //p.Color.B = _MATH.InByte(p.Color.B + vary);
                     if ((Change & EPSColor.不透明) != EPSColor.无)
-                        p.Color.A = _MATH.InByte(p.Color.A + vary);
+                        p.A += vary;
+                        //p.Color.A = _MATH.InByte(p.Color.A + vary);
+                    p.RGBA2Color();
                 }
             }
             else
             {
                 if ((Change & EPSColor.红) != EPSColor.无)
-                    p.Color.R = _MATH.InByte(p.Color.R + VaryValue(p.Color.R) * elapsed);
+                    p.R += VaryValue(p.R) * elapsed;
+                    //p.Color.R = _MATH.InByte(p.Color.R + VaryValue(p.Color.R) * elapsed);
                 if ((Change & EPSColor.绿) != EPSColor.无)
-                    p.Color.G = _MATH.InByte(p.Color.G + VaryValue(p.Color.G) * elapsed);
+                    p.G += VaryValue(p.G) * elapsed;
+                    //p.Color.G = _MATH.InByte(p.Color.G + VaryValue(p.Color.G) * elapsed);
                 if ((Change & EPSColor.蓝) != EPSColor.无)
-                    p.Color.B = _MATH.InByte(p.Color.B + VaryValue(p.Color.B) * elapsed);
+                    p.B += VaryValue(p.B) * elapsed;
+                    //p.Color.B = _MATH.InByte(p.Color.B + VaryValue(p.Color.B) * elapsed);
                 if ((Change & EPSColor.不透明) != EPSColor.无)
-                    p.Color.A = _MATH.InByte(p.Color.A + VaryValue(p.Color.A) * elapsed);
+                    p.A += VaryValue(p.A) * elapsed;
+                    //p.Color.A = _MATH.InByte(p.Color.A + VaryValue(p.Color.A) * elapsed);
+                p.RGBA2Color();
             }
             return true;
         }
@@ -1024,6 +1058,30 @@ namespace EntryEngine
         /// <summary>每秒旋转的角度</summary>
         public float Rotate;
 
+        internal float R;
+        internal float G;
+        internal float B;
+        internal float A;
+        /// <summary>会将RGBA设定在0~1范围内</summary>
+        internal void RGBA2Color()
+        {
+            if (R < 0) R = 0; else if (R > 1) R = 1;
+            if (G < 0) G = 0; else if (G > 1) G = 1;
+            if (B < 0) B = 0; else if (B > 1) B = 1;
+            if (A < 0) A = 0; else if (A > 1) A = 1;
+            Color.R = (byte)(R * 255);
+            Color.G = (byte)(G * 255);
+            Color.B = (byte)(B * 255);
+            Color.A = (byte)(A * 255);
+        }
+        internal void Color2RGBA()
+        {
+            R = Color.R * COLOR.BYTE_TO_FLOAT;
+            G = Color.G * COLOR.BYTE_TO_FLOAT;
+            B = Color.B * COLOR.BYTE_TO_FLOAT;
+            A = Color.A * COLOR.BYTE_TO_FLOAT;
+        }
+
         /// <summary>粒子存在时间（秒）</summary>
         public float Life;
         /// <summary>粒子当前存在时间（秒）</summary>
@@ -1107,8 +1165,13 @@ namespace EntryEngine
             if (value <= _elapsed)
                 Reset();
 
+            int test = 0;
             while (_elapsed < value)
+            {
+                test++;
                 Update(fps);
+            }
+            _LOG.Debug("TestCount: {0}", test);
             this._elapsed = value;
         }
         public void Update(float elapsed)
@@ -1285,13 +1348,16 @@ namespace EntryEngine
                 p.Position.X += p.Vector.X * _elapsed;
                 p.Position.Y += p.Vector.Y * _elapsed;
             }
-            p.Rotation += p.Rotate * _elapsed;
+            if (p.Rotate != 0)
+            {
+                p.Rotation += p.Rotate * _elapsed;
+            }
 
-            p.Age += _elapsed;
             if (p.Age >= p.Life)
             {
                 particles.RemoveAt(p);
             }
+            p.Age += _elapsed;
 
             if (p.Texture != null)
             {
