@@ -2230,14 +2230,17 @@ return result;"
                         builder.AppendLine("var parameters = new StringBuilder();");
                         for (int j = 0, n = parameters.Length - 2; j <= n; j++)
                         {
-                            //builder.AppendLine("parameters.Append(\"{0}={1}{2}\", {0});", parameters[j].Name, "{0}", j != n ? "&" : "");
                             builder.Append("parameters.Append(\"{0}={{0}}", parameters[j].Name);
                             if (j != n)
                                 builder.Append("&");
                             builder.Append("\", ");
                             if (parameters[j].ParameterType.IsEnum)
                                 builder.Append("({0})", parameters[j].ParameterType.GetEnumUnderlyingType().CodeName());
-                            builder.AppendLine("{0});", parameters[j].Name);
+                            if (parameters[j].ParameterType.IsCustomType())
+                                builder.Append("JsonWriter.Serialize({0})", parameters[j].Name);
+                            else
+                                builder.Append("{0}", parameters[j].Name);
+                            builder.AppendLine(");");
                         }
                         // 生成请求调用
                         if (hasAsync)
