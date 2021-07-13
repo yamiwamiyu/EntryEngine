@@ -1165,13 +1165,8 @@ namespace EntryEngine
             if (value <= _elapsed)
                 Reset();
 
-            int test = 0;
             while (_elapsed < value)
-            {
-                test++;
                 Update(fps);
-            }
-            _LOG.Debug("TestCount: {0}", test);
             this._elapsed = value;
         }
         public void Update(float elapsed)
@@ -1183,8 +1178,8 @@ namespace EntryEngine
         }
         protected internal override bool Draw(GRAPHICS graphics, ref SpriteVertex vertex)
         {
-            if (!_updated && EntryService.Instance != null)
-                Update(EntryService.Instance.GameTime.ElapsedSecond);
+            if (!_updated)
+                Update(GameTime.Time.ElapsedSecond);
 
             if (emitters.Count > 0)
             {
