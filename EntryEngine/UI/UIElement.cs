@@ -490,6 +490,8 @@ namespace EntryEngine.UI
         public event DUpdate<UIElement> Released;
         /// <summary>鼠标左键双击</summary>
         public event DUpdate<UIElement> DoubleClick;
+        /// <summary>轻击事件</summary>
+        public event DUpdate<UIElement> Tap;
         /// <summary>键盘按键状态改变</summary>
         public event DUpdate<UIElement> Keyboard;
 
@@ -1033,6 +1035,7 @@ namespace EntryEngine.UI
             RegistEvent(DoDrag);
             RegistEvent(DoClicked);
             RegistEvent(DoReleased);
+            RegistEvent(DoTap);
             RegistEvent(DoKeyboard);
         }
 
@@ -1777,6 +1780,18 @@ namespace EntryEngine.UI
             if (Released != null && OnReleased(e))
             {
                 Released(this, e);
+                Handle();
+            }
+        }
+        protected bool OnTap(Entry e)
+        {
+            return isHover && e.INPUT.Pointer.IsTap(e.INPUT.Pointer.DefaultKey);
+        }
+        private void DoTap(Entry e)
+        {
+            if (Tap != null && OnTap(e))
+            {
+                Tap(this, e);
                 Handle();
             }
         }
