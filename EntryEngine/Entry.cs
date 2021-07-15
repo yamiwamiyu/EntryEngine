@@ -7237,7 +7237,12 @@ namespace EntryEngine
                 if (fontSize == 0)
                     this.fontSize = value;
                 else
-                    scale = _MATH.Near(value / fontSize, 1);
+                {
+                    if (value == 0)
+                        scale = 1;
+                    else
+                        scale = _MATH.Near(value / fontSize, 1);
+                }
             }
         }
         public override float LineHeight
