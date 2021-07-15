@@ -187,7 +187,7 @@ namespace EntryEngine.UI
 			}
 			set
 			{
-				if (contentScope.Equals(ref value))
+				if (contentScope.X == value.X && contentScope.Y == value.Y)
 					return;
 				contentScope = value;
                 UpdateScrollScope(true);
@@ -291,6 +291,16 @@ namespace EntryEngine.UI
             //IsClip = true;
 		}
 
+        protected override void OnAdd(UIElement node, int index)
+        {
+            base.OnAdd(node, index);
+            UpdateScrollScope(true);
+        }
+        protected override void OnRemoved(UIElement node)
+        {
+            base.OnRemoved(node);
+            UpdateScrollScope(true);
+        }
         protected void PanelMouseScroll(UIElement sender, Entry e)
         {
             if (e.INPUT.Mouse != null && ScrollWheelSpeed != 0)
@@ -329,7 +339,7 @@ namespace EntryEngine.UI
 			this.UpdateScrollScope(false);
 			this.InternalUpdateScrollBar();
 		}
-		public void UpdateScrollBar()
+		internal void UpdateScrollBar()
 		{
 			if (needUpdateScrollBar)
 				return;
