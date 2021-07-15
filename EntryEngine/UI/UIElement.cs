@@ -1785,7 +1785,7 @@ namespace EntryEngine.UI
         }
         protected bool OnTap(Entry e)
         {
-            return isHover && e.INPUT.Pointer.IsTap(e.INPUT.Pointer.DefaultKey);
+            return isHover && isClick && e.INPUT.Pointer.IsTap(e.INPUT.Pointer.DefaultKey);
         }
         private void DoTap(Entry e)
         {
