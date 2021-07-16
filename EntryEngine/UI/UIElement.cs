@@ -385,6 +385,28 @@ namespace EntryEngine.UI
             item.SourceHover = PATCH.GetNinePatch(COLOR.TransparentWhite, colorHover, bold);
             item.SourceClicked = PATCH.GetNinePatch(COLOR.TransparentWhite, inputColor, bold);
         }
+
+        /// <summary>按钮效果，点击时放大（使用了DrawAfterBegin和DrawBeforeEnd）</summary>
+        public static void EffectScale(UIElement element)
+        {
+            element.DrawAfterBegin += beqBegin;
+            element.DrawBeforeEnd += beqEnd;
+        }
+        static void beqBegin(UIElement sender, GRAPHICS sb, Entry e)
+        {
+            if (sender.IsHover && sender.IsClick)
+            {
+                var pivot = sender.FinalViewClip.Center;
+                sb.Begin(MATRIX2x3.CreateTransform(0, pivot.X, pivot.Y, 1.2f, 1.2f, pivot.X, pivot.Y));
+            }
+        }
+        static void beqEnd(UIElement sender, GRAPHICS sb, Entry e)
+        {
+            if (sender.IsHover && sender.IsClick)
+            {
+                sb.End();
+            }
+        }
     }
 
     public struct UIFlowLayout

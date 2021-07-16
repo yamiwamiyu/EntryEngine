@@ -291,9 +291,9 @@ namespace EntryEngine.UI
             //IsClip = true;
 		}
 
-        protected override void OnAdd(UIElement node, int index)
+        protected override void OnAdded(UIElement node, int index)
         {
-            base.OnAdd(node, index);
+            base.OnAdded(node, index);
             UpdateScrollScope(true);
         }
         protected override void OnRemoved(UIElement node)
@@ -419,7 +419,7 @@ namespace EntryEngine.UI
 				offsetScope.Y += scrollBarHorizontal.Height;
 			UpdateScrollBar();
             //if (!offsetScope.Equals(ref temp))
-            if (offsetScope != temp)
+            if (offsetScope.X != temp.X || offsetScope.Y != temp.Y)
             {
                 if (stayValue)
                     Offset = VECTOR2.Multiply(new VECTOR2(
