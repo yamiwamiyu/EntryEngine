@@ -7843,20 +7843,24 @@ namespace EntryEngine
 
         protected override void InternalBegin(GRAPHICS g)
         {
+            if (Base == null) return;
             Base.SetValue("View", (MATRIX)g.GraphicsToCartesianMatrix());
             Base.Begin(g);
         }
         protected override void InternalEnd(GRAPHICS g)
         {
+            if (Base == null) return;
             Base.End(g);
         }
         public void BaseOnTexture(TEXTURE texture)
         {
+            if (Base == null) return;
             if (Base.OnTexture != null)
                 Base.OnTexture(texture);
         }
         public void BaseOnDraw(EPrimitiveType type, TextureVertex[] vertices, int offset, int count)
         {
+            if (Base == null) return;
             if (Base.OnDraw != null)
                 Base.OnDraw(type, vertices, offset, count);
         }
@@ -7957,6 +7961,92 @@ namespace EntryEngine
             if (shader == null)
                 throw new ArgumentNullException("没有着色器，请先用SHADER.LoadShader加载着色器到Shader变量中");
             Base = shader;
+        }
+    }
+    public class ShaderAlpha : SHADER
+    {
+        /// <summary>0~1: 原本a=0.5，这个值0.5，最终就看见a=0.25的内容</summary>
+        public float Alpha;
+        public ShaderAlpha()
+        {
+            this.OnDraw = SetAlpha;
+        }
+        public ShaderAlpha(float alpha) : this() { }
+        void SetAlpha(EPrimitiveType type, TextureVertex[] vertices, int index, int count)
+        {
+            for (int i = index, e = index + count; i < e; i++)
+            {
+                vertices[i].Color.A = (byte)(vertices[i].Color.A * Alpha);
+            }
+        }
+
+        public override int PassCount
+        {
+            get { return 1; }
+        }
+        protected override void InternalBegin(GRAPHICS g)
+        {
+        }
+        protected override void InternalEnd(GRAPHICS g)
+        {
+        }
+
+        public override bool HasProperty(string name)
+        {
+            return false;
+        }
+        public override void SetValue(string property, bool value)
+        {
+        }
+        public override void SetValue(string property, bool[] value)
+        {
+        }
+        public override void SetValue(string property, float value)
+        {
+        }
+        public override void SetValue(string property, float[] value)
+        {
+        }
+        public override void SetValue(string property, int value)
+        {
+        }
+        public override void SetValue(string property, int[] value)
+        {
+        }
+        public override void SetValue(string property, MATRIX value)
+        {
+        }
+        public override void SetValue(string property, MATRIX[] value)
+        {
+        }
+        public override void SetValue(string property, TEXTURE value)
+        {
+        }
+        public override void SetValue(string property, VECTOR2 value)
+        {
+        }
+        public override void SetValue(string property, VECTOR2[] value)
+        {
+        }
+        public override void SetValue(string property, VECTOR3 value)
+        {
+        }
+        public override void SetValue(string property, VECTOR3[] value)
+        {
+        }
+        public override void SetValue(string property, VECTOR4 value)
+        {
+        }
+        public override void SetValue(string property, VECTOR4[] value)
+        {
+        }
+
+        public override bool IsDisposed
+        {
+            get { return false; }
+        }
+        protected internal override void InternalDispose()
+        {
         }
     }
 
