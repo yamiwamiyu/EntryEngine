@@ -606,9 +606,8 @@ namespace EntryEngine
             if (!_event && Scene != null && Scene.Phase == EPhase.Running)
                 _event = true;
 
-            foreach (var item in scenes)
-                // 首先更新一下Hover状态，否则子场景更新时，可能父场景没有更新导致Hover失效
-                item.UpdateHoverState(INPUT.Pointer);
+            // 首先更新一下Hover状态，否则子场景更新时，可能父场景没有更新导致Hover失效
+            scenes.ForFirstToLast(item => item.UpdateHoverState(INPUT.Pointer));
 
             var main = this.Scene;
             var node = scenes.Last;
