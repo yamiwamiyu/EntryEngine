@@ -325,6 +325,74 @@ namespace EntryEngine
 			result.X = num;
 			result.Y = num2;
 		}
+        /// <summary>力的合成</summary>
+        /// <param name="v1">分力1</param>
+        /// <param name="v2">分力2</param>
+        /// <param name="v3">合力</param>
+        public static void Combine(ref VECTOR2 v1, ref VECTOR2 v2, out VECTOR2 v3)
+        {
+            float a1 = (float)Math.Atan2(v1.Y, v1.X) * _MATH.R2D;
+            float a2 = (float)Math.Atan2(v2.Y, v2.X) * _MATH.R2D;
+
+            float speed1 = v1.Length();
+            float speed2 = v2.Length();
+
+            // 夹角
+            float a = _MATH.Closewise(a1, a2);
+            float r = a * _MATH.D2R;
+            float cos = (float)Math.Cos(r);
+            float sin = (float)Math.Sin(r);
+
+            float direction = a1;
+            float speed;
+            if (a != 0)
+            {
+                if (speed1 != 0)
+                    direction = a2 + (float)Math.Atan2(speed1 * sin, speed2 + speed1 * cos) * _MATH.R2D;
+                else
+                    direction = a2;
+            }
+            speed = (float)Math.Sqrt(speed1 * speed1 + speed2 * speed2 + 2 * speed1 * speed2 * cos);
+
+            float radian = direction * _MATH.D2R;
+            v3.X = (float)Math.Cos(radian) * speed;
+            v3.Y = (float)Math.Sin(radian) * speed;
+        }
+        /// <summary>万有引力</summary>
+        /// <param name="p">受力点坐标</param>
+        /// <param name="power">受力点原始运动方向和速度</param>
+        /// <param name="target">引力点</param>
+        /// <param name="force">引力大小</param>
+        /// <param name="v3">被万有引力吸引后的运动方向和速度</param>
+        public static void Gravitation(ref VECTOR2 p, ref VECTOR2 power, ref VECTOR2 target, float force, out VECTOR2 v3)
+        {
+            float radian = (float)Math.Atan2(target.Y - p.Y, target.X - p.X);
+            float angle = radian * _MATH.R2D;
+
+            float speed1 = power.Length();
+
+            // 夹角
+            float a1 = (float)Math.Atan2(power.Y, power.X) * _MATH.R2D;
+            float a = _MATH.Closewise(a1, angle);
+            float r = a * _MATH.D2R;
+            float cos = (float)Math.Cos(r);
+            float sin = (float)Math.Sin(r);
+
+            float direction = a1;
+            float speed;
+            if (a != 0)
+            {
+                if (speed1 != 0)
+                    direction = angle + (float)Math.Atan2(speed1 * sin, force + speed1 * cos) * _MATH.R2D;
+                else
+                    direction = angle;
+            }
+            speed = (float)Math.Sqrt(speed1 * speed1 + force * force + 2 * speed1 * force * cos);
+
+            radian = direction * _MATH.D2R;
+            v3.X = (float)Math.Cos(radian) * speed;
+            v3.Y = (float)Math.Sin(radian) * speed;
+        }
 		public static VECTOR2 Lerp(VECTOR2 value1, VECTOR2 value2, float amount)
 		{
 			VECTOR2 result;
