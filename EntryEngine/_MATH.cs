@@ -34,7 +34,9 @@ namespace EntryEngine
 		public readonly static float[] DIVIDE_BY_1;
         public readonly static ushort[] POW_2_SIZE = { 1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048 };
 		public const float DIVIDE_2048 = 1f / 2048f;
+        /// <summary>角度乘以变量转换成弧度</summary>
         public const float D2R = 0.0174532924f;
+        /// <summary>弧度乘以变量转换成角度</summary>
         public const float R2D = 57.2957764f;
 
 		public static float Abs(float value)

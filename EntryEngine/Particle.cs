@@ -272,24 +272,48 @@ namespace EntryEngine
     {
         [ASummary("矩形区域", "右键可以在屏幕拖拽选择一个矩形区域")]
         public RECT Area = new RECT(-50, -50, 100, 100);
+        [ASummary("内环宽度", "若不为0则与外轮廓形成一个环")]
+        public float InnerWidth;
+        [ASummary("内环高度", "若不为0则与外轮廓形成一个环")]
+        public float InnerHeight;
         public override bool Update(Particle p, ParticleEmitter ps, float elapsed)
         {
-            float x = Random.Next(Area.Width);
-            float y = Random.Next(Area.Height);
+            float x;
+            if (InnerWidth == 0)
+                x = Random.Next(Area.Width);
+            else
+            {
+                float width = Area.Width - InnerWidth;
+                x = Random.Next(width);
+                if (x > width * 0.5f)
+                    x = Area.Width - x + width * 0.5f;
+            }
+            float y;
+            if (InnerHeight == 0)
+                y = Random.Next(Area.Height);
+            else
+            {
+                float height = Area.Height - InnerHeight;
+                y = Random.Next(height);
+                if (y > height * 0.5f)
+                    y = Area.Height - y + height * 0.5f;
+            }
             p.Position.X = x + Area.X;
             p.Position.Y = y + Area.Y;
             return true;
         }
     }
-    [ASummaryP("位置：圆形", "粒子出生的圆形区域", EParticleStreamType.一次性)]
+    [ASummaryP("位置：圆环", "粒子出生的圆形区域", EParticleStreamType.一次性)]
     [AReflexible]public class PSPosCircle : PSRandomSkip
     {
         [ASummary("矩形区域", "暂不支持视图操作，只能自己填数值")]
         public CIRCLE Area = new CIRCLE(50);
+        [ASummary("内环长度", "若不为0则与外轮廓形成一个环")]
+        public float InnerRing;
         public override bool Update(Particle p, ParticleEmitter ps, float elapsed)
         {
             float radian = Random.NextRadian();
-            float r = Random.Next(Area.R);
+            float r = Random.Next(InnerRing, Area.R);
             CIRCLE.ParametricEquation(ref Area.C, r, radian, out p.Position);
             return true;
         }
@@ -871,6 +895,39 @@ namespace EntryEngine
         }
     }
 
+    [ASummaryP("万有引力", "将粒子向一点吸引（运动速度和方向变化，单位每秒）", EParticleStreamType.变化)]
+    [AReflexible]public class PSGravitation : ParticleStream
+    {
+        [ASummary("地心坐标", "将粒子向自己吸引，右键可以在屏幕上点击选择一个点）")]
+        public VECTOR2 Geocentric;
+        [ASummary("地心引力", "单位每秒")]
+        public float Force = 100;
+        public override bool Update(Particle p, ParticleEmitter ps, float elapsed)
+        {
+            float radian;
+            VECTOR2.Radian(ref p.Position, ref Geocentric, out radian);
+            float angle = radian * _MATH.R2D;
+
+            float f = Force * elapsed;
+
+            // 夹角
+            float a = _MATH.Closewise(p.direction % 360, angle);
+            float r = a * _MATH.D2R;
+            float cos = (float)Math.Cos(r);
+            float sin = (float)Math.Sin(r);
+
+            if (a != 0)
+            {
+                if (p.speed != 0)
+                    p.direction = angle + (float)Math.Atan2(p.speed * sin, f + p.speed * cos) * _MATH.R2D;
+                else
+                    p.direction = a;
+            }
+            p.speed = (float)Math.Sqrt(p.speed * p.speed + f * f + 2 * p.speed * f * cos);
+            p.ResetVector();
+            return true;
+        }
+    }
     [ASummaryP("运动：力", "使粒子按照力的方向运动（运动速度和方向变化，单位每秒）", EParticleStreamType.变化)]
     [AReflexible]public class PSGravity : ParticleStream
     {
@@ -1028,8 +1085,9 @@ namespace EntryEngine
         public VECTOR2 Origin;
         public EFlip Flip;
 
-        // 每秒移动的像素
+        /// <summary>每秒移动的像素</summary>
         internal float speed;
+        /// <summary>力的方向（角度）</summary>
         internal float direction;
         public float Speed
         {
@@ -1050,7 +1108,7 @@ namespace EntryEngine
                 ResetVector();
             }
         }
-        internal VECTOR2 Vector;
+        public VECTOR2 Vector;
         /// <summary>绝对坐标，不会跟随粒子系统位移，但会跟随粒子系统的其它矩阵变化</summary>
         public VECTOR2 AbsolutePosition;
         /// <summary>0: 相对坐标 1: 绝对坐标尚未确定坐标 2: 绝对坐标已确定坐标</summary>
@@ -1090,7 +1148,7 @@ namespace EntryEngine
 
         internal void ResetVector()
         {
-            float radian = _MATH.ToRadian(direction);
+            float radian = direction * _MATH.D2R;
             Vector.X = (float)Math.Cos(radian) * speed;
             Vector.Y = (float)Math.Sin(radian) * speed;
         }
