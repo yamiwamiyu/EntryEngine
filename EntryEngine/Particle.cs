@@ -908,22 +908,23 @@ namespace EntryEngine
             VECTOR2.Radian(ref p.Position, ref Geocentric, out radian);
             float angle = radian * _MATH.R2D;
 
-            float f = Force * elapsed;
+            float speed1 = p.speed;
+            float speed2 = Force * elapsed;
 
             // 夹角
-            float a = _MATH.Closewise(p.direction % 360, angle);
+            float a = _MATH.Closewise(angle, p.direction % 360);
             float r = a * _MATH.D2R;
             float cos = (float)Math.Cos(r);
             float sin = (float)Math.Sin(r);
 
             if (a != 0)
             {
-                if (p.speed != 0)
-                    p.direction = angle + (float)Math.Atan2(p.speed * sin, f + p.speed * cos) * _MATH.R2D;
+                if (speed1 != 0)
+                    p.direction = angle + (float)Math.Atan2(speed1 * sin, speed2 + speed1 * cos) * _MATH.R2D;
                 else
                     p.direction = a;
             }
-            p.speed = (float)Math.Sqrt(p.speed * p.speed + f * f + 2 * p.speed * f * cos);
+            p.speed = (float)Math.Sqrt(speed1 * speed1 + speed2 * speed2 + 2 * speed1 * speed2 * cos);
             p.ResetVector();
             return true;
         }
@@ -1108,6 +1109,7 @@ namespace EntryEngine
                 ResetVector();
             }
         }
+        /// <summary>粒子运动的速度和方向（单位每秒）</summary>
         public VECTOR2 Vector;
         /// <summary>绝对坐标，不会跟随粒子系统位移，但会跟随粒子系统的其它矩阵变化</summary>
         public VECTOR2 AbsolutePosition;

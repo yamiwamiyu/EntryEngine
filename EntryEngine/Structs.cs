@@ -338,7 +338,7 @@ namespace EntryEngine
             float speed2 = v2.Length();
 
             // 夹角
-            float a = _MATH.Closewise(a1, a2);
+            float a = _MATH.Closewise(a2, a1);
             float r = a * _MATH.D2R;
             float cos = (float)Math.Cos(r);
             float sin = (float)Math.Sin(r);
@@ -373,7 +373,7 @@ namespace EntryEngine
 
             // 夹角
             float a1 = (float)Math.Atan2(power.Y, power.X) * _MATH.R2D;
-            float a = _MATH.Closewise(a1, angle);
+            float a = _MATH.Closewise(angle, a1);
             float r = a * _MATH.D2R;
             float cos = (float)Math.Cos(r);
             float sin = (float)Math.Sin(r);
