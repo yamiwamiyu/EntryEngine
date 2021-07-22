@@ -26,6 +26,15 @@ namespace EntryEngine.UI
         /// <summary>移动控件的位置</summary>
 		Move
 	}
+    /// <summary>面板布局模式，模式会使得面板显示区域以外的子内容不显示，加速更新和渲染</summary>
+    public enum ELayoutMode
+    {
+        None,
+        /// <summary>横向布局</summary>
+        Horizontal,
+        /// <summary>纵向布局</summary>
+        Vertical,
+    }
     /// <summary>面板</summary>
 	public class Panel : UIElement
 	{
@@ -58,6 +67,7 @@ namespace EntryEngine.UI
         /// <summary>滚动事件</summary>
 		public event DUpdate<Panel> Scroll;
 		public event DUpdate<Panel> ScrollBarChanged;
+        private ELayoutMode layoutMode;
 
         /// <summary>滚动条显示</summary>
 		public EScrollOrientation ScrollOrientation
@@ -181,10 +191,7 @@ namespace EntryEngine.UI
         /// <summary>内容区间</summary>
 		public VECTOR2 ContentScope
 		{
-			get
-			{
-				return contentScope;
-			}
+            get { return contentScope; }
 			set
 			{
 				if (contentScope.X == value.X && contentScope.Y == value.Y)
@@ -221,6 +228,27 @@ namespace EntryEngine.UI
 				(Utility.EnumContains((int)scrollOrientation, (int)EScrollOrientation.VerticalAuto) && CanScrollVertical));
 			}
 		}
+        /// <summary>请在面板添加好子组件之后设置此布局模式，模式会自动设置ContentScope并在更新时自动隐藏非显示区域内的子组件</summary>
+        public ELayoutMode LayoutMode
+        {
+            get { return layoutMode; }
+            set
+            {
+                layoutMode = value;
+                if (value == ELayoutMode.None)
+                    ContentScope = VECTOR2.Zero;
+                else
+                {
+                    if (this.ChildCount == 0)
+                        return;
+                    var last = this.Last;
+                    if (value == ELayoutMode.Horizontal)
+                        ContentScope = new VECTOR2(last.X + last.Width, 0);
+                    else
+                        ContentScope = new VECTOR2(0, last.Y + last.Height);
+                }
+            }
+        }
 		public override float Width
 		{
 			get
@@ -589,6 +617,37 @@ namespace EntryEngine.UI
                 Inertia.Y *= dragFriction;
                 if (_MATH.Abs(Inertia.Y) <= INERTIA_STOP)
                     Inertia.Y = 0;
+            }
+            if (layoutMode != ELayoutMode.None)
+            {
+                if (layoutMode == ELayoutMode.Horizontal)
+                {
+                    float min = this.offset.X;
+                    float max = this.offset.X + this.Width;
+                    foreach (var item in this)
+                    {
+                        if (item.X >= max)
+                            item.Visible = false;
+                        else if (item.X + item.Width <= min)
+                            item.Visible = false;
+                        else
+                            item.Visible = true;
+                    }
+                }
+                else
+                {
+                    float min = this.offset.Y;
+                    float max = this.offset.Y + this.Height;
+                    foreach (var item in this)
+                    {
+                        if (item.Y >= max)
+                            item.Visible = false;
+                        else if (item.Y + item.Height <= min)
+                            item.Visible = false;
+                        else
+                            item.Visible = true;
+                    }
+                }
             }
         }
 		protected override void DrawBegin(GRAPHICS spriteBatch, ref MATRIX2x3 transform, ref RECT view, SHADER shader)

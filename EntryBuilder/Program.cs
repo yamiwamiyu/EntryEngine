@@ -668,6 +668,7 @@ namespace EntryBuilder
 			{
 				foreach (var file in GetFiles(dirOrFile, pattern, option))
 				{
+                    if (Path.GetFileName(file).StartsWith("#")) continue;
 					yield return file;
 				}
 			}
@@ -4127,7 +4128,7 @@ return result;"
             public bool Cut;
             [ASummary("合并的大图尺寸是否采用2的次方")]
             public bool Power2;
-            [ASummary("输出后的大图路径，输出文件可带后缀，不带后缀默认为t2d，不填则在图片目录并于首个目录同名；'/'结尾则视为目录，不组合大图（Power2将失效），主要作为仅裁切图片时使用")]
+            [ASummary("输出后的大图路径，输出文件可带后缀，不带后缀默认为png，不填则在图片目录并于首个目录同名；'/'结尾则视为目录，不组合大图（Power2将失效），主要作为仅裁切图片时使用")]
             public string Output;
             [ASummary("图片组合后的信息文件名，不带后缀，可以重复")]
             public string Metadata;
@@ -10205,7 +10206,8 @@ return result;"
 
                         string suffix = Path.GetExtension(onePiece.Output);
                         if (string.IsNullOrEmpty(suffix))
-                            onePiece.Output += "." + TEXTURE.SPECIAL_TEXTURE_TYPE;
+                            //onePiece.Output += "." + TEXTURE.SPECIAL_TEXTURE_TYPE;
+                            onePiece.Output += ".png";
                         root = inputDir + onePiece.Root;
                         for (int j = 0; j < count; j++)
                         {
