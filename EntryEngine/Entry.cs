@@ -4701,8 +4701,11 @@ namespace EntryEngine
             CSVReader reader = new CSVReader(content);
             var read = reader.ReadObject<Piece[]>();
 
-            if (Pieces == null || Pieces.Count == 0)
+            if (Pieces == null)
                 Pieces = read.ToDictionary(p => p.File);
+            else if (Pieces.Count == 0)
+                foreach (var piece in read)
+                    Pieces.Add(piece.File, piece);
             else
             {
                 Piece temp;
