@@ -38,8 +38,6 @@ namespace EntryEngine.UI
             HintLabel.FontSize = 44;
             HintLabel.BreakLine = true;
             Add(HintLabel);
-
-            this.PhaseShowing += HintScene_PhaseShowing;
         }
 
         float y
@@ -47,12 +45,12 @@ namespace EntryEngine.UI
             get { return HintLabel.Y - HintLabel.Height * 0.5f; }
             set { HintLabel.Y = value + HintLabel.Height * 0.5f; }
         }
-        void HintScene_PhaseShowing(UIScene arg1)
+        protected internal override IEnumerable<ICoroutine> Loading()
         {
             HintLabel.UIText.FontColor.A = 0;
-            Close(EState.None, false);
+            return base.Loading();
         }
-        protected internal override IEnumerable<ICoroutine> Ending()
+        protected internal override IEnumerable<ICoroutine> Running()
         {
             var size = HintLabel.UIText.Font.MeasureString(HintLabel.Text);
             this.Height = size.Y + HintLabel.UIText.Padding.Y;
@@ -89,6 +87,7 @@ namespace EntryEngine.UI
                 HintLabel.UIText.FontColor.A = (byte)(HintLabel.UIText.FontColor.A - GameTime.Time.ElapsedSecond * 1 / 0.2f * 255);
                 yield return null;
             }
+            Close(true);
         }
 
         public static STextHint ShowHint(string content)
