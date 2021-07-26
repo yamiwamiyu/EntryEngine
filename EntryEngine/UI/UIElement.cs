@@ -443,7 +443,8 @@ namespace EntryEngine.UI
     {
         internal static UIElement __PrevHandledElement;
         internal static UIElement __HandledElement;
-        public bool Handled
+        /// <summary>当前帧的事件是否已经被消耗掉</summary>
+        public static bool Handled
         {
             get { return __HandledElement != null; }
         }
