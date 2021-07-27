@@ -10,6 +10,7 @@ namespace EntryEngine.UI
     /// <summary>屏幕中央弹出提示文字，常用于提示错误信息</summary>
     public class STextHint : UIScene
     {
+        /// <summary>提示框，框上有默认背景和半透明灰色，有和场景一样的宽度</summary>
         public Label HintLabel;
         public string HintContent
         {
@@ -26,7 +27,6 @@ namespace EntryEngine.UI
             this.Height = 0;
 
             HintLabel = new Label();
-            HintLabel.Pivot = EPivot.MiddleLeft;
             HintLabel.UIText.TextAlignment = EPivot.MiddleCenter;
             HintLabel.UIText.Padding.X = 40;
             HintLabel.UIText.Padding.Y = 20;
@@ -40,11 +40,6 @@ namespace EntryEngine.UI
             Add(HintLabel);
         }
 
-        float y
-        {
-            get { return HintLabel.Y - HintLabel.Height * 0.5f; }
-            set { HintLabel.Y = value + HintLabel.Height * 0.5f; }
-        }
         protected internal override IEnumerable<ICoroutine> Loading()
         {
             HintLabel.UIText.FontColor.A = 0;
@@ -53,26 +48,17 @@ namespace EntryEngine.UI
         protected internal override IEnumerable<ICoroutine> Running()
         {
             var size = HintLabel.UIText.Font.MeasureString(HintLabel.Text);
-            this.Height = size.Y + HintLabel.UIText.Padding.Y;
             yield return null;
-            HintLabel.Y = HintLabel.Height * 2;
-            shownTime = 0;
-            while (shownTime < 0.1f)
+            float alpha = 0;
+            while (true)
             {
-                shownTime += GameTime.Time.ElapsedSecond;
-                y -= GameTime.Time.ElapsedSecond * 1 / 0.1f * HintLabel.Height * 2.2f;
-                HintLabel.UIText.FontColor.A = (byte)(HintLabel.UIText.FontColor.A + GameTime.Time.ElapsedSecond * 1 / 0.2f * 255);
+                // 逐渐显示
+                alpha += GameTime.Time.ElapsedSecond * 1275;
+                if (alpha >= 255)
+                    break;
+                HintLabel.UIText.FontColor.A = (byte)alpha;
                 yield return null;
             }
-            shownTime = 0;
-            while (HintLabel.Y < size.Y)
-            {
-                shownTime += GameTime.Time.ElapsedSecond;
-                y += GameTime.Time.ElapsedSecond * 1 / 0.1f * HintLabel.Height * 2f;
-                HintLabel.UIText.FontColor.A = _MATH.InByte(HintLabel.UIText.FontColor.A + GameTime.Time.ElapsedSecond * 1 / 0.2f * 255);
-                yield return null;
-            }
-            y = 0;
             HintLabel.UIText.FontColor.A = 255;
             shownTime = 0;
             while (shownTime < ShowTime)
@@ -81,10 +67,13 @@ namespace EntryEngine.UI
                 yield return null;
             }
             shownTime = 0;
-            while (shownTime < 0.05f)
+            alpha = 255;
+            while (true)
             {
-                y += GameTime.Time.ElapsedSecond * 1 / 0.1f * HintLabel.Height;
-                HintLabel.UIText.FontColor.A = (byte)(HintLabel.UIText.FontColor.A - GameTime.Time.ElapsedSecond * 1 / 0.2f * 255);
+                alpha -= GameTime.Time.ElapsedSecond * 1275;
+                if (alpha <= 0)
+                    break;
+                HintLabel.UIText.FontColor.A = (byte)alpha;
                 yield return null;
             }
             Close(true);
