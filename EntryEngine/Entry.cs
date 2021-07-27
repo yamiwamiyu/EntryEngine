@@ -7437,7 +7437,6 @@ namespace EntryEngine
         /// <summary>字体大小相差不大时，采用静态字体缩放</summary>
         public static byte StaticStep = 0;
         private static Dictionary<int, FontDynamic> fonts = new Dictionary<int, FontDynamic>();
-        private static AsyncDrawDynamicChar async1 = new AsyncDrawDynamicChar();
 
         protected class CacheInfo2 : FontTexture.CacheInfo
         {
@@ -7576,18 +7575,14 @@ namespace EntryEngine
             
             cache.Maps.Add(c, buffer);
 
-            AsyncDrawDynamicChar async;
-            if (async1.IsEnd)
-            {
-                async = async1;
-                async1.Run();
-            }
-            else
-                async = new AsyncDrawDynamicChar();
-            async.texture = texture;
-            async.buffer = buffer;
             if (width != 0 && height != 0)
+            {
+                AsyncDrawDynamicChar async = new AsyncDrawDynamicChar();
+                async.texture = texture;
+                async.buffer = buffer;
+                async.Run();
                 DrawChar(async, c, buffer);
+            }
             u += buffer.W;
             //u++;
             if (buffer.Space == 0)
@@ -8870,29 +8865,29 @@ namespace EntryEngine
             if (vertex.Rotation == 0)
                 //&& vertex.Flip == EFlip.None)
             {
-                RECT desc = vertex.Destination;
+                RECT temp = vertex.Destination;
                 if (vertex.Origin.X != 0)
                 {
-                    desc.X -= desc.Width * (vertex.Origin.X / vertex.Source.Width);
+                    temp.X -= temp.Width * vertex.Origin.X;
                     //vertex.Origin.X = 0;
                 }
                 if (vertex.Origin.Y != 0)
                 {
-                    desc.Y -= desc.Height * (vertex.Origin.Y / vertex.Source.Height);
+                    temp.Y -= temp.Height * vertex.Origin.Y;
                     //vertex.Origin.Y = 0;
                 }
 
                 if (matrix.IsIdentity())
                 {
-                    box.Left = desc.X;
-                    box.Top = desc.Y;
-                    box.Right = desc.Right;
-                    box.Bottom = desc.Bottom;
+                    box.Left = temp.X;
+                    box.Top = temp.Y;
+                    box.Right = temp.Right;
+                    box.Bottom = temp.Bottom;
                 }
                 else
                 {
                     RECT result;
-                    RECT.CreateBoundingBox(ref desc, ref matrix, out result);
+                    RECT.CreateBoundingBox(ref temp, ref matrix, out result);
                     box.Left = result.X;
                     box.Top = result.Y;
                     box.Right = result.Right;
@@ -9054,14 +9049,15 @@ namespace EntryEngine
                         if (buffers[i].TextureIndex == drawableIndex)
                         {
                             // 检查缓存图片之后的所有缓存中的渲染包围盒是否会被此次渲染遮挡
-                            // 只要渲染之间没有遮挡关系，渲染顺序现后就无所谓
+                            // 只要渲染之间没有遮挡关系，渲染顺序先后就无所谓
                             // 此时将本次渲染提到之前相同图片的渲染位置，减少更换图片的批次
                             for (int j = bufferCount - 1; j > i; j--)
                             {
-                                for (int s = buffers[j].spriteQueueCount - 1; s >= 0; s--)
+                                var rb = buffers[j];
+                                for (int s = rb.spriteQueueCount - 1; s >= 0; s--)
                                 {
                                     // 遮挡了其它对象，不能提前合批渲染
-                                    if (buffers[j].spriteBoundingBox[s].Intersects(ref box))
+                                    if (rb.spriteBoundingBox[s].Intersects(ref box))
                                     {
                                         newBuffer = true;
                                         break;
