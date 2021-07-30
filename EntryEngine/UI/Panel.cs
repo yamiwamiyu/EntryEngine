@@ -435,7 +435,9 @@ namespace EntryEngine.UI
 
 			needUpdateScrollBar = false;
 		}
-		private void UpdateScrollScope(bool stayValue)
+        /// <summary>手动更新可滑动区域，例如内部元素坐标或大小发生改变时，就需要调用</summary>
+        /// <param name="stayValue">可滑动区域后，滚动条所在位置是否保持在原来的位置</param>
+		public void UpdateScrollScope(bool stayValue)
 		{
             VECTOR2 content = ContentSize;
 			VECTOR2 temp = offsetScope;
