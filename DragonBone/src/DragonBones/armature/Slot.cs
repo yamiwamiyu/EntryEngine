@@ -1351,5 +1351,17 @@ namespace EntryEngine.DragonBone.DBCore
         {
             get { return this._parent; }
         }
+
+        public override string ToString()
+        {
+            if (_childArmature == null)
+            {
+                return name;
+            }
+            else
+            {
+                return string.Format("{0} - {1}", name, _childArmature.name);
+            }
+        }
     }
 }

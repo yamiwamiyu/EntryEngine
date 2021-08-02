@@ -639,5 +639,10 @@ namespace EntryEngine.DragonBone.DBCore
                 return null;
             }
         }
+
+        public override string ToString()
+        {
+            return name;
+        }
     }
 }
