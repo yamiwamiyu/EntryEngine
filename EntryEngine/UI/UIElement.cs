@@ -2138,6 +2138,10 @@ namespace EntryEngine.UI
             this.Name = name;
         }
 
+        protected override void OnRemovedBy(UIElement parent)
+        {
+            Close(true);
+        }
         internal void SetPhase(IEnumerable<ICoroutine> coroutine)
         {
             if (Phasing != null)
@@ -2210,7 +2214,7 @@ namespace EntryEngine.UI
                 PhaseEnded(this);
             Entry = null;
         }
-
+        
         public void ChangeFlowLayout(bool useFlowLayout)
         {
             if (UseFlowLayout == useFlowLayout) return;
