@@ -423,9 +423,9 @@ namespace EntryEngine.DragonBone.DBCore
                 frame = new ActionFrame();
                 frame.frameStart = frameStart;
 
-                if (frameIndex + 1 < this._actionFrames.Count)
+                if (frameIndex < this._actionFrames.Count)
                 {
-                    this._actionFrames.Insert(frameIndex + 1, frame);
+                    this._actionFrames.Insert(frameIndex, frame);
                 }
                 else
                 {
@@ -2144,49 +2144,12 @@ namespace EntryEngine.DragonBone.DBCore
                 this._timelineArray.Add(0);
             }
 
-            var l1 = this._intArray.Count * Helper.INT16_SIZE;
-            var l2 = this._floatArray.Count * Helper.FLOAT_SIZE;
-            var l3 = this._frameIntArray.Count * Helper.INT16_SIZE;
-            var l4 = this._frameFloatArray.Count * Helper.FLOAT_SIZE;
-            var l5 = this._frameArray.Count * Helper.INT16_SIZE;
-            var l6 = this._timelineArray.Count * Helper.UINT16_SIZE;
-            var lTotal = l1 + l2 + l3 + l4 + l5 + l6;
-
-            //using (MemoryStream ms = new MemoryStream(lTotal))
-            //using (BinaryDataWriter writer = new BinaryDataWriter(ms))
-            //using (BinaryDataReader reader = new BinaryDataReader(ms))
-            //{
-
-            //    //ToWrite
-            //    writer.Write(_intArray.ToArray());
-            //    writer.Write(_floatArray.ToArray());
-            //    writer.Write(_frameIntArray.ToArray());
-            //    writer.Write(_frameFloatArray.ToArray());
-            //    writer.Write(_frameArray.ToArray());
-            //    writer.Write(_timelineArray.ToArray());
-
-            //    ms.Position = 0;
-
-            //    //ToRead
-            //    this._data.binary = ms.GetBuffer();
-            //    this._data.intArray = reader.ReadInt16s(0, this._intArray.Count);
-            //    this._data.floatArray = reader.ReadSingles(0, this._floatArray.Count);
-            //    this._data.frameIntArray = reader.ReadInt16s(0, this._frameIntArray.Count);
-            //    this._data.frameFloatArray = reader.ReadSingles(0, this._frameFloatArray.Count);
-            //    this._data.frameArray = reader.ReadInt16s(0, this._frameArray.Count);
-            //    this._data.timelineArray = reader.ReadUInt16s(0, this._timelineArray.Count);
-
-            //    ms.Close();
-            //}
-
-            {
-                this._data.intArray = _intArray.ToArray();
-                this._data.floatArray = _floatArray.ToArray();
-                this._data.frameIntArray = _frameIntArray.ToArray();
-                this._data.frameFloatArray = _frameFloatArray.ToArray();
-                this._data.frameArray = _frameArray.ToArray();
-                this._data.timelineArray = _timelineArray.ToArray();
-            }
+            this._data.intArray = _intArray.ToArray();
+            this._data.floatArray = _floatArray.ToArray();
+            this._data.frameIntArray = _frameIntArray.ToArray();
+            this._data.frameFloatArray = _frameFloatArray.ToArray();
+            this._data.frameArray = _frameArray.ToArray();
+            this._data.timelineArray = _timelineArray.ToArray();
 
             this._defaultColorOffset = -1;
         }
