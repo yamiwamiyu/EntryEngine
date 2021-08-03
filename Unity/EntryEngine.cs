@@ -85,20 +85,6 @@ namespace EntryEngine.Unity
             else
                 return base._ReadByte(file);
 		}
-        protected override string _ReadText(string file)
-        {
-            if (GetReadPath(ref file))
-            {
-                using (WWW www = Load(file))
-                {
-                    return _IO.ReadPreambleText(www.bytes, IOEncoding);
-                    //return ReadPreambleText(www.text, Encoding);
-                    //return www.text;
-                }
-            }
-            else
-                return base._ReadText(file);
-        }
 		protected override AsyncReadFile _ReadAsync(string file)
 		{
             string origin = file;
@@ -116,13 +102,7 @@ namespace EntryEngine.Unity
 		{
             base._WriteByte(GetWritePath(file), content);
 		}
-        protected override void _WriteText(string file, string content, System.Text.Encoding encoding)
-        {
-            base._WriteText(GetWritePath(file), content, encoding);
-        }
-        /// <summary>
-        /// Web将死循环
-        /// </summary>
+        /// <summary>Web将死循环</summary>
         [Code(ECode.BUG)]
         internal WWW Load(string file)
         {
@@ -771,7 +751,7 @@ namespace EntryEngine.Unity
             if (cache.Font != null)
                 cache.Font.Destroy();
         }
-        protected override Content Cache()
+        public override Content Cache()
         {
             FontDynamicUnity font = new FontDynamicUnity(cache.Font);
             font._Key = this._Key;
@@ -834,21 +814,15 @@ namespace EntryEngine.Unity
             content.text = c.ToString();
             return style.CalcSize(content).x;
         }
-        public override VECTOR2 MeasureString(string text)
-        {
-            content.text = text;
-            var size = style.CalcSize(content);
-            return new VECTOR2(size.x, size.y); ;
-        }
 
-        protected override void Draw(GRAPHICS spriteBatch, string text, VECTOR2 location, COLOR color, float scale)
+        protected override void Draw(GRAPHICS spriteBatch, string text, float x, float y, COLOR color, float scale)
         {
             style.font = font;
             style.normal.textColor = color.GetColor();
             content.text = text;
             //var matrix = GUI.matrix;
             //GUI.matrix = matrix * Matrix4x4.Scale(new Vector3(scale, scale, 1));
-            style.Draw(new Rect(location.X, location.Y, 2048, 2048), content, false, false, false, false);
+            style.Draw(new Rect(x, y, 2048, 2048), content, false, false, false, false);
             //GUI.matrix = matrix;
         }
         protected override void InternalDispose()
@@ -872,6 +846,10 @@ namespace EntryEngine.Unity
         {
             material = new Material(shader);
         }
+        public ShaderUnity(Material material)
+        {
+            this.material = material;
+        }
         public override bool IsDisposed
         {
             get { return disposed; }
@@ -885,51 +863,9 @@ namespace EntryEngine.Unity
                 material = null;
             }
         }
-        public override void LoadFromCode(string code)
-        {
-            material = new Material(code);
-        }
-        public override bool SetPass(int pass)
-        {
-            return material.SetPass(pass);
-        }
         public override bool HasProperty(string name)
         {
             return material.HasProperty(name);
-        }
-        public override bool GetValueBoolean(string property)
-        {
-            return material.GetInt(property) != 0;
-        }
-        public override int GetValueInt32(string property)
-        {
-            return material.GetInt(property);
-        }
-        public override MATRIX GetValueMatrix(string property)
-        {
-            return material.GetMatrix(property).GetMatrix();
-        }
-        public override float GetValueSingle(string property)
-        {
-            return material.GetFloat(property);
-        }
-        public override TEXTURE GetValueTexture(string property)
-        {
-            return new Texture2DUnity((Texture2D)material.GetTexture(property));
-        }
-        public override VECTOR2 GetValueVector2(string property)
-        {
-            Vector4 vector = material.GetVector(property);
-            return new VECTOR2(vector.x, vector.y);
-        }
-        public override VECTOR3 GetValueVector3(string property)
-        {
-            Vector4 vector = material.GetVector(property);
-            return new VECTOR3(vector.x, vector.y, vector.z);
-        }
-        public override VECTOR4 GetValueVector4(string property)
-        {
-            return material.GetVector(property).GetVector4();
         }
         public override void SetValue(string property, bool value)
         {
@@ -968,6 +904,79 @@ namespace EntryEngine.Unity
             ShaderUnity clone = new ShaderUnity();
             clone.material = new Material(this.material);
             return clone;
+        }
+
+        protected override void InternalBegin(GRAPHICS g)
+        {
+            material.SetPass(CurrentPass);
+        }
+        protected override void InternalEnd(GRAPHICS g)
+        {
+        }
+        public override void SetValue(string property, bool[] value)
+        {
+            float[] array = new float[value.Length];
+            for (int i = 0; i < array.Length; i++)
+                array[i] = value[i] ? 1 : 0;
+            material.SetFloatArray(property, array);
+        }
+        public override void SetValue(string property, float[] value)
+        {
+            material.SetFloatArray(property, value);
+        }
+        public override void SetValue(string property, int[] value)
+        {
+            float[] array = new float[value.Length];
+            for (int i = 0; i < array.Length; i++)
+                array[i] = value[i];
+            material.SetFloatArray(property, array);
+        }
+        public override void SetValue(string property, MATRIX[] value)
+        {
+            Matrix4x4[] array = new Matrix4x4[value.Length];
+            for (int i = 0; i < array.Length; i++)
+                array[i] = value[i].GetMatrix();
+            material.SetMatrixArray(property, array);
+        }
+        public override void SetValue(string property, VECTOR2[] value)
+        {
+            Vector4[] array = new Vector4[value.Length];
+            for (int i = 0; i < array.Length; i++)
+            {
+                array[i].x = value[i].X;
+                array[i].y = value[i].Y;
+            }
+            material.SetVectorArray(property, array);
+        }
+        public override void SetValue(string property, VECTOR3[] value)
+        {
+            Vector4[] array = new Vector4[value.Length];
+            for (int i = 0; i < array.Length; i++)
+            {
+                array[i].x = value[i].X;
+                array[i].y = value[i].Y;
+                array[i].z = value[i].Z;
+            }
+            material.SetVectorArray(property, array);
+        }
+        public override void SetValue(string property, VECTOR4[] value)
+        {
+            Vector4[] array = new Vector4[value.Length];
+            for (int i = 0; i < array.Length; i++)
+            {
+                array[i].x = value[i].X;
+                array[i].y = value[i].Y;
+                array[i].z = value[i].Z;
+                array[i].w = value[i].W;
+            }
+            material.SetVectorArray(property, array);
+        }
+    }
+    public class PipelineShaderUnity : PipelineShader
+    {
+        public override Content LoadFromText(string text)
+        {
+            return new ShaderUnity(new Material(text));
         }
     }
     public class SoundUnity : SOUND
@@ -1062,93 +1071,71 @@ namespace EntryEngine.Unity
             set { Screen.SetResolution((int)value.X, (int)value.Y, IsFullScreen); }
         }
 
-        public GraphicsUnityGL()
-        {
-            //XCornerOffsets = new float[] { 0, 0, 1, 1 };
-            XCornerOffsets[1] = 0;
-            XCornerOffsets[3] = 1;
-            //YCornerOffsets = new float[] { 1, 0, 0, 1 };
-            YCornerOffsets[0] = 1;
-            YCornerOffsets[2] = 0;
-        }
-
-        protected override void SetViewport(MATRIX2x3 view, RECT viewport)
+        protected override void SetViewport(ref MATRIX2x3 view, ref RECT graphicsViewport)
         {
             this.View = MATRIX2x3.Identity;
         }
         protected override void InternalBegin(bool threeD, ref MATRIX matrix, ref RECT graphics, SHADER shader)
         {
             Rect scissor = AreaToScreen(graphics).ToCartesian();
-            if (threeD)
+            if (shader == null)
             {
-                VECTOR2 temp = GraphicsSize;
-                matrix.M31 /= temp.X;
-                matrix.M32 /= temp.Y;
-                var modelview =
-                    (MATRIX2x3)matrix * MATRIX2x3.Invert(View)
-                    * MATRIX2x3.CreateTranslation(-graphics.X / temp.X, -graphics.Y / temp.Y)
-                    * MATRIX2x3.CreateScale(temp.X / graphics.Width, temp.Y / graphics.Height)
-                    ;
-                GL.LoadProjectionMatrix(matrix.GetMatrix());
-                //GL.modelview = ((matrix * (MATRIX)(MATRIX2x3.Invert(View)
-                //    * MATRIX2x3.CreateTranslation(-graphics.X / temp.X, -graphics.Y / temp.Y)
-                //    * MATRIX2x3.CreateScale(temp.X / graphics.Width, temp.Y / graphics.Height))).GetMatrix());
+                if (threeD)
+                {
+                    VECTOR2 temp = GraphicsSize;
+                    matrix.M31 /= temp.X;
+                    matrix.M32 /= temp.Y;
+                    var modelview =
+                        (MATRIX2x3)matrix * MATRIX2x3.Invert(View)
+                        * MATRIX2x3.CreateTranslation(-graphics.X / temp.X, -graphics.Y / temp.Y)
+                        * MATRIX2x3.CreateScale(temp.X / graphics.Width, temp.Y / graphics.Height)
+                        ;
+                    GL.LoadProjectionMatrix(matrix.GetMatrix());
+                    //GL.modelview = ((matrix * (MATRIX)(MATRIX2x3.Invert(View)
+                    //    * MATRIX2x3.CreateTranslation(-graphics.X / temp.X, -graphics.Y / temp.Y)
+                    //    * MATRIX2x3.CreateScale(temp.X / graphics.Width, temp.Y / graphics.Height))).GetMatrix());
+                }
+                else
+                {
+                    GL.LoadOrtho();
+                    VECTOR2 temp = GraphicsSize;
+                    // 将像素坐标从左下角0~1设置为左上角宽0~width,高0~height
+                    MATRIX2x3 view =
+                        // 1280, 0
+                        (MATRIX2x3)matrix *
+                        // 将画布内左上角坐标转换成视口内左下角坐标
+                        MATRIX2x3.CreateTranslation(-graphics.X, -graphics.Y) *
+                        // 1, 0
+                        //MATRIX2x3.CreateScale(1 / temp.X, 1 / temp.Y) *
+                        MATRIX2x3.CreateScale(1 / graphics.Width, 1 / graphics.Height) *
+                        // 1, -1
+                        MATRIX2x3.CreateTranslation(0, -1) *
+                        // 1, 1
+                        MATRIX2x3.CreateScale(1, -1)
+                        ;
+                    GL.modelview = view.GetMatrix();
+                }
             }
             else
             {
-                GL.LoadOrtho();
-                VECTOR2 temp = GraphicsSize;
-                // 将像素坐标从左下角0~1设置为左上角宽0~width,高0~height
-                MATRIX2x3 view =
-                    // 1280, 0
-                    (MATRIX2x3)matrix *
-                    // 将画布内左上角坐标转换成是口内左下角坐标
-                    MATRIX2x3.CreateTranslation(-graphics.X, -graphics.Y) *
-                    // 1, 0
-                    //MATRIX2x3.CreateScale(1 / temp.X, 1 / temp.Y) *
-                    MATRIX2x3.CreateScale(1 / graphics.Width, 1 / graphics.Height) *
-                    // 1, -1
-                    MATRIX2x3.CreateTranslation(0, -1) *
-                    // 1, 1
-                    MATRIX2x3.CreateScale(1, -1)
-                    ;
-
-                GL.modelview = view.GetMatrix();
+                shader.Begin(this);
             }
             GL.Viewport(scissor);
         }
-        protected override void DrawPrimitivesBegin(TEXTURE texture, EPrimitiveType ptype)
+        protected override void InternalDrawPrimitivesBegin(TEXTURE texture, EPrimitiveType ptype, int textureIndex)
         {
             if (texture != null)
             {
                 UnityGate.Gate.GLMaterial.mainTexture = texture.GetTexture();
                 UnityGate.Gate.GLMaterial.SetPass(0);
             }
-            
+
             if (ptype == EPrimitiveType.Point) throw new NotImplementedException();
             else if (ptype == EPrimitiveType.Line) GL.Begin(GL.LINES);
             else GL.Begin(GL.TRIANGLES);
         }
-        protected override void DrawPrimitives(EPrimitiveType ptype, TextureVertex[] vertices, int offset, int count, short[] indexes, int indexOffset, int primitiveCount)
+        protected override void InternalDrawPrimitives(EPrimitiveType ptype, TextureVertex[] vertices, int offset, int count, short[] indexes, int indexOffset, int primitiveCount)
         {
-            float twidth = Texture == null ? 1 : _MATH.DIVIDE_BY_1[Texture.Width];
-            float theight = Texture == null ? 1 : _MATH.DIVIDE_BY_1[Texture.Height];
-            for (int i = offset, e = offset + count; i < e; i++)
-            {
-                vertices[i].UV.X *= twidth;
-                vertices[i].UV.Y = 1 - vertices[i].UV.Y * theight;
-
-                // Begin时已用GL.LoadPixelMatrix代替此坐标转换
-                //if (twoD)
-                //{
-                //    // 使用左上坐标系计算好坐标再转换成左下角坐标
-                //    vertices[i].Position.X *= _gs.X;
-                //    vertices[i].Position.Y *= _gs.Y;
-                //    VECTOR2.Transform(ref vertices[i].Position.X, ref vertices[i].Position.Y, ref modelview);
-                //    vertices[i].Position.Y = 1 - vertices[i].Position.Y;
-                //}
-            }
-
             if (ptype == EPrimitiveType.Triangle)
             {
                 int idx = indexOffset;
@@ -1183,7 +1170,7 @@ namespace EntryEngine.Unity
             GL.TexCoord2(vertex.UV.X, vertex.UV.Y);
             GL.Vertex3(vertex.Position.X, vertex.Position.Y, vertex.Position.Z);
         }
-        protected override void DrawPrimitivesEnd()
+        public override void DrawPrimitivesEnd()
         {
             GL.End();
         }
