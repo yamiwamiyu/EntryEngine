@@ -654,10 +654,8 @@ namespace EntryEngine
                         case EState.Break:
                         case EState.Dispose:
                         case EState.Release:
-                            // close
-                            //if (scene.Phase != EPhase.Ending)
-                            if (phase == EPhase.Running && scene.Phase != EPhase.Ending)
-                                Close(scene, scene.State);
+                            if (phase == EPhase.Running)
+                                CloseImmediately(scene, scene.State);
                             break;
                     }
                 }
