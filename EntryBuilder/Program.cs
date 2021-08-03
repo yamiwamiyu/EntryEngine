@@ -11195,7 +11195,8 @@ return result;"
                     name == "Microsoft.Xna.Framework" ||
                     name == "Microsoft.Xna.Framework.Game" ||
                     name == "X3DAudio1_6" ||
-                    name == "xinput1_3")
+                    name == "xinput1_3" ||
+                    name == "Xna")
                     continue;
                 FileInfo info = new FileInfo(dll);
                 builder.AppendLine("{0}.bytes\t{1}\t{2}", name, info.LastWriteTime.Ticks, info.Length);
