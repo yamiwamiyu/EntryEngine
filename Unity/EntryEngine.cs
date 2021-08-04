@@ -78,7 +78,7 @@ namespace EntryEngine.Unity
 		{
             if (GetReadPath(ref file))
             {
-                using (UnityWebRequest www = Load(file))
+                using (UnityWebRequest www = Load(false, file))
                 {
                     return www.downloadHandler.data;
                 }
@@ -92,8 +92,7 @@ namespace EntryEngine.Unity
             if (GetReadPath(ref file))
             {
                 AsyncReadFile async = new AsyncReadFile(this, file);
-                AsyncUnityCoroutine coroutine = new AsyncUnityCoroutine();
-                coroutine.Load(Coroutine(file, request => 
+                LoadAsync(false, file, request => 
                     {
                         if (string.IsNullOrEmpty(request.error))
                         {
@@ -110,7 +109,7 @@ namespace EntryEngine.Unity
                         {
                             async.Error(new Exception(request.error));
                         }
-                    }));
+                    });
                 return async;
             }
             else
@@ -122,30 +121,32 @@ namespace EntryEngine.Unity
 		}
         /// <summary>System.Threading.EventWaitHandle估计用不了</summary>
         [Code(ECode.BeNotTest)]
-        internal UnityWebRequest Load(string file)
+        internal UnityWebRequest Load(bool needGetReadPath, string file)
         {
             UnityWebRequest request = null;
             System.Threading.EventWaitHandle wait = new System.Threading.EventWaitHandle(false, System.Threading.EventResetMode.ManualReset);
-            new AsyncUnityCoroutine().Load(Coroutine(file, r =>
+            LoadAsync(needGetReadPath, file, r =>
             {
                 request = r;
                 wait.Set();
-            }));
+            });
             wait.WaitOne();
             return request;
         }
-        internal void LoadAsync(string file, Action<UnityWebRequest> onCallback)
+        internal void LoadAsync(bool needGetReadPath, string file, Action<UnityWebRequest> onCallback)
         {
-            GetReadPath(ref file);
+            if (needGetReadPath)
+            {
+                GetReadPath(ref file);
+            }
             new AsyncUnityCoroutine().Load(Coroutine(file, onCallback));
         }
         private System.Collections.IEnumerator Coroutine(string file, Action<UnityWebRequest> async)
         {
-            using (UnityWebRequest www = UnityWebRequest.Get(file))
+            using (UnityWebRequest request = UnityWebRequest.Get(file))
             {
-                if (!www.isDone)
-                    yield return www;
-                async(www);
+                yield return request.SendWebRequest();
+                async(request);
             }
         }
 	}
@@ -196,56 +197,16 @@ namespace EntryEngine.Unity
 	}
     public class PipelineSound : ContentPipeline
     {
-        public override IEnumerable<string> SuffixProcessable
-        {
-            get
-            {
-                return SOUND.FileTypes.Enumerable();
-            }
-        }
+        public override IEnumerable<string> SuffixProcessable { get { return SOUND.FileTypes.Enumerable(); } }
 
-        private string BuildResourcePath(string file)
-        {
-            file = file.Replace('\\', '/');
-            int index = file.LastIndexOf(".");
-            if (index != -1)
-                file = file.Substring(0, index);
-            return file;
-        }
-        //protected override Content Load(string file)
-        //{
-        //    return new SoundUnity(Resources.Load<AudioClip>(BuildResourcePath(file)));
-        //}
-        //protected override void LoadAsync(AsyncLoadContent async)
-        //{
-        //    AsyncData<AudioClip> load = new AsyncData<AudioClip>();
-        //    var request = Resources.LoadAsync(BuildResourcePath(async.File));
-        //    Entry.Instance.SetCoroutine(
-        //        new CorDelegate((time) =>
-        //        {
-        //            if (request.isDone)
-        //            {
-        //                load.SetData((AudioClip)request.asset);
-        //                return true;
-        //            }
-        //            else
-        //            {
-        //                async.ProgressFloat = request.progress;
-        //                return false;
-        //            }
-        //        }));
-        //    Wait(async, load, clip => new SoundUnity(clip.Data));
-        //}
         protected override Content Load(string file)
         {
-            IOUnity io = (IOUnity)this.IO;
-            io.GetReadPath(ref file);
-            using (var request = io.Load(file))
+            using (var request = ((IOUnity)IO).Load(true, file))
                 return new SoundUnity(DownloadHandlerAudioClip.GetContent(request));
         }
         protected override void LoadAsync(AsyncLoadContent async)
         {
-            ((IOUnity)this.IO).LoadAsync(async.File, request => DownloadHandlerAudioClip.GetContent(request));
+            ((IOUnity)this.IO).LoadAsync(true, async.File, request => DownloadHandlerAudioClip.GetContent(request));
         }
     }
     public class AsyncUnityCoroutine : Async
@@ -276,22 +237,15 @@ namespace EntryEngine.Unity
 	}
     public class PipelineTextureUnity : ContentPipelineBinary
     {
-        //public override IEnumerable<string> SuffixProcessable
-        //{
-        //    get { yield return ""; }
-        //}
-        public override IEnumerable<string> SuffixProcessable
-        {
-            get { return TEXTURE.TextureFileType.Enumerable(); }
-        }
+        public override IEnumerable<string> SuffixProcessable { get { return TEXTURE.TextureFileType.Enumerable(); } }
 
         public override Content LoadFromBytes(byte[] bytes)
-		{
-			Texture2D texture = new Texture2D(1, 1);
+        {
+            Texture2D texture = new Texture2D(1, 1);
             if (!ImageConversion.LoadImage(texture, bytes, false))
-				Resources.UnloadAsset(texture);
-			return new Texture2DUnity(texture);
-		}
+                Resources.UnloadAsset(texture);
+            return new Texture2DUnity(texture);
+        }
 	}
 
     public class CameraTexture : TextureUnity
