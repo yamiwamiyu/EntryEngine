@@ -46,7 +46,7 @@ namespace EntryEngine.Unity
         //protected virtual void OnPostRender()
         protected virtual void OnGUI()
         {
-            if (Event.current.type == EventType.repaint)
+            if (Event.current.type == EventType.Repaint)
                 Entry.Draw();
         }
     }

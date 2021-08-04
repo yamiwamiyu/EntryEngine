@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
+using UnityEngine.Networking;
 
 namespace EntryEngine.Unity
 {
@@ -32,7 +33,7 @@ namespace EntryEngine.Unity
             }
 		}
 	}
-	public class IOWWW : _IO.iO
+	public class IOUnity : _IO.iO
 	{
         /// <summary>调用了Destroy的资源的对象ToString()的结果为"null"</summary>
         internal const string DESTROIED_RESOURCE = "null";
@@ -50,7 +51,7 @@ namespace EntryEngine.Unity
         //    }
         //}
 
-        /// <returns>是否应使用WWW</returns>
+        /// <returns>返回是否应使用WWW</returns>
         internal bool GetReadPath(ref string file)
         {
             //file = file.Replace('\\', '/');
@@ -77,9 +78,9 @@ namespace EntryEngine.Unity
 		{
             if (GetReadPath(ref file))
             {
-                using (WWW www = Load(file))
+                using (UnityWebRequest www = Load(file))
                 {
-                    return www.bytes;
+                    return www.downloadHandler.data;
                 }
             }
             else
@@ -92,7 +93,24 @@ namespace EntryEngine.Unity
             {
                 AsyncReadFile async = new AsyncReadFile(this, file);
                 AsyncUnityCoroutine coroutine = new AsyncUnityCoroutine();
-                coroutine.Load(Coroutine(async));
+                coroutine.Load(Coroutine(file, request => 
+                    {
+                        if (string.IsNullOrEmpty(request.error))
+                        {
+                            try
+                            {
+                                async.SetData(request.downloadHandler.data);
+                            }
+                            catch (Exception ex)
+                            {
+                                async.Error(ex);
+                            }
+                        }
+                        else
+                        {
+                            async.Error(new Exception(request.error));
+                        }
+                    }));
                 return async;
             }
             else
@@ -102,38 +120,34 @@ namespace EntryEngine.Unity
 		{
             base._WriteByte(GetWritePath(file), content);
 		}
-        /// <summary>Web将死循环</summary>
-        [Code(ECode.BUG)]
-        internal WWW Load(string file)
+        /// <summary>System.Threading.EventWaitHandle估计用不了</summary>
+        [Code(ECode.BeNotTest)]
+        internal UnityWebRequest Load(string file)
         {
-            WWW www = new WWW(file);
-            while (!www.isDone) { }
-            return www;
+            UnityWebRequest request = null;
+            System.Threading.EventWaitHandle wait = new System.Threading.EventWaitHandle(false, System.Threading.EventResetMode.ManualReset);
+            new AsyncUnityCoroutine().Load(Coroutine(file, r =>
+            {
+                request = r;
+                wait.Set();
+            }));
+            wait.WaitOne();
+            return request;
         }
-		internal System.Collections.IEnumerator Coroutine(AsyncReadFile async)
-		{
-			using (WWW www = new WWW(async.File))
-			{
+        internal void LoadAsync(string file, Action<UnityWebRequest> onCallback)
+        {
+            GetReadPath(ref file);
+            new AsyncUnityCoroutine().Load(Coroutine(file, onCallback));
+        }
+        private System.Collections.IEnumerator Coroutine(string file, Action<UnityWebRequest> async)
+        {
+            using (UnityWebRequest www = UnityWebRequest.Get(file))
+            {
                 if (!www.isDone)
-				    yield return www;
-
-				if (string.IsNullOrEmpty(www.error))
-				{
-					try
-					{
-						async.SetData(www.bytes);
-					}
-					catch (Exception ex)
-					{
-						async.Error(ex);
-					}
-				}
-				else
-				{
-					async.Error(new Exception(www.error));
-				}
-			}
-		}
+                    yield return www;
+                async(www);
+            }
+        }
 	}
 	public class MediaPlayerUnity : AUDIO
 	{
@@ -224,54 +238,14 @@ namespace EntryEngine.Unity
         //}
         protected override Content Load(string file)
         {
-            IOWWW io = (IOWWW)this.IO;
-            string localFile = file;
-            io.GetReadPath(ref localFile);
-            using (WWW www = io.Load(localFile))
-                return new SoundUnity(www.GetAudioClip());
-            //else
-            //{
-            //    return new SoundUnity(Resources.Load<AudioClip>(BuildResourcePath(file)));
-            //}
+            IOUnity io = (IOUnity)this.IO;
+            io.GetReadPath(ref file);
+            using (var request = io.Load(file))
+                return new SoundUnity(DownloadHandlerAudioClip.GetContent(request));
         }
         protected override void LoadAsync(AsyncLoadContent async)
         {
-            IOWWW io = (IOWWW)this.IO;
-            string file = async.File;
-            io.GetReadPath(ref file);
-            //if (System.IO.File.Exists(file))
-            {
-                AsyncReadFile asyncReadFile = new AsyncReadFile(io, file);
-                AsyncUnityCoroutine coroutine = new AsyncUnityCoroutine();
-                coroutine.Load(io.Coroutine(asyncReadFile));
-            }
-            //else
-            //{
-            //    var request = Resources.LoadAsync(BuildResourcePath(async.File));
-            //    if (request.isDone)
-            //    {
-            //        async.SetData(new SoundUnity((AudioClip)request.asset));
-            //    }
-            //    else
-            //    {
-            //        AsyncData<AudioClip> load = new AsyncData<AudioClip>();
-            //        Entry.Instance.SetCoroutine(
-            //            new CorDelegate((time) =>
-            //            {
-            //                if (request.isDone)
-            //                {
-            //                    load.SetData((AudioClip)request.asset);
-            //                    return true;
-            //                }
-            //                else
-            //                {
-            //                    async.ProgressFloat = request.progress;
-            //                    return false;
-            //                }
-            //            }));
-            //        Wait(async, load, clip => new SoundUnity(clip.Data));
-            //    }
-            //}
+            ((IOUnity)this.IO).LoadAsync(async.File, request => DownloadHandlerAudioClip.GetContent(request));
         }
     }
     public class AsyncUnityCoroutine : Async
@@ -314,7 +288,7 @@ namespace EntryEngine.Unity
         public override Content LoadFromBytes(byte[] bytes)
 		{
 			Texture2D texture = new Texture2D(1, 1);
-			if (!texture.LoadImage(bytes))
+            if (!ImageConversion.LoadImage(texture, bytes, false))
 				Resources.UnloadAsset(texture);
 			return new Texture2DUnity(texture);
 		}
@@ -988,7 +962,7 @@ namespace EntryEngine.Unity
         }
         public override bool IsDisposed
         {
-            get { return AudioClip == null || AudioClip.ToString() == IOWWW.DESTROIED_RESOURCE; }
+            get { return AudioClip == null || AudioClip.ToString() == IOUnity.DESTROIED_RESOURCE; }
         }
         public SoundUnity(AudioClip clip)
         {
@@ -1796,8 +1770,8 @@ namespace EntryEngine.Unity
                 const string WritePath = "Content/";
                 if (!System.IO.Directory.Exists(WritePath))
                     System.IO.Directory.CreateDirectory(WritePath);
-                IOWWW.PersistentDataPath = WritePath;
-                IOWWW.DataPath = "file://" + IOWWW.DataPath;
+                IOUnity.PersistentDataPath = WritePath;
+                IOUnity.DataPath = "file://" + IOUnity.DataPath;
             }
 
             INPUT = ((PlatformUnity)IPlatform).BuildInputDevice();
@@ -1834,7 +1808,7 @@ namespace EntryEngine.Unity
             //        throw new NotSupportedException();
             //}
             //return result;
-            var result = new IOWWW();
+            var result = new IOUnity();
             result.RootDirectory = root;
             return result;
         }
