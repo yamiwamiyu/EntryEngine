@@ -1005,7 +1005,8 @@ namespace EntryEngine.Unity
         }
         protected override void InternalBegin(bool threeD, ref MATRIX matrix, ref RECT graphics, SHADER shader)
         {
-            Rect scissor = AreaToScreen(graphics).ToCartesian();
+            RECT gscreen = AreaToScreen(graphics);
+            Rect scissor = gscreen.ToCartesian();
             if (shader == null)
             {
                 if (threeD)
@@ -1025,21 +1026,15 @@ namespace EntryEngine.Unity
                 }
                 else
                 {
-                    GL.LoadOrtho();
-                    VECTOR2 temp = GraphicsSize;
+                    GL.LoadIdentity();
                     // 将像素坐标从左下角0~1设置为左上角宽0~width,高0~height
                     MATRIX2x3 view =
                         // 1280, 0
                         (MATRIX2x3)matrix *
-                        // 将画布内左上角坐标转换成视口内左下角坐标
-                        MATRIX2x3.CreateTranslation(-graphics.X, -graphics.Y) *
-                        // 1, 0
-                        //MATRIX2x3.CreateScale(1 / temp.X, 1 / temp.Y) *
-                        MATRIX2x3.CreateScale(1 / graphics.Width, 1 / graphics.Height) *
-                        // 1, -1
-                        MATRIX2x3.CreateTranslation(0, -1) *
-                        // 1, 1
-                        MATRIX2x3.CreateScale(1, -1)
+                        // 画布坐标转换到屏幕坐标
+                        graphicsToScreen *
+                        // 屏幕坐标转换到视口坐标
+                        MATRIX2x3.CreateTranslation(-gscreen.X, -gscreen.Y) * MATRIX2x3.CreateScale(Screen.width / gscreen.Width, Screen.height / gscreen.Height)
                         ;
                     GL.modelview = view.GetMatrix();
                 }
@@ -1048,6 +1043,7 @@ namespace EntryEngine.Unity
             {
                 shader.Begin(this);
             }
+            // 屏幕左下角0,0
             GL.Viewport(scissor);
         }
         protected override void InternalDrawPrimitivesBegin(TEXTURE texture, EPrimitiveType ptype, int textureIndex)
@@ -1095,7 +1091,7 @@ namespace EntryEngine.Unity
         private void DrawPrimitive(ref TextureVertex vertex)
         {
             GL.Color(vertex.Color.GetColor());
-            GL.TexCoord2(vertex.UV.X, vertex.UV.Y);
+            GL.TexCoord2(vertex.UV.X, 1 - vertex.UV.Y);
             GL.Vertex3(vertex.Position.X, vertex.Position.Y, vertex.Position.Z);
         }
         public override void DrawPrimitivesEnd()
