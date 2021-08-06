@@ -202,7 +202,7 @@ namespace EditorUI
         // 鼠标中键并且滚动滑轮可以缩放视图
         private void ScaleViewport(UIElement sender, Entry e)
         {
-            if (Project.Document != null && e.INPUT.Pointer.IsPressed(2) && e.INPUT.Mouse.ScrollWheelValue != 0)
+            if (Project != null && Project.Document != null && e.INPUT.Pointer.IsPressed(2) && e.INPUT.Mouse.ScrollWheelValue != 0)
             {
                 Project.Document.Expand(_MATH.Sign(e.INPUT.Mouse.ScrollWheelValue));
                 Handle();
