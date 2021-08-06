@@ -6113,6 +6113,8 @@ namespace EntryBuilder.CodeAnalysis.Refactoring
         const string GENERIC_NAME = "__g";
         //const string SUPER = "__base";
         const string AUTO_PROPERTY = "__";
+        /// <summary>索引器this[] => $1this()</summary>
+        const string INDEXER = "$1";
         internal const string GET = "__get";
         internal const string SET = "__set";
         const string ADDRESS_VALUE = "v";
@@ -7001,96 +7003,102 @@ namespace EntryBuilder.CodeAnalysis.Refactoring
             //    return;
             //}
 
-            // 统一采用get|set方法的实现方式
             string isStatic = member.IsStatic ? string.Empty : "prototype.";
             string isThis = member.IsStatic ? TypeName : "this";
-            if (node.Getter != null)
-            {
-                // 防止显示实现的成员覆盖掉隐式实现的成员
-                if (!member.IsStatic && node.ExplicitImplement != null)
-                    builder.AppendLine("if (!{0}.{3}{1}{2})", TypeName, GET, name, isStatic);
-                builder.Append("{0}.{3}{1}{2} = function{4}(", TypeName, GET, name, isStatic, IEnumeratorTester.TestYield(node.Getter.Body) ? "*" : string.Empty);
-                Visit(node.Arguments);
-                builder.Append(")");
-                if (node.Getter.Body == null)
-                    builder.AppendLine("{{return {2}.{0}{1};}};", AUTO_PROPERTY, name, isThis);
-                else
-                {
-                    builder.AppendLine();
-                    WriteIEnumerableBody(node.Arguments, member, node.Getter.Body);
-                    builder.Append(";");
-                }
-            }
-            if (node.Setter != null)
-            {
-                // 防止显示实现的成员覆盖掉隐式实现的成员
-                if (!member.IsStatic && node.ExplicitImplement != null)
-                    builder.AppendLine("if (!{0}.{3}{1}{2})", TypeName, SET, name, isStatic);
-                builder.Append("{0}.{3}{1}{2} = function(value", TypeName, SET, name, isStatic);
-                paramArgumentOffset = 1;
-                if (node.Arguments != null && node.Arguments.Count > 0)
-                    builder.Append(", ");
-                Visit(node.Arguments);
-                builder.Append(")");
-                if (node.Setter.Body == null)
-                    builder.AppendLine("{{{2}.{0}{1}=value;}};", AUTO_PROPERTY, name, isThis);
-                else
-                {
-                    builder.AppendLine();
-                    Visit(node.Setter.Body);
-                    builder.Append(";");
-                }
-            }
+
+            // 统一采用get|set方法的实现方式
+            //if (node.Getter != null)
+            //{
+            //    // 防止显示实现的成员覆盖掉隐式实现的成员
+            //    if (!member.IsStatic && node.ExplicitImplement != null)
+            //        builder.AppendLine("if (!{0}.{3}{1}{2})", TypeName, GET, name, isStatic);
+            //    builder.Append("{0}.{3}{1}{2} = function{4}(", TypeName, GET, name, isStatic, IEnumeratorTester.TestYield(node.Getter.Body) ? "*" : string.Empty);
+            //    Visit(node.Arguments);
+            //    builder.Append(")");
+            //    if (node.Getter.Body == null)
+            //        builder.AppendLine("{{return {2}.{0}{1};}};", AUTO_PROPERTY, name, isThis);
+            //    else
+            //    {
+            //        builder.AppendLine();
+            //        WriteIEnumerableBody(node.Arguments, member, node.Getter.Body);
+            //        builder.Append(";");
+            //    }
+            //}
+            //if (node.Setter != null)
+            //{
+            //    // 防止显示实现的成员覆盖掉隐式实现的成员
+            //    if (!member.IsStatic && node.ExplicitImplement != null)
+            //        builder.AppendLine("if (!{0}.{3}{1}{2})", TypeName, SET, name, isStatic);
+            //    builder.Append("{0}.{3}{1}{2} = function(value", TypeName, SET, name, isStatic);
+            //    paramArgumentOffset = 1;
+            //    if (node.Arguments != null && node.Arguments.Count > 0)
+            //        builder.Append(", ");
+            //    Visit(node.Arguments);
+            //    builder.Append(")");
+            //    if (node.Setter.Body == null)
+            //        builder.AppendLine("{{{2}.{0}{1}=value;}};", AUTO_PROPERTY, name, isThis);
+            //    else
+            //    {
+            //        builder.AppendLine();
+            //        Visit(node.Setter.Body);
+            //        builder.Append(";");
+            //    }
+            //}
 
             /* JS类似C#属性的实现，索引器可使用属性的实现方式，用到的参数改为实例变量 */
-            //if (node.IsIndexer)
-            //{
-            //    /* 普通的get|set方法的实现 */
-            //    builder.Append("{0}.{1}__{2} = function(", TypeName, isStatic, name);
-            //    Visit(node.Arguments);
-            //    builder.AppendLine(")");
-            //    builder.AppendBlockWithEnd(() =>
-            //    {
-            //        foreach (var item in node.Arguments)
-            //            builder.AppendLine("{0}.___{1} = {1};", isThis, item.Name);
+            if (node.IsIndexer)
+            {
+                // a[5]++ -> a.索引器(5).属性++
+                // 1. 索引器改为方法，参数就是索引器的参数
+                // 2. 索引器方法体内，将参数赋值给this的实例变量
+                // 3. 索引器方法体内，返回this，可以让调用处继续写表达式调用属性
+                // 4. 定义属性，属性方法体内的用到的参数全部变为索引器方法赋值的this实例参数
+                builder.Append("{0}.{1}__{2} = function(", TypeName, INDEXER, name);
+                Visit(node.Arguments);
+                builder.AppendLine(")");
+                builder.AppendBlockWithEnd(() =>
+                {
+                    foreach (var item in node.Arguments)
+                        builder.AppendLine("this.{0}{1} = {1};", INDEXER, item.Name);
+                    builder.AppendLine("return this;");
 
-            //        // 参数作为实例参数，每次调用时赋值
-            //        foreach (var item in node.Arguments)
-            //            item.Name.Name = string.Format("{0}.___{1}", isThis, item.Name.Name);
-            //    });
-            //}
-            //if (member.IsStatic)
-            //    builder.AppendLine("Object.defineProperty({0}, \"{1}\",", TypeName, name);
-            //else
-            //    builder.AppendLine("Object.defineProperty({0}.prototype, \"{1}\",", TypeName, name);
-            //builder.AppendBlock(() =>
-            //{
-            //    if (node.Getter != null)
-            //    {
-            //        builder.Append("get:function()");
-            //        if (node.Getter.Body == null)
-            //            builder.AppendLine("{{return {2}.{0}{1};}}", AUTO_PROPERTY, name, isThis);
-            //        else
-            //        {
-            //            builder.AppendLine();
-            //            WriteIEnumerableBody(node.Arguments, member, node.Getter.Body);
-            //        }
-            //    }
-            //    if (node.Setter != null)
-            //    {
-            //        if (node.Getter != null)
-            //            builder.Append(',');
-            //        builder.Append("set:function(value)");
-            //        if (node.Setter.Body == null)
-            //            builder.AppendLine("{{{2}.{0}{1}=value;}}", AUTO_PROPERTY, name, isThis);
-            //        else
-            //        {
-            //            builder.AppendLine();
-            //            Visit(node.Setter.Body);
-            //        }
-            //    }
-            //});
-            //builder.AppendLine(");");
+                    // 参数作为实例参数，每次调用时赋值
+                    foreach (var item in node.Arguments)
+                        item.Name.Name = string.Format("this.{0}{1}", INDEXER, item.Name.Name);
+                });
+            }
+            if (member.IsStatic)
+                builder.AppendLine("Object.defineProperty({0}, \"{1}\",", TypeName, name);
+            else
+                builder.AppendLine("Object.defineProperty({0}.prototype, \"{1}\",", TypeName, name);
+            builder.AppendBlock(() =>
+            {
+                if (node.Getter != null)
+                {
+                    builder.Append("get:function()");
+                    if (node.Getter.Body == null)
+                        builder.AppendLine("{{return {2}.{0}{1};}}", AUTO_PROPERTY, name, isThis);
+                    else
+                    {
+                        builder.AppendLine();
+                        WriteIEnumerableBody(node.Arguments, member, node.Getter.Body);
+                    }
+                }
+                if (node.Setter != null)
+                {
+                    if (node.Getter != null)
+                        builder.Append(',');
+                    builder.Append("set:function(value)");
+                    if (node.Setter.Body == null)
+                        builder.AppendLine("{{{2}.{0}{1}=value;}}", AUTO_PROPERTY, name, isThis);
+                    else
+                    {
+                        builder.AppendLine();
+                        Visit(node.Setter.Body);
+                    }
+                }
+            });
+            builder.AppendLine(");");
         }
         public override void Visit(Accessor node)
         {
@@ -8986,8 +8994,7 @@ namespace EntryBuilder.CodeAnalysis.Refactoring
                     foreach (var item in node.Initializer)
                     {
                         // 初始化属性时，应为会变成闭包调用，闭包的bind参数应该改为ANONYMOUS_OBJ
-                        if (!members[item].IsProperty)
-                            builder.Append("{0}.", ANONYMOUS_OBJ);
+                        builder.Append("{0}.", ANONYMOUS_OBJ);
                         Visit(item);
                         builder.AppendLine(";");
                     }
@@ -13266,7 +13273,7 @@ namespace EntryBuilder.CodeAnalysis.Refactoring
                     {
                         var current = parents.Pop();
                         // todo: test
-                        if (current.Name.Name == "OnReceived" && definingMember != null && definingMember.Name.Name == "send")
+                        if (current.Name.Name == "Count" && definingMember != null && definingMember.Name.Name == "Drop")
                         {
                             CSharpMember member2 = definingType.Members.FirstOrDefault(f => f.Name.Name == current.Name.Name);
                         }
