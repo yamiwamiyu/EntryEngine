@@ -1605,6 +1605,7 @@ namespace EntryEngine.Serialize
     public static class _SERIALIZE
     {
         public static readonly object[] EmptyObjects = new object[0];
+        public static readonly Type ObjectType = typeof(object);
         private static Dictionary<char, char> ESC;
         /// <summary>变量名不能使用的字符</summary>
         public const string VARIABLE_NAME = "/?.>,<;:'\"\\|}]{[=+-)(*&^%$#@!`~\r\n\t ";

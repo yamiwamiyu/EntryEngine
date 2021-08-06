@@ -461,6 +461,19 @@ namespace EntryEngine.Serialize
         }
         public virtual void WriteObject(object value, Type type)
         {
+            if (type == _SERIALIZE.ObjectType)
+            {
+                if (value == null)
+                {
+                    Write((string)null);
+                    return;
+                }
+                else
+                {
+                    type = value.GetType();
+                    Write(type.SimpleAQName());
+                }
+            }
             MethodInfo method;
             if (type.IsGenericType && genericMethods.TryGetValue(type.GetGenericTypeDefinition(), out method))
             {
@@ -507,8 +520,8 @@ namespace EntryEngine.Serialize
                     //Write(value.GetType().AssemblyQualifiedName);
                     Write(type.SimpleAQName());
                     // object类型的基本数据
-                    if (WriteSupportiveType(type, value))
-                        return;
+                    //if (WriteSupportiveType(type, value))
+                    //    return;
                 }
                 else
                 {
@@ -1451,6 +1464,15 @@ namespace EntryEngine.Serialize
         {
             //if (!hasReadType && Setting.AutoType)
             //    ReadType();
+            if (type == _SERIALIZE.ObjectType)
+            {
+                string typeName;
+                Read(out typeName);
+                // object null
+                if (typeName == null)
+                    return null;
+                type = _SERIALIZE.LoadSimpleAQName(typeName);
+            }
 
             if (type.IsEnum)
             {
@@ -1506,15 +1528,15 @@ namespace EntryEngine.Serialize
                     string typeName;
                     Read(out typeName);
                     Type _type = _SERIALIZE.LoadSimpleAQName(typeName);
-                    if (_type != null)
-                    {
-                        type = _type;
-                        int supportive = Array.IndexOf(SupportiveTypes, type);
-                        if (supportive != -1)
-                        {
-                            return ReadSupportiveType(supportive);
-                        }
-                    }
+                    //if (_type != null)
+                    //{
+                    //    type = _type;
+                    //    int supportive = Array.IndexOf(SupportiveTypes, type);
+                    //    if (supportive != -1)
+                    //    {
+                    //        return ReadSupportiveType(supportive);
+                    //    }
+                    //}
                 }
             }
             object value;
