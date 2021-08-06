@@ -83,57 +83,19 @@ namespace EntryBuilder.CodeAnalysis.Syntax
     //}
     public class Project
     {
-        PrimitiveValue AssemblyTitle;
-        PrimitiveValue AssemblyDescription;
-        PrimitiveValue AssemblyCompany;
-        PrimitiveValue AssemblyCopyright;
-        PrimitiveValue guid;
-        PrimitiveValue AssemblyVersion;
-        PrimitiveValue AssemblyFileVersion;
+        public PrimitiveValue AssemblyTitle = new PrimitiveValue();
+        public PrimitiveValue AssemblyDescription = new PrimitiveValue();
+        public PrimitiveValue AssemblyCompany = new PrimitiveValue();
+        public PrimitiveValue AssemblyCopyright = new PrimitiveValue();
+        public PrimitiveValue Guid = new PrimitiveValue();
+        public PrimitiveValue AssemblyVersion = new PrimitiveValue();
+        public PrimitiveValue AssemblyFileVersion = new PrimitiveValue();
+        public DefineFile[] Files;
 
-        public string Title
-        {
-            get { return AssemblyTitle == null ? null : AssemblyTitle.Value.ToString(); }
-            set { AssemblyTitle.Value = value; }
-        }
-        public string Description
-        {
-            get { return AssemblyDescription == null ? null : AssemblyDescription.Value.ToString(); }
-            set { AssemblyDescription.Value = value; }
-        }
-        public string Company
-        {
-            get { return AssemblyCompany == null ? null : AssemblyCompany.Value.ToString(); }
-            set { AssemblyCompany.Value = value; }
-        }
-        public string Copyright
-        {
-            get { return AssemblyCopyright == null ? null : AssemblyCopyright.Value.ToString(); }
-            set { AssemblyCopyright.Value = value; }
-        }
-        public string Guid
-        {
-            get { return guid == null ? null : guid.Value.ToString(); }
-            set { guid.Value = value; }
-        }
-        public string Version
-        {
-            get { return AssemblyVersion == null ? null : AssemblyVersion.Value.ToString(); }
-            set { AssemblyVersion.Value = value; }
-        }
-        public string FileVersion
-        {
-            get { return AssemblyFileVersion == null ? null : AssemblyFileVersion.Value.ToString(); }
-            set { AssemblyFileVersion.Value = value; }
-        }
         public HashSet<string> Symbols
         {
             get;
             private set;
-        }
-        public DefineFile[] Files
-        {
-            get { return files; }
         }
 
         public Project()
@@ -142,7 +104,6 @@ namespace EntryBuilder.CodeAnalysis.Syntax
         }
 
         StringStreamReader r;
-        DefineFile[] files;
         public void ParseFromFile(params string[] files)
         {
             int len = files.Length;
@@ -158,13 +119,13 @@ namespace EntryBuilder.CodeAnalysis.Syntax
                 throw new ParseFileException(files[ex.SourceIndex], ex);
             }
             for (int i = 0; i < len; i++)
-                this.files[i].Name = files[i];
+                this.Files[i].Name = files[i];
         }
         public void ParseFromSource(params string[] sources)
         {
             Parse(sources);
             // AutoParseProjectName();
-            foreach (var file in files)
+            foreach (var file in Files)
             {
                 if (file.Attributes.Count > 0)
                 {
@@ -176,13 +137,13 @@ namespace EntryBuilder.CodeAnalysis.Syntax
                         {
                             switch (rm.Name.Name)
                             {
-                                case "AssemblyTitle": AssemblyTitle = (PrimitiveValue)item.Arguments[0].Expression; break;
-                                case "AssemblyDescription": AssemblyDescription = (PrimitiveValue)item.Arguments[0].Expression; break;
-                                case "AssemblyCompany": AssemblyCompany = (PrimitiveValue)item.Arguments[0].Expression; break;
-                                case "AssemblyCopyright": AssemblyCopyright = (PrimitiveValue)item.Arguments[0].Expression; break;
-                                case "Guid": guid = (PrimitiveValue)item.Arguments[0].Expression; break;
-                                case "AssemblyVersion": AssemblyVersion = (PrimitiveValue)item.Arguments[0].Expression; break;
-                                case "AssemblyFileVersion": AssemblyFileVersion = (PrimitiveValue)item.Arguments[0].Expression; break;
+                                case "AssemblyTitle": AssemblyTitle = ((PrimitiveValue)item.Arguments[0].Expression); break;
+                                case "AssemblyDescription": AssemblyDescription = ((PrimitiveValue)item.Arguments[0].Expression); break;
+                                case "AssemblyCompany": AssemblyCompany = ((PrimitiveValue)item.Arguments[0].Expression); break;
+                                case "AssemblyCopyright": AssemblyCopyright = ((PrimitiveValue)item.Arguments[0].Expression); break;
+                                case "Guid": Guid = ((PrimitiveValue)item.Arguments[0].Expression); break;
+                                case "AssemblyVersion": AssemblyVersion = ((PrimitiveValue)item.Arguments[0].Expression); break;
+                                case "AssemblyFileVersion": AssemblyFileVersion = ((PrimitiveValue)item.Arguments[0].Expression); break;
                                 default: continue;
                             }
                         }
@@ -193,14 +154,14 @@ namespace EntryBuilder.CodeAnalysis.Syntax
         private void Parse(string[] sources)
         {
             int len = sources.Length;
-            files = new DefineFile[len];
+            Files = new DefineFile[len];
             for (int i = 0; i < len; i++)
             {
                 r = new StringStreamReader(sources[i]);
                 r.WORD_BREAK = " \t\n\r{(),:;\"";
                 try
                 {
-                    ParseCodeFile(out files[i]);
+                    ParseCodeFile(out Files[i]);
                 }
                 catch (Exception ex)
                 {
@@ -4477,6 +4438,7 @@ namespace EntryBuilder.CodeAnalysis.Syntax
 namespace EntryBuilder.CodeAnalysis.Refactoring
 {
     using EntryBuilder.CodeAnalysis.Semantics;
+    using System.Diagnostics;
 
     internal static class _Reflection
     {
@@ -10604,7 +10566,7 @@ namespace EntryBuilder.CodeAnalysis.Refactoring
                 assembly = new ProjectAssembly();
             else
                 assembly = new BinaryAssembly();
-            assembly.Name = project.Title;
+            assembly.Name = (string)project.AssemblyTitle.Value;
             assemblies.Add(assembly);
 
             _BuildTypeSystem build = null;
@@ -10871,8 +10833,11 @@ namespace EntryBuilder.CodeAnalysis.Refactoring
         private static T BuildTypeSystem<T>(CSharpAssembly assembly, _BuildTypeSystem previous, Project project) where T : _BuildTypeSystem, new()
         {
             _LOG.Info("{0}解析中", typeof(T).Name);
+            Stopwatch tick = Stopwatch.StartNew();
             T target = new T();
             BuildTypeSystem(target, assembly, previous, project);
+            tick.Stop();
+            _LOG.Info("{0}解析完成！耗时：{1}s", typeof(T).Name, Utility.LengthFloat((float)tick.Elapsed.TotalSeconds, 3));
             return target;
         }
         public static void UnloadDomain()
@@ -11783,7 +11748,7 @@ namespace EntryBuilder.CodeAnalysis.Refactoring
                 case "IEnumerator": if (DefiningNamespace.Name == "Generic") CSharpType.IENUMERATOR = type; break;
                 case "Nullable": if (node.Generic.GenericTypes.Count == 1) CSharpType.NULLABLE = type; break;
 
-                case "___Array": ArrayTypeReference.___Array = type; break;
+                case "___Array": CSharpType.___Array = type; break;
             }
 
             if (node.Type == EType.CLASS)
@@ -14425,8 +14390,10 @@ namespace EntryBuilder.CodeAnalysis.Refactoring
         }
 
         static Stack<List<CSharpMember>> _functions = new Stack<List<CSharpMember>>();
-        internal static Dictionary<object, BEREF> objectReferences = new Dictionary<object, BEREF>();
-        internal static Dictionary<SyntaxNode, REF> syntaxReferences = new Dictionary<SyntaxNode, REF>();
+        /// <summary>语义的引用</summary>
+        public static Dictionary<object, BEREF> objectReferences = new Dictionary<object, BEREF>();
+        /// <summary>语法的引用</summary>
+        public static Dictionary<SyntaxNode, REF> syntaxReferences = new Dictionary<SyntaxNode, REF>();
 
         private bool findAndRef;
         private bool invokeConstructor;

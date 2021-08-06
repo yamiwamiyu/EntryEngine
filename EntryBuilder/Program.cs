@@ -524,7 +524,7 @@ namespace EntryBuilder
             //PublishToPC(@"D:\Project\xss\xss\Launch\Client", @"D:\Project\xss\xss\Launch\Client");
             //PublishToWebGL(@"C:\Yamiwamiyu\Project\EntryEngineGit\trunk\", @"C:\Yamiwamiyu\Project\ChamberH5New\Code\Client", "", @"C:\Yamiwamiyu\Project\ChamberH5New\Publish\WebGL\index.html", false, 1);
             //PublishToWebGL(@"C:\Yamiwamiyu\Project\EntryEngineGit\trunk\", @"C:\Yamiwamiyu\Project\IslandChronicle\Code\Client", "", @"C:\Yamiwamiyu\Project\ChamberH5New\Publish\WebGL\index.html", false, 1);
-            //PublishToWebGL(@"C:\Yamiwamiyu\Project\EntryEngineGit\trunk\", @"C:\Yamiwamiyu\Project\hdcq3\Code\Client", @"C:\Yamiwamiyu\Project\hdcq3\Code\Protocol;C:\Yamiwamiyu\Project\EntryEngineGit\trunk\DragonBone", @"C:\Yamiwamiyu\Project\ChamberH5New\Publish\WebGL\index.html", false, 1);
+            PublishToWebGL(@"C:\Yamiwamiyu\Project\EntryEngineGit\trunk\", @"C:\Yamiwamiyu\Project\hdcq3\Code\Client", @"C:\Yamiwamiyu\Project\hdcq3\Code\Protocol;C:\Yamiwamiyu\Project\EntryEngineGit\trunk\DragonBone", @"C:\Yamiwamiyu\Project\hdcq3\Publish\WebGL\index.html", false, 1);
             //BuildTableTranslate("", "");
             //BuildDatabaseMysql(@"C:\Yamiwamiyu\Project\YMHY\Code\Protocol\Protocol\bin\Release\Protocol.dll", "Server._DB", @"C:\Yamiwamiyu\Project\YMHY\Code\Server\Server\_DB.design.cs", "", "", false);
             //BuildProtocolAgentHttp(@"D:\Desktop\hdcq2\Code\Client\Client", @"D:\Desktop\hdcq2\Code\Server\Server", @"D:\Desktop\hdcq2\Code\Protocol\Protocol\bin\Debug\Protocol.dll", 0);
@@ -4309,16 +4309,66 @@ return result;"
             public int 文字间隔;
         }
 
-        private class CodeResolve
+        private class CompiledSolution
         {
+            /// <summary>所有编译好的项目</summary>
+            public CodeResolve[] Projects;
+            // _BuildReference中的引用
+            /// <summary>语义的引用</summary>
+            public Dictionary<object, BEREF> ObjectReferences = new Dictionary<object, BEREF>();
+            /// <summary>语法的引用</summary>
+            public Dictionary<SyntaxNode, REF> SyntaxReferences = new Dictionary<SyntaxNode, REF>();
+        }
+        private class CodeResolve : IEquatable<CodeResolve>
+        {
+            const string SUFFIX = ".dll.bytes";
+
+            /// <summary>代码文件，代码没有发生变化时，可以不用重新解析程序集</summary>
+            public class CSFile
+            {
+                public string Name;
+                public DateTime LastWriteTime;
+            }
             public string Name;
-            public string[] Files;
+            public CSFile[] Files;
             public string Symbols;
+
+            /// <summary>代码解析</summary>
+            public Project Project;
+            /// <summary>程序编译</summary>
+            public EntryBuilder.CodeAnalysis.Semantics.CSharpAssembly Assembly;
+
+            public string[] SourceCodeFiles { get; private set; }
+
             public CodeResolve(string name, string symbols, string[] files)
             {
+                this.SourceCodeFiles = files;
                 this.Name = name;
                 this.Symbols = symbols;
-                this.Files = files;
+                this.Files = new CSFile[files.Length];
+                for (int i = 0; i < files.Length; i++)
+                {
+                    Files[i] = new CSFile();
+                    FileInfo file = new FileInfo(files[i]);
+                    Files[i].Name = file.FullName;
+                    Files[i].LastWriteTime = file.LastWriteTime;
+                }
+            }
+            public bool Equals(CodeResolve other)
+            {
+                if (this.Symbols != other.Symbols)
+                    return false;
+                if (this.Files.Length != other.Files.Length)
+                    return false;
+                int len = this.Files.Length;
+                for (int i = 0; i < len; i++)
+                {
+                    if (this.Files[i].Name != other.Files[i].Name)
+                        return false;
+                    if (this.Files[i].LastWriteTime != other.Files[i].LastWriteTime)
+                        return false;
+                }
+                return true;
             }
         }
 
@@ -5262,10 +5312,10 @@ return result;"
 
             string[] codes = Directory.GetFiles(solutionDir, "*.cs", SearchOption.AllDirectories);
             project.ParseFromFile(codes);
-            if (string.IsNullOrEmpty(project.Company))
-                project.Company = "Yamiwa Studio";
-            if (string.IsNullOrEmpty(project.Description))
-                project.Description = "Powered by EntryEngine";
+            if (project.AssemblyCompany.Value == null)
+                project.AssemblyCompany.Value = "Yamiwa Studio";
+            if (project.AssemblyDescription.Value == null)
+                project.AssemblyDescription.Value = "Powered by EntryEngine";
 
             for (int i = 0; i < codes.Length; i++)
             {
@@ -5288,7 +5338,7 @@ return result;"
             var dlls = Directory.GetFiles(Environment.CurrentDirectory, "*.dll", SearchOption.TopDirectoryOnly);
             foreach (string dll in dlls)
             {
-                if (project.Title != Path.GetFileNameWithoutExtension(dll))
+                if ((string)project.AssemblyTitle.Value != Path.GetFileNameWithoutExtension(dll))
                     param.ReferencedAssemblies.Add(Path.GetFileName(dll));
             }
             if (!string.IsNullOrEmpty(refferenceDllsSplitBySep))
@@ -11250,8 +11300,8 @@ return result;"
                 try
                 {
                     _LOG.Debug("Begin Parse [{0}]", item.Name);
-                    project.ParseFromFile(item.Files);
-                    _LOG.Debug("Parse [{0}] Time Elapsed: {1}", item.Name, watch.ElapsedMilliseconds.ToString());
+                    project.ParseFromFile(item.SourceCodeFiles);
+                    _LOG.Debug("Parse [{0}] Time Elapsed: {1}s", item.Name, Utility.LengthFloat((float)watch.Elapsed.TotalSeconds, 3));
                 }
                 catch (ParseFileException ex)
                 {
@@ -11263,16 +11313,9 @@ return result;"
                     _LOG.Error(ex, "Parse Project Error!\r\nFile={0}", item.Name);
                     return;
                 }
-                //try
-                //{
-                    Refactor.Resolve(project, true);
-                    Console.WriteLine("Resolve [{0}]: {1}", item.Name, watch.ElapsedMilliseconds.ToString());
-                //}
-                //catch (Exception ex)
-                //{
-                //    _LOG.Error(ex, "Resolve Project Error!\r\nFile={0}", item.Name);
-                //    return;
-                //}
+                item.Project = project;
+                item.Assembly = Refactor.Resolve(project, true);
+                _LOG.Debug("Resolve [{0}]: {1}", item.Name, Utility.LengthFloat((float)watch.Elapsed.TotalSeconds, 3));
                 defines.AddRange(project.Files);
             }
             try
@@ -11384,7 +11427,7 @@ return result;"
             watch.Stop();
 
             File.WriteAllText(outputFile, builder.ToString());
-            _LOG.Debug("Write Code Time Elapsed: {0}", watch.ElapsedMilliseconds.ToString());
+            _LOG.Debug("Write Code Time Elapsed: {0}", Utility.LengthFloat((float)watch.Elapsed.TotalSeconds, 3));
 
             // 复制资源文件到StreamingAssets文件夹
             string xnaDir = Path.Combine(projectCodeClientDir, @"..\..\Launch\Client\Content");

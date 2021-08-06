@@ -192,7 +192,7 @@ namespace EntryBuilder.CodeAnalysis.Semantics
 
     [AInvariant]public abstract class CSharpType : IEquatable<CSharpType>
     {
-        public static readonly CSharpType[] EmptyList = new CSharpType[0];
+        internal static readonly CSharpType[] EmptyList = new CSharpType[0];
         /// <summary>类型默认继承</summary>
         internal static TypeDefinitionInfo OBJECT;
         /// <summary>[]默认继承</summary>
@@ -223,6 +223,7 @@ namespace EntryBuilder.CodeAnalysis.Semantics
         internal static TypeDefinitionInfo IENUMERABLE;
         internal static TypeDefinitionInfo IENUMERATOR;
         internal static TypeDefinitionInfo NULLABLE;
+        internal static TypeDefinitionInfo ___Array;
 
         public virtual Named Name
         {
@@ -1400,8 +1401,6 @@ namespace EntryBuilder.CodeAnalysis.Semantics
     }
     internal class ArrayTypeReference : CSharpType, IEquatable<ArrayTypeReference>
     {
-        internal static TypeDefinitionInfo ___Array;
-
         private readonly CSharpType gArrayType;
         private readonly CSharpType elementType;
         private readonly int rank;
