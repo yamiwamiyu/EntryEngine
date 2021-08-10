@@ -201,8 +201,6 @@ namespace EntryEngine.DragonBone
             var slots = Proxy.Armature.GetSlots();
             if (slots.Count == 0) return;
 
-            var vertices = graphics.GetVertexBuffer();
-
             for (int i = 0; i < slots.Count; i++)
             {
                 Slot slot = slots[i];
@@ -229,7 +227,25 @@ namespace EntryEngine.DragonBone
                             tempTransform.Add(slot.global);
                             transform = tempTransform;
                         }
-                        graphics.ToSpriteVertex(TextureData.Texture,
+                        // 速度快，可后续扩展兼容MeshDisplayData
+                        //graphics.ToSpriteVertex(TextureData.Texture,
+                        //    transform.x,
+                        //    transform.y,
+                        //    transform.scaleX, transform.scaleY,
+                        //    true,
+                        //    data.texture.region.x, data.texture.region.y, data.texture.region.width, data.texture.region.height,
+                        //    true,
+                        //    (byte)(slot._colorTransform.redMultiplier * vertex.Color.R), (byte)(slot._colorTransform.greenMultiplier * vertex.Color.G),
+                        //    (byte)(slot._colorTransform.blueMultiplier * vertex.Color.B), (byte)(slot._colorTransform.alphaMultiplier * vertex.Color.A),
+                        //    transform.rotation,
+                        //    data.pivot.x, data.pivot.y,
+                        //    EFlip.None, ref tempVertex);
+                        //graphics.InputVertexToOutputVertex(ref tempVertex, vertexCount);
+                        //vertexCount += 4;
+                        //primitiveCount += 2;
+
+                        // 可使用打包大图，不方便兼容MeshDisplayData
+                        graphics.BaseDraw(TextureData.Texture,
                             transform.x,
                             transform.y,
                             transform.scaleX, transform.scaleY,
@@ -240,10 +256,7 @@ namespace EntryEngine.DragonBone
                             (byte)(slot._colorTransform.blueMultiplier * vertex.Color.B), (byte)(slot._colorTransform.alphaMultiplier * vertex.Color.A),
                             transform.rotation,
                             data.pivot.x, data.pivot.y,
-                            EFlip.None, ref tempVertex);
-                        graphics.InputVertexToOutputVertex(ref tempVertex, vertexCount);
-                        vertexCount += 4;
-                        primitiveCount += 2;
+                            EFlip.None);
                     }
                     else if (display is MeshDisplayData)
                     {
