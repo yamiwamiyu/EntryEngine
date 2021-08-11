@@ -9,6 +9,9 @@ namespace EntryEngine.Unity
 	using Input = UnityEngine.Input;
 	using Random = UnityEngine.Random;
 	using Time = UnityEngine.Time;
+    using System.IO;
+    using System.Reflection;
+    using System.Text;
 
 	/*
 	 * Sound
@@ -1716,13 +1719,7 @@ namespace EntryEngine.Unity
 
             IPlatform = new PlatformUnity();
             if (Application.isEditor)
-            {
-                const string WritePath = "Content/";
-                if (!System.IO.Directory.Exists(WritePath))
-                    System.IO.Directory.CreateDirectory(WritePath);
-                IOUnity.PersistentDataPath = WritePath;
-                IOUnity.DataPath = "file://" + IOUnity.DataPath;
-            }
+                IOUnity.PersistentDataPath = IOUnity.DataPath;
 
             INPUT = ((PlatformUnity)IPlatform).BuildInputDevice();
 
