@@ -509,9 +509,10 @@ namespace EntryBuilder
         {
             _LOG._Logger = new LoggerConsole();
 
+            //TexPiece(@"C:\Yamiwamiyu\Project\hdcq3\Design\Pack\___TEMP.xlsx", @"C:\Yamiwamiyu\Project\hdcq3\Launch\Client\Content\", @"C:\Yamiwamiyu\Project\hdcq3\Launch\Client\Content\");
+
             //TexFontFromExcel("图片字体.xlsx");
             //PSD2JS("首页.psd", @"C:\Yamiwamiyu\Project\YMHY2\gaming-center\dist\", true);
-            
 
             //GaussianBlur gauss = new GaussianBlur(15);
             //using (Bitmap bitmap = new Bitmap("Test.png"))
@@ -524,7 +525,7 @@ namespace EntryBuilder
             //PublishToPC(@"D:\Project\xss\xss\Launch\Client", @"D:\Project\xss\xss\Launch\Client");
             //PublishToWebGL(@"C:\Yamiwamiyu\Project\EntryEngineGit\trunk\", @"C:\Yamiwamiyu\Project\ChamberH5New\Code\Client", "", @"C:\Yamiwamiyu\Project\ChamberH5New\Publish\WebGL\index.html", false, 1);
             //PublishToWebGL(@"C:\Yamiwamiyu\Project\EntryEngineGit\trunk\", @"C:\Yamiwamiyu\Project\IslandChronicle\Code\Client", "", @"C:\Yamiwamiyu\Project\ChamberH5New\Publish\WebGL\index.html", false, 1);
-            PublishToWebGL(@"C:\Yamiwamiyu\Project\EntryEngineGit\trunk\", @"C:\Yamiwamiyu\Project\hdcq3\Code\Client", @"C:\Yamiwamiyu\Project\hdcq3\Code\Protocol;C:\Yamiwamiyu\Project\EntryEngineGit\trunk\DragonBone", @"C:\Yamiwamiyu\Project\hdcq3\Publish\WebGL\index.html", false, 1);
+            //PublishToWebGL(@"C:\Yamiwamiyu\Project\EntryEngineGit\trunk\", @"C:\Yamiwamiyu\Project\hdcq3\Code\Client", @"C:\Yamiwamiyu\Project\hdcq3\Code\Protocol;C:\Yamiwamiyu\Project\EntryEngineGit\trunk\DragonBone", @"C:\Yamiwamiyu\Project\hdcq3\Publish\WebGL\index.html", false, 1);
             //BuildTableTranslate("", "");
             //BuildDatabaseMysql(@"C:\Yamiwamiyu\Project\YMHY\Code\Protocol\Protocol\bin\Release\Protocol.dll", "Server._DB", @"C:\Yamiwamiyu\Project\YMHY\Code\Server\Server\_DB.design.cs", "", "", false);
             //BuildProtocolAgentHttp(@"D:\Desktop\hdcq2\Code\Client\Client", @"D:\Desktop\hdcq2\Code\Server\Server", @"D:\Desktop\hdcq2\Code\Protocol\Protocol\bin\Debug\Protocol.dll", 0);
@@ -4309,16 +4310,6 @@ return result;"
             public int 文字间隔;
         }
 
-        private class CompiledSolution
-        {
-            /// <summary>所有编译好的项目</summary>
-            public CodeResolve[] Projects;
-            // _BuildReference中的引用
-            /// <summary>语义的引用</summary>
-            public Dictionary<object, BEREF> ObjectReferences = new Dictionary<object, BEREF>();
-            /// <summary>语法的引用</summary>
-            public Dictionary<SyntaxNode, REF> SyntaxReferences = new Dictionary<SyntaxNode, REF>();
-        }
         private class CodeResolve : IEquatable<CodeResolve>
         {
             const string SUFFIX = ".dll.bytes";
@@ -5311,7 +5302,7 @@ return result;"
             project.AddSymbols(symbols);
 
             string[] codes = Directory.GetFiles(solutionDir, "*.cs", SearchOption.AllDirectories);
-            project.ParseFromFile(codes);
+            project.Parse(codes);
             if (project.AssemblyCompany.Value == null)
                 project.AssemblyCompany.Value = "Yamiwa Studio";
             if (project.AssemblyDescription.Value == null)
@@ -5324,7 +5315,7 @@ return result;"
                     writer = new CSharpDummyCodeBuilder();
                 else
                     writer = new CSharpCodeBuilder();
-                writer.Visit(project.Files[i]);
+                writer.Visit(project.Files[i].Define);
                 //File.WriteAllText(Path.Combine(@"D:\Projects\EntryEngine\CompileTest", Path.GetFileName(codes[i])), writer.Result);
                 codes[i] = writer.Result;
             }
@@ -10078,7 +10069,8 @@ return result;"
                 }
 
                 string[] directories = onePiece.Directories.Split(',');
-                if (string.IsNullOrEmpty(onePiece.Output))
+                bool isAutoOutput = string.IsNullOrEmpty(onePiece.Output);
+                if (isAutoOutput)
                 {
                     onePiece.Output = directories[0];
                     var last = onePiece.Output[onePiece.Output.Length - 1];
@@ -10254,10 +10246,17 @@ return result;"
                             }
                         });
 
-                        string suffix = Path.GetExtension(onePiece.Output);
-                        if (string.IsNullOrEmpty(suffix))
-                            //onePiece.Output += "." + TEXTURE.SPECIAL_TEXTURE_TYPE;
+                        if (isAutoOutput)
+                        {
                             onePiece.Output += ".png";
+                        }
+                        else
+                        {
+                            string suffix = Path.GetExtension(onePiece.Output);
+                            if (string.IsNullOrEmpty(suffix))
+                                //onePiece.Output += "." + TEXTURE.SPECIAL_TEXTURE_TYPE;
+                                onePiece.Output += ".png";
+                        }
                         root = inputDir + onePiece.Root;
                         for (int j = 0; j < count; j++)
                         {
@@ -11300,12 +11299,12 @@ return result;"
                 try
                 {
                     _LOG.Debug("Begin Parse [{0}]", item.Name);
-                    project.ParseFromFile(item.SourceCodeFiles);
+                    project.Parse(item.SourceCodeFiles);
                     _LOG.Debug("Parse [{0}] Time Elapsed: {1}s", item.Name, Utility.LengthFloat((float)watch.Elapsed.TotalSeconds, 3));
                 }
-                catch (ParseFileException ex)
+                catch (ParseSourceException ex)
                 {
-                    _LOG.Error(ex, "Parse Project Error!\r\nFile={0}\r\nFocus:{1}", item.Name, ex.File, ((ParseSourceException)ex.InnerException).ErrorFocus);
+                    _LOG.Error(ex, "Parse Project Error!\r\nFile={0}\r\nFocus:{1}", item.Name, ex.File, ex.ErrorFocus);
                     return;
                 }
                 catch (Exception ex)
@@ -11316,8 +11315,9 @@ return result;"
                 item.Project = project;
                 item.Assembly = Refactor.Resolve(project, true);
                 _LOG.Debug("Resolve [{0}]: {1}", item.Name, Utility.LengthFloat((float)watch.Elapsed.TotalSeconds, 3));
-                defines.AddRange(project.Files);
+                defines.AddRange(project.Files.Select(f => f.Define));
             }
+
             try
             {
                 Refactor.Optimize();
