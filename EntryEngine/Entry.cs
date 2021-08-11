@@ -6985,8 +6985,6 @@ namespace EntryEngine
                     item.Color = color;
                 if (item.Font == null)
                     item.Font = Base;
-                else
-                    item.Font.FontSize = Base.FontSize;
                 if (item.Font == null) continue;
                 if (item.Text == "\n")
                 {

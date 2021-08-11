@@ -1873,7 +1873,7 @@ namespace EntryEngine.UI
             rect.Height = rect.Bottom;
             if (!child.isClip)
             {
-                RECT clip = child.ChildClip;
+                RECT clip = child.InParentChildClip;
                 if (clip.X < 0)
                 {
                     rect.X += clip.X;
