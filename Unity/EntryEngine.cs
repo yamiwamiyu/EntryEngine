@@ -36,26 +36,26 @@ namespace EntryEngine.Unity
             }
 		}
 	}
+    internal enum EIOPathType
+    {
+        /// <summary>可写目录</summary>
+        Write,
+        /// <summary>只读目录</summary>
+        Read,
+        /// <summary>网络目录，包含file://类的本地目录</summary>
+        Web,
+    }
 	public class IOUnity : _IO.iO
 	{
         /// <summary>调用了Destroy的资源的对象ToString()的结果为"null"</summary>
         internal const string DESTROIED_RESOURCE = "null";
+        /// <summary>可读可写文件夹</summary>
         internal static string PersistentDataPath = Application.persistentDataPath + '/';
+        /// <summary>只读内部文件夹</summary>
         internal static string DataPath = Application.streamingAssetsPath + '/';
 
-        //public override string RootDirectory
-        //{
-        //    get
-        //    {
-        //        return string.Empty;
-        //    }
-        //    set
-        //    {
-        //    }
-        //}
-
         /// <returns>返回是否应使用WWW</returns>
-        internal bool GetReadPath(ref string file)
+        internal EIOPathType GetReadPath(ref string file)
         {
             //file = file.Replace('\\', '/');
             string target = PersistentDataPath + file;
@@ -64,14 +64,24 @@ namespace EntryEngine.Unity
                 if (System.IO.File.Exists(target))
                 {
                     file = target;
-                    return false;
+                    return EIOPathType.Write;
                 }
             }
             catch (Exception)
             {
             }
             file = DataPath + file;
-            return file.Contains("://");
+            try
+            {
+                if (System.IO.File.Exists(file))
+                {
+                    return EIOPathType.Read;
+                }
+            }
+            catch (Exception)
+            {
+            }
+            return EIOPathType.Web;
         }
         private string GetWritePath(string file)
         {
@@ -79,7 +89,7 @@ namespace EntryEngine.Unity
         }
 		protected override byte[] _ReadByte(string file)
 		{
-            if (GetReadPath(ref file))
+            if (GetReadPath(ref file) == EIOPathType.Web)
             {
                 using (UnityWebRequest www = Load(false, file))
                 {
@@ -92,7 +102,7 @@ namespace EntryEngine.Unity
 		protected override AsyncReadFile _ReadAsync(string file)
 		{
             string origin = file;
-            if (GetReadPath(ref file))
+            if (GetReadPath(ref file) == EIOPathType.Web)
             {
                 AsyncReadFile async = new AsyncReadFile(this, file);
                 LoadAsync(false, file, request => 
@@ -128,9 +138,18 @@ namespace EntryEngine.Unity
         {
             UnityWebRequest request = null;
             System.Threading.EventWaitHandle wait = new System.Threading.EventWaitHandle(false, System.Threading.EventResetMode.ManualReset);
-            LoadAsync(needGetReadPath, file, r =>
+            EntryEngine.Network.AsyncThread.QueueUserWorkItem(() =>
             {
-                request = r;
+                if (needGetReadPath)
+                {
+                    GetReadPath(ref file);
+                }
+                request = UnityWebRequest.Get(file);
+                var result = request.SendWebRequest();
+                while (!result.isDone)
+                {
+                    System.Threading.Thread.Sleep(1);
+                }
                 wait.Set();
             });
             wait.WaitOne();
@@ -138,34 +157,35 @@ namespace EntryEngine.Unity
         }
         internal void LoadAsync(bool needGetReadPath, string file, Action<UnityWebRequest> onCallback)
         {
+            LoadAsync(needGetReadPath, file, f => UnityWebRequest.Get(f), onCallback);
+        }
+        internal void LoadAsync(bool needGetReadPath, string file, Func<string, UnityWebRequest> buildWebRequest, Action<UnityWebRequest> onCallback)
+        {
             if (needGetReadPath)
             {
-                GetReadPath(ref file);
+                if (GetReadPath(ref file) == EIOPathType.Write)
+                {
+                    // 本地文件，但又不得不用UnityWebRequest加载时
+                    file = "file:///" + file;
+                }
             }
-            new AsyncUnityCoroutine().Load(Coroutine(file, onCallback));
+            new AsyncUnityCoroutine().Load(Coroutine(buildWebRequest(file), onCallback));
         }
-        private System.Collections.IEnumerator Coroutine(string file, Action<UnityWebRequest> async)
+        private System.Collections.IEnumerator Coroutine(UnityWebRequest request, Action<UnityWebRequest> async)
         {
-            using (UnityWebRequest request = UnityWebRequest.Get(file))
+            using (request)
             {
                 yield return request.SendWebRequest();
+                if (!string.IsNullOrEmpty(request.error))
+                {
+                    _LOG.Warning("加载资源{0}失败：{1}", request.url, request.error);
+                }
                 async(request);
             }
         }
 	}
 	public class MediaPlayerUnity : AUDIO
 	{
-        public override float Volume
-        {
-            get;
-            set;
-        }
-        public override bool Mute
-        {
-            get;
-            set;
-        }
-
         public MediaPlayerUnity()
         {
             Volume = 1;
@@ -209,7 +229,14 @@ namespace EntryEngine.Unity
         }
         protected override void LoadAsync(AsyncLoadContent async)
         {
-            ((IOUnity)this.IO).LoadAsync(true, async.File, request => DownloadHandlerAudioClip.GetContent(request));
+            DownloadHandlerAudioClip download = null;
+            ((IOUnity)this.IO).LoadAsync(true, async.File,
+                f =>
+                {
+                    download = new DownloadHandlerAudioClip(f, AudioType.UNKNOWN);
+                    return new UnityWebRequest(f, UnityWebRequest.kHttpVerbGET, download, null);
+                },
+                request => async.SetData(new SoundUnity(download.audioClip)));
         }
     }
     public class AsyncUnityCoroutine : Async
@@ -1720,6 +1747,8 @@ namespace EntryEngine.Unity
             IPlatform = new PlatformUnity();
             if (Application.isEditor)
                 IOUnity.PersistentDataPath = IOUnity.DataPath;
+            _LOG.Debug("可读可写文件夹：{0}", IOUnity.PersistentDataPath);
+            _LOG.Debug("只读内部文件夹：{0}", IOUnity.DataPath);
 
             INPUT = ((PlatformUnity)IPlatform).BuildInputDevice();
 
