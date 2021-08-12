@@ -11219,17 +11219,16 @@ return result;"
             File.WriteAllText(Path.Combine(outputDir, fileListVersion), new FileInfo(fileList).LastWriteTime.Ticks.ToString(), Encoding.ASCII);
             Console.WriteLine("复制资源完成");
         }
-        public static void PublishToUnity(string xnaDir, string unityAssetsDir)
+        public static void PublishToUnity(string xnaDir, string unityStreamingAssetsDir)
         {
             BuildDir(ref xnaDir);
-            BuildDir(ref unityAssetsDir);
+            BuildDir(ref unityStreamingAssetsDir);
 
-            // 将dll转为.bytes 文件放入StreamingAssets文件夹，并生成列表供Unity加载
-            string dir = _IO.PathCombine(Path.GetFullPath(unityAssetsDir), "StreamingAssets\\");
 
             StringBuilder builder = new StringBuilder();
 
-            FileInfo runtime = new FileInfo(Path.Combine(dir, "UnityRuntime.bytes"));
+            // 将dll转为.bytes 文件放入StreamingAssets文件夹，并生成列表供Unity加载
+            FileInfo runtime = new FileInfo(Path.Combine(unityStreamingAssetsDir, "UnityRuntime.bytes"));
             // IOS平台由于不能热更新，将不会采用动态加载DLL
             if (runtime.Exists)
             {
@@ -11249,20 +11248,20 @@ return result;"
                     continue;
                 FileInfo info = new FileInfo(dll);
                 builder.AppendLine("{0}.bytes\t{1}\t{2}", name, info.LastWriteTime.Ticks, info.Length);
-                File.Copy(dll, dir + name + ".bytes", true);
+                File.Copy(dll, unityStreamingAssetsDir + name + ".bytes", true);
             }
             Console.WriteLine("复制dll列表完成");
 
             // 复制资源文件到StreamingAssets文件夹
-            PublishCopyContent(Path.Combine(xnaDir, "Content"), dir,
+            PublishCopyContent(Path.Combine(xnaDir, "Content"), unityStreamingAssetsDir,
                 (file, fileName) =>
                 {
                     // 文件名\t最后修改时间\t文件大小(字节)
                     builder.AppendLine("{0}\t{1}\t{2}", fileName, file.LastWriteTime.Ticks, file.Length);
                 });
 
-            string fileList = dir + "__filelist.txt";
-            string fileListVersion = dir + "__version.txt";
+            string fileList = unityStreamingAssetsDir + "__filelist.txt";
+            string fileListVersion = unityStreamingAssetsDir + "__version.txt";
             File.WriteAllText(fileList, builder.ToString(), Encoding.UTF8);
             File.WriteAllBytes(fileListVersion, BitConverter.GetBytes(new FileInfo(fileList).LastWriteTime.Ticks));
             Console.WriteLine("复制资源完成");
