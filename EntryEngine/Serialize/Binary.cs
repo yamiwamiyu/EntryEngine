@@ -88,6 +88,7 @@ namespace EntryEngine.Serialize
             "System.Collections.Generic.Queue^1",
             "System.Collections.Generic.Stack^1",
             "System.Collections.Generic.LinkedList^1",
+            "System.Collections.Generic.HashSet^1",
             "System.Collections.Generic.Dictionary^2",
             "System.Nullable^1",
         };
@@ -612,6 +613,10 @@ namespace EntryEngine.Serialize
             WriteArray(value == null ? null : value.ToArray());
         }
         public void Write<T>(LinkedList<T> value)
+        {
+            WriteArray(value == null ? null : value.ToArray());
+        }
+        public void Write<T>(HashSet<T> value)
         {
             WriteArray(value == null ? null : value.ToArray());
         }
@@ -1657,6 +1662,15 @@ namespace EntryEngine.Serialize
                 value = null;
             else
                 value = new LinkedList<T>(array);
+        }
+        public void Read<T>(out HashSet<T> value)
+        {
+            T[] array;
+            Read<T>(out array);
+            if (array == null)
+                value = null;
+            else
+                value = new HashSet<T>(array);
         }
         public void Read<T>(out Nullable<T> value) where T : struct
         {

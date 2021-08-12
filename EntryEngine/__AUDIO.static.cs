@@ -67,17 +67,17 @@ namespace EntryEngine
         {
             __instance.Resume(sound);
         }
-        public static EntryEngine.SOUND PlayMusic(string name)
+        public static void PlayMusic(string name, System.Action<EntryEngine.SOUND> callback)
         {
-            return __instance.PlayMusic(name);
+            __instance.PlayMusic(name, callback);
         }
-        public static EntryEngine.SOUND PlayMusic(string name, EntryEngine.IAudioSource source)
+        public static void PlayMusic(string name, EntryEngine.IAudioSource source, System.Action<EntryEngine.SOUND> callback)
         {
-            return __instance.PlayMusic(name, source);
+            __instance.PlayMusic(name, source, callback);
         }
-        public static EntryEngine.SOUND PlayMusic(string name, float volume, float channel)
+        public static void PlayMusic(string name, float volume, float channel, System.Action<EntryEngine.SOUND> callback)
         {
-            return __instance.PlayMusic(name, volume, channel);
+            __instance.PlayMusic(name, volume, channel, callback);
         }
         public static void PlayMusic(EntryEngine.SOUND sound, EntryEngine.IAudioSource source)
         {
@@ -87,17 +87,17 @@ namespace EntryEngine
         {
             __instance.PlayMusic(sound, volume, channel);
         }
-        public static EntryEngine.SOUND PlayVoice(object obj, string name)
+        public static void PlayVoice(object obj, string name, System.Action<EntryEngine.SOUND> callback)
         {
-            return __instance.PlayVoice(obj, name);
+            __instance.PlayVoice(obj, name, callback);
         }
-        public static EntryEngine.SOUND PlayVoice(object obj, string name, EntryEngine.IAudioSource source)
+        public static void PlayVoice(object obj, string name, EntryEngine.IAudioSource source, System.Action<EntryEngine.SOUND> callback)
         {
-            return __instance.PlayVoice(obj, name, source);
+            __instance.PlayVoice(obj, name, source, callback);
         }
-        public static EntryEngine.SOUND PlayVoice(object obj, string name, float volume, float channel)
+        public static void PlayVoice(object obj, string name, float volume, float channel, System.Action<EntryEngine.SOUND> callback)
         {
-            return __instance.PlayVoice(obj, name, volume, channel);
+            __instance.PlayVoice(obj, name, volume, channel, callback);
         }
         public static void PlayVoice(object obj, EntryEngine.SOUND sound, EntryEngine.IAudioSource source)
         {
@@ -111,17 +111,17 @@ namespace EntryEngine
         {
             __instance.ClearVoiceStack();
         }
-        public static EntryEngine.SOUND PlaySound(string name)
+        public static void PlaySound(string name, System.Action<EntryEngine.SOUND> callback)
         {
-            return __instance.PlaySound(name);
+            __instance.PlaySound(name, callback);
         }
-        public static EntryEngine.SOUND PlaySound(string name, EntryEngine.IAudioSource source)
+        public static void PlaySound(string name, EntryEngine.IAudioSource source, System.Action<EntryEngine.SOUND> callback)
         {
-            return __instance.PlaySound(name, source);
+            __instance.PlaySound(name, source, callback);
         }
-        public static EntryEngine.SOUND PlaySound(string name, float volume, float channel)
+        public static void PlaySound(string name, float volume, float channel, System.Action<EntryEngine.SOUND> callback)
         {
-            return __instance.PlaySound(name, volume, channel);
+            __instance.PlaySound(name, volume, channel, callback);
         }
         public static void PlaySound(EntryEngine.SOUND sound, EntryEngine.IAudioSource source)
         {

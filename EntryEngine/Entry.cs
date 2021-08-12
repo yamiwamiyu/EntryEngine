@@ -3988,23 +3988,31 @@ namespace EntryEngine
         protected virtual void Resume(SoundSource source) { }
         protected abstract void Stop(SoundSource source);
         /// <summary>播放背景音乐</summary>
-        public SOUND PlayMusic(string name)
+        public void PlayMusic(string name, Action<SOUND> callback)
         {
-            return PlayMusic(name, null);
+            PlayMusic(name, null, callback);
         }
         /// <summary>播放背景音乐</summary>
-        public SOUND PlayMusic(string name, IAudioSource source)
+        public void PlayMusic(string name, IAudioSource source, Action<SOUND> callback)
         {
-            SOUND load = Content.Load<SOUND>(name);
-            PlayMusic(load, source);
-            return load;
+            Content.LoadAsync<SOUND>(name,
+            a =>
+            {
+                PlayMusic(a, source);
+                if (callback != null)
+                    callback(a);
+            });
         }
         /// <summary>播放背景音乐</summary>
-        public SOUND PlayMusic(string name, float volume, float channel)
+        public void PlayMusic(string name, float volume, float channel, Action<SOUND> callback)
         {
-            SOUND load = Content.Load<SOUND>(name);
-            PlayMusic(load, volume, channel);
-            return load;
+            Content.LoadAsync<SOUND>(name,
+            a =>
+            {
+                PlayMusic(a, volume, channel);
+                if (callback != null)
+                    callback(a);
+            });
         }
         /// <summary>播放背景音乐</summary>
         public void PlayMusic(SOUND sound, IAudioSource source)
@@ -4041,23 +4049,31 @@ namespace EntryEngine
             Play(this.sound, sound, volume, channel, true);
         }
         /// <summary>播放人声</summary>
-        public SOUND PlayVoice(object obj, string name)
+        public void PlayVoice(object obj, string name, Action<SOUND> callback)
         {
-            return PlayVoice(obj, name, 1, 0);
+            PlayVoice(obj, name, 1, 0, callback);
         }
         /// <summary>播放人声</summary>
-        public SOUND PlayVoice(object obj, string name, IAudioSource source)
+        public void PlayVoice(object obj, string name, IAudioSource source, Action<SOUND> callback)
         {
-            SOUND load = Content.Load<SOUND>(name);
-            PlayVoice(obj, load, source);
-            return load;
+            Content.LoadAsync<SOUND>(name,
+            a =>
+            {
+                PlayVoice(obj, a, source);
+                if (callback != null)
+                    callback(a);
+            });
         }
         /// <summary>播放人声</summary>
-        public SOUND PlayVoice(object obj, string name, float volume, float channel)
+        public void PlayVoice(object obj, string name, float volume, float channel, Action<SOUND> callback)
         {
-            SOUND load = Content.Load<SOUND>(name);
-            PlayVoice(obj, load, volume, channel);
-            return load;
+            Content.LoadAsync<SOUND>(name,
+            a =>
+            {
+                PlayVoice(obj, a, volume, channel);
+                if (callback != null)
+                    callback(a);
+            });
         }
         /// <summary>播放人声</summary>
         public void PlayVoice(object obj, SOUND sound, IAudioSource source)
@@ -4099,23 +4115,31 @@ namespace EntryEngine
             sources.Clear();
         }
         /// <summary>播放音效</summary>
-        public SOUND PlaySound(string name)
+        public void PlaySound(string name, Action<SOUND> callback)
         {
-            return PlaySound(name, 1, 0);
+            PlaySound(name, 1, 0, callback);
         }
         /// <summary>播放音效</summary>
-        public SOUND PlaySound(string name, IAudioSource source)
+        public void PlaySound(string name, IAudioSource source, Action<SOUND> callback)
         {
-            SOUND load = Content.Load<SOUND>(name);
-            PlaySound(load, source);
-            return load;
+            Content.LoadAsync<SOUND>(name,
+            a =>
+            {
+                PlaySound(a, source);
+                if (callback != null)
+                    callback(a);
+            });
         }
         /// <summary>播放音效</summary>
-        public SOUND PlaySound(string name, float volume, float channel)
+        public void PlaySound(string name, float volume, float channel, Action<SOUND> callback)
         {
-            SOUND load = Content.Load<SOUND>(name);
-            PlaySound(load, volume, channel);
-            return load;
+            Content.LoadAsync<SOUND>(name,
+            a =>
+            {
+                PlaySound(a, volume, channel);
+                if (callback != null)
+                    callback(a);
+            });
         }
         /// <summary>播放音效</summary>
         public void PlaySound(SOUND sound, IAudioSource source)

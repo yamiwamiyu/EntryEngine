@@ -269,6 +269,10 @@ namespace EntryEngine
         {
             __instance.BaseDraw(texture, x, y, w, h, scale, sx, sy, sw, sh, color, r, g, b, a, rotation, ox, oy, flip);
         }
+        public static void ToSpriteVertex(EntryEngine.TEXTURE texture, float x, float y, float w, float h, bool scale, float sx, float sy, float sw, float sh, bool color, byte r, byte g, byte b, byte a, float rotation, float ox, float oy, EntryEngine.EFlip flip, ref EntryEngine.SpriteVertex vertex)
+        {
+            __instance.ToSpriteVertex(texture, x, y, w, h, scale, sx, sy, sw, sh, color, r, g, b, a, rotation, ox, oy, flip, ref vertex);
+        }
         public static void Draw(EntryEngine.TEXTURE texture, ref EntryEngine.SpriteVertex vertex)
         {
             __instance.Draw(texture, ref vertex);
@@ -281,6 +285,10 @@ namespace EntryEngine
         {
             __instance.Draw(font, text, location, color, scale);
         }
+        public static void Draw(EntryEngine.FONT font, string text, float x, float y, float scale)
+        {
+            __instance.Draw(font, text, x, y, scale);
+        }
         public static void Draw(EntryEngine.FONT font, string text, EntryEngine.RECT bound, EntryEngine.COLOR color, EntryEngine.UI.EPivot alignment)
         {
             __instance.Draw(font, text, bound, color, alignment);
@@ -289,6 +297,10 @@ namespace EntryEngine
         {
             __instance.Draw(font, text, bound, color, alignment, scale);
         }
+        public static void BaseDrawFont(EntryEngine.FONT font, string text, float x, float y, EntryEngine.COLOR color, float scale)
+        {
+            __instance.BaseDrawFont(font, text, x, y, color, scale);
+        }
         public static EntryEngine.TextureVertex[] GetVertexBuffer()
         {
             return __instance.GetVertexBuffer();
@@ -296,6 +308,18 @@ namespace EntryEngine
         public static EntryEngine.TextureVertex[] ResizeVertexBuffer(int newSize)
         {
             return __instance.ResizeVertexBuffer(newSize);
+        }
+        public static short[] GetIndicesBuffer()
+        {
+            return __instance.GetIndicesBuffer();
+        }
+        public static void UV(EntryEngine.TextureVertex[] vertices, int offset, int count)
+        {
+            __instance.UV(vertices, offset, count);
+        }
+        public static void UV(EntryEngine.TEXTURE texture, EntryEngine.TextureVertex[] vertices, int offset, int count)
+        {
+            __instance.UV(texture, vertices, offset, count);
         }
         public static void InputVertexToOutputVertex(ref EntryEngine.SpriteVertex vertex, int outputIndex)
         {
