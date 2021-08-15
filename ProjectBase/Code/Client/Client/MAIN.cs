@@ -9,7 +9,9 @@ public class MAIN : UIScene
 {
     protected override IEnumerable<ICoroutine> Loading()
     {
-        // 你可以自定义你的第一个初始菜单来替换MAIN
+        // 渲染设置：分辨率，屏幕外剔除渲染
+        Entry.GRAPHICS.GraphicsSize = new VECTOR2(900, 1600);
+        //Entry.GRAPHICS.Culling = true;
 
         AsyncReadFile async;
 
@@ -25,9 +27,6 @@ public class MAIN : UIScene
         //_C.Load(_IO.ReadPreambleText(async.Data));
         //_LOG.Debug("加载常量表完毕");
 
-        Encoding encoding = _IO.IOEncoding;
-        _IO.IOEncoding = Encoding.Default;
-
         //async = _IO.ReadAsync("Tables\\LANGUAGE.csv");
         //if (!async.IsEnd) yield return async;
         //_LANGUAGE.Load(_IO.ReadPreambleText(async.Data), "");
@@ -38,7 +37,27 @@ public class MAIN : UIScene
         //        yield return item;
         //_LOG.Debug("加载数据表完毕");
 
-        _IO.IOEncoding = encoding;
+#if DEBUG
+        // 可以加载打包大图的配置
+        async = _IO.ReadAsync("piece.pcsv");
+        if (!async.IsEnd) yield return async;
+        PipelinePiece.GetDefaultPipeline().LoadMetadata(_IO.ReadPreambleText(async.Data));
+        _LOG.Debug("加载Piece完成");
+#endif
+
+        #region 系统级加载
+
+        // todo: 添加龙骨骼，Spine等第三方插件加载管道
+        //Entry.OnNewContentManager += (cm) => cm.AddPipeline(new PipelineDragonBones());
+
+        // 替换系统内容管理器，确保使用了上面的第三方插件
+        Entry._ContentManager = Entry.NewContentManager();
+        var content = Entry._ContentManager;
+
+        // todo: 使用content加载一些系统资源
+        //yield return content.WaitAsyncLoadHandle;
+
+        #endregion
 
         // 确保加载完了所有的基本资源后就可以启动第一个正式的菜单了
         //Entry.ShowMainScene<T>();
