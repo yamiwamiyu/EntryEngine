@@ -221,10 +221,12 @@ namespace EntryEngine
             if (scenes.Contains(scene))
             {
                 scene.State = dialogState;
-                scene.Show(this);
-                scene.OnPhaseShowing();
                 if (phase == EPhase.Running)
+                {
+                    scene.Show(this);
+                    scene.OnPhaseShowing();
                     phase = EPhase.Showing;
+                }
                 ToFront(scene);
                 return;
             }

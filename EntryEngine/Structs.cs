@@ -8,8 +8,120 @@ using EntryEngine.UI;
 
 namespace EntryEngine
 {
+    public interface IMobile
+    {
+        float X { get; set; }
+        float Y { get; set; }
+    }
+    public class MOBILE : IMobile
+    {
+        public VECTOR2 P;
+        public float X
+        {
+            get { return P.X; }
+            set { P.X = value; }
+        }
+        public float Y
+        {
+            get { return P.Y; }
+            set { P.Y = value; }
+        }
+        public MOBILE() { }
+        public MOBILE(float x, float y) { this.P.X = x; this.P.Y = y; }
+        public MOBILE(VECTOR2 p) { this.P = p; }
+
+        /// <summary>from根据速度朝to匀速移动</summary>
+        /// <param name="speed">移动速度，单位像素/秒</param>
+        public static IEnumerable<ICoroutine> UniformMoveBySpeed(IMobile from, IMobile to, float speed)
+        {
+            while (true)
+            {
+                float y = to.Y - from.Y;
+                float x = to.X - from.X;
+                float radian = (float)Math.Atan2(y, x);
+                float distance = (float)Math.Sqrt(x * x + y * y);
+
+                float moved = speed * GameTime.Time.ElapsedSecond;
+                bool over = distance < moved;
+                if (over)
+                    moved = distance;
+                from.X += (float)Math.Cos(radian) * moved;
+                from.Y += (float)Math.Sin(radian) * moved;
+                if (over)
+                    break;
+                yield return null;
+            }
+        }
+        /// <summary>from根据时间朝to匀速移动</summary>
+        /// <param name="second">移动时间，单位秒，移动速度将自动计算</param>
+        public static IEnumerable<ICoroutine> UniformMoveByTime(IMobile from, IMobile to, float second)
+        {
+            if (second == 0)
+                throw new ArgumentException("移动时间必须不为0");
+            double x = from.X - to.X;
+            double y = from.Y - to.Y;
+            float distance = (float)Math.Sqrt(x * x + y * y);
+            return UniformMoveBySpeed(from, to, distance / second);
+        }
+        /// <summary>from根据速度朝to加速靠近，减速停下</summary>
+        /// <param name="second1">加速时间，单位秒，超过加速时间将开始减速最终停下，加速度将自动计算</param>
+        /// <param name="second2">移动总时间，单位秒，加速度将自动计算</param>
+        public static IEnumerable<ICoroutine> CloseToBySpeed(IMobile from, IMobile to, float second1, float second2)
+        {
+            VECTOR2 origin = new VECTOR2(from.X, from.Y);
+            VECTOR2 current;
+            double x = to.X - from.X;
+            double y = to.Y - from.Y;
+            // 两点距离
+            float distance = (float)Math.Sqrt(x * x + y * y);
+            // 移动方向
+            float radian = (float)Math.Atan2(y, x);
+            // v0 * t + 1/2 * a * t * t
+            // 加速运动占总时间的百分比
+            float percent = second1 / second2;
+            float d = distance * percent;
+            // 根据[加速运动移动距离]，[加速运动时间]计算出加速度
+            float a = d / (0.5f * second1 * second1);
+            // 经过加速或减速阶段的时间
+            float time = 0;
+            while (time < second1)
+            {
+                float elapsed = GameTime.Time.ElapsedSecond;
+                if (time + elapsed > second1)
+                {
+                    elapsed = second1 - time;
+                }
+                time += elapsed;
+                CIRCLE.ParametricEquation(ref origin, 0.5f * a * time * time, radian, out current);
+                from.X = current.X;
+                from.Y = current.Y;
+                yield return null;
+            }
+            // 减速运动时间
+            second2 = second2 - second1;
+            percent = 1 - percent;
+            // 当前移动速度
+            float v0 = a * second1;
+            // 根据[减速运动移动距离]，[减速运动时间]计算出加速度
+            a = (distance * percent - v0 * second2) / (0.5f * second2 * second2);
+            time = 0;
+            while (time < second2)
+            {
+                float elapsed = GameTime.Time.ElapsedSecond;
+                if (time + elapsed >= second2)
+                {
+                    elapsed = second2 - time;
+                }
+                time += elapsed;
+                CIRCLE.ParametricEquation(ref origin, d + v0 * time + 0.5f * a * time * time, radian, out current);
+                from.X = current.X;
+                from.Y = current.Y;
+                yield return null;
+            }
+        }
+    }
     /// <summary>二维向量</summary>
-    [AReflexible]public struct VECTOR2 : IEquatable<VECTOR2>
+    [AReflexible]public struct VECTOR2 : IEquatable<VECTOR2>, IMobile
     {
         public float X;
         public float Y;
@@ -801,6 +913,18 @@ namespace EntryEngine
             VECTOR2 result;
             Divide(ref value1, divider, out result);
             return result;
+        }
+
+
+        float IMobile.X
+        {
+            get { return this.X; }
+            set { this.X = value; }
+        }
+        float IMobile.Y
+        {
+            get { return this.Y; }
+            set { this.Y = value; }
         }
     }
     [Code(ECode.LessUseful)]
