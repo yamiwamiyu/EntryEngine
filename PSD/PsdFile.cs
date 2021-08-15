@@ -59,7 +59,7 @@ namespace PSDFile
         {
             Version = version;
 
-            BaseLayer = new Layer(this);
+            BaseLayer = new Layer(this) { Name = "" };
             ImageResources = new ImageResources();
             Layers = new List<Layer>();
             AdditionalInfo = new List<LayerInfo>();
@@ -363,8 +363,9 @@ namespace PSDFile
         /// <returns>返回虚构的树的根节点，相当于PSD文档</returns>
         public LayerTree GetLayerTree()
         {
-            // 跟节点
+            // 根节点
             LayerTree parent = new LayerTree();
+            parent.Layer = BaseLayer;
             // 图层组
             Stack<LayerTree> stack = new Stack<LayerTree>();
             stack.Push(parent);
@@ -859,19 +860,68 @@ namespace PSDFile
     }
 
     /// <summary>图层的组织结构，跟PS里打开的一样</summary>
-    public class LayerTree
+    public class LayerTree : IEnumerable<Layer>
     {
         public Layer Layer;
         public LayerTree Parent;
         public List<LayerTree> Childs = new List<LayerTree>();
 
         /// <summary>true: 图层 / false: 图层组</summary>
-        public bool IsLayer { get { return Layer != null && Layer.IsLayer; } }
+        public bool IsLayer { get { return Layer.IsLayer; } }
+        /// <summary>图层组时，Rect全为0，这个可以标示图层组内元素的包围盒</summary>
+        public Rectangle Rect
+        {
+            get
+            {
+                if (IsLayer)
+                    return Layer.Rect;
+
+                if (Childs.Count == 0)
+                    return Layer.Rect;
+
+                Rectangle result = new Rectangle(int.MaxValue, int.MaxValue, -int.MaxValue, -int.MaxValue);
+                foreach (var item in Childs)
+                {
+                    Rectangle rect = item.Rect;
+                    if (rect.X < result.X) result.X = rect.X;
+                    if (rect.Y < result.Y) result.Y = rect.Y;
+                    if (rect.Right > result.Width) result.Width = rect.Right;
+                    if (rect.Bottom < result.Height) result.Height = rect.Bottom;
+                }
+                result.Width -= result.X;
+                result.Height -= result.Y;
+                return result;
+            }
+        }
+        /// <summary>相对父图层的坐标</summary>
+        public Rectangle RectRelativeParent
+        {
+            get
+            {
+                if (Parent == null)
+                    return Rect;
+
+                Rectangle parent = Parent.Rect;
+                Rectangle me = Rect;
+                me.X -= parent.X;
+                me.Y -= parent.Y;
+                return me;
+            }
+        }
 
         public override string ToString()
         {
             if (Layer == null) return "root";
             return Layer.Name;
+        }
+        public IEnumerator<Layer> GetEnumerator()
+        {
+            foreach (var item in Childs)
+                yield return item.Layer;
+        }
+        System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator()
+        {
+            return GetEnumerator();
         }
     }
 }

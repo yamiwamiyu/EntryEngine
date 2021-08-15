@@ -1558,14 +1558,19 @@ namespace EntryEngine.UI
         }
         public RECT InParent(RECT clip)
         {
-            clip.X -= PivotAlignmentX * Width * 0.5f;
-            clip.Y -= PivotAlignmentY * Height * 0.5f;
-            if (!needUpdateLocalToWorld && (clip.X != model.M31 || clip.Y != model.M32))
-            {
-                clip.X = model.M31;
-                clip.Y = model.M32;
-            }
+            InParent(ref clip.X, ref clip.Y);
             return clip;
+        }
+        /// <summary>根据Pivot将范围转换成在自己父容器中的位置</summary>
+        public void InParent(ref float x, ref float y)
+        {
+            x -= PivotAlignmentX * Width * 0.5f;
+            y -= PivotAlignmentY * Height * 0.5f;
+            if (!needUpdateLocalToWorld && (x != model.M31 || y != model.M32))
+            {
+                x = model.M31;
+                y = model.M32;
+            }
         }
         public VECTOR2 ConvertGraphicsToLocalView(VECTOR2 point)
         {
@@ -1871,27 +1876,32 @@ namespace EntryEngine.UI
             RECT rect = child.InParentClip;
             rect.Width = rect.Right;
             rect.Height = rect.Bottom;
+            // 子内容没有锁定在范围内时，可能子内容超出了容器
             if (!child.isClip)
             {
-                RECT clip = child.InParentChildClip;
+                // 获得容器的子内容
+                RECT clip = child.ChildClip;
+                // 左侧超出的部分
                 if (clip.X < 0)
                 {
                     rect.X += clip.X;
                     rect.Width -= clip.X;
                 }
+                // 上侧超出的部分
                 if (clip.Y < 0)
                 {
                     rect.Y += clip.Y;
                     rect.Height -= clip.Y;
                 }
+                // 转换成父容器内的坐标，才能与原本父容器内的范围进行比较
+                //clip = child.InParent(clip);
+                child.InParent(ref clip.X, ref clip.Y);
+                // 右侧超出的部分
                 if (clip.Right > rect.Width)
-                {
                     rect.Width = clip.Right;
-                }
+                // 下侧超出的部分
                 if (clip.Bottom > rect.Height)
-                {
                     rect.Height = clip.Bottom;
-                }
             }
             rect.Width = rect.Width - rect.X;
             rect.Height = rect.Height - rect.Y;

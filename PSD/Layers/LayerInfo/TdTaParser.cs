@@ -71,7 +71,7 @@ namespace PSDFile.Text
             {
                 byte[] b = (byte[])tree;
                 //FEFF - big endian
-                if (b[0] == 254 && b[1] == 255) return System.Text.UTF8Encoding.BigEndianUnicode.GetString(b,2,b.Length -2);
+                if (b[0] == 254 && b[1] == 255) return System.Text.UTF8Encoding.BigEndianUnicode.GetString(b, 2, b.Length - 2);
                 //FFEF - little endian
                 if (b[0] == 255 && b[1] == 254) return System.Text.UTF8Encoding.Unicode.GetString(b, 2, b.Length - 2);
                 throw new Exception("Failed to find Byte Order mark in string! :" + System.Text.UTF8Encoding.BigEndianUnicode.GetString(b));
@@ -220,7 +220,7 @@ namespace PSDFile.Text
 
                 //Shouldn't be a token
                 if (o is Token) throw new TdTaParseException("Unexpected token " + (Token)o + " in dict! Expected value.");
-                
+
                 //Add pair
                 dict.Add((string)key.value, o);
             }

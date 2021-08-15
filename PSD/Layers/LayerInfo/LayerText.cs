@@ -45,6 +45,10 @@ namespace PSDFile
 			get;
 			private set;
 		}
+        public double FontSizePx
+        {
+            get { return FontSize / 72 * 96; }
+        }
 
 		public string FontName
 		{
@@ -111,7 +115,7 @@ namespace PSDFile
             object value;
 			Dictionary<string, object> d = StylesheetReader.GetStylesheetDataFromLongestRun();
             // 文字属性
-			Text = StylesheetReader.Text;
+			Text = StylesheetReader.Text.Trim();
 			FontName = TdTaParser.getString(StylesheetReader.getFontSet()[(int)TdTaParser.query(d, "Font")], "Name$");
 			FontSize = (double)TdTaParser.query(d, "FontSize");
             if (d.TryGetValue("FauxBold", out value))
@@ -120,7 +124,8 @@ namespace PSDFile
                 FauxItalic = (bool)value;
             if (d.TryGetValue("Underline", out value))
                 Underline = (bool)value;
-			FillColor = TdTaParser.getColor(d, "FillColor");
+            if (d.TryGetValue("FillColor", out value))
+			    FillColor = TdTaParser.getColor(d, "FillColor");
 
             // 段落属性
             d = StylesheetReader.GetParagraphDataFromLongestRun();

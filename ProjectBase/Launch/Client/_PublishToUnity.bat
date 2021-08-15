@@ -1,1 +1,1 @@
-..\..\EntryBuilder PublishToUnity "" ..\..\Publish\Project\Assets\
+..\..\EntryBuilder PublishToUnity "" ..\..\Publish\Project\Assets\StreamingAssets\
