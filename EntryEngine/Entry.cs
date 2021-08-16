@@ -45,9 +45,9 @@ namespace EntryEngine
                 while (current != null && current != scenes.First)
                 {
                     var dialog = current.Value;
+                    current = current.Previous;
                     if (dialog.Parent == null)
                         yield return dialog;
-                    current = current.Previous;
                 }
             }
         }
