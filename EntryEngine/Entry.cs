@@ -167,7 +167,11 @@ namespace EntryEngine
         public UIScene ShowMainScene(UIScene scene)
         {
             if (scenes.Count > 0)
-                scenes.ForFirstToLast((item) => item.OnPhaseEnding());
+                scenes.ForFirstToLast((item) =>
+                {
+                    if (item == scene) return;
+                    item.OnPhaseEnding();
+                });
             InternalShowScene(scene, EState.None, true);
             //phase = EPhase.Ending;
             return scene;
