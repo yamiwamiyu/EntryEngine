@@ -31,6 +31,9 @@ namespace EntryEngine
          */
         private EPhase phase = EPhase.Running;
         private LinkedList<UIScene> scenes = new LinkedList<UIScene>();
+        /// <summary>渲染前渲染，自行决定Begin和End，可以用于超出视口的全屏幕背景绘制</summary>
+        public event Action<GRAPHICS> OnRenderBegin;
+        /// <summary>渲染鼠标</summary>
         public event Action<GRAPHICS, INPUT> OnDrawMouse;
         public event Action<UIScene, EState, bool> OnShowScene;
         /// <summary>每帧经过的时间：true:Platform.FrameRate/false:实际经过时间</summary>
@@ -323,8 +326,8 @@ namespace EntryEngine
                 InputUpdate();
             if (AUDIO != null)
                 AUDIO.Update(GameTime);
-            PhaseUpdate();
             SceneUpdate();
+            PhaseUpdate();
         }
         private bool NeedUpdateScene(UIScene scene)
         {
@@ -425,11 +428,7 @@ namespace EntryEngine
         }
         private bool NeedDrawScene(UIScene scene)
         {
-            scene.IsDrawable = scene.Phase != EPhase.Loading
-                // 没有准备且处在准备阶段的菜单不绘制
-                && ((scene.Phase != EPhase.Preparing && scene.Phase != EPhase.Prepared) || scene.Phasing != null);
-
-            if (scene.IsDrawable && scene.DrawState && scene.IsVisible)
+            if (scene.Phase != EPhase.Loading && scene.IsVisible)
             {
                 if (scene.Parent == null)
                 {
@@ -573,19 +572,6 @@ namespace EntryEngine
         }
         private void PhaseUpdate()
         {
-            // 当ShowScene在协程上就被调用时，防止当前帧的绘制被跳过造成闪屏
-            foreach (var item in scenes)
-                item.IsDrawable = true;
-
-            switch (phase)
-            {
-                case EPhase.Ending: PhaseEnding(); break;
-                case EPhase.Loading: PhaseLoading(); break;
-                case EPhase.Preparing: PhasePreparing(); break;
-                case EPhase.Showing: PhaseShowing(); break;
-                default: break;
-            }
-
             LinkedListNode<UIScene> node = scenes.Last;
             while (node != null)
             {
@@ -604,6 +590,15 @@ namespace EntryEngine
                     }
                 }
                 node = node.Previous;
+            }
+
+            switch (phase)
+            {
+                case EPhase.Ending: PhaseEnding(); break;
+                case EPhase.Loading: PhaseLoading(); break;
+                case EPhase.Preparing: PhasePreparing(); break;
+                case EPhase.Showing: PhaseShowing(); break;
+                default: break;
             }
         }
         private void SceneUpdate()
@@ -685,6 +680,9 @@ namespace EntryEngine
         public void Draw()
         {
             GRAPHICS.Clear();
+
+            if (OnRenderBegin != null)
+                OnRenderBegin(GRAPHICS);
 
             GRAPHICS.Begin(MATRIX2x3.Identity, GRAPHICS.FullGraphicsArea);
 
@@ -2838,6 +2836,20 @@ namespace EntryEngine
 
             if (result == null)
                 throw new ArgumentNullException("call");
+
+            if (asyncs.All(a => a.IsSuccess))
+            {
+                var content = result();
+                if (content == null)
+                {
+                    load.Error(new InvalidOperationException("Wait for the async queue must have a content return."));
+                }
+                else
+                {
+                    load.SetData(content);
+                }
+                return;
+            }
 
             Queue<T> queue = new Queue<T>(asyncs);
 

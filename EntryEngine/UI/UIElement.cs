@@ -1176,8 +1176,11 @@ namespace EntryEngine.UI
                     if (drawOrder[i].IsScene)
                     {
                         var scene = (UIScene)drawOrder[i];
-                        if (!(scene.Entry == null || (!scene.DrawState && scene.IsDrawable)))
+                        // 主场景内显示的普通场景，这里不能渲染
+                        if (scene.Entry != null)
                             continue;
+                        //if (!(scene.Entry == null || (!scene.DrawState && scene.IsDrawable)))
+                        //    continue;
                     }
                     drawOrder[i].Draw(spriteBatch, e);
                     //var scene = drawOrder[i] as UIScene;
@@ -2002,7 +2005,7 @@ namespace EntryEngine.UI
         Ending,
         /// <summary>场景进入舞台前的加载阶段：不执行任何流程</summary>
         Loading,
-        /// <summary>场景进入舞台前的准备阶段：执行渲染</summary>
+        /// <summary>场景进入舞台前的准备阶段：执行绘制</summary>
         Preparing,
         /// <summary>准备完成阶段，会等待其它场景准备完成：执行绘制</summary>
         Prepared,
@@ -2076,16 +2079,11 @@ namespace EntryEngine.UI
         public event Action<UIScene, ContentManager> LoadCompleted;
         internal Queue<UIElement> TopMost = new Queue<UIElement>();
         private List<AsyncLoadContent> loadings = new List<AsyncLoadContent>();
-        internal bool IsDrawable;
         public bool UseFlowLayout;
 
         internal override bool IsScene
         {
             get { return true; }
-        }
-        internal bool DrawState
-        {
-            get { return State != EState.Break && State != EState.Dispose && State != EState.Release; }
         }
         /// <summary>场景所在舞台，作为其它控件的子控件时，舞台为null</summary>
         public Entry Entry
