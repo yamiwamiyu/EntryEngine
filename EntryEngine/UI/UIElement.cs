@@ -387,18 +387,18 @@ namespace EntryEngine.UI
         }
 
         /// <summary>按钮效果，点击时放大（使用了DrawAfterBegin和DrawBeforeEnd）</summary>
-        public static void EffectScale(UIElement element)
+        /// <param name="scale">点击下去缩放的大小，放大推荐1.2，缩小推荐0.8</param>
+        public static void EffectScale(UIElement element, float scale)
         {
-            element.DrawAfterBegin += beqBegin;
-            element.DrawBeforeEnd += beqEnd;
-        }
-        static void beqBegin(UIElement sender, GRAPHICS sb, Entry e)
-        {
-            if (sender.IsHover && sender.IsClick)
+            element.DrawAfterBegin += (sender, sb, e) =>
             {
-                var pivot = sender.FinalViewClip.Center;
-                sb.Begin(MATRIX2x3.CreateTransform(0, pivot.X, pivot.Y, 1.2f, 1.2f, pivot.X, pivot.Y));
-            }
+                if (sender.IsHover && sender.IsClick)
+                {
+                    var pivot = sender.FinalViewClip.Center;
+                    sb.Begin(MATRIX2x3.CreateTransform(0, pivot.X, pivot.Y, scale, scale, pivot.X, pivot.Y));
+                }
+            };
+            element.DrawBeforeEnd += beqEnd;
         }
         static void beqEnd(UIElement sender, GRAPHICS sb, Entry e)
         {
