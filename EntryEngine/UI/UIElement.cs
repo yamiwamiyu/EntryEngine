@@ -407,6 +407,39 @@ namespace EntryEngine.UI
                 sb.End();
             }
         }
+        /// <summary>从左往右扫光特效</summary>
+        /// <param name="light">扫光图片</param>
+        /// <param name="target">需要扫光的控件</param>
+        /// <param name="duration">扫光一遍需要的时间</param>
+        /// <param name="interval">扫光后距离下次扫光间隔的时间</param>
+        public static void EffectScan(TEXTURE light, UIElement target, float duration, float interval)
+        {
+            float x = -light.Width;
+            float time = 0;
+            target.DrawAfterEnd += (sender, spriteBatch, e) =>
+            {
+                if (x > target.Width + light.Width)
+                {
+                    time += e.GameTime.ElapsedSecond;
+                    if (time >= interval)
+                    {
+                        x = -light.Width;
+                        time = 0;
+                    }
+                    else
+                    {
+                        return;
+                    }
+                }
+                x += target.Width * duration * e.GameTime.ElapsedSecond;
+                var clip = target.ViewClip;
+                var previous = spriteBatch.CurrentGraphics;
+                RECT.Intersect(ref previous, ref clip, out clip);
+                spriteBatch.Begin(clip);
+                spriteBatch.Draw(light, new VECTOR2(clip.X + x, clip.Y));
+                spriteBatch.End();
+            };
+        }
     }
 
     public struct UIFlowLayout
