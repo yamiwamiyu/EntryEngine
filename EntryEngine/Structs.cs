@@ -42,7 +42,7 @@ namespace EntryEngine
                 float distance = (float)Math.Sqrt(x * x + y * y);
 
                 float moved = speed * GameTime.Time.ElapsedSecond;
-                bool over = distance < moved;
+                bool over = distance <= moved;
                 if (over)
                     moved = distance;
                 from.X += (float)Math.Cos(radian) * moved;
