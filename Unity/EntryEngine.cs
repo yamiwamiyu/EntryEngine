@@ -57,29 +57,17 @@ namespace EntryEngine.Unity
         /// <returns>返回是否应使用WWW</returns>
         internal EIOPathType GetReadPath(ref string file)
         {
-            //file = file.Replace('\\', '/');
             string target = PersistentDataPath + file;
-            try
+            if (System.IO.File.Exists(target))
             {
-                if (System.IO.File.Exists(target))
-                {
-                    file = target;
-                    return EIOPathType.Write;
-                }
-            }
-            catch (Exception)
-            {
+                file = target;
+                return EIOPathType.Write;
             }
             file = DataPath + file;
-            try
+            // 对于android和ios，streamingAssetsPath不能通过File的API进行操作
+            if (System.IO.File.Exists(file))
             {
-                if (System.IO.File.Exists(file))
-                {
-                    return EIOPathType.Read;
-                }
-            }
-            catch (Exception)
-            {
+                return EIOPathType.Read;
             }
             return EIOPathType.Web;
         }
@@ -132,10 +120,11 @@ namespace EntryEngine.Unity
 		{
             base._WriteByte(GetWritePath(file), content);
 		}
-        /// <summary>System.Threading.EventWaitHandle估计用不了</summary>
-        [Code(ECode.BeNotTest)]
+        /// <summary>Android可用，Web没试过</summary>
+        [Code(ECode.Attention)]
         internal UnityWebRequest Load(bool needGetReadPath, string file)
         {
+            _LOG.Debug("异步线程同步加载文件：{0}", file);
             UnityWebRequest request = null;
             System.Threading.EventWaitHandle wait = new System.Threading.EventWaitHandle(false, System.Threading.EventResetMode.ManualReset);
             EntryEngine.Network.AsyncThread.QueueUserWorkItem(() =>

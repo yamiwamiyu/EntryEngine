@@ -27,6 +27,7 @@ namespace EntryEngine.Unity
 
         protected virtual void Start()
         {
+            Debug.Log("初始化Unity入口");
             Gate = this;
 
             if (OnCreateEntry != null)
