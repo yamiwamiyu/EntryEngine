@@ -1437,7 +1437,7 @@ namespace EntryEngine
             {
                 if (Previous == null || Current == null)
                     return VECTOR2.Zero;
-                return VECTOR2.Subtract(ref position, ref positionPrevious);
+                return new VECTOR2(position.X - positionPrevious.X, position.Y - positionPrevious.Y);
             }
         }
         /// <summary>上一帧鼠标的坐标</summary>
@@ -1453,7 +1453,7 @@ namespace EntryEngine
         /// <summary>鼠标当前坐标相对于点击坐标的值</summary>
         public VECTOR2 ClickPositionRelative
         {
-            get { return VECTOR2.Subtract(ref position, ref clickPosition); }
+            get { return new VECTOR2(position.X - clickPosition.X, position.Y - clickPosition.Y); }
         }
 
         /// <summary>当前帧是否点击并放开(仅一帧)</summary>
@@ -1629,7 +1629,7 @@ namespace EntryEngine
         {
             get { return Scale < 0; }
         }
-        /// <summary>缩放，单位为百分比</summary>
+        /// <summary>缩放，单位为像素</summary>
         public float Scale
         {
             get
@@ -1645,8 +1645,9 @@ namespace EntryEngine
                     }
                     else
                     {
+                        
                         return VECTOR2.Distance(t1.Position, t2.Position) -
-                               VECTOR2.Distance(VECTOR2.Subtract(t1.Position, t1.DeltaPosition), VECTOR2.Subtract(t2.Position, t2.DeltaPosition));
+                               VECTOR2.Distance(t1.PositionPrevious, t2.PositionPrevious);
                     }
                 }
                 else
@@ -1671,8 +1672,9 @@ namespace EntryEngine
                     }
                     else
                     {
-                        return VECTOR2.Degree(t1.Position, t2.Position) -
-                            VECTOR2.Degree(VECTOR2.Subtract(t1.Position, t1.DeltaPosition), VECTOR2.Subtract(t2.Position, t2.DeltaPosition));
+                        return _MATH.Closewise(
+                            VECTOR2.Degree(t1.PositionPrevious, t2.PositionPrevious),
+                            VECTOR2.Degree(t1.Position, t2.Position));
                     }
                 }
                 else
@@ -8399,7 +8401,7 @@ namespace EntryEngine
                     break;
 
                 case EViewport.Strength:
-                    VECTOR2 strength = VECTOR2.Divide(ref screen, ref graphics);
+                    VECTOR2 strength = new VECTOR2(screen.X / graphics.X, screen.Y / graphics.Y);
                     view.M11 = strength.X;
                     view.M22 = strength.Y;
                     break;

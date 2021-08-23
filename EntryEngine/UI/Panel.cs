@@ -452,10 +452,9 @@ namespace EntryEngine.UI
             if (offsetScope.X != temp.X || offsetScope.Y != temp.Y)
             {
                 if (stayValue)
-                    Offset = VECTOR2.Multiply(new VECTOR2(
-                        temp.X == 0 ? 0 : offset.X / temp.X,
-                        temp.Y == 0 ? 0 : offset.Y / temp.Y)
-                        , offsetScope);
+                    Offset = new VECTOR2(
+                        (temp.X == 0 ? 0 : offset.X / temp.X) * offsetScope.X,
+                        (temp.Y == 0 ? 0 : offset.Y / temp.Y) * offsetScope.Y);
                 else
                     Offset = offset;
             }
@@ -491,7 +490,7 @@ namespace EntryEngine.UI
                         case EDragMode.Drag:
                             if (offsetScope.X == 0 && offsetScope.Y == 0)
                                 return;
-                            Offset = VECTOR2.Subtract(Offset, delta);
+                            Offset = offset - delta;
                             Handle();
                             break;
 

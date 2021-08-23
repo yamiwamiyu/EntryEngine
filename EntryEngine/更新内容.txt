@@ -1,4 +1,8 @@
-﻿2021/08/17
+﻿2021/08/23
+1. 删除EntryBuilder.TexClearColor
+2. EntryEngine轻量化，删除多余代码和3D相关内容，节约dll体积150kb
+
+2021/08/17
 1. Entry新增渲染事件，可用于渲染超出视口的屏幕背景
 2. 优化Entry和UIScene的渲染
 

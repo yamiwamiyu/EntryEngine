@@ -1134,6 +1134,9 @@ namespace EntryEngine
 			return Min.GetHashCode() & Max.GetHashCode();
 		}
 	}
+
+    // 列表
+    /// <summary>随机列表，例如音乐播放器的列表，前后来回切换时音乐不会变</summary>
 	public class RandomList<T> : IEnumerable<T>
 	{
 		private T[] list;
@@ -1141,6 +1144,7 @@ namespace EntryEngine
 		private int[] indexes;
 		private int lastIndex = -1;
 
+        /// <summary>原始未随机的列表</summary>
 		public T[] List
 		{
 			get { return list; }
@@ -1163,11 +1167,8 @@ namespace EntryEngine
 				Reset();
 			}
 		}
-		public int Count
-		{
-			get { return list.Length; }
-		}
-		public int Last
+        /// <summary>当前内容在原始列表中的索引</summary>
+		public int Index
 		{
 			get
 			{
@@ -1176,10 +1177,13 @@ namespace EntryEngine
 				return indexes[lastIndex];
 			}
 		}
+        /// <summary>是否是最后一首</summary>
 		public bool IsLast
 		{
-			get { return lastIndex == Count - 1; }
+			get { return lastIndex == list.Length - 1; }
 		}
+        /// <summary>当前内容</summary>
+        public T Current { get { return list[indexes[lastIndex]]; } }
 
 		public RandomList()
             : this(new T[0], new RandomDotNet(_RANDOM.Next()))
@@ -1202,9 +1206,9 @@ namespace EntryEngine
 
 		public void Reset()
 		{
-			int last = Last;
-			int count = Count;
-			indexes = new int[Count];
+			int last = Index;
+            int count = list.Length;
+            indexes = new int[count];
 			for (int i = 0; i < count; i++)
 				indexes[i] = i;
 			do
@@ -1213,28 +1217,30 @@ namespace EntryEngine
 			} while (last != -1 && count > 0 && last == indexes[0]);
 			lastIndex = -1;
 		}
+        /// <summary>上一首</summary>
 		public T Previous()
 		{
 			if (lastIndex == -1)
 				return default(T);
 			if (lastIndex > 0)
 				lastIndex--;
-			return list[Last];
+			return list[Index];
 		}
+        /// <summary>上一首</summary>
 		public T Next()
 		{
-			int count = Count;
+            int count = list.Length;
 			if (count == 0)
 				return default(T);
 			if (lastIndex + 1 == count)
 				Reset();
 			lastIndex++;
-			return list[Last];
+			return list[Index];
 		}
 
 		public IEnumerator<T> GetEnumerator()
 		{
-			int count = Count;
+            int count = list.Length;
 			for (int i = 0; i < count; i++)
 				yield return list[indexes[i]];
 			lastIndex = count - 1;
@@ -1247,6 +1253,7 @@ namespace EntryEngine
 	}
 
     // 池
+    public delegate void ActionRef<T>(ref T action);
     /// <summary>要用到池的对象应该继承此类型以便快速进行池内的增删改</summary>
 	public class PoolItem
 	{
@@ -1254,7 +1261,6 @@ namespace EntryEngine
         /// <summary>池对象在池中的索引</summary>
         public int PoolIndex { get { return poolIndex; } }
 	}
-    public delegate void ActionRef<T>(ref T action);
     /// <summary>池数据结构，可以循环利用对象，减少new对象的次数</summary>
 	public class Pool<T> : IEnumerable<T>
 	{
@@ -1486,14 +1492,6 @@ namespace EntryEngine
 
 		public IEnumerator<T> GetEnumerator()
 		{
-            //int capacity = Capacity;
-            //bool[] isNull = new bool[capacity];
-            //int tail = Tail;
-            //for (int i = 0; i < tail; i++)
-            //    isNull[free[i]] = true;
-            //for (int i = 0; i < capacity; i++)
-            //    if (!isNull[i])
-            //        yield return items[i];
             return ((IEnumerable<T>)ToArray()).GetEnumerator();
 		}
 		IEnumerator IEnumerable.GetEnumerator()
@@ -1501,39 +1499,40 @@ namespace EntryEngine
 			return GetEnumerator();
 		}
 	}
-	public class PoolStack<T> : IEnumerable<T>
-	{
-		protected T[] items;
+    /// <summary>栈，只是可以不删除栈内的元素而重复使用，达到池的效果</summary>
+    public class PoolStack<T> : IEnumerable<T>
+    {
+        protected T[] items;
         protected int size;
 
-		public int Count
-		{
-			get { return size; }
-		}
-		public int Capcity
-		{
-			get { return items.Length; }
-		}
+        public int Count
+        {
+            get { return size; }
+        }
+        public int Capcity
+        {
+            get { return items.Length; }
+        }
 
-		public PoolStack()
-			: this(4)
-		{
-		}
-		public PoolStack(int capcity)
-		{
-			items = new T[capcity];
-		}
-		public PoolStack(IEnumerable<T> array)
-		{
-			ICollection<T> collection = array as ICollection<T>;
-			if (collection != null)
-				items = new T[collection.Count];
-			else
-				items = new T[4];
+        public PoolStack()
+            : this(4)
+        {
+        }
+        public PoolStack(int capcity)
+        {
+            items = new T[capcity];
+        }
+        public PoolStack(IEnumerable<T> array)
+        {
+            ICollection<T> collection = array as ICollection<T>;
+            if (collection != null)
+                items = new T[collection.Count];
+            else
+                items = new T[4];
 
-			foreach (var item in array)
-				Push(item);
-		}
+            foreach (var item in array)
+                Push(item);
+        }
 
         public void For(Action<T> action)
         {
@@ -1541,218 +1540,90 @@ namespace EntryEngine
                 action(items[i]);
         }
         public T Allot()
-		{
-			T item;
-			Allot(out item);
-			return item;
-		}
-		public bool Allot(out T item)
-		{
-			if (size < Capcity)
-			{
-				item = items[size];
-				if (item == null)
-					return false;
-				Push(item);
-				return true;
-			}
-			else
-			{
-				item = default(T);
-			}
-			return false;
-		}
-		public void Push(T item)
-		{
-			if (size == items.Length)
-			{
-				T[] array = new T[size * 2];
-				Array.Copy(items, 0, array, 0, size);
-				items = array;
-			}
-			items[size++] = item;
-		}
-		public T Peek()
-		{
-			return items[size - 1];
-		}
-		public T Pop()
-		{
-			if (size == 0)
-				throw new InvalidOperationException("Empty stack.");
-			return items[--size];
-		}
-		public T[] ToArray()
-		{
-			T[] array = new T[size];
-			for (int i = 0; i < size; i++)
-			{
-				array[i] = items[size - i - 1];
-			}
-			return array;
-		}
-		public void Clear()
-		{
-			size = 0;
-		}
-		public void ClearAndTrim(int capcity)
-		{
-			if (capcity < 4)
-				capcity = 4;
-			size = capcity;
-			Trim();
-			size = 0;
-		}
-		public void Trim()
-		{
-			int capcity = Capcity;
-			if (capcity > size)
-			{
-				T[] array = new T[size];
-				Array.Copy(items, 0, array, 0, size);
-				items = array;
-			}
-		}
-		public IEnumerator<T> GetEnumerator()
-		{
-			for (int i = size - 1; i >= 0; i--)
-			{
-				yield return items[i];
-			}
-		}
-		IEnumerator IEnumerable.GetEnumerator()
-		{
-			return GetEnumerator();
-		}
-	}
-	/// <summary>
-	/// 池堆
-	/// 将BufferSize个对象视为一堆
-	/// 整个池能放满PoolSize堆时溢出
-	/// </summary>
-	public class PoolHeap<T> : IEnumerable<T>
-	{
-		private int poolSize;
-		private int bufferSize;
-		private Queue<T[]> records;
-		private T[] buffers;
-		private int index;
-		public event Action<T> PoolFlush;
-
-		public int PoolSize
-		{
-			get { return poolSize; }
-			set
-			{
-				if (poolSize != value)
-				{
-					Flush();
-					poolSize = value;
-					InitPool();
-				}
-			}
-		}
-		public int BufferSize
-		{
-			get { return bufferSize; }
-			set
-			{
-				if (bufferSize != value)
-				{
-					Flush();
-					bufferSize = value;
-					InitPool();
-				}
-			}
-		}
-		public bool PoolFull
-		{
-			get { return index == bufferSize && records.Count == poolSize; }
-		}
-		public bool HeapFull
-		{
-			get { return index == bufferSize; }
-		}
-
-		public PoolHeap() : this(32, 4096) { }
-		public PoolHeap(int poolSize, int bufferSize)
-		{
-			this.poolSize = poolSize;
-			this.bufferSize = bufferSize;
-			InitPool();
-		}
-		public PoolHeap(int poolSize, int bufferSize, Action<T> recorder)
-			: this(poolSize, bufferSize)
-		{
-			this.PoolFlush = recorder;
-		}
-
-		private void InitPool()
-		{
-			records = new Queue<T[]>(poolSize);
-			buffers = new T[bufferSize];
-		}
-		public void Add(T record)
-		{
-			if (index == bufferSize)
-			{
-				if (records.Count == poolSize)
-				{
-					Flush();
-				}
-				else
-				{
-					records.Enqueue(buffers);
-				}
-				buffers = new T[bufferSize];
-				index = 0;
-			}
-			buffers[index++] = record;
-		}
-		public void Flush()
-		{
-			if (PoolFlush != null)
-			{
-				while (records.Count > 0)
-				{
-					T[] queue = records.Dequeue();
-					for (int i = 0; i < bufferSize; i++)
-					{
-						PoolFlush(queue[i]);
-					}
-				}
-			}
-			records.Clear();
-
-			if (index > 0)
-			{
-				if (PoolFlush != null)
-				{
-					for (int i = 0; i < index; i++)
-					{
-						PoolFlush(buffers[i]);
-					}
-				}
-				buffers = new T[bufferSize];
-			}
-		}
-
-		IEnumerator<T> IEnumerable<T>.GetEnumerator()
-		{
-			foreach (var record in records)
-				for (int i = 0; i < bufferSize; i++)
-					yield return record[i];
-
-			if (index > 0)
-				for (int i = 0; i < index; i++)
-					yield return buffers[i];
-		}
-		IEnumerator IEnumerable.GetEnumerator()
-		{
-			return ((IEnumerable<T>)this).GetEnumerator();
-		}
-	}
-
+        {
+            T item;
+            Allot(out item);
+            return item;
+        }
+        public bool Allot(out T item)
+        {
+            if (size < Capcity)
+            {
+                item = items[size];
+                if (item == null)
+                    return false;
+                Push(item);
+                return true;
+            }
+            else
+            {
+                item = default(T);
+            }
+            return false;
+        }
+        public void Push(T item)
+        {
+            if (size == items.Length)
+            {
+                T[] array = new T[size * 2];
+                Array.Copy(items, 0, array, 0, size);
+                items = array;
+            }
+            items[size++] = item;
+        }
+        public T Peek()
+        {
+            return items[size - 1];
+        }
+        public T Pop()
+        {
+            if (size == 0)
+                throw new InvalidOperationException("Empty stack.");
+            return items[--size];
+        }
+        public T[] ToArray()
+        {
+            T[] array = new T[size];
+            for (int i = 0; i < size; i++)
+            {
+                array[i] = items[size - i - 1];
+            }
+            return array;
+        }
+        public void Clear()
+        {
+            size = 0;
+        }
+        public void ClearAndTrim(int capcity)
+        {
+            if (capcity < 4)
+                capcity = 4;
+            size = capcity;
+            Trim();
+            size = 0;
+        }
+        public void Trim()
+        {
+            int capcity = Capcity;
+            if (capcity > size)
+            {
+                T[] array = new T[size];
+                Array.Copy(items, 0, array, 0, size);
+                items = array;
+            }
+        }
+        public IEnumerator<T> GetEnumerator()
+        {
+            for (int i = size - 1; i >= 0; i--)
+            {
+                yield return items[i];
+            }
+        }
+        IEnumerator IEnumerable.GetEnumerator()
+        {
+            return GetEnumerator();
+        }
+    }
 
     // 树
     /// <summary>树数据结构</summary>
@@ -2078,227 +1949,227 @@ namespace EntryEngine
                 ForRootToLeaf(parent.Childs[i], func, newNode);
         }
     }
-    public class BTree<T> : IEnumerable<T>
-    {
-        class Node
-        {
-            public T Data;
-            public Node Left;
-            public Node Right;
-            public Node(T data)
-            {
-                Data = data;
-            }
-        }
-        private Comparison<T> comparer;
-        private Node root;
-        private int count;
+    //public class BTree<T> : IEnumerable<T>
+    //{
+    //    class Node
+    //    {
+    //        public T Data;
+    //        public Node Left;
+    //        public Node Right;
+    //        public Node(T data)
+    //        {
+    //            Data = data;
+    //        }
+    //    }
+    //    private Comparison<T> comparer;
+    //    private Node root;
+    //    private int count;
 
-        public int Count
-        {
-            get { return count; }
-        }
-        public T this[T key]
-        {
-            get
-            {
-                Node node = FindEntry(key);
-                if (node == null)
-                    throw new KeyNotFoundException();
-                return node.Data;
-            }
-        }
-        private static Comparison<T> GetDefaultComparison()
-        {
-            var comparer = Comparer<T>.Default;
-            if (comparer != null)
-                return comparer.Compare;
-            return null;
-        }
-        public BTree() : this(GetDefaultComparison()) { }
-        public BTree(Comparison<T> comparer)
-        {
-            this.comparer = comparer;
-        }
-        public BTree(T root) : this(GetDefaultComparison(), root) { }
-        public BTree(Comparison<T> comparer, T root)
-        {
-            this.comparer = comparer;
-            this.root = new Node(root);
-        }
-        private Node FindEntry(T key)
-        {
-            if (root == null) return null;
-            var node = root;
-            while (node != null)
-            {
-                int value = comparer(node.Data, key);
-                if (value == 0)
-                    return node;
-                else if (value < 0)
-                    node = node.Right;
-                else
-                    node = node.Left;
-            }
-            return null;
-        }
-        public bool Contains(T key)
-        {
-            return FindEntry(key) != null;
-        }
-        public bool Add(T key)
-        {
-            if (root == null)
-            {
-                count = 1;
-                root = new Node(key);
-                return true;
-            }
-            var node = root;
-            while (true)
-            {
-                int value = comparer(node.Data, key);
-                if (value == 0)
-                {
-                    return false;
-                }
-                else if (value < 0)
-                {
-                    if (node.Right == null)
-                    {
-                        count++;
-                        node.Right = new Node(key);
-                        return true;
-                    }
-                    node = node.Right;
-                }
-                else
-                {
-                    if (node.Left == null)
-                    {
-                        count++;
-                        node.Left = new Node(key);
-                        return true;
-                    }
-                    node = node.Left;
-                }
-            }
-            throw new InvalidOperationException();
-        }
-        public bool Remove(T key)
-        {
-            var node = root;
-            var parent = node;
-            while (true)
-            {
-                int value = comparer(node.Data, key);
-                if (value == 0)
-                {
-                    if (node == parent.Left)
-                    {
-                        if (node.Left != null)
-                        {
-                            parent.Left = node.Left;
-                        }
-                        else if (node.Right != null)
-                        {
-                            parent.Left = node.Right;
-                        }
-                        else
-                        {
-                            parent.Left = null;
-                        }
-                    }
-                    else if (node == parent.Right)
-                    {
-                        if (node.Left != null)
-                        {
-                            parent.Right = node.Left;
-                        }
-                        else if (node.Right != null)
-                        {
-                            parent.Right = node.Right;
-                        }
-                        else
-                        {
-                            parent.Right = null;
-                        }
-                    }
-                    else
-                    {
-                        // delete root
-                        root = null;
-                    }
-                    count--;
-                    return true;
-                }
-                else if (value < 0)
-                {
-                    if (node.Right == null)
-                    {
-                        return false;
-                    }
-                    parent = node;
-                    node = node.Right;
-                }
-                else
-                {
-                    if (node.Left == null)
-                    {
-                        return false;
-                    }
-                    parent = node;
-                    node = node.Left;
-                }
-            }
-        }
-        public void Clear()
-        {
-            count = 0;
-            root = null;
-        }
+    //    public int Count
+    //    {
+    //        get { return count; }
+    //    }
+    //    public T this[T key]
+    //    {
+    //        get
+    //        {
+    //            Node node = FindEntry(key);
+    //            if (node == null)
+    //                throw new KeyNotFoundException();
+    //            return node.Data;
+    //        }
+    //    }
+    //    private static Comparison<T> GetDefaultComparison()
+    //    {
+    //        var comparer = Comparer<T>.Default;
+    //        if (comparer != null)
+    //            return comparer.Compare;
+    //        return null;
+    //    }
+    //    public BTree() : this(GetDefaultComparison()) { }
+    //    public BTree(Comparison<T> comparer)
+    //    {
+    //        this.comparer = comparer;
+    //    }
+    //    public BTree(T root) : this(GetDefaultComparison(), root) { }
+    //    public BTree(Comparison<T> comparer, T root)
+    //    {
+    //        this.comparer = comparer;
+    //        this.root = new Node(root);
+    //    }
+    //    private Node FindEntry(T key)
+    //    {
+    //        if (root == null) return null;
+    //        var node = root;
+    //        while (node != null)
+    //        {
+    //            int value = comparer(node.Data, key);
+    //            if (value == 0)
+    //                return node;
+    //            else if (value < 0)
+    //                node = node.Right;
+    //            else
+    //                node = node.Left;
+    //        }
+    //        return null;
+    //    }
+    //    public bool Contains(T key)
+    //    {
+    //        return FindEntry(key) != null;
+    //    }
+    //    public bool Add(T key)
+    //    {
+    //        if (root == null)
+    //        {
+    //            count = 1;
+    //            root = new Node(key);
+    //            return true;
+    //        }
+    //        var node = root;
+    //        while (true)
+    //        {
+    //            int value = comparer(node.Data, key);
+    //            if (value == 0)
+    //            {
+    //                return false;
+    //            }
+    //            else if (value < 0)
+    //            {
+    //                if (node.Right == null)
+    //                {
+    //                    count++;
+    //                    node.Right = new Node(key);
+    //                    return true;
+    //                }
+    //                node = node.Right;
+    //            }
+    //            else
+    //            {
+    //                if (node.Left == null)
+    //                {
+    //                    count++;
+    //                    node.Left = new Node(key);
+    //                    return true;
+    //                }
+    //                node = node.Left;
+    //            }
+    //        }
+    //        throw new InvalidOperationException();
+    //    }
+    //    public bool Remove(T key)
+    //    {
+    //        var node = root;
+    //        var parent = node;
+    //        while (true)
+    //        {
+    //            int value = comparer(node.Data, key);
+    //            if (value == 0)
+    //            {
+    //                if (node == parent.Left)
+    //                {
+    //                    if (node.Left != null)
+    //                    {
+    //                        parent.Left = node.Left;
+    //                    }
+    //                    else if (node.Right != null)
+    //                    {
+    //                        parent.Left = node.Right;
+    //                    }
+    //                    else
+    //                    {
+    //                        parent.Left = null;
+    //                    }
+    //                }
+    //                else if (node == parent.Right)
+    //                {
+    //                    if (node.Left != null)
+    //                    {
+    //                        parent.Right = node.Left;
+    //                    }
+    //                    else if (node.Right != null)
+    //                    {
+    //                        parent.Right = node.Right;
+    //                    }
+    //                    else
+    //                    {
+    //                        parent.Right = null;
+    //                    }
+    //                }
+    //                else
+    //                {
+    //                    // delete root
+    //                    root = null;
+    //                }
+    //                count--;
+    //                return true;
+    //            }
+    //            else if (value < 0)
+    //            {
+    //                if (node.Right == null)
+    //                {
+    //                    return false;
+    //                }
+    //                parent = node;
+    //                node = node.Right;
+    //            }
+    //            else
+    //            {
+    //                if (node.Left == null)
+    //                {
+    //                    return false;
+    //                }
+    //                parent = node;
+    //                node = node.Left;
+    //            }
+    //        }
+    //    }
+    //    public void Clear()
+    //    {
+    //        count = 0;
+    //        root = null;
+    //    }
 
-        public IEnumerable<T> ForeachLeftToRight()
-        {
-            return ForeachLeftToRight(root);
-        }
-        public IEnumerable<T> ForeachRightToLeft()
-        {
-            return ForeachRightToLeft(root);
-        }
-        public IEnumerator<T> GetEnumerator()
-        {
-            return ForeachLeftToRight(root).GetEnumerator();
-        }
-        System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator()
-        {
-            return this.GetEnumerator();
-        }
-        static IEnumerable<T> ForeachLeftToRight(Node node)
-        {
-            if (node == null)
-                yield break;
-            if (node.Left != null)
-                foreach (var item in ForeachLeftToRight(node.Left))
-                    yield return item;
-            yield return node.Data;
-            if (node.Right != null)
-                foreach (var item in ForeachLeftToRight(node.Right))
-                    yield return item;
-        }
-        static IEnumerable<T> ForeachRightToLeft(Node node)
-        {
-            if (node == null)
-                yield break;
-            if (node.Right != null)
-                foreach (var item in ForeachRightToLeft(node.Right))
-                    yield return item;
-            yield return node.Data;
-            if (node.Left != null)
-                foreach (var item in ForeachRightToLeft(node.Left))
-                    yield return item;
-        }
-    }
+    //    public IEnumerable<T> ForeachLeftToRight()
+    //    {
+    //        return ForeachLeftToRight(root);
+    //    }
+    //    public IEnumerable<T> ForeachRightToLeft()
+    //    {
+    //        return ForeachRightToLeft(root);
+    //    }
+    //    public IEnumerator<T> GetEnumerator()
+    //    {
+    //        return ForeachLeftToRight(root).GetEnumerator();
+    //    }
+    //    System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator()
+    //    {
+    //        return this.GetEnumerator();
+    //    }
+    //    static IEnumerable<T> ForeachLeftToRight(Node node)
+    //    {
+    //        if (node == null)
+    //            yield break;
+    //        if (node.Left != null)
+    //            foreach (var item in ForeachLeftToRight(node.Left))
+    //                yield return item;
+    //        yield return node.Data;
+    //        if (node.Right != null)
+    //            foreach (var item in ForeachLeftToRight(node.Right))
+    //                yield return item;
+    //    }
+    //    static IEnumerable<T> ForeachRightToLeft(Node node)
+    //    {
+    //        if (node == null)
+    //            yield break;
+    //        if (node.Right != null)
+    //            foreach (var item in ForeachRightToLeft(node.Right))
+    //                yield return item;
+    //        yield return node.Data;
+    //        if (node.Left != null)
+    //            foreach (var item in ForeachRightToLeft(node.Left))
+    //                yield return item;
+    //    }
+    //}
 #if SERVER
     /// <summary>
     /// 平衡二叉树
@@ -3367,7 +3238,7 @@ namespace EntryEngine
     /// <summary>并行协程，并行执行全部协程，全部协程执行完毕时协程完毕</summary>
     public class CorParallel : ICoroutine
     {
-        private List<COROUTINE> coroutines = new List<COROUTINE>();
+        private Pool<COROUTINE> coroutines = new Pool<COROUTINE>();
 
         public bool IsEnd
         {
@@ -3400,26 +3271,26 @@ namespace EntryEngine
         }
         public COROUTINE Add(IEnumerator<ICoroutine> coroutine)
         {
-            var add = new COROUTINE(coroutine);
-            Add(add);
+            var add = coroutines.AllotOrCreate();
+            add.Set(coroutine);
             return add;
         }
         public COROUTINE Add(IEnumerable<ICoroutine> coroutine)
         {
-            var add = new COROUTINE(coroutine);
-            Add(add);
+            var add = coroutines.AllotOrCreate();
+            add.Set(coroutine);
             return add;
         }
         public void Update(float time)
         {
             if (coroutines.Count > 0)
             {
-                for (int i = coroutines.Count - 1; i >= 0; i--)
+                coroutines.For(c =>
                 {
-                    coroutines[i].Update(time);
-                    if (coroutines[i].IsEnd)
-                        coroutines.RemoveAt(i);
-                }
+                    c.Update(time);
+                    if (c.IsEnd)
+                        coroutines.RemoveAt(c);
+                });
             }
         }
         public void Clear()
@@ -3530,11 +3401,12 @@ namespace EntryEngine
     /// <summary>等待钟表协程</summary>
     public struct CLOCK : ICoroutine
     {
+        /// <summary>当前已经经过的时间</summary>
         public float Elapsed;
-        /// <summary>起止时间</summary>
+        /// <summary>起止时间，单位秒</summary>
         public Range<float> Duration;
-        /// <summary>时钟嘀嗒（取值-n仅一次:0每次:n间隔)，单位毫秒</summary>
-        public int TickTime;
+        /// <summary>时钟嘀嗒（取值-n仅一次:0每次:n间隔)，单位秒</summary>
+        public float TickTime;
 
         public bool IsEnd
         {
@@ -3549,7 +3421,7 @@ namespace EntryEngine
         }
 
         /// <summary>经过时间</summary>
-        /// <param name="time">单位毫秒</param>
+        /// <param name="time">单位秒</param>
         /// <returns>是否滴答一次</returns>
         public bool Tick(float time)
         {
@@ -3568,7 +3440,7 @@ namespace EntryEngine
             float current = Elapsed - Duration.Min;
             if (TickTime < 0)
             {
-                int tick = -TickTime;
+                float tick = -TickTime;
                 if (current > tick)
                     return false;
                 else

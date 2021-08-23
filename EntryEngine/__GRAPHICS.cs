@@ -70,7 +70,7 @@ namespace EntryEngine
 				directionY.Y = 0;
 			}
 			VECTOR3 directionX = VECTOR3.Normalize(camera.Right);
-            return VECTOR3.Add(VECTOR3.Multiply(directionY, move.Y), VECTOR3.Multiply(directionX, -move.X));
+            return (directionY * move.Y) + (directionX * -move.X);
 		}
         public static MATRIX2x3 DrawMatrix(RECT rect, RECT source, float rotation, VECTOR2 origin, EFlip flip)
         {

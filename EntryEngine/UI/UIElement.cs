@@ -1953,18 +1953,20 @@ namespace EntryEngine.UI
         public static int PivotX(EPivot pivot)
         {
             return ((int)pivot) & 15;
-            //return Utility.EnumLow4((int)pivot);
         }
         public static int PivotY(EPivot pivot)
         {
             return ((int)pivot) >> 4;
-            //return Utility.EnumHigh4((int)pivot);
         }
         public static VECTOR2 TextAlign(RECT bound, VECTOR2 textSize, EPivot alignment)
         {
+            int px = ((int)alignment) & 15;
+            int py = ((int)alignment) >> 4;
             VECTOR2 location = bound.Location;
-            location = VECTOR2.Add(location, CalcPivotPoint(bound.Size, alignment));
-            location = VECTOR2.Subtract(location, CalcPivotPoint(textSize, alignment));
+            location.X += px * bound.Width * 0.5f;
+            location.Y += py * bound.Height * 0.5f;
+            location.X -= px * textSize.X * 0.5f;
+            location.Y -= py * textSize.Y * 0.5f;
             return location;
         }
         /// <summary>文字只能左上角开始绘制，这里计算文字应用了对齐之后的左上角位置</summary>
