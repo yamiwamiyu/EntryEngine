@@ -9692,58 +9692,6 @@ return result;"
             File.WriteAllText(outputCS, builder.ToString());
             Console.WriteLine("生成防优化完毕");
         }
-		public static void TexClearColor(string inputDirOrFile, byte clearR, byte clearG, byte clearB, byte clearA,
-			byte coverR, byte coverG, byte coverB, byte coverA, string outputDir)
-		{
-			BuildDir(ref outputDir);
-
-			COLOR clear = new COLOR(clearR, clearG, clearB, clearA);
-			COLOR cover = new COLOR(coverR, coverG, coverB, coverA);
-
-			string[] files = GetFiles(inputDirOrFile, IMAGE_FORMAT, SearchOption.AllDirectories);
-			foreach (var file in files)
-			{
-				Bitmap texture = OpenBitmap(file);
-				unsafe
-				{
-					int width = texture.Width;
-					int height = texture.Height;
-
-					var data = texture.LockBits(new Rectangle(0, 0, width, height), ImageLockMode.ReadWrite, PixelFormat.Format32bppArgb);
-					byte* scan = (byte*)data.Scan0.ToPointer();
-					COLOR color;
-
-					for (int i = 0; i < height; i++)
-					{
-						for (int j = 0; j < width; j++)
-						{
-							int index = i * data.Stride + j * 4;
-							color.R = scan[index];
-							color.G = scan[index + 1];
-							color.B = scan[index + 2];
-							color.A = scan[index + 3];
-
-							byte alpha = color.A;
-
-							if (clearA != 0)
-								color = COLOR.ClearColor(color, clear);
-
-                            if (coverA != 0)
-								color = new COLOR(cover, (byte)(alpha * coverA / 255));
-
-							scan[index] = color.R;
-							scan[index + 1] = color.G;
-							scan[index + 2] = color.B;
-							scan[index + 3] = color.A;
-						}
-					}
-
-					texture.UnlockBits(data);
-					SavePng(texture, outputDir + _IO.RelativeDirectory(file, inputDirOrFile), file);
-				}
-				ClearMemory();
-			}
-		}
         public static void TexLightness(string inputDirOrFile, byte vStep, string outputDir)
         {
             if (vStep == 0)
