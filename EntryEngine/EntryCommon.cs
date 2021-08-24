@@ -3010,7 +3010,7 @@ namespace EntryEngine
         protected virtual void OnSetData(ref T data)
         {
         }
-        protected sealed override void InternalRun()
+        protected override void InternalRun()
         {
             Data = default(T);
             set = false;
@@ -3046,47 +3046,12 @@ namespace EntryEngine
     /// <summary>可迭代协程，一般放入EntryService.SetCoroutine</summary>
     public class COROUTINE : PoolItem, ICoroutine, IDisposable
     {
-        public struct CorSingleEnumerator : IEnumerator<ICoroutine>
-        {
-            private ICoroutine coroutine;
-            private bool moved;
-            public ICoroutine Current
-            {
-                get { return moved ? coroutine : null; }
-            }
-            object IEnumerator.Current
-            {
-                get { return this.Current; }
-            }
-            public CorSingleEnumerator(ICoroutine coroutine)
-            {
-                this.coroutine = coroutine;
-                this.moved = false;
-            }
-            public void Dispose()
-            {
-                this.coroutine = null;
-            }
-            public bool MoveNext()
-            {
-                if (moved)
-                    return false;
-                this.moved = true;
-                return true;
-            }
-            public void Reset()
-            {
-                this.moved = false;
-            }
-        }
-
-        private bool last;
         private IEnumerator<ICoroutine> coroutine;
         private ICoroutine current;
 
         public bool IsEnd
         {
-            get { return coroutine == null; }
+            get { return coroutine == null && current == null; }
         }
 
         public COROUTINE() { }
@@ -3107,13 +3072,15 @@ namespace EntryEngine
         {
             if (coroutine == null)
                 throw new ArgumentNullException("coroutine");
-            InternalSet(new CorSingleEnumerator(coroutine));
+            this.coroutine = null;
+            this.current = coroutine;
         }
         public void Set(IEnumerator<ICoroutine> coroutine)
         {
             if (coroutine == null)
                 throw new ArgumentNullException("coroutine");
-            InternalSet(coroutine);
+            this.coroutine = coroutine;
+            this.current = null;
         }
         public void Set(IEnumerable<ICoroutine> coroutine)
         {
@@ -3122,13 +3089,8 @@ namespace EntryEngine
             var c = coroutine.GetEnumerator();
             if (c == null)
                 throw new ArgumentNullException("coroutine");
-            InternalSet(c);
-        }
-        private void InternalSet(IEnumerator<ICoroutine> coroutine)
-        {
-            this.coroutine = coroutine;
+            this.coroutine = c;
             this.current = null;
-            this.last = false;
         }
 
         public void Update(float time)
@@ -3137,28 +3099,21 @@ namespace EntryEngine
             {
                 if (coroutine == null)
                     return;
-                last = !coroutine.MoveNext();
-                // MoveNext may dispose this
-                if (coroutine == null)
-                    current = null;
+                if (!coroutine.MoveNext())
+                    Dispose();
                 else
-                    current = coroutine.Current;
+                    // MoveNext may dispose this
+                    if (coroutine == null)
+                        current = null;
+                    else
+                        current = coroutine.Current;
             }
 
-            if (last)
+            if (current != null)
             {
-                Dispose();
-            }
-            else
-            {
-                if (current != null)
-                {
-                    current.Update(time);
-                    if (current != null && current.IsEnd)
-                    {
-                        current = null;
-                    }
-                }
+                current.Update(time);
+                if (current != null && current.IsEnd)
+                    current = null;
             }
         }
         public void Dispose()
@@ -3245,7 +3200,7 @@ namespace EntryEngine
             get { return coroutines.Count == 0; }
         }
 
-        public CorParallel(){}
+        public CorParallel() { }
         public CorParallel(IEnumerable<ICoroutine> current)
         {
             Add(current);
@@ -3271,14 +3226,14 @@ namespace EntryEngine
         }
         public COROUTINE Add(IEnumerator<ICoroutine> coroutine)
         {
-            var add = coroutines.AllotOrCreate();
-            add.Set(coroutine);
+            var add = new COROUTINE(coroutine);
+            coroutines.Add(add);
             return add;
         }
         public COROUTINE Add(IEnumerable<ICoroutine> coroutine)
         {
-            var add = coroutines.AllotOrCreate();
-            add.Set(coroutine);
+            var add = new COROUTINE(coroutine);
+            coroutines.Add(add);
             return add;
         }
         public void Update(float time)
@@ -3289,7 +3244,9 @@ namespace EntryEngine
                 {
                     c.Update(time);
                     if (c.IsEnd)
+                    {
                         coroutines.RemoveAt(c);
+                    }
                 });
             }
         }
