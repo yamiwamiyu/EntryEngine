@@ -169,12 +169,17 @@ namespace EntryEngine
         /// <summary>打开一个主场景，会替换掉之前的主场景</summary>
         public UIScene ShowMainScene(UIScene scene)
         {
+            // 相同主场景不做任何操作
+            if (scenes.Count > 0 && scenes.First.Value == scene)
+                return scene;
             if (scenes.Count > 0)
+            {
                 scenes.ForFirstToLast((item) =>
                 {
                     if (item == scene) return;
                     item.OnPhaseEnding();
                 });
+            }
             InternalShowScene(scene, EState.None, true);
             //phase = EPhase.Ending;
             return scene;
