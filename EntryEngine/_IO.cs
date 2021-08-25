@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Net;
 using System.Diagnostics;
 using System.Linq;
+using EntryEngine.Network;
 
 namespace EntryEngine
 {
@@ -89,6 +90,7 @@ namespace EntryEngine
         public class iO
         {
             private Encoding ioEncoding = Encoding.UTF8;
+            //public event ActionRef<byte[]> OnWriteByte;
             public event ActionRef<byte[]> OnReadByte;
 
             /// <summary>加载文字内容的编码</summary>
@@ -166,6 +168,7 @@ namespace EntryEngine
             /// <summary>向IO写入二进制内容</summary>
             public void WriteByte(string file, byte[] content)
             {
+                //_WriteByte(BuildPath(file), _OnWriteByte(content));
                 _WriteByte(BuildPath(file), content);
             }
 
@@ -381,7 +384,6 @@ namespace EntryEngine
                 //if (length > int.MaxValue)
                 //    length = int.MaxValue;
                 int read = stream.Read(buffer, offset, length);
-                offset += read;
                 if (read == 0)
                 {
                     //if (offset < buffer.Length)
@@ -390,6 +392,7 @@ namespace EntryEngine
                     //}
                     break;
                 }
+                offset += read;
                 if (offset == buffer.Length)
                 {
                     // 扩容继续读取
@@ -411,6 +414,20 @@ namespace EntryEngine
             io.OnReadByte += new EncryptInvert().Decrypt;
             io.OnReadByte += new EncryptShuffle().Decrypt;
         }
+        //public static void SetEncrypt(iO io)
+        //{
+        //    io.OnWriteByte += new EncryptShuffle().Encrypt;
+        //    io.OnWriteByte += new EncryptInvert().Encrypt;
+        //}
+        //public static void SetEncryptDecrypt(iO io)
+        //{
+        //    EncryptInvert invert = new EncryptInvert();
+        //    EncryptShuffle shuffle = new EncryptShuffle();
+        //    io.OnReadByte += invert.Decrypt;
+        //    io.OnReadByte += shuffle.Decrypt;
+        //    io.OnWriteByte += shuffle.Encrypt;
+        //    io.OnWriteByte += invert.Encrypt;
+        //}
         public static uint Crc32(byte[] data, int start, int length)
         {
             uint crc = uint.MaxValue;
@@ -552,108 +569,206 @@ namespace EntryEngine
     }
 
 #if DEBUG
-    public static class HotFix
+    public enum EHotFix
     {
-        class Filelist
+        /// <summary>热更新流程刚开始</summary>
+        正在检测最新版本号,
+        /// <summary>已准备好NewVersionBytes</summary>
+        正在获取最新版本内容,
+        /// <summary>已准备好NewFileListBytes & NewFileList，有不需要更新的文件在此阶段删除</summary>
+        开始更新,
+        /// <summary>所有更新已经完成</summary>
+        更新完成,
+    }
+    /// <summary>程序热更新：入口 -> 下载比对版本号 -> 更新dll -> 设置ServerURL -> 打开程序 -> 程序自行热更
+    /// <para>若IO设置了资源加密，请将解密程序在热更新后设置</para>
+    /// <para>可在[EHotFix.开始更新]阶段的迭代中，实时更新Progress</para>
+    /// </summary>
+    public static class _HOT_FIX
+    {
+        /// <summary>一个需要新下载或更新的文件</summary>
+        public class FileNew
         {
+            /// <summary>文件路径</summary>
             public string File;
+            /// <summary>文件最后修改时间</summary>
             public string Time;
+            /// <summary>文件大小，单位字节</summary>
             public long Length;
 
+            /// <summary>文件下载时的异常</summary>
             public Exception UpdateException { get; set; }
+
+            /// <summary>可以生成文件列表中一个文件的格式</summary>
+            public override string ToString()
+            {
+                return string.Format("{0}\t{1}\t{2}\r\n", File, Time, Length);
+            }
         }
 
         internal const string FIX_TEMP = "HotFix/";
         internal const string HOT_FIX_BAT = "__hotfix.bat";
-        internal const string VERSION = "__version.txt";
-        internal const string FILE_LIST = "__filelist.txt";
-        internal const int PARALLEL = 10;
-        public static readonly string[] SPLIT = new string[] { "\r\n" };
+        /// <summary>版本文件</summary>
+        public const string VERSION = "__version.txt";
+        public const string FILE_LIST = "__filelist.txt";
+        /// <summary>并行下载数</summary>
+        public static int PARALLEL = 8;
+        static string[] SPLIT = new string[] { "\r\n" };
+        /// <summary>热更新服务器地址，例如http://127.0.0.1:88/，Unity若有热更会自动设置此值</summary>
         public static string ServerURL;
 
+        /// <summary>热更新进程发生变化时触发</summary>
+        public static event Action<EHotFix> OnProcess;
+        /// <summary>热更新发生异常时触发，返回true就中止热更新</summary>
+        public static event Func<AsyncHttpRequest, bool> OnError;
+        /// <summary>文件下载完毕后，可以修改文件路径或下载的数据内容，之后将写入文件（此事件在异步线程上触发）</summary>
+        public static event Func<FileNew, byte[], byte[]> OnDownload;
+
+        /// <summary>新版本号，热更后清空；null则自动下载VERSION文件作为此值；外部传入可以避免重复下载，更新热更新程序时用</summary>
+        public static byte[] NewVersionBytes;
+        /// <summary>新文件列表，热更后清空；null则自动下载FILE_LIST文件作为此值；外部传入可以避免重复下载，更新热更新程序时用</summary>
+        public static byte[] NewFileListBytes;
         public static long VersionOld { get; private set; }
         public static long Version { get; private set; }
-        public static string ProcessText { get; private set; }
+        public static EHotFix Process { get; private set; }
         public static bool NeedUpdate { get; private set; }
-        public static float Progress { get; private set; }
-
-        static string ReadString(byte[] bytes)
+        public static List<FileNew> NewFileList { get; private set; }
+        public static float Progress
         {
-            using (MemoryStream stream = new MemoryStream(bytes))
-            {
-                using (StreamReader reader = new StreamReader(stream))
-                {
-                    return reader.ReadToEnd();
-                }
-            }
+            get { return (float)(DownloadBytes * 1.0 / TotalBytes); }
+        }
+        /// <summary>需要更新的字节数(转换KB >> 10)</summary>
+        public static long TotalBytes { get; private set; }
+        /// <summary>已经下载更新的字节数(转换KB >> 10)</summary>
+        public static long DownloadBytes { get; private set; }
+
+        static void DoProcess(EHotFix phase)
+        {
+            Process = phase;
+            if (OnProcess != null)
+                OnProcess(phase);
+        }
+        /// <summary>返回true就中止热更新</summary>
+        static bool DoError(AsyncHttpRequest ex)
+        {
+            if (OnError != null)
+                return OnError(ex);
+            return true;
         }
 
+        /// <summary>程序热更新：Unity -> 下载比对版本号 -> 更新dll -> 设置ServerURL -> 打开程序 -> 程序自行热更</summary>
         public static IEnumerable<ICoroutine> Update()
         {
-            if (string.IsNullOrEmpty(ServerURL) || !File.Exists(VERSION))
+            if (string.IsNullOrEmpty(ServerURL))
                 yield break;
 
-            ProcessText = "正在检测最新版本号";
+            AsyncHttpRequest async;
 
+            #region 版本号
             // 新版本号
-            WebRequest request = HttpWebRequest.Create(ServerURL + VERSION);
-            WebResponse response = request.GetResponse();
-            string newVersionBuffer = Encoding.ASCII.GetString(_IO.ReadStream(response.GetResponseStream(), 18));
-            Version = long.Parse(newVersionBuffer);
-            
+            if (NewVersionBytes == null)
+            {
+                // 自动下载最新版本号
+                DoProcess(EHotFix.正在检测最新版本号);
+                async = new AsyncHttpRequest(ServerURL + VERSION).Timeout(2000).NoCache().Send(null);
+                yield return async;
+                if (async.IsFaulted)
+                {
+                    if (DoError(async))
+                        yield break;
+                }
+                else
+                {
+                    NewVersionBytes = async.Data;
+                    Version = BitConverter.ToInt64(NewVersionBytes, 0);
+                }
+            }
+
             // 旧版本号
-            string oldVersionBuffer = File.ReadAllText(VERSION);
-            VersionOld = long.Parse(oldVersionBuffer);
+            byte[] oldVersionBuffer = null;
+            try
+            {
+                oldVersionBuffer = _IO.ReadByte(VERSION);
+                VersionOld = BitConverter.ToInt64(oldVersionBuffer, 0);
+            }
+            catch
+            {
+            }
 
             // 新旧版本比对
-            if (oldVersionBuffer != null)
+            if (oldVersionBuffer == null)
             {
-                bool needUpdate = false;
-                for (int i = 0; i < newVersionBuffer.Length; i++)
+                // 没有旧版本号，必定更新新版本
+                NeedUpdate = true;
+            }
+            else
+            {
+                // 新旧版本号不同则需要更新版本
+                for (int i = 0; i < NewVersionBytes.Length; i++)
                 {
-                    if (newVersionBuffer[i] != oldVersionBuffer[i])
+                    if (NewVersionBytes[i] != oldVersionBuffer[i])
                     {
-                        needUpdate = true;
+                        NeedUpdate = true;
                         break;
                     }
                 }
 
-                if (!needUpdate)
+                if (!NeedUpdate)
                     yield break;
             }
+            #endregion
 
-            NeedUpdate = true;
+            #region 文件列表
 
-            ProcessText = "正在计算更新内容大小";
-            yield return null;
-
+            string[] oldList;
+            string[] newList;
             // 新文件列表
-            request = WebRequest.Create(ServerURL + FILE_LIST);
-            response = request.GetResponse();
-            byte[] newFileListBuffer = _IO.ReadStream(response.GetResponseStream(), 65535);
+            if (NewFileListBytes == null)
+            {
+                DoProcess(EHotFix.正在获取最新版本内容);
+                async = new AsyncHttpRequest(ServerURL + FILE_LIST).Timeout(2000).NoCache().Send(null);
+                yield return async;
+                if (async.IsFaulted)
+                {
+                    if (DoError(async))
+                        yield break;
+                }
+                else
+                {
+                    NewFileListBytes = async.Data;
+                }
+            }
+            newList = _IO.ReadPreambleText(NewFileListBytes).Split(SPLIT, StringSplitOptions.RemoveEmptyEntries);
 
             // 旧文件列表
-            byte[] oldFileListBuffer = File.ReadAllBytes(FILE_LIST);
-            string[] oldList = ReadString(oldFileListBuffer).Split(SPLIT, StringSplitOptions.RemoveEmptyEntries);
-            string[] newList = ReadString(newFileListBuffer).Split(SPLIT, StringSplitOptions.RemoveEmptyEntries);
-
-            // 暂时不删除不需要了的文件，只列出需要下载的新文件或者需要更新的文件
-            Dictionary<string, Filelist> oldFilelist = new Dictionary<string, Filelist>();
+            try
+            {
+                oldList = _IO.ReadText(FILE_LIST).Split(SPLIT, StringSplitOptions.RemoveEmptyEntries);
+            }
+            catch
+            {
+                oldList = _SARRAY<string>.Empty;
+            }
+            Dictionary<string, FileNew> oldFilelist = new Dictionary<string, FileNew>();
             foreach (var item in oldList)
             {
                 string[] splits = item.Split('\t');
-                Filelist file = new Filelist();
+                FileNew file = new FileNew();
                 file.File = splits[0];
                 file.Time = splits[1];
                 file.Length = long.Parse(splits[2]);
                 oldFilelist.Add(splits[0], file);
             }
 
-            List<Filelist> newFilelist = new List<Filelist>();
+            // 用于记录已经更新的文件，中途关闭更新下次也能接着上次的更新
+            StringBuilder builder = new StringBuilder();
+
+            // 暂时不删除不需要了的文件，只列出需要下载的新文件或者需要更新的文件
+            List<FileNew> newFilelist = new List<FileNew>();
             foreach (var item in newList)
             {
                 string[] splits = item.Split('\t');
-                Filelist file;
+                FileNew file;
                 if (oldFilelist.TryGetValue(splits[0], out file))
                 {
                     // 时间不一致需要更新
@@ -663,11 +778,17 @@ namespace EntryEngine
                         newFilelist.Add(file);
                         _LOG.Debug("Update: {0}", file.File);
                     }
+                    else
+                    {
+                        // 旧文件不需要更新的写入builder
+                        builder.Append(item);
+                        builder.Append("\r\n");
+                    }
                 }
                 else
                 {
                     // 需要下载的新文件
-                    file = new Filelist();
+                    file = new FileNew();
                     file.File = splits[0];
                     file.Time = splits[1];
                     file.Length = long.Parse(splits[2]);
@@ -676,208 +797,121 @@ namespace EntryEngine
                 }
             }
 
+            NewFileList = newFilelist;
+            DoProcess(EHotFix.开始更新);
+
+            #endregion
+
             // 可能只是删除了文件，导致没有需要更新的文件
-            bool withDLL = false;
             if (newFilelist.Count > 0)
             {
-                long needDownload = newFilelist.Sum(f => f.Length) >> 10;
-                long download = 0;
-                int parallel = 0;
-                foreach (var item in newFilelist)
+                if (PARALLEL <= 0)
+                    throw new ArgumentException("并行下载数不能小于1");
+
+                TotalBytes = newFilelist.Sum(f => f.Length);
+                DownloadBytes = 0;
+                // 同时开启多个下载
+                AsyncHttpRequest[] asyncs = new AsyncHttpRequest[PARALLEL];
+                long downloadBytesTemp = 0;
+                // 正在下载的字节数，下载完成的字节数才累计进入DownloadBytes
+                long downloading;
+                // 已经下载到的文件索引
+                int fileIndex = 0;
+                while (true)
                 {
-                    while (parallel >= PARALLEL)
+                    // 是否有新下好的文件
+                    bool downloadFlag = false;
+                    // 是否全部下载完成
+                    bool completeFlag = true;
+                    downloading = downloadBytesTemp;
+                    for (int i = 0; i < asyncs.Length; i++)
                     {
+                        async = asyncs[i];
+                        if (async != null && !async.IsEnd)
+                        {
+                            // 正在下载
+                            FileNew file = (FileNew)async.Tag;
+                            downloading += (long)(async.Progress * file.Length);
+                            completeFlag = false;
+                        }
+                        else
+                        {
+                            // 未下载或者下载已经完成
+                            if (async != null)
+                            {
+                                if (async.IsSuccess)
+                                {
+                                    FileNew file = (FileNew)async.Tag;
+                                    downloadBytesTemp += file.Length;
+                                    // 每完成一个下载都写入旧文件列表，这样中途退出下次也能接着上次中断的文件开始下载
+                                    builder.Append(file.ToString());
+                                    downloadFlag = true;
+                                }
+                                else
+                                {
+                                    if (DoError(async))
+                                        yield break;
+                                }
+                                asyncs[i] = null;
+                            }
+
+                            if (fileIndex == newFilelist.Count)
+                                continue;
+
+                            completeFlag = false;
+                            FileNew temp = newFilelist[fileIndex++];
+                            asyncs[i] = new AsyncHttpRequest(ServerURL + temp.File + "?" + temp.Time).NoCache()
+                            .SetTag(temp).DoComplete(ret =>
+                            {
+                                if (ret.IsSuccess)
+                                {
+                                    byte[] bytes = ret.Data;
+                                    if (OnDownload != null)
+                                        bytes = OnDownload(temp, bytes);
+
+                                    if (bytes != null)
+                                    {
+                                        string dir = Path.GetDirectoryName(temp.File);
+                                        if (!string.IsNullOrEmpty(dir) && !Directory.Exists(dir))
+                                            Directory.CreateDirectory(dir);
+                                        _IO.WriteByte(temp.File, bytes);
+                                    }
+                                }
+                                else if (ret.IsFaulted)
+                                {
+                                    temp.UpdateException = ret.FaultedReason;
+                                    _LOG.Warning("下载文件{0}失败 Error:{1}", temp.File, ret.FaultedReason.Message);
+                                }
+                            }).Send(null);
+                            _LOG.Debug("开始下载{0}", temp.File);
+                        }
+                    }
+                    // 更新下载进度
+                    DownloadBytes = downloading;
+                    // 结束或等待下载
+                    if (completeFlag)
+                        break;
+                    else
+                    {
+                        if (downloadFlag)
+                            // 每完成一个下载都写入旧文件列表，这样中途退出下次也能接着上次中断的文件开始下载
+                            File.WriteAllText(FILE_LIST, builder.ToString());
                         yield return null;
                     }
-                    parallel++;
-                    request = WebRequest.Create(ServerURL + item.File);
-                    Filelist fileListItem = item;
-                    _LOG.Debug("正在下载{0}", fileListItem.File);
-                    request.BeginGetResponse(ar =>
-                    {
-                        try
-                        {
-                            WebResponse _response = ((WebRequest)ar.AsyncState).EndGetResponse(ar);
-                            byte[] result = _IO.ReadStream(_response.GetResponseStream(), (int)fileListItem.Length);
-
-                            string dir = Path.GetDirectoryName(fileListItem.File);
-                            if (!string.IsNullOrEmpty(dir) && !Directory.Exists(dir))
-                                Directory.CreateDirectory(dir);
-
-                            // 需要热更重启的必须是根目录下的exe，dll文件
-                            if (string.IsNullOrEmpty(dir) &&
-                                (fileListItem.File.EndsWith(".dll") || fileListItem.File.EndsWith(".exe") || fileListItem.File.EndsWith(".pdb")))
-                            {
-                                if (!Directory.Exists(FIX_TEMP))
-                                    Directory.CreateDirectory(FIX_TEMP);
-                                // 写入程序到临时文件夹，重启时通过临时文件夹拷贝程序覆盖原来的程序
-                                withDLL = true;
-                                //_LOG.Debug("下载DLL:" + FIX_TEMP + fileListItem.File);
-                                File.WriteAllBytes(FIX_TEMP + fileListItem.File, result);
-                            }
-                            else
-                            {
-                                _IO.WriteByte(fileListItem.File, result);
-                            }
-                        }
-                        catch (Exception ex)
-                        {
-                            fileListItem.UpdateException = ex;
-                            _LOG.Error("下载文件{0}失败 Error:{1}", fileListItem.File, ex.Message);
-                        }
-                        finally
-                        {
-                            // todo:每完成一个下载都写入旧文件列表，这样中途退出下次也能接着上次中断的文件开始下载
-                            download += fileListItem.Length >> 10;
-                            Progress = (float)Math.Min(download * 1.0 / needDownload, 1);
-                            ProcessText = string.Format("正在更新：{0}kb / {1}kb", download, needDownload);
-                            parallel--;
-                        }
-                    }, request);
                 }
-                while (parallel > 0)
-                    yield return null;
-                var error = newFilelist.FirstOrDefault(f => f.UpdateException != null);
-                if (error != null)
-                {
-                    // 任何一个文件错误都视为更新失败
-                    throw new Exception("文件更新失败", error.UpdateException);
-                }
+
                 // 写入新文件列表
-                File.WriteAllBytes(FILE_LIST, newFileListBuffer);
+                _IO.WriteByte(FILE_LIST, NewFileListBytes);
             }
 
             // 写入新版本列表
-            File.WriteAllText(VERSION, newVersionBuffer);
+            _IO.WriteByte(VERSION, NewVersionBytes);
 
-            if (withDLL)
-            {
-                string update_bat =
-@"taskkill /PID {0}
-cd {1}
-xcopy /Y *.* ..\
-cd ..\
-start """" ""{2}""
-del {3}
-";
-                // 关闭程序并启动批处理来启动程序
-                File.WriteAllText(HOT_FIX_BAT,
-                    string.Format(update_bat, Process.GetCurrentProcess().Id, FIX_TEMP, 
-                    System.Reflection.Assembly.GetEntryAssembly().Location, HOT_FIX_BAT), Encoding.Default);
-                Process.Start(HOT_FIX_BAT);
-            }
+            DoProcess(EHotFix.更新完成);
+            _HOT_FIX.NewVersionBytes = null;
+            _HOT_FIX.NewFileListBytes = null;
+            _HOT_FIX.NewFileList = null;
         }
     }
 #endif
-
-    #region old implements
-
-    //public class AsyncLoadFileHttp : AsyncLoadFile
-    //{
-    //    public static uint LocalSyncSize = uint.MaxValue;
-
-    //    private HttpWebRequest web;
-    //    private FileStream local;
-
-    //    protected override void LoadLocal()
-    //    {
-    //        CheckClient();
-    //        local = new FileStream(File.File, FileMode.Open, FileAccess.Read);
-    //        long length = File.Length;
-    //        if (length == 0)
-    //            length = local.Length - File.Offset;
-    //        if (length <= LocalSyncSize)
-    //        {
-    //            Bytes = IODotNet.Read(local, File.Offset, length);
-    //        }
-    //        else
-    //        {
-    //            byte[] buffer = new byte[length];
-    //            local.BeginRead(buffer, 0, buffer.Length, (result) =>
-    //            {
-    //                if (local == null)
-    //                    return;
-    //                int read = local.EndRead(result);
-    //                if (result.IsCompleted)
-    //                    Bytes = buffer;
-    //            }, null);
-    //        }
-    //    }
-    //    protected override void LoadRemote()
-    //    {
-    //        CheckClient();
-
-    //        string protocol = File.Protocol;
-    //        if (protocol == "http" || protocol == "https")
-    //        {
-    //            web = (HttpWebRequest)WebRequest.Create(File.File);
-    //            web.KeepAlive = false;
-    //            // .Net 2.0 System.dll
-    //            // private bool AddRange(string, string, string)
-    //            if (File.Offset > 0 || File.Length > 0)
-    //            {
-    //                var method = typeof(HttpWebRequest).GetMethod("AddRange", BindingFlags.NonPublic | BindingFlags.Instance);
-    //                method.Invoke(web, new object[] { "Range", 
-    //                    File.Offset.ToString(System.Globalization.NumberFormatInfo.InvariantInfo), 
-    //                    File.Length > 0 ? File.Length.ToString(System.Globalization.NumberFormatInfo.InvariantInfo) : null });
-    //            }
-
-    //            web.BeginGetResponse(WebRequestCallback, null);
-    //        }
-    //        else
-    //        {
-    //            throw new NotImplementedException("Not supported protocol " + protocol);
-    //        }
-    //    }
-    //    private void WebRequestCallback(IAsyncResult ar)
-    //    {
-    //        if (web == null)
-    //            return;
-
-    //        var response = (HttpWebResponse)web.EndGetResponse(ar);
-    //        try
-    //        {
-    //            byte[] buffer = new byte[response.ContentLength];
-    //            using (Stream stream = response.GetResponseStream())
-    //            {
-    //                foreach (float progress in IODotNet.Read(stream, ref buffer, 0))
-    //                    ProgressFloat = 1.0f * progress / buffer.Length;
-    //            }
-    //            Bytes = buffer;
-    //        }
-    //        catch (Exception ex)
-    //        {
-    //            Error(ex);
-    //        }
-    //        finally
-    //        {
-    //            response.Close();
-    //        }
-    //    }
-    //    private void CheckClient()
-    //    {
-    //        if (web != null || local != null)
-    //            throw new InvalidOperationException("WebClient download had been started.");
-    //    }
-    //    protected override void InternalComplete()
-    //    {
-    //        if (web != null)
-    //        {
-    //            if (State == EAsyncState.Canceled)
-    //            {
-    //                web.Abort();
-    //            }
-    //            web = null;
-    //        }
-
-    //        if (local != null)
-    //        {
-    //            local.Close();
-    //            local.Dispose();
-    //            local = null;
-    //        }
-    //    }
-    //}
-
-    #endregion
 }

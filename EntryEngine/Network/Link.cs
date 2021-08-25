@@ -2113,6 +2113,133 @@ namespace EntryEngine.Network
             this.StatusCode = (HttpStatusCode)code;
         }
     }
+    /// <summary>HTTP网络请求</summary>
+    public class AsyncHttpRequest : AsyncData<byte[]>
+    {
+        /// <summary>完成时的委托，委托将在异步线程上回调</summary>
+        public Action<AsyncHttpRequest> OnComplete;
+        public object Tag;
+        public WebRequest Request;
+
+        /// <summary>网络异常，可能为null</summary>
+        public WebException WebException
+        {
+            get { return this.FaultedReason as WebException; }
+        }
+
+        public AsyncHttpRequest() { }
+        public AsyncHttpRequest(string url)
+        {
+            Request = WebRequest.Create(url);
+        }
+
+        protected override void InternalRun()
+        {
+            base.InternalRun();
+            Request.BeginGetResponse(WaitResponse, null);
+        }
+        private void WaitResponse(IAsyncResult async)
+        {
+            HttpWebResponse response = null;
+            try
+            {
+                response = (HttpWebResponse)Request.EndGetResponse(async);
+                using (var stream = response.GetResponseStream())
+                {
+                    // 读取流信息
+                    byte[] bytes = new byte[response.ContentLength];
+                    if (bytes.Length == 0)
+                    {
+                        bytes = _IO.ReadStream(stream);
+                    }
+                    else
+                    {
+                        int offset = 0;
+                        while (true)
+                        {
+                            int length = bytes.Length - offset;
+                            int read = stream.Read(bytes, offset, length);
+                            if (read == 0)
+                                break;
+                            Progress = offset * 1.0f / bytes.Length;
+                            offset += read;
+                        }
+                    }
+                    SetData(bytes);
+                }
+            }
+            catch (Exception ex)
+            {
+                Error(ex);
+            }
+            finally
+            {
+                if (response != null)
+                    response.Close();
+            }
+        }
+        protected override void InternalComplete()
+        {
+            if (OnComplete != null)
+                OnComplete(this);
+        }
+
+        /// <summary>发送请求，确保其它设置都设置好了，本方法会调用Run让协程开始</summary>
+        /// <param name="data">PostBody数据，null则不写入数据，不宜上传大数据</param>
+        public AsyncHttpRequest Send(byte[] data)
+        {
+            if (data != null)
+            {
+                using (var stream = Request.GetRequestStream())
+                {
+                    stream.Write(data, 0, data.Length);
+                }
+            }
+            Run();
+            return this;
+        }
+        public AsyncHttpRequest Url(string url)
+        {
+            Request = WebRequest.Create(url);
+            return this;
+        }
+        public AsyncHttpRequest ContentType(string ct)
+        {
+            Request.ContentType = ct;
+            return this;
+        }
+        public AsyncHttpRequest Get()
+        {
+            Request.Method = "GET";
+            return this;
+        }
+        public AsyncHttpRequest Timeout(int milliseconds)
+        {
+            Request.Timeout = milliseconds;
+            return this;
+        }
+        public AsyncHttpRequest NoCache()
+        {
+            Request.Headers["Cache-Control"] = "no-cache";
+            Request.Headers["Pragma"] = "no-cache";
+            return this;
+        }
+        public AsyncHttpRequest UserAgent(string ua)
+        {
+            Request.Headers["User-Agent"] = ua;
+            return this;
+        }
+        public AsyncHttpRequest DoComplete(Action<AsyncHttpRequest> complete)
+        {
+            OnComplete = complete;
+            return this;
+        }
+        public AsyncHttpRequest SetTag(object tag)
+        {
+            this.Tag = tag;
+            return this;
+        }
+    }
 
     public class HttpError
     {

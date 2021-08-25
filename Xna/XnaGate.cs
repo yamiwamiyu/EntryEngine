@@ -8,6 +8,7 @@ namespace EntryEngine.Xna
 {
 	using GameTime = Microsoft.Xna.Framework.GameTime;
     using System.Windows.Forms;
+    using System.IO;
 
     public class XnaGate : Microsoft.Xna.Framework.Game
     {
@@ -111,7 +112,54 @@ namespace EntryEngine.Xna
             Entry.Initialize();
             if (OnInitialized != null)
                 OnInitialized(Entry);
+
+            // PC热更新注意事项
+            // 1. 程序有更新时，需要下载exe,dll等到临时文件夹，执行批处理完成热更
+            // 2. 批处理关闭进程，移动临时文件夹下的所有文件到程序根目录，重新启动程序，删除批处理
+            // todo: 可能会因为 Environment.CurrentDirectory = "Content\\"; 导致程序热更新路径在Content目录下而不是程序根目录
+            const string FIX_TEMP = "HotFix/";
+            const string HOT_FIX_BAT = "__hotfix.bat";
+            bool needRestart = false;
+            _HOT_FIX.OnProcess += (p) =>
+            {
+                if (p == EHotFix.更新完成)
+                {
+                    if (needRestart)
+                    {
+                        // 关闭程序并启动批处理来重新启动程序
+                        File.WriteAllText(HOT_FIX_BAT, 
+                            string.Format(
+@"taskkill /PID {0}
+cd {1}
+xcopy /Y *.* ..\
+cd ..\
+start """" ""{2}""
+rd {1} /S /Q
+del {3}"
+, Process.GetCurrentProcess().Id
+, FIX_TEMP
+, System.Reflection.Assembly.GetEntryAssembly().Location
+, HOT_FIX_BAT)
+                            , System.Text.Encoding.Default);
+                        Process.Start(HOT_FIX_BAT);
+                    }
+                }
+            };
+            _HOT_FIX.OnDownload += (file, bytes) =>
+            {
+                string dir = Path.GetDirectoryName(file.File);
+                // 需要热更重启的必须是根目录下的exe，dll文件
+                if (string.IsNullOrEmpty(dir) &&
+                     (file.File.EndsWith(".dll") || file.File.EndsWith(".exe") || file.File.EndsWith(".pdb")))
+                {
+                    // 写入程序到临时文件夹，重启时通过临时文件夹拷贝程序覆盖原来的程序
+                    needRestart = true;
+                    file.File = FIX_TEMP + file.File;
+                }
+                return bytes;
+            };
         }
+
         protected override void UnloadContent()
         {
             //Entry.Dispose();

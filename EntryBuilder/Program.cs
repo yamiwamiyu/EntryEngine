@@ -11160,18 +11160,17 @@ return result;"
             builderRet.Append(builder.ToString());
             Console.WriteLine("复制dll列表完成");
 
-            string fileList = "__filelist.txt";
-            string fileListVersion = "__version.txt";
             // xna目录下也应该存在上面两个文件，否则没法对比版本号
-            File.WriteAllText(Path.Combine(outputDir, fileList), builderRet.ToString(), Encoding.UTF8);
-            File.WriteAllText(Path.Combine(outputDir, fileListVersion), new FileInfo(fileList).LastWriteTime.Ticks.ToString(), Encoding.ASCII);
+            string fileList = Path.Combine(outputDir, _HOT_FIX.FILE_LIST);
+            string fileListVersion = Path.Combine(outputDir, _HOT_FIX.VERSION);
+            File.WriteAllText(fileList, builderRet.ToString(), Encoding.UTF8);
+            File.WriteAllBytes(fileListVersion, BitConverter.GetBytes(new FileInfo(fileList).LastWriteTime.Ticks));
             Console.WriteLine("复制资源完成");
         }
         public static void PublishToUnity(string xnaDir, string unityStreamingAssetsDir)
         {
             BuildDir(ref xnaDir);
             BuildDir(ref unityStreamingAssetsDir);
-
 
             StringBuilder builder = new StringBuilder();
 
@@ -11208,8 +11207,8 @@ return result;"
                     builder.AppendLine("{0}\t{1}\t{2}", fileName, file.LastWriteTime.Ticks, file.Length);
                 });
 
-            string fileList = unityStreamingAssetsDir + "__filelist.txt";
-            string fileListVersion = unityStreamingAssetsDir + "__version.txt";
+            string fileList = unityStreamingAssetsDir + _HOT_FIX.FILE_LIST;
+            string fileListVersion = unityStreamingAssetsDir + _HOT_FIX.VERSION;
             File.WriteAllText(fileList, builder.ToString(), Encoding.UTF8);
             File.WriteAllBytes(fileListVersion, BitConverter.GetBytes(new FileInfo(fileList).LastWriteTime.Ticks));
             Console.WriteLine("复制资源完成");

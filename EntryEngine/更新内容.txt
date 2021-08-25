@@ -1,4 +1,7 @@
-﻿2021/08/23
+﻿2021/08/25
+1. 修改热更新
+
+2021/08/23
 1. 删除EntryBuilder.TexClearColor
 2. EntryEngine轻量化，删除多余代码和3D相关内容，节约dll体积150kb
 

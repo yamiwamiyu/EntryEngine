@@ -1107,7 +1107,7 @@ namespace EntryEngine.Network
                     {
                         float progress = func();
                         lock (this)
-                            ProgressFloat = progress;
+                            Progress = progress;
                     }
                     catch (Exception ex)
                     {

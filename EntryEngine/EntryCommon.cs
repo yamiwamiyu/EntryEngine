@@ -2877,8 +2877,7 @@ namespace EntryEngine
     /// <summary>协程基类</summary>
     public abstract class Async : ICoroutine
     {
-        protected const byte COMPLETED = 100;
-        private byte progress;
+        private float progress;
 
         public bool IsSuccess
         {
@@ -2903,14 +2902,14 @@ namespace EntryEngine
         {
             get { return State > EAsyncState.Running; }
         }
-        /// <summary>协程执行的进度，0~100</summary>
-        public byte Progress
+        /// <summary>协程执行的进度，0~1</summary>
+        public float Progress
         {
             get { return progress; }
-            protected set
+            set
             {
-                progress = (byte)_MATH.Min(value, COMPLETED);
-                if (progress == COMPLETED)
+                progress = _MATH.Clamp(value, 0, 1);
+                if (progress == 1)
                 {
                     if (!IsEnd)
                     {
@@ -2923,12 +2922,6 @@ namespace EntryEngine
                     CheckCompleted();
                 }
             }
-        }
-        /// <summary>协程执行的进度，0~1</summary>
-        public float ProgressFloat
-        {
-            get { return progress * 0.01f; }
-            set { Progress = (byte)(value * COMPLETED); }
         }
         /// <summary>协程执行异常时的异常信息</summary>
         public Exception FaultedReason
@@ -2955,7 +2948,7 @@ namespace EntryEngine
         protected abstract void InternalRun();
         protected void Complete()
         {
-            Progress = COMPLETED;
+            Progress = 1;
         }
         /// <summary>协程执行异常</summary>
         public void Error(Exception ex)
@@ -3005,7 +2998,7 @@ namespace EntryEngine
             OnSetData(ref data);
             Data = data;
             set = true;
-            Progress = COMPLETED;
+            Complete();
         }
         protected virtual void OnSetData(ref T data)
         {
