@@ -127,7 +127,7 @@ namespace EntryEngine.Unity
             _LOG.Debug("异步线程同步加载文件：{0}", file);
             UnityWebRequest request = null;
             System.Threading.EventWaitHandle wait = new System.Threading.EventWaitHandle(false, System.Threading.EventResetMode.ManualReset);
-            EntryEngine.Network.AsyncThread.QueueUserWorkItem(() =>
+            System.Threading.ThreadPool.QueueUserWorkItem((_) =>
             {
                 if (needGetReadPath)
                 {
@@ -1761,11 +1761,11 @@ namespace EntryEngine.Unity
             //{
             //    case EPlatform.PC:
             //        result = base.NewiO();
-            //        result.RootDirectory = Application.streamingAssetsPath + "/";
+            //        result.RootDirectory = Application.streamingAssetsPath + "/");
             //        break;
             //    case EPlatform.Phone:
             //        result = new IOWWW();
-            //        result.RootDirectory = Application.streamingAssetsPath + "/";
+            //        result.RootDirectory = Application.streamingAssetsPath + "/");
             //        break;
             //    case EPlatform.掌机:
             //    case EPlatform.主机:
