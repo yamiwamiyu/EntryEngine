@@ -1,6 +1,7 @@
 copy ..\EntryBuilder.exe EntryBuilder\
 copy ..\EntryEngine.dll EntryBuilder\
 copy ..\ReflectionHelper.dll EntryBuilder\
+copy ..\CSharp.dll EntryBuilder\
 ::del EntryBuilder\CSharp.dll
 ::copy ..\*.pdb EntryBuilder\
 ::copy ..\EntryBuilder.pdb EntryBuilder\
