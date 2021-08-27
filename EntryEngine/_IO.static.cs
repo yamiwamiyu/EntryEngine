@@ -47,12 +47,12 @@ namespace EntryEngine
                 #endif
             }
         }
-        public static byte[] _OnReadByte(byte[] data)
+        public static void ClearOnReadByte()
         {
             #if EntryBuilder
             throw new System.NotImplementedException();
             #else
-            return _iO._OnReadByte(data);
+            _iO.ClearOnReadByte();
             #endif
         }
         public static string BuildPath(string file)

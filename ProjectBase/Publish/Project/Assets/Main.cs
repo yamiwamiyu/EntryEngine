@@ -580,6 +580,7 @@ public class Main : MonoBehaviour
                                                 {
                                                     WriteFile(file.File, async.downloadHandler.data);
                                                     downloadBytesTemp += file.Length;
+                                                    downloading += file.Length;
                                                     // 每完成一个下载都写入旧文件列表，这样中途退出下次也能接着上次中断的文件开始下载
                                                     builder.Append(file.ToString());
                                                     downloadFlag = true;

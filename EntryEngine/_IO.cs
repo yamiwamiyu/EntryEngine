@@ -122,7 +122,7 @@ namespace EntryEngine
             {
                 OnReadByte = null;
             }
-            public byte[] _OnReadByte(byte[] data)
+            internal byte[] _OnReadByte(byte[] data)
             {
                 if (OnReadByte != null)
                     OnReadByte(ref data);
@@ -888,6 +888,7 @@ namespace EntryEngine
                                     _IO.WriteByte(file.File, bytes);
 
                                     downloadBytesTemp += file.Length;
+                                    downloading += file.Length;
                                     // 每完成一个下载都写入旧文件列表，这样中途退出下次也能接着上次中断的文件开始下载
                                     builder.Append(file.ToString());
                                     downloadFlag = true;
