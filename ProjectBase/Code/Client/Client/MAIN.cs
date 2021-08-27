@@ -43,6 +43,10 @@ public class MAIN : UIScene
         if (!async.IsEnd) yield return async;
         PipelinePiece.GetDefaultPipeline().LoadMetadata(_IO.ReadPreambleText(async.Data));
         _LOG.Debug("加载Piece完成");
+
+	// 资源解密，发布时使用了EntryBuilder BuildEncrypt的资源就需要用这两行来对资源解密
+	//Entry.OnNewiO += (io) => _IO.SetDecrypt(io);
+        //_IO.SetDecrypt(_IO._iO);
 #endif
 
         #region 系统级加载
