@@ -513,6 +513,7 @@ namespace EntryEngine
     }
     public class EncryptShuffle : IEncrypt
     {
+        const int ENCRYPT_COUNT = 1024;
         private _RANDOM.Random BuildRandom(byte[] bytes)
         {
             int seed = 0;
@@ -526,18 +527,35 @@ namespace EntryEngine
 
             int len = bytes.Length;
             int[] array = new int[len];
+            if (len > ENCRYPT_COUNT)
+                len = ENCRYPT_COUNT;
             for (int i = 0; i < len; i++)
                 array[i] = random.Next(len);
 
+            byte temp;
             for (int i = len - 1; i >= 0; i--)
-                Utility.Swap(ref bytes[i], ref bytes[array[i]]);
+            {
+                temp = bytes[i];
+                bytes[i] = bytes[array[i]];
+                bytes[array[i]] = temp;
+            }
         }
         public void Decrypt(ref byte[] bytes)
         {
             _RANDOM.Random random = BuildRandom(bytes);
 
-            for (int i = 0, len = bytes.Length; i < len; i++)
-                Utility.Swap(ref bytes[i], ref bytes[random.Next(len)]);
+            int len = bytes.Length;
+            if (len > ENCRYPT_COUNT)
+                len = ENCRYPT_COUNT;
+            byte temp;
+            int index;
+            for (int i = 0; i < len; i++)
+            {
+                temp = bytes[i];
+                index = random.Next(len);
+                bytes[i] = bytes[index];
+                bytes[index] = temp;
+            }
         }
     }
     public class EncryptRandom : IEncrypt
