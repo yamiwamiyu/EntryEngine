@@ -16,7 +16,7 @@ move __UnityTemp\__filelist.txt __Unity\
 move __UnityTemp\__version.txt __Unity\
 move __UnityTemp\web.config __Unity\
 xcopy /Y __UnityTemp\*.bytes __Unity\
-del /Q __UnityTemp\*.bytes __Unity\
+del /Q __UnityTemp\*.bytes
 ..\..\EntryBuilder BuildEncrypt __UnityTemp __Unity
 rd /S /Q __UnityTemp
 
@@ -26,3 +26,4 @@ rd /S /Q __UnityTemp
 
 ::svn add __Unity --auto-props --force
 ::svn commit __Unity -m "Publish __Unity Commit"
+pause

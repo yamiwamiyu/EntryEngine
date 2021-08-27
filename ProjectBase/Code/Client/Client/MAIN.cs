@@ -15,6 +15,17 @@ public class MAIN : UIScene
 
         AsyncReadFile async;
 
+#if DEBUG
+        // 资源解密，发布时使用了EntryBuilder BuildEncrypt的资源就需要用这两行来对资源解密
+	    //Entry.OnNewiO += (io) => _IO.SetDecrypt(io);
+        //_IO.SetDecrypt(_IO._iO);
+
+        // 可以加载打包大图的配置
+        async = _IO.ReadAsync("piece.pcsv");
+        if (!async.IsEnd) yield return async;
+        PipelinePiece.GetDefaultPipeline().LoadMetadata(_IO.ReadPreambleText(async.Data));
+        _LOG.Debug("加载Piece完成");
+#endif
         // 你还可以加载其它一些常量表
 
         //async = _IO.ReadAsync("Tables\\CC.xml");
@@ -36,18 +47,6 @@ public class MAIN : UIScene
         //    if (!item.IsEnd)
         //        yield return item;
         //_LOG.Debug("加载数据表完毕");
-
-#if DEBUG
-        // 可以加载打包大图的配置
-        async = _IO.ReadAsync("piece.pcsv");
-        if (!async.IsEnd) yield return async;
-        PipelinePiece.GetDefaultPipeline().LoadMetadata(_IO.ReadPreambleText(async.Data));
-        _LOG.Debug("加载Piece完成");
-
-	// 资源解密，发布时使用了EntryBuilder BuildEncrypt的资源就需要用这两行来对资源解密
-	//Entry.OnNewiO += (io) => _IO.SetDecrypt(io);
-        //_IO.SetDecrypt(_IO._iO);
-#endif
 
         #region 系统级加载
 
