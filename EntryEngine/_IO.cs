@@ -118,6 +118,10 @@ namespace EntryEngine
                 this.RootDirectory = root;
             }
 
+            public void ClearOnReadByte()
+            {
+                OnReadByte = null;
+            }
             public byte[] _OnReadByte(byte[] data)
             {
                 if (OnReadByte != null)
@@ -605,6 +609,11 @@ namespace EntryEngine
                 return string.Format("{0}\t{1}\t{2}\r\n", File, Time, Length);
             }
         }
+        class FileDownload
+        {
+            public FileNew File;
+            public AsyncHttpRequest Web;
+        }
 
         internal const string FIX_TEMP = "HotFix/";
         internal const string HOT_FIX_BAT = "__hotfix.bat";
@@ -621,7 +630,7 @@ namespace EntryEngine
         public static event Action<EHotFix> OnProcess;
         /// <summary>热更新发生异常时触发，返回true就中止热更新</summary>
         public static event Func<AsyncHttpRequest, bool> OnError;
-        /// <summary>文件下载完毕后，可以修改文件路径或下载的数据内容，之后将写入文件（此事件在异步线程上触发）</summary>
+        /// <summary>文件下载完毕后，可以修改文件路径或下载的数据内容，之后将写入文件（此事件在同步线程上触发）</summary>
         public static event Func<FileNew, byte[], byte[]> OnDownload;
 
         /// <summary>新版本号，热更后清空；null则自动下载VERSION文件作为此值；外部传入可以避免重复下载，更新热更新程序时用</summary>
@@ -669,11 +678,13 @@ namespace EntryEngine
             if (NewVersionBytes == null)
             {
                 // 自动下载最新版本号
+                _LOG.Debug("正在检测版本更新");
                 DoProcess(EHotFix.正在检测最新版本号);
                 async = new AsyncHttpRequest(ServerURL + VERSION).Timeout(2000).NoCache().Send(null);
                 yield return async;
                 if (async.IsFaulted)
                 {
+                    _LOG.Warning("获取版本号异常：{0}", async.FaultedReason.Message);
                     if (DoError(async))
                         yield break;
                 }
@@ -725,11 +736,13 @@ namespace EntryEngine
             // 新文件列表
             if (NewFileListBytes == null)
             {
+                _LOG.Debug("正在获取最新版本内容");
                 DoProcess(EHotFix.正在获取最新版本内容);
                 async = new AsyncHttpRequest(ServerURL + FILE_LIST).Timeout(2000).NoCache().Send(null);
                 yield return async;
                 if (async.IsFaulted)
                 {
+                    _LOG.Warning("获取版本文件列表异常:{0}", async.FaultedReason.Message);
                     if (DoError(async))
                         yield break;
                 }
@@ -798,7 +811,6 @@ namespace EntryEngine
             }
 
             NewFileList = newFilelist;
-            DoProcess(EHotFix.开始更新);
 
             #endregion
 
@@ -809,9 +821,14 @@ namespace EntryEngine
                     throw new ArgumentException("并行下载数不能小于1");
 
                 TotalBytes = newFilelist.Sum(f => f.Length);
+                DoProcess(EHotFix.开始更新);
+                _LOG.Debug("开始更新{0}个文件：共 {1} MB", newFilelist.Count, (TotalBytes / 1048576.0).ToString("0.00"));
+
                 DownloadBytes = 0;
                 // 同时开启多个下载
-                AsyncHttpRequest[] asyncs = new AsyncHttpRequest[PARALLEL];
+                FileDownload[] asyncs = new FileDownload[PARALLEL];
+                for (int i = 0; i < asyncs.Length; i++)
+                    asyncs[i] = new FileDownload();
                 long downloadBytesTemp = 0;
                 // 正在下载的字节数，下载完成的字节数才累计进入DownloadBytes
                 long downloading;
@@ -826,11 +843,11 @@ namespace EntryEngine
                     downloading = downloadBytesTemp;
                     for (int i = 0; i < asyncs.Length; i++)
                     {
-                        async = asyncs[i];
+                        async = asyncs[i].Web;
                         if (async != null && !async.IsEnd)
                         {
                             // 正在下载
-                            FileNew file = (FileNew)async.Tag;
+                            FileNew file = asyncs[i].File;
                             downloading += (long)(async.Progress * file.Length);
                             completeFlag = false;
                         }
@@ -839,9 +856,19 @@ namespace EntryEngine
                             // 未下载或者下载已经完成
                             if (async != null)
                             {
+                                FileNew file = asyncs[i].File;
                                 if (async.IsSuccess)
                                 {
-                                    FileNew file = (FileNew)async.Tag;
+                                    byte[] bytes = async.Data;
+                                    if (OnDownload != null)
+                                        bytes = OnDownload(file, bytes);
+
+                                    string dir = Path.GetDirectoryName(file.File);
+                                    if (!string.IsNullOrEmpty(dir) && !Directory.Exists(dir))
+                                        Directory.CreateDirectory(dir);
+                                    
+                                    _IO.WriteByte(file.File, bytes);
+
                                     downloadBytesTemp += file.Length;
                                     // 每完成一个下载都写入旧文件列表，这样中途退出下次也能接着上次中断的文件开始下载
                                     builder.Append(file.ToString());
@@ -849,10 +876,11 @@ namespace EntryEngine
                                 }
                                 else
                                 {
+                                    _LOG.Warning("下载文件{0}失败：{1}", file.File, async.FaultedReason.Message);
                                     if (DoError(async))
                                         yield break;
                                 }
-                                asyncs[i] = null;
+                                asyncs[i].Web = null;
                             }
 
                             if (fileIndex == newFilelist.Count)
@@ -860,29 +888,8 @@ namespace EntryEngine
 
                             completeFlag = false;
                             FileNew temp = newFilelist[fileIndex++];
-                            asyncs[i] = new AsyncHttpRequest(ServerURL + temp.File + "?" + temp.Time).NoCache()
-                            .SetTag(temp).DoComplete(ret =>
-                            {
-                                if (ret.IsSuccess)
-                                {
-                                    byte[] bytes = ret.Data;
-                                    if (OnDownload != null)
-                                        bytes = OnDownload(temp, bytes);
-
-                                    if (bytes != null)
-                                    {
-                                        string dir = Path.GetDirectoryName(temp.File);
-                                        if (!string.IsNullOrEmpty(dir) && !Directory.Exists(dir))
-                                            Directory.CreateDirectory(dir);
-                                        _IO.WriteByte(temp.File, bytes);
-                                    }
-                                }
-                                else if (ret.IsFaulted)
-                                {
-                                    temp.UpdateException = ret.FaultedReason;
-                                    _LOG.Warning("下载文件{0}失败 Error:{1}", temp.File, ret.FaultedReason.Message);
-                                }
-                            }).Send(null);
+                            asyncs[i].File = temp;
+                            asyncs[i].Web = new AsyncHttpRequest(ServerURL + temp.File + "?" + temp.Time).NoCache().Send(null);
                             _LOG.Debug("开始下载{0}", temp.File);
                         }
                     }
@@ -890,12 +897,15 @@ namespace EntryEngine
                     DownloadBytes = downloading;
                     // 结束或等待下载
                     if (completeFlag)
+                    {
+                        DownloadBytes = TotalBytes;
                         break;
+                    }
                     else
                     {
                         if (downloadFlag)
                             // 每完成一个下载都写入旧文件列表，这样中途退出下次也能接着上次中断的文件开始下载
-                            File.WriteAllText(FILE_LIST, builder.ToString());
+                            _IO.WriteText(FILE_LIST, builder.ToString());
                         yield return null;
                     }
                 }
@@ -906,6 +916,7 @@ namespace EntryEngine
 
             // 写入新版本列表
             _IO.WriteByte(VERSION, NewVersionBytes);
+            _LOG.Debug(string.Format("版本更新完成 更新文件：{0}个 更新大小：{1} MB 版本号：{2}", newFilelist.Count, (TotalBytes / 1048576.0).ToString("0.00"), Version));
 
             DoProcess(EHotFix.更新完成);
             _HOT_FIX.NewVersionBytes = null;

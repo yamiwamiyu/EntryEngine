@@ -2118,7 +2118,6 @@ namespace EntryEngine.Network
     {
         /// <summary>完成时的委托，委托将在异步线程上回调</summary>
         public Action<AsyncHttpRequest> OnComplete;
-        public object Tag;
         public WebRequest Request;
 
         /// <summary>网络异常，可能为null</summary>
@@ -2232,11 +2231,6 @@ namespace EntryEngine.Network
         public AsyncHttpRequest DoComplete(Action<AsyncHttpRequest> complete)
         {
             OnComplete = complete;
-            return this;
-        }
-        public AsyncHttpRequest SetTag(object tag)
-        {
-            this.Tag = tag;
             return this;
         }
     }
