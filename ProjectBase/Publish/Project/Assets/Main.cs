@@ -670,7 +670,7 @@ public class Main : MonoBehaviour
                         type.GetField("NewFileListBytes", BindingFlags.Public | BindingFlags.Static).SetValue(null, newFilelistBytes);
                     }
                 }
-                catch (Exception)
+                catch (Exception ex)
                 {
                     text.text = "加载运行环境失败，可以尝试删除__version.txt后重启以自动修复程序";
                     Debug.LogWarning("加载运行时环境失败：" + ex.Message);
