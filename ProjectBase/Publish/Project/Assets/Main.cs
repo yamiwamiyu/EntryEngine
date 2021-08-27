@@ -23,8 +23,8 @@ public class Main : MonoBehaviour
 
     /// <summary>引擎渲染用的默认材质，请在Unity编辑器中选择Sprites-Default材质</summary>
     public Material GLMaterial;
-    /// <summary>热更新服务器地址，例如http://127.0.0.1:88/，地址目录应该是StreamingAssets</summary>
-    public string ServerUrl;
+    /// <summary>热更新服务器地址，例如http://127.0.0.1:9901/，地址目录应该是StreamingAssets</summary>
+    public string ServerUrl = "http://127.0.0.1:9901/";
     /// <summary>热更新是否更新全部资源，不更新全部则仅更新程序，其它资源交由程序内自定义热更新页面进行更新</summary>
     public bool All = true;
 
