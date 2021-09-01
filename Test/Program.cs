@@ -14,35 +14,106 @@ using System.Drawing;
 using System.Drawing.Imaging;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
-using EntryEngine.DragonBones;
+using EntryEngine.DragonBone;
 
 namespace Test
 {
     class TestScene : UIScene
     {
-        SpriteText st1 = new SpriteText();
+        Sprite st1 = new Sprite();
         SpriteText st2 = new SpriteText();
+        SHADER shader;
         protected override IEnumerable<ICoroutine> Loading()
         {
+            TabPage tp = new TabPage();
+            tp.IsRadioButton = false;
+            tp.X = 200;
+            tp.Y = 500;
+            tp.Width = 100;
+            tp.Height = 20;
+            tp.SourceNormal = TEXTURE.Pixel;
+            tp.Color = new COLOR(255, 0, 0, 128);
+            Add(tp);
+            Panel page = new Panel();
+            page.Width = 100;
+            page.Height = tp.Height * 2;
+            page.Y = tp.Height;
+            page.Background = TEXTURE.Pixel;
+            page.Color = new COLOR(0, 255, 0, 128);
+            tp.Page = page;
+
+            //Content.Load<DRAGONBONES>("dragonbones/战士.json");
+
             this.Background = TEXTURE.Pixel;
-            st1.Font = Content.Load<FONT>("数值.tfont");
-            st1.Text = "0123456789+-";
-            st1.Area.X = 200;
-            st1.Area.Y = 200;
-            st1.Alignment = EPivot.TopLeft;
-            st2.Font = Content.Load<FONT>("等宽数值.tfont");
-            st2.Text = "0123456789+-";
+            //this.Color = COLOR.Black;
+            st1.Texture = Content.Load<TEXTURE>("新建图像.png");
+            st1.Position.X = 200;
+            st1.Position.Y = 200;
+            //st2.Font = Content.Load<FONT>("等宽数值.tfont");
+            st2.Font = new FontRich(st2.Font);
+            st2.Text = "012<34<Color=0;255;0;255; >5\n67</><Font=等宽数值.tfont;>8</>666";
             st2.Area.X = 200;
             st2.Area.Y = 400;
+            st2.Color = COLOR.White;
+            st2.Font.FontSize = 72;
             st2.Alignment = EPivot.TopLeft;
+            //shader = Content.Load<SHADER>("描边.shader");
+            //ShaderStroke.Shader = Content.Load<SHADER>("描边.shader");
+            shader = new ShaderGray()
+                {
+                };
+
+            //UIScene scene = new UIScene();
+            //scene.Background = TEXTURE.Pixel;
+            //scene.Color = COLOR.Lime;
+            //scene.Width = 100;
+            //scene.Height = 100;
+            //scene.DragMode = EDragMode.Move;
+            //scene.DragInertia = 1;
+            //scene.Rebound = 1f;
+            //Entry.ShowDialogScene(scene, EState.Dialog);
+
+            db = Content.Load<DRAGONBONES>("野人.json");
+            db.Proxy.AddDBEventListener(EntryEngine.DragonBone.DBCore.EEventType.FRAME_EVENT,
+                e =>
+                {
+                    _LOG.Debug("Type: {0}, Name: {1} Frame:{2}", e.type, e.name, GameTime.Time.FrameID);
+                });
             return base.Loading();
+        }
+        DRAGONBONES db;
+        int a = 0;
+        protected override void InternalEvent(Entry e)
+        {
+            base.InternalEvent(e);
+            if (e.INPUT.Pointer.IsRelease(0))
+            {
+                //STextHint.ShowHint("测试fyiwoupbujagiuew[iruwe");
+                db.Proxy.Animation.Play(db.Proxy.Animation.animationNames[a], -1);
+                a++;
+                if (a == db.Proxy.Animation.animationNames.Count)
+                    a = 0;
+            }
         }
         protected override void InternalDraw(GRAPHICS spriteBatch, Entry e)
         {
+            
             base.InternalDraw(spriteBatch, e);
+            //shader.SetValue("View", (MATRIX)spriteBatch.GraphicsToCartesianMatrix());
+            spriteBatch.Begin(new ShaderAlpha() { Alpha = 0.9f });
             st1.Draw();
             st2.Draw();
+            spriteBatch.End();
 
+            spriteBatch.Draw(db, new VECTOR2(400, 800));
+
+            //db.Update(e.GameTime.ElapsedSecond);
+
+            //var result = (DRAGONBONES)((EntryEngine.DragonBone.DBCore.Armature)db.Proxy.Armature.GetSlots().FirstOrDefault(s => s.name == "野人大招").displayList[0]).display;
+            ////result.Update(e.GameTime.ElapsedSecond);
+            ////if (result.Proxy.Animation.lastAnimationState == null)
+            ////    result.Proxy.Animation.Play();
+            //spriteBatch.Draw(result, new VECTOR2(400, 800));
         }
     }
 

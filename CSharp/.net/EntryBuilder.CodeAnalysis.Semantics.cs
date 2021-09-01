@@ -25,7 +25,7 @@ namespace EntryBuilder.CodeAnalysis.Semantics
     {
         static string[] _empty = new string[1];
         [AInvariant]public string Name;
-        private Named() { }
+        public Named() { }
         public Named(string name)
         {
             this.Name = name;
@@ -58,16 +58,8 @@ namespace EntryBuilder.CodeAnalysis.Semantics
      */
     public abstract class CSharpAssembly
     {
-        public string Name
-        {
-            get;
-            internal set;
-        }
-        public List<CSharpType> Types
-        {
-            get;
-            private set;
-        }
+        public string Name;
+        public List<CSharpType> Types = new List<CSharpType>();
         public IEnumerable<CSharpNamespace> Namespaces
         {
             get
@@ -89,11 +81,6 @@ namespace EntryBuilder.CodeAnalysis.Semantics
             }
         }
         public virtual bool IsProject { get { return false; } }
-
-        internal CSharpAssembly()
-        {
-            Types = new List<CSharpType>();
-        }
 
         [ANonOptimize]internal void Add(TypeDefinitionInfo target)
         {
@@ -118,30 +105,14 @@ namespace EntryBuilder.CodeAnalysis.Semantics
     }
     public class CSharpNamespace
     {
-        public string Name
-        {
-            get;
-            internal set;
-        }
+        public string Name;
         public bool IsRoot
         {
             get { return ContainingNamespace == null; }
         }
-        public CSharpNamespace ContainingNamespace
-        {
-            get;
-            private set;
-        }
-        public List<CSharpNamespace> Namespaces
-        {
-            get;
-            private set;
-        }
-        public List<CSharpType> Types
-        {
-            get;
-            private set;
-        }
+        public CSharpNamespace ContainingNamespace;
+        public List<CSharpNamespace> Namespaces = new List<CSharpNamespace>();
+        public List<CSharpType> Types = new List<CSharpType>();
 
         internal CSharpNamespace()
         {
@@ -1015,18 +986,18 @@ namespace EntryBuilder.CodeAnalysis.Semantics
     }
     internal class TypeDefinitionInfo : CSharpType, TypeParameterInfo.IProvider
     {
-        internal CSharpAssembly _Assembly;
-        internal Named _Name;
-        internal TypeAttributes _TypeAttributes;
-        internal CSharpNamespace _ContainingNamespace;
-        internal CSharpType _ContainingType;
-        private List<CSharpType> _NestedTypes = new List<CSharpType>();
-        internal TypeParameterData[] _TypeParameters;
-        private CSharpType[] _typeParameters;
-        internal List<CSharpType> _BaseTypes = new List<CSharpType>();
-        internal List<MemberDefinitionInfo> _Members = new List<MemberDefinitionInfo>();
-        internal Dictionary<CSharpType, object> _Attributes = new Dictionary<CSharpType, object>();
-        internal CSharpType _UnderlyingType;
+        public CSharpAssembly _Assembly;
+        public Named _Name;
+        public TypeAttributes _TypeAttributes;
+        public CSharpNamespace _ContainingNamespace;
+        public CSharpType _ContainingType;
+        public List<CSharpType> _NestedTypes = new List<CSharpType>();
+        public TypeParameterData[] _TypeParameters;
+        public CSharpType[] _typeParameters;
+        public List<CSharpType> _BaseTypes = new List<CSharpType>();
+        public List<MemberDefinitionInfo> _Members = new List<MemberDefinitionInfo>();
+        public Dictionary<CSharpType, object> _Attributes = new Dictionary<CSharpType, object>();
+        public CSharpType _UnderlyingType;
 
         public override CSharpAssembly Assembly
         {
@@ -1265,7 +1236,7 @@ namespace EntryBuilder.CodeAnalysis.Semantics
                 return this.HasVisibility(TypeAttributes.NestedPrivate);
             }
         }
-        [ANonOptimize]internal TypeDefinitionInfo()
+        [ANonOptimize]public TypeDefinitionInfo()
         {
         }
         [ANonOptimize]internal virtual MemberDefinitionInfo CreateMemberDefinition(int memberIndex)
@@ -1401,10 +1372,10 @@ namespace EntryBuilder.CodeAnalysis.Semantics
     }
     internal class ArrayTypeReference : CSharpType, IEquatable<ArrayTypeReference>
     {
-        private readonly CSharpType gArrayType;
-        private readonly CSharpType elementType;
-        private readonly int rank;
-        private readonly Named name;
+        public CSharpType gArrayType;
+        public CSharpType elementType;
+        public int rank;
+        public Named name;
         public override CSharpAssembly Assembly
         {
             get
@@ -1444,6 +1415,7 @@ namespace EntryBuilder.CodeAnalysis.Semantics
         {
             get { return gArrayType.MemberDefinitions; }
         }
+        public ArrayTypeReference() { }
         internal ArrayTypeReference(CSharpType elementType, int rank)
         {
             if (rank != 1)
@@ -1484,7 +1456,7 @@ namespace EntryBuilder.CodeAnalysis.Semantics
     }
     internal class PointerTypeReference : CSharpType, IEquatable<PointerTypeReference>
     {
-        private readonly CSharpType elementType;
+        public CSharpType elementType;
         public override CSharpAssembly Assembly
         {
             get
@@ -1506,6 +1478,7 @@ namespace EntryBuilder.CodeAnalysis.Semantics
                 return true;
             }
         }
+        public PointerTypeReference() { }
         internal PointerTypeReference(CSharpType elementType)
         {
             this.elementType = elementType;
@@ -1529,10 +1502,10 @@ namespace EntryBuilder.CodeAnalysis.Semantics
     }
     internal class ConstructedTypeReference : CSharpType, IEquatable<ConstructedTypeReference>
     {
-        private readonly CSharpType definingType;
-        private readonly CSharpType containingType;
-        private readonly IList<CSharpType> typeArguments;
-        private List<CSharpType> typeParameters = new List<CSharpType>();
+        public CSharpType definingType;
+        public CSharpType containingType;
+        public IList<CSharpType> typeArguments;
+        public List<CSharpType> typeParameters = new List<CSharpType>();
         public override bool IsConstructed { get { return true; } }
         public override Named Name { get { return this.definingType.Name; } }
         public override CSharpType DefiningType { get { return this.definingType; } }
@@ -1712,6 +1685,7 @@ namespace EntryBuilder.CodeAnalysis.Semantics
                 return typeParameters;
             }
         }
+        public ConstructedTypeReference() { }
         internal ConstructedTypeReference(CSharpType definingType, CSharpType containingType, IList<CSharpType> typeArguments)
         {
             this.definingType = definingType;
@@ -1805,10 +1779,10 @@ namespace EntryBuilder.CodeAnalysis.Semantics
             bool HasValueTypeConstraint(int index);
             bool HasConstructorConstraint(int index);
         }
-        private readonly CSharpType definingType;
-        private readonly CSharpMember definingMember;
-        private readonly int position;
-        private readonly TypeParameterInfo.IProvider infoProvider;
+        public CSharpType definingType;
+        public CSharpMember definingMember;
+        public int position;
+        public TypeParameterInfo.IProvider infoProvider;
         public override CSharpAssembly Assembly
         {
             get
@@ -1902,6 +1876,7 @@ namespace EntryBuilder.CodeAnalysis.Semantics
         {
             get { return BaseClass.MemberDefinitions; }
         }
+        public TypeParameterInfo() { }
         internal TypeParameterInfo(CSharpType definingType, int position, TypeParameterInfo.IProvider infoProvider)
         {
             this.definingType = definingType;
@@ -2644,18 +2619,18 @@ namespace EntryBuilder.CodeAnalysis.Semantics
         }
         internal static ParameterData[] EmptyList = new ParameterData[0];
 
-        private TypeDefinitionInfo definingType;
-        private readonly int memberIndex;
-        [AInvariant]internal Named _Name;
-        [AInvariant]internal MemberAttributes _MemberAttributes;
-        [AInvariant]internal MemberDefinitionKind _Kind;
-        [AInvariant]internal CSharpType _ReturnType;
-        internal CSharpType _ExplicitInterfaceImplementation;
-        [AInvariant]internal TypeParameterData[] _TypeParameters;
-        [AInvariant]internal ParameterData[] _Parameters;
-        [AInvariant]internal Dictionary<CSharpType, object> _Attributes = new Dictionary<CSharpType, object>();
-        [AInvariant]internal List<CSharpMember> _Accessors = new List<CSharpMember>();
-        internal object _ConstantValue;
+        public TypeDefinitionInfo definingType;
+        public int memberIndex;
+        [AInvariant]public Named _Name;
+        [AInvariant]public MemberAttributes _MemberAttributes;
+        [AInvariant]public MemberDefinitionKind _Kind;
+        [AInvariant]public CSharpType _ReturnType;
+        public CSharpType _ExplicitInterfaceImplementation;
+        [AInvariant]public TypeParameterData[] _TypeParameters;
+        [AInvariant]public ParameterData[] _Parameters;
+        [AInvariant]public Dictionary<CSharpType, object> _Attributes = new Dictionary<CSharpType, object>();
+        [AInvariant]public List<CSharpMember> _Accessors = new List<CSharpMember>();
+        public object _ConstantValue;
 
         public int MemberIndex
         {
@@ -3027,10 +3002,10 @@ namespace EntryBuilder.CodeAnalysis.Semantics
     }
     internal class MemberWithType : CSharpMember, CSharpParameter.IProvider, TypeParameterInfo.IProvider, IEquatable<MemberWithType>
     {
-        private readonly ConstructedTypeReference containingType;
-        private readonly CSharpMember definingMember;
-        private IList<CSharpParameter> parameters;
-        private IList<CSharpType> typeParameters;
+        public ConstructedTypeReference containingType;
+        public CSharpMember definingMember;
+        public IList<CSharpParameter> parameters;
+        public IList<CSharpType> typeParameters;
         public override CSharpType ContainingType
         {
             get
@@ -3325,6 +3300,7 @@ namespace EntryBuilder.CodeAnalysis.Semantics
                 return this.typeParameters;
             }
         }
+        public MemberWithType() { }
         public MemberWithType(ConstructedTypeReference containingType, CSharpMember member)
         {
             this.containingType = containingType;
@@ -3419,10 +3395,10 @@ namespace EntryBuilder.CodeAnalysis.Semantics
     }
     internal class MemberWithTypeArguments : CSharpMember, CSharpParameter.IProvider, TypeParameterInfo.IProvider, IEquatable<MemberWithTypeArguments>
     {
-        private readonly CSharpMember member;
-        private readonly IList<CSharpType> methodTypeArguments;
-        private IList<CSharpParameter> parameters;
-        private IList<CSharpType> typeParameters;
+        public CSharpMember member;
+        public IList<CSharpType> methodTypeArguments;
+        public IList<CSharpParameter> parameters;
+        public IList<CSharpType> typeParameters;
         public override CSharpType ContainingType
         {
             get
@@ -3727,6 +3703,7 @@ namespace EntryBuilder.CodeAnalysis.Semantics
                 return this.methodTypeArguments;
             }
         }
+        public MemberWithTypeArguments() { }
         internal MemberWithTypeArguments(CSharpMember member, IList<CSharpType> methodTypeArguments)
         {
             this.member = member;
@@ -3832,10 +3809,10 @@ namespace EntryBuilder.CodeAnalysis.Semantics
     {
         private static Named SpecialName = new Named("value");
 
-        private MemberDefinitionInfo definingMember;
-        private Named _Name;
-        private List<CSharpParameter> _Parameters;
-        internal MemberAttributes _MemberAttributes;
+        public MemberDefinitionInfo definingMember;
+        public Named _Name;
+        public List<CSharpParameter> _Parameters;
+        public MemberAttributes _MemberAttributes;
 
         public override CSharpMember DefiningMember
         {
@@ -3970,6 +3947,7 @@ namespace EntryBuilder.CodeAnalysis.Semantics
             }
         }
 
+        public MemberAccessor() { }
         [AInvariant][ANonOptimize]internal MemberAccessor(MemberDefinitionInfo member, bool get)
         {
             member._Accessors.Add(this);
@@ -4010,6 +3988,7 @@ namespace EntryBuilder.CodeAnalysis.Semantics
         }
         public override bool Equals(CSharpMember other)
         {
+            if (other == null) return false;
             return DefiningMember == other.DefiningMember && Name == other.Name;
         }
         Named CSharpParameter.IProvider.GetName(int index)
@@ -4061,7 +4040,7 @@ namespace EntryBuilder.CodeAnalysis.Semantics
     }
     public class CSharpParameter : IEquatable<CSharpParameter>
     {
-        internal interface IProvider
+        public interface IProvider
         {
             Named GetName(int index);
             CSharpType GetType(int index);
@@ -4072,9 +4051,9 @@ namespace EntryBuilder.CodeAnalysis.Semantics
             CSharpDefaultParameterValue GetDefaultValue(int index);
         }
         internal static readonly IList<CSharpParameter> EmptyList = new CSharpParameter[0];
-        private readonly CSharpMember containingMember;
-        private readonly int position;
-        private readonly CSharpParameter.IProvider infoProvider;
+        public CSharpMember containingMember;
+        public int position;
+        public CSharpParameter.IProvider infoProvider;
         public CSharpMember ContainingMember
         {
             get
@@ -4138,6 +4117,7 @@ namespace EntryBuilder.CodeAnalysis.Semantics
                 return this.position;
             }
         }
+        public CSharpParameter() { }
         internal CSharpParameter(CSharpMember containingMember, int position, CSharpParameter.IProvider infoProvider)
         {
             this.containingMember = containingMember;
@@ -4213,7 +4193,7 @@ namespace EntryBuilder.CodeAnalysis.Semantics
     }
     public class CSharpDefaultParameterValue
     {
-        private readonly string displayString;
+        public string displayString;
         public string DisplayString
         {
             get
@@ -4221,6 +4201,7 @@ namespace EntryBuilder.CodeAnalysis.Semantics
                 return this.displayString;
             }
         }
+        public CSharpDefaultParameterValue() { }
         internal CSharpDefaultParameterValue(string displayString)
         {
             this.displayString = displayString;
@@ -4235,14 +4216,15 @@ namespace EntryBuilder.CodeAnalysis.Semantics
     {
         internal static CSharpAttribute0[] EmptyList = new CSharpAttribute0[0];
 
-        internal object _DefiningObject;
-        internal CSharpType _AttributeType;
+        public object _DefiningObject;
+        public CSharpType _AttributeType;
 
         public CSharpType DefiningType { get { return _DefiningObject as CSharpType; } }
         public CSharpMember DefiningMember { get { return _DefiningObject as CSharpMember; } }
         public object DefiningObject { get { return _DefiningObject; } }
         public CSharpType Type { get { return _AttributeType; } }
 
+        public CSharpAttribute0() { }
         internal CSharpAttribute0(CSharpType type, CSharpType atype)
         {
             this._DefiningObject = type;

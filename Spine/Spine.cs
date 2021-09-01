@@ -57,11 +57,11 @@ namespace Spine
             this.Animation = new AnimationState(stateData);
         }
 
-        public override void Update(GameTime time)
+        public override void Update(float time)
         {
             if (IsDisposed)
                 return;
-            Animation.Update(time.ElapsedSecond);
+            Animation.Update(time);
             Animation.Apply(Skeleton);
             Skeleton.UpdateWorldTransform();
         }
@@ -155,7 +155,7 @@ namespace Spine
                     itemVertices[TR].UV.X = uvs[RegionAttachment.URX];
                     itemVertices[TR].UV.Y = uvs[RegionAttachment.URY];
 
-                    graphics.DrawPrimitives(texture, vertices, 0, 4, quadTriangles, 0, 2);
+                    graphics.DrawPrimitives(texture, EPrimitiveType.Triangle, vertices, 0, 4, quadTriangles, 0, 2);
                 }
                 else if (attachment is MeshAttachment)
                 {
@@ -202,7 +202,7 @@ namespace Spine
                         itemVertices[ii].UV.Y = uvs[v + 1];
                     }
 
-                    graphics.DrawPrimitives(texture, vertices, 0, vertexCount / 2, triangles, 0, triangles.Length / 3);
+                    graphics.DrawPrimitives(texture, EPrimitiveType.Triangle, vertices, 0, vertexCount / 2, triangles, 0, triangles.Length / 3);
                 }
                 #endregion
             }
@@ -240,7 +240,7 @@ namespace Spine
                 Animation = null;
             }
         }
-        protected override Content Cache()
+        public override Content Cache()
         {
             SPINE spine = new SPINE(Skeleton.Data);
             spine._Key = this._Key;

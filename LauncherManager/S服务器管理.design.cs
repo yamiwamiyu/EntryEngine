@@ -203,7 +203,7 @@ public partial class S服务器管理
         CB服务.UIText.FontSize = 16f;
         CB服务.Text = "服务";
         CB服务.IsRadioButton = true;
-        CB服务.CheckedOverlayNormal = true;
+        CB服务.CheckedOverlayNormal = ECheckedOverlay.选中覆盖普通;
         this.Add(CB服务);
         CB服务器.Name = "CB服务器";
         EntryEngine.RECT CB服务器_Clip = new EntryEngine.RECT();
@@ -229,7 +229,7 @@ public partial class S服务器管理
         CB服务器.UIText.FontSize = 16f;
         CB服务器.Text = "服务器";
         CB服务器.IsRadioButton = true;
-        CB服务器.CheckedOverlayNormal = true;
+        CB服务器.CheckedOverlayNormal = ECheckedOverlay.选中覆盖普通;
         this.Add(CB服务器);
         B账号管理.Name = "B账号管理";
         EntryEngine.RECT B账号管理_Clip = new EntryEngine.RECT();

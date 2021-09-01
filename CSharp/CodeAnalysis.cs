@@ -20,7 +20,7 @@ namespace EntryBuilder.CodeAnalysis.Syntax
     public class ParseSourceException : Exception
     {
         const int MAX_FOCUS = 300;
-        internal int SourceIndex
+        public string File
         {
             get;
             private set;
@@ -35,14 +35,14 @@ namespace EntryBuilder.CodeAnalysis.Syntax
             get;
             private set;
         }
-        private ParseSourceException(int index, string source, string message, Exception innerEx)
+        private ParseSourceException(string file, string source, string message, Exception innerEx)
             : base(message, innerEx)
         {
-            this.SourceIndex = index;
+            this.File = file;
             this.SourceText = source;
             this.ErrorFocus = message;
         }
-        public static ParseSourceException Throw(int index, string source, int pos, Exception innerEx)
+        public static ParseSourceException Throw(string file, string source, int pos, Exception innerEx)
         {
             if (string.IsNullOrEmpty(source))
                 throw new ArgumentNullException("source");
@@ -51,37 +51,39 @@ namespace EntryBuilder.CodeAnalysis.Syntax
             int focus = source.Length - pos;
             focus = focus > MAX_FOCUS ? MAX_FOCUS : focus;
             string message = source.Substring(pos, focus);
-            throw new ParseSourceException(index, source, message, innerEx);
+            throw new ParseSourceException(file, source, message, innerEx);
         }
     }
-    public class ParseFileException : Exception
+
+    public class CSFile
     {
-        public string File
+        /// <summary>CS文件路径</summary>
+        public string File;
+        /// <summary>CS文件源码</summary>
+        //public string Code;
+        /// <summary>CS文件最后更新时间</summary>
+        public DateTime LastWriteTime;
+        /// <summary>CS文件语法解析结果</summary>
+        public DefineFile Define;
+
+        public override string ToString()
         {
-            get;
-            private set;
+            return Path.GetFileNameWithoutExtension(File);
         }
-        public ParseFileException(string file, ParseSourceException ex)
-            : base(file, ex)
+        public static CSFile[] GetFiles(string[] files)
         {
-            this.File = file;
+            CSFile[] result = new CSFile[files.Length];
+            for (int i = 0; i < result.Length; i++)
+            {
+                result[i] = new CSFile();
+                FileInfo file = new FileInfo(files[i]);
+                result[i].File = file.FullName;
+                result[i].LastWriteTime = file.LastWriteTime;
+            }
+            return result;
         }
     }
-
-    //public class Solution
-    //{
-    //    public List<Project> Projects
-    //    {
-    //        get;
-    //        private set;
-    //    }
-
-    //    public Solution()
-    //    {
-    //        Projects = new List<Project>();
-    //    }
-    //}
-    public class Project
+    public class Project : IEquatable<Project>
     {
         public PrimitiveValue AssemblyTitle = new PrimitiveValue();
         public PrimitiveValue AssemblyDescription = new PrimitiveValue();
@@ -90,46 +92,39 @@ namespace EntryBuilder.CodeAnalysis.Syntax
         public PrimitiveValue Guid = new PrimitiveValue();
         public PrimitiveValue AssemblyVersion = new PrimitiveValue();
         public PrimitiveValue AssemblyFileVersion = new PrimitiveValue();
-        public DefineFile[] Files;
-
-        public HashSet<string> Symbols
-        {
-            get;
-            private set;
-        }
-
-        public Project()
-        {
-            Symbols = new HashSet<string>();
-        }
+        public CSFile[] Files;
+        public List<string> Symbols = new List<string>();
 
         StringStreamReader r;
-        public void ParseFromFile(params string[] files)
+        /// <summary>开始解析，需要事先赋值Files，所有Files里Define为null的都会解析</summary>
+        public void Parse()
         {
-            int len = files.Length;
-            string[] sources = new string[len];
-            for (int i = 0; i < len; i++)
-                sources[i] = File.ReadAllText(files[i]);
-            try
+            if (Files == null)
+                throw new InvalidOperationException("请先赋值Files");
+            foreach (var item in Files)
             {
-                ParseFromSource(sources);
+                if (item == null || item.Define != null) continue;
+                //if (!string.IsNullOrEmpty(item.Code)) continue;
+                //item.Code = File.ReadAllText(item.File);
+
+                // 解析代码
+                r = new StringStreamReader(File.ReadAllText(item.File));
+                r.WORD_BREAK = " \t\n\r{(),:;\"";
+                try
+                {
+                    ParseCodeFile(out item.Define);
+                    item.Define.Name = item.File;
+                }
+                catch (Exception ex)
+                {
+                    ParseSourceException.Throw(item.File, r.str, r.Pos, ex);
+                }
             }
-            catch (ParseSourceException ex)
-            {
-                throw new ParseFileException(files[ex.SourceIndex], ex);
-            }
-            for (int i = 0; i < len; i++)
-                this.Files[i].Name = files[i];
-        }
-        public void ParseFromSource(params string[] sources)
-        {
-            Parse(sources);
-            // AutoParseProjectName();
             foreach (var file in Files)
             {
-                if (file.Attributes.Count > 0)
+                if (file.Define.Attributes.Count > 0)
                 {
-                    var attributes = file.Attributes;
+                    var attributes = file.Define.Attributes;
                     foreach (var item in attributes)
                     {
                         ReferenceMember rm = item.Target as ReferenceMember;
@@ -151,24 +146,10 @@ namespace EntryBuilder.CodeAnalysis.Syntax
                 }
             }
         }
-        private void Parse(string[] sources)
+        public void Parse(string[] files)
         {
-            int len = sources.Length;
-            Files = new DefineFile[len];
-            for (int i = 0; i < len; i++)
-            {
-                r = new StringStreamReader(sources[i]);
-                r.WORD_BREAK = " \t\n\r{(),:;\"";
-                try
-                {
-                    ParseCodeFile(out Files[i]);
-                }
-                catch (Exception ex)
-                {
-                    ParseSourceException.Throw(i, sources[i], r.Pos, ex);
-                }
-            }
-            r = null;
+            Files = CSFile.GetFiles(files);
+            Parse();
         }
         public void AddSymbols(IEnumerable<string> symbols)
         {
@@ -184,6 +165,28 @@ namespace EntryBuilder.CodeAnalysis.Syntax
             if (string.IsNullOrEmpty(symbolStr))
                 return;
             AddSymbols(symbolStr.Split(';'));
+        }
+        public bool Equals(Project other)
+        {
+            if (this.Symbols != other.Symbols)
+                return false;
+            if (this.Files.Length != other.Files.Length)
+                return false;
+            int len = this.Files.Length;
+            for (int i = 0; i < len; i++)
+            {
+                if (this.Files[i].File != other.Files[i].File)
+                    return false;
+                if (this.Files[i].LastWriteTime != other.Files[i].LastWriteTime)
+                    return false;
+            }
+            return true;
+        }
+        public override string ToString()
+        {
+            if (AssemblyTitle.Value != null)
+                return AssemblyTitle.Value.ToString();
+            return base.ToString();
         }
 
 
@@ -2210,7 +2213,7 @@ namespace EntryBuilder.CodeAnalysis.Syntax
             }
 
             return lambda;
-        }
+        }        
     }
 
     // 对象模型
@@ -2239,6 +2242,13 @@ namespace EntryBuilder.CodeAnalysis.Syntax
         public bool HasName
         {
             get { return Name != null && !string.IsNullOrEmpty(Name.Name); }
+        }
+
+        public override string ToString()
+        {
+            if (HasName)
+                return Name.Name;
+            return base.ToString();
         }
     }
 
@@ -10103,19 +10113,10 @@ namespace EntryBuilder.CodeAnalysis.Refactoring
     }
     public static class Refactor
     {
+        internal static List<Project> projects = new List<Project>();
         internal static HashSet<CSharpAssembly> assemblies = new HashSet<CSharpAssembly>();
-        public static IList<CSharpAssembly> Assemblies
-        {
-            get { return assemblies.ToArray(); }
-        }
 
-        public static void AddAssembly(CSharpAssembly assembly)
-        {
-            if (assembly == null)
-                throw new ArgumentNullException("assembly");
-            assemblies.Add(assembly);
-        }
-
+        #region 没有源码，直接通过Assembly加载需要用到的dll，暂不支持
         public static CSharpAssembly LoadFromAssembly(Assembly assembly)
         {
             CSharpAssembly csa;
@@ -10553,7 +10554,8 @@ namespace EntryBuilder.CodeAnalysis.Refactoring
                 }
             }
         }
-
+        #endregion
+        
         public static void Resolve(params Project[] projects)
         {
             for (int i = 0; i < projects.Length; i++)
@@ -10561,6 +10563,7 @@ namespace EntryBuilder.CodeAnalysis.Refactoring
         }
         public static CSharpAssembly Resolve(Project project, bool isProject)
         {
+            projects.Add(project);
             CSharpAssembly assembly;
             if (isProject)
                 assembly = new ProjectAssembly();
@@ -10828,7 +10831,7 @@ namespace EntryBuilder.CodeAnalysis.Refactoring
         {
             target.assembly = assembly;
             foreach (var item in project.Files)
-                target.Visit(item);
+                target.Visit(item.Define);
         }
         private static T BuildTypeSystem<T>(CSharpAssembly assembly, _BuildTypeSystem previous, Project project) where T : _BuildTypeSystem, new()
         {
@@ -10842,11 +10845,40 @@ namespace EntryBuilder.CodeAnalysis.Refactoring
         }
         public static void UnloadDomain()
         {
+            projects.Clear();
             assemblies.Clear();
             _BuildReference.members.Clear();
+            if (_BuildReference.types != null)
             _BuildReference.types.Clear();
             _BuildReference.objectReferences.Clear();
             _BuildReference.syntaxReferences.Clear();
+        }
+        public const string DOMAIN_SUFFIX = ".domain";
+        public static void SaveDomain(string filePath)
+        {
+            ByteRefWriter writer = new ByteRefWriter();
+            writer.WriteObject(projects, projects.GetType());
+            writer.WriteObject(assemblies, assemblies.GetType());
+            writer.WriteObject(_BuildReference.members, _BuildReference.members.GetType());
+            writer.WriteObject(_BuildReference.types, _BuildReference.types.GetType());
+            writer.WriteObject(_BuildReference.objectReferences, _BuildReference.objectReferences.GetType());
+            writer.WriteObject(_BuildReference.syntaxReferences, _BuildReference.syntaxReferences.GetType());
+            File.WriteAllBytes(Path.ChangeExtension(filePath, DOMAIN_SUFFIX), writer.GetBuffer());
+        }
+        /// <summary>1. 对于_C.cs和_C.design.cs读取会抛出异常，具体错误暂未确定
+        /// 2. 对于EntryEngine语法树反序列化比直接解析速度还慢德多
+        /// </summary>
+        [Code(ECode.ToBeContinue)]
+        public static void LoadDomain(string filePath)
+        {
+            UnloadDomain();
+            ByteRefReader reader = new ByteRefReader(File.ReadAllBytes(Path.ChangeExtension(filePath, DOMAIN_SUFFIX)));
+            reader.Read(out projects);
+            reader.Read(out assemblies);
+            reader.Read(out _BuildReference.members);
+            reader.Read(out _BuildReference.types);
+            reader.Read(out _BuildReference.objectReferences);
+            reader.Read(out _BuildReference.syntaxReferences);
         }
 
         public static bool IsNumberType(CSharpType t)
@@ -13238,7 +13270,7 @@ namespace EntryBuilder.CodeAnalysis.Refactoring
                     {
                         var current = parents.Pop();
                         // todo: test
-                        if (current.Name.Name == "Count" && definingMember != null && definingMember.Name.Name == "Drop")
+                        if (current.Name.Name == "Count" && definingMember != null && definingMember.Name.Name == "InternalUpdate")
                         {
                             CSharpMember member2 = definingType.Members.FirstOrDefault(f => f.Name.Name == current.Name.Name);
                         }

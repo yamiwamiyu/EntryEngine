@@ -31,15 +31,11 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="EntryEngine, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\EntryEngine.dll</HintPath>
-    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Data" />
     <Reference Include="UnityEngine">
-      <HintPath>..\UnityEngine.dll</HintPath>
+      <HintPath>..\..\Unity\UnityEngine.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>
@@ -137,6 +133,10 @@
     <Compile Include="Scripts\UnityDispatcher.cs" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\EntryEngine\EntryEngine.csproj">
+      <Project>{424D14E4-1661-42E9-A192-B1C60D4669FF}</Project>
+      <Name>EntryEngine</Name>
+    </ProjectReference>
     <ProjectReference Include="..\ADBase\ADBase.csproj">
       <Project>{206162A1-6DA8-4532-9280-C66005060D96}</Project>
       <Name>ADBase</Name>
