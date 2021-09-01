@@ -103,7 +103,25 @@ public abstract class ADBase
             }
         }
         if (_AutoType == null)
-            return null;
+            return new ADEmpty();
         return (ADBase)Activator.CreateInstance(_AutoType);
+    }
+}
+internal class ADEmpty : ADBase
+{
+    public override string Name
+    {
+        get { return "广告测试"; }
+    }
+    protected override void _Initialize(string appID, Action<bool, string> callback)
+    {
+        callback(true, "");
+    }
+    protected override void _ShowAD(string adid, EADType type, float x, float y, int width, int height, Action<int, string> onError, Action<IDisposable> onLoad, Action onClick, Action onOver)
+    {
+        if (onLoad != null)
+            onLoad(null);
+        if (onOver != null)
+            onOver();
     }
 }

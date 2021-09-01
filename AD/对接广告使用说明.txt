@@ -1,0 +1,51 @@
+1. 需要对接广告的项目引用ADBase.dll
+
+2. 将需要对接的广告平台的dll复制到Launch\Client\中
+以www.pangle.cn为例，广告用于Unity，www.pangle.cn.dll会在发布Unity时，发布到Publish\Project\Assets\StreamingAssets\www.pangle.cn.bytes
+之后会被发布的APK动态加载进入Unity程序中即可正常使用
+
+3. 将Unity发布需要的SDK内容通过.unitypackage文件导入Unity工程后发布APK即可
+
+实例代码如下：
+
+(1). SDK初始化
+// AD不会为null，会建一个测试广告的实例，对于展示广告会回调onLoad和onOver
+var AD = ADBase.AutoCreateFromAvailableFactory();
+// 初始化广告SDK
+AD.Initialize("广告平台AppID", (success, msg) =>
+{
+    if (success)
+        _LOG.Debug("初始化广告[{0}]成功", AD.Name);
+    else
+        _LOG.Debug("初始化广告[{0}]失败！失败原因：{1}", AD.Name, msg);
+});
+
+(2). 展示广告
+// Banner广告居下显示
+var ssize = Entry.GRAPHICS.ScreenSize;
+var gsize = Entry.GRAPHICS.GraphicsSize;
+var grate = gsize.X / gsize.Y;
+var srate = ssize.X / ssize.Y;
+if (grate > srate)
+{
+    float height = (grate - srate) * 0.5f * ssize.Y;
+    AD.ShowAD("广告位ID", EADType.Banner, 0, ssize.Y - height, (int)ssize.X, (int)height,
+            (code, msg) => _LOG.Debug("广告异常 Code:{0} Msg:{1}", code, msg),
+            (ad) => _LOG.Debug("加载广告成功"),
+            () => _LOG.Debug("点击广告"),
+            null);
+}
+
+// 插屏广告
+MAIN.AD.ShowAD("广告位ID", EADType.Interaction, 0, 0, 900, 1600,
+                (code, msg) => _LOG.Debug("广告异常 Code:{0} Msg:{1}", code, msg),
+                (ad) => _LOG.Debug("加载广告成功"),
+                () => _LOG.Debug("点击广告"),
+                null);
+
+// 看完后领取奖励的广告
+MAIN.AD.ShowAD("广告位ID", EADType.Video, 0, 0, 900, 1600,
+                (code, msg) => _LOG.Debug("广告异常 Code:{0} Msg:{1}", code, msg),
+                (ad) => _LOG.Debug("加载广告成功"),
+                () => _LOG.Debug("点击广告"),
+                () => _LOG.Debug("这里可以领取广告奖励"));
