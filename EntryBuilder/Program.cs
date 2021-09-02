@@ -509,7 +509,7 @@ namespace EntryBuilder
         {
             _LOG._Logger = new LoggerConsole();
 
-            //TexPiece(@"C:\Yamiwamiyu\Project\hdcq3\Design\Pack\___TEMP.xlsx", @"C:\Yamiwamiyu\Project\hdcq3\Launch\Client\Content\", @"C:\Yamiwamiyu\Project\hdcq3\Launch\Client\Content\");
+            //TexSplit(@"C:\Yamiwamiyu\Project\ZDJS\Launch\Client\Content\#测试拆分地图块.png", true, 0, @"C:\Yamiwamiyu\Project\ZDJS\Launch\Client\Content\Tables");
 
             //TexFontFromExcel("图片字体.xlsx");
             //PSD2JS("首页.psd", @"C:\Yamiwamiyu\Project\YMHY2\gaming-center\dist\", true);
@@ -3745,7 +3745,9 @@ return result;"
                                 // 本身有像素
                                 if (p.Alpha > 0)
                                 {
-                                    // 周围都需要没有像素(边缘像素)
+                                    // 边缘像素：边界像素或者周围有空白像素
+                                    if (border == 0)
+                                        return true;
                                     for (int sx = p.X - border, a = 0; a < border2; a++, sx++)
                                     {
                                         if (sx < 0 || sx >= width)
@@ -11055,7 +11057,7 @@ return result;"
 				ClearMemory();
 			}
 		}
-        public static void TexSplit(string inputDirOrFile, bool isInOriginGraphics, string outputDir)
+        public static void TexSplit(string inputDirOrFile, bool isInOriginGraphics, int border, string outputDir)
         {
             BuildDir(ref outputDir);
 
@@ -11084,7 +11086,7 @@ return result;"
                         Directory.CreateDirectory(dir);
 
                     int count = 0;
-                    foreach (var item in Split(sourceMap, new Size(5, 5), 2, isInOriginGraphics))
+                    foreach (var item in Split(sourceMap, new Size(5, 5), border, isInOriginGraphics))
                     {
                         using (item)
                         {
