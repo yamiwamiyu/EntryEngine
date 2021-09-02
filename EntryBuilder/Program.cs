@@ -3674,10 +3674,11 @@ return result;"
         }
         /// <summary>将一张大图分解成多张小图</summary>
         /// <param name="source">原始大图</param>
-        /// <param name="border">边界像素尺寸，像素周围指定的范围内有空像素时视为边界像素</param>
         /// <param name="skip">跳过拆分后宽高低于指定尺寸的图，宽高小于等于0时，不忽略任何图片</param>
+        /// <param name="border">边界像素尺寸，像素周围指定的范围内有空像素时视为边界像素</param>
+        /// <param name="isInOriginGraphics">false: 裁图按照其包围盒创建新图片 / true: 裁图按照原始画布图片大小和原始位置创建新图片</param>
         /// <returns>拆分后的小图</returns>
-        private static List<Bitmap> Split(Bitmap source, Size skip, int border = 2)
+        private static List<Bitmap> Split(Bitmap source, Size skip, int border, bool isInOriginGraphics)
         {
             List<Bitmap> results = new List<Bitmap>();
             int border2 = border * 2 + 1;
@@ -3766,57 +3767,85 @@ return result;"
                                 return false;
                             });
 
-                        int minX, minY, maxX, maxY;
-                        split.Resolve(out minX, out minY, out maxX, out maxY);
-
                         // 扫描矩形范围内未被扫描到的部分
                         // 如果有其它颜色，则那个颜色使用同样的扫描方式得出矩形范围
                         // 两个矩形范围取并集得出新的矩形范围
-                        bool flag = false;
-                        for (y = minY; y <= maxY; y++)
+                        // 因为拆分小图是将原图上一矩形部分渲染到新图上
+                        // 若采用将原图像素点直接放到新图的像素点上，则可以忽略以上步骤
+                        if (isInOriginGraphics)
                         {
-                            ScanLine line = split.Lines[y];
-                            for (x = minX; x < line.Min; x++)
+                            Bitmap frame = new Bitmap(source.Width, source.Height);
+                            LockBits(frame, bytes =>
                             {
-                                if (HasAlpha(x, y))
+                                foreach (var line in split.Lines)
                                 {
-                                    flag = true;
-                                    break;
+                                    int _y = line.Key;
+                                    for (int _x = line.Value.Min; _x <= line.Value.Max; _x++)
+                                    {
+                                        int index = _y * stride + _x * 4;
+                                        bytes[index + 0] = buffer[index + 0];
+                                        bytes[index + 1] = buffer[index + 1];
+                                        bytes[index + 2] = buffer[index + 2];
+                                        bytes[index + 3] = buffer[index + 3];
+                                        // 删除掉像素，让下次刷全图找像素时不会找到重复的图案
+                                        buffer[index + 3] = 0;
+                                    }
                                 }
-                            }
-                            if (flag) break;
-                            for (x = line.Max + 1; x <= maxX; x++)
-                            {
-                                if (HasAlpha(x, y))
-                                {
-                                    flag = true;
-                                    break;
-                                }
-                            }
-                            if (flag) break;
-                        }
-                        if (!flag)
-                        {
-                            // 过小的分离像素不进行拆分
-                            if (split.Area.Width * split.Area.Height >= 20)
-                            {
-                                Bitmap frame = new Bitmap(split.Area.Width, split.Area.Height);
-                                ImageDraw(frame, g =>
-                                {
-                                    g.DrawImage(
-                                        source,
-                                        new Rectangle(0, 0, frame.Width, frame.Height),
-                                        split.Area,
-                                        GraphicsUnit.Pixel);
-                                });
-                                results.Add(frame);
-                            }
-
-                            // 删除掉像素，让下次刷全图找像素时不会找到重复的图案
-                            for (int i = minY; i <= maxY; i++)
-                                for (int j = minX; j <= maxX; j++)
-                                    buffer[(i * stride) + (j << 2) + 3] = 0;
+                            });
+                            results.Add(frame);
                             break;
+                        }
+                        else
+                        {
+                            int minX, minY, maxX, maxY;
+                            split.Resolve(out minX, out minY, out maxX, out maxY);
+
+                            bool flag = false;
+                            for (y = minY; y <= maxY; y++)
+                            {
+                                ScanLine line = split.Lines[y];
+                                for (x = minX; x < line.Min; x++)
+                                {
+                                    if (HasAlpha(x, y))
+                                    {
+                                        flag = true;
+                                        break;
+                                    }
+                                }
+                                if (flag) break;
+                                for (x = line.Max + 1; x <= maxX; x++)
+                                {
+                                    if (HasAlpha(x, y))
+                                    {
+                                        flag = true;
+                                        break;
+                                    }
+                                }
+                                if (flag) break;
+                            }
+                            if (!flag)
+                            {
+                                // 过小的分离像素不进行拆分
+                                if (split.Area.Width * split.Area.Height >= 20)
+                                {
+                                    Bitmap frame = new Bitmap(split.Area.Width, split.Area.Height);
+                                    ImageDraw(frame, g =>
+                                    {
+                                        g.DrawImage(
+                                            source,
+                                            new Rectangle(0, 0, frame.Width, frame.Height),
+                                            split.Area,
+                                            GraphicsUnit.Pixel);
+                                    });
+                                    results.Add(frame);
+                                }
+
+                                // 删除掉像素，让下次刷全图找像素时不会找到重复的图案
+                                for (int i = minY; i <= maxY; i++)
+                                    for (int j = minX; j <= maxX; j++)
+                                        buffer[(i * stride) + (j << 2) + 3] = 0;
+                                break;
+                            }
                         }
                     }// end of split of one piece
                 }// end of split of a hole map
@@ -11026,13 +11055,17 @@ return result;"
 				ClearMemory();
 			}
 		}
-        public static void TexSplit(string inputDirOrFile, string outputDir)
+        public static void TexSplit(string inputDirOrFile, bool isInOriginGraphics, string outputDir)
         {
             BuildDir(ref outputDir);
 
             bool isFile = inputDirOrFile.Contains('.');
             string[] files = GetFiles(inputDirOrFile, IMAGE_FORMAT, SearchOption.AllDirectories);
-            inputDirOrFile = _IO.DirectoryWithEnding(Path.GetFullPath(Path.GetDirectoryName(inputDirOrFile)));
+            string tempDir = Path.GetDirectoryName(inputDirOrFile);
+            if (string.IsNullOrEmpty(tempDir))
+                inputDirOrFile = tempDir;
+            else
+                inputDirOrFile = _IO.DirectoryWithEnding(Path.GetFullPath(tempDir));
             Stopwatch watch = Stopwatch.StartNew();
             foreach (var file in files)
             {
@@ -11051,7 +11084,7 @@ return result;"
                         Directory.CreateDirectory(dir);
 
                     int count = 0;
-                    foreach (var item in Split(sourceMap, new Size(5, 5), 2))
+                    foreach (var item in Split(sourceMap, new Size(5, 5), 2, isInOriginGraphics))
                     {
                         using (item)
                         {
