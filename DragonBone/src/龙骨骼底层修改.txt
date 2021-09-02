@@ -1,2 +1,2 @@
 ﻿ObjectDataParser._MergeActionFrame: this._actionFrames.Insert的位置，frameIndex不需要+1
-Animation.isCompleted: return this._animationStates.Count > 0 改为 == 0
+Animation.isCompleted: return this._animationStates.Count > 0 改为 return true

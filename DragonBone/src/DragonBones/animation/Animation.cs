@@ -927,7 +927,7 @@ namespace EntryEngine.DragonBone.DBCore
                     }
                 }
 
-                return this._animationStates.Count == 0;
+                return true;
             }
         }
         /// <summary>
