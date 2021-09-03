@@ -566,11 +566,22 @@ namespace EntryEngine
         private void PhaseShowing()
         {
             bool end = true;
-            foreach (var item in scenes.Where(s => s.Phase == EPhase.Showing))
-                if (item.Phasing != null && !item.Phasing.IsEnd)
-                    end = false;
-                else
-                    item.OnPhaseShown();
+            scenes.ForFirstToLast(item =>
+            {
+                if (item.Phase == EPhase.Showing)
+                {
+                    if (item.Phasing != null && !item.Phasing.IsEnd)
+                        end = false;
+                    else
+                    {
+                        item.OnPhaseShown();
+                        if (item.State == EState.Break ||
+                            item.State == EState.Dispose ||
+                            item.State == EState.Release)
+                            CloseImmediately(item, item.State);
+                    }
+                }
+            });
 
             if (phase == EPhase.Showing && end)
                 phase = EPhase.Running;
