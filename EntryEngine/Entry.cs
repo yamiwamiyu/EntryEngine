@@ -4318,17 +4318,17 @@ namespace EntryEngine
         /// <summary>获取图片的像素颜色</summary>
         public COLOR[] GetData()
         {
-            return GetData(new RECT(0, 0, Width, Height));
+            return GetData(0, 0, Width, Height);
         }
-        public virtual COLOR[] GetData(RECT area)
+        public virtual COLOR[] GetData(int x, int y, int width, int height)
         {
             throw new NotImplementedException();
         }
         public void SetData(COLOR[] buffer)
         {
-            SetData(buffer, new RECT(0, 0, Width, Height));
+            SetData(buffer, 0, 0, Width, Height);
         }
-        public virtual void SetData(COLOR[] buffer, RECT area)
+        public virtual void SetData(COLOR[] buffer, int x, int y, int width, int height)
         {
             throw new NotImplementedException();
         }
@@ -4485,13 +4485,13 @@ namespace EntryEngine
         public TEXTURE_Link() { }
         public TEXTURE_Link(EntryEngine.TEXTURE Base) { this.Base = Base; }
 
-        public override EntryEngine.COLOR[] GetData(EntryEngine.RECT area)
+        public override EntryEngine.COLOR[] GetData(int x, int y, int width, int height)
         {
-            return Base.GetData(area);
+            return Base.GetData(x, y, width, height);
         }
-        public override void SetData(EntryEngine.COLOR[] buffer, EntryEngine.RECT area)
+        public override void SetData(EntryEngine.COLOR[] buffer, int x, int y, int width, int height)
         {
-            Base.SetData(buffer, area);
+            Base.SetData(buffer, x, y, width, height);
         }
         public override void Save(string file)
         {
@@ -4542,6 +4542,49 @@ namespace EntryEngine
                 return base.Cache();
             else
                 return Base.Cache();
+        }
+    }
+    /// <summary>将图片颜色缓存的图片</summary>
+    public class TEXTURE_COLOR : TEXTURE_Link
+    {
+        public override TEXTURE Base
+        {
+            get { return base.Base; }
+            set
+            {
+                base.Base = value;
+                if (value == null)
+                    ColorData = _SARRAY<COLOR>.Empty;
+                else
+                    ColorData = value.GetData();
+            }
+        }
+        /// <summary>整张图片的像素数据</summary>
+        public COLOR[] ColorData { get; private set; }
+
+        public TEXTURE_COLOR() { }
+        public TEXTURE_COLOR(TEXTURE _base) : base(_base) { }
+
+        /// <summary>坐标是否在图片中的有效像素内</summary>
+        public bool IsHover(float x, float y)
+        {
+            int width = Width;
+            if (x < 0 || y < 0 || x >= width || y >= Height)
+                return false;
+            return ColorData[width * (int)y + (int)x].A != 0;
+        }
+        public override COLOR[] GetData(int x, int y, int width, int height)
+        {
+            return Utility.GetArray(ColorData, x, y, width, height, Width);
+        }
+        public override void SetData(COLOR[] buffer, int x, int y, int width, int height)
+        {
+            Utility.SetArray(buffer, ColorData, x, y, width, height, Width, width, 0);
+            Base.SetData(buffer, x, y, width, height);
+        }
+        public override Content Cache()
+        {
+            return new TEXTURE_COLOR(Base);
         }
     }
     public abstract class TEXTURE_ANIMATION : TEXTURE_Link
@@ -4614,15 +4657,36 @@ namespace EntryEngine
             this.Padding = padding;
         }
 
+        void CheckSize(float width, float height)
+        {
+            if (width > Width || height > Height)
+                throw new InvalidOperationException("Piece texture can't tile. SourceRectangle must be contained in piece's SourceRectangle.");
+        }
+        public override COLOR[] GetData(int x, int y, int width, int height)
+        {
+            CheckSize(width, height);
+            COLOR[] full = new COLOR[width * height];
+            var real = Base.GetData(x + (int)(SourceRectangle.X), y + (int)(SourceRectangle.Y), 
+                width - (int)(Padding.X + Padding.Width),
+                height - (int)(Padding.Y + Padding.Height));
+            Utility.SetArray(real, full, x, y, width, height, width, width - (int)(Padding.X + Padding.Width), 0);
+            return full;
+        }
+        public override void SetData(COLOR[] buffer, int x, int y, int width, int height)
+        {
+            CheckSize(width, height);
+            Base.SetData(Utility.GetArray(buffer, x, y, width, height, width), 
+                x + (int)SourceRectangle.X, y + (int)SourceRectangle.Y,
+                width - (int)(Padding.X + Padding.Width),
+                height - (int)(Padding.Y + Padding.Height));
+        }
+
         protected internal override bool Draw(GRAPHICS graphics, ref SpriteVertex vertex)
         {
             if (Base == null)
                 return true;
 
-            float width = Width;
-            float height = Height;
-            if (vertex.Source.Width > width || vertex.Source.Height > height)
-                throw new InvalidOperationException("Piece texture can't tile. SourceRectangle must be contained in piece's SourceRectangle.");
+            CheckSize(vertex.Source.Width, vertex.Source.Height);
 
             SpriteVertex copy = vertex;
 
@@ -7474,7 +7538,7 @@ namespace EntryEngine
         internal FontTexture.Buffer buffer;
         protected override void OnSetData(ref COLOR[] data)
         {
-            texture.SetData(data, new RECT(buffer.x, buffer.y, buffer.W, buffer.H));
+            texture.SetData(data, buffer.x, buffer.y, buffer.W, buffer.H);
         }
     }
     public abstract class FontDynamic : FontStatic

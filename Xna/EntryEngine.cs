@@ -309,11 +309,11 @@ namespace EntryEngine.Xna
                 throw new ArgumentNullException("texture");
             this.texture = texture;
         }
-		public override COLOR[] GetData(RECT area)
+		public override COLOR[] GetData(int x, int y, int width, int height)
 		{
 			if (texture == null)
 				return null;
-			COLOR[] buffer = texture.GetColor(area);
+			COLOR[] buffer = texture.GetColor(new RECT(x, y, width, height));
 			if (texture.Format == SurfaceFormat.Bgr32)
 			{
 				unsafe
@@ -332,13 +332,13 @@ namespace EntryEngine.Xna
 			}
 			return buffer;
 		}
-        public override void SetData(COLOR[] buffer, RECT area)
+        public override void SetData(COLOR[] buffer, int x, int y, int width, int height)
 		{
 			if (texture != null)
 			{
                 try
                 {
-                    texture.SetData(0, area.GetRect(), buffer, 0, (int)(area.Width * area.Height), SetDataOptions.None);
+                    texture.SetData(0, new Rectangle(x, y, width, height), buffer, 0, width * height, SetDataOptions.None);
                 }
                 catch (InvalidOperationException)
                 {
@@ -354,7 +354,7 @@ namespace EntryEngine.Xna
                         }
                         index++;
                     }
-                    texture.SetData(0, area.GetRect(), buffer, 0, (int)(area.Width * area.Height), SetDataOptions.None);
+                    texture.SetData(0, new Rectangle(x, y, width, height), buffer, 0, width * height, SetDataOptions.None);
                 }
 			}
 		}

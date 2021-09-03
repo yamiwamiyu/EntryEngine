@@ -330,10 +330,10 @@ namespace EntryEngine.Unity
             camera.Stop();
         }
 
-        public override COLOR[] GetData(RECT area)
+        public override COLOR[] GetData(int x, int y, int width, int height)
         {
             bool rotate;
-            return GetColor((int)area.X, (int)area.Y, (int)area.Width, (int)area.Height, out rotate).GetColor();
+            return GetColor(x, y, width, height, out rotate).GetColor();
         }
         Color[] GetColor(int x, int y, int width, int height, out bool whChange)
         {
@@ -476,16 +476,16 @@ namespace EntryEngine.Unity
                 throw new ArgumentNullException("texture");
             this.texture = texture;
         }
-        public override COLOR[] GetData(RECT area)
+        public override COLOR[] GetData(int x, int y, int width, int height)
         {
             // 颜色从左下角开始取
-            return ((Texture2D)texture).GetPixels((int)area.X, (int)(Height - area.Y - area.Height), (int)area.Width, (int)area.Height).GetColor();
+            return ((Texture2D)texture).GetPixels(x, Height - y - height, width, height).GetColor();
         }
-        public override void SetData(COLOR[] buffer, RECT area)
+        public override void SetData(COLOR[] buffer, int x, int y, int width, int height)
         {
             Texture2D tex1 = (Texture2D)texture;
             // 颜色从左下角开始取
-            tex1.SetPixels32((int)area.X, (int)(Height - area.Y - area.Height), (int)area.Width, (int)area.Height, buffer.GetColor());
+            tex1.SetPixels32(x, Height - y - height, width, height, buffer.GetColor());
             tex1.Apply();
         }
         public override void Save(string file)

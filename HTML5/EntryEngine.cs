@@ -568,18 +568,14 @@ namespace EntryEngine.HTML5
             Data = new ImageData(width, height);
             Texture = GraphicsWebGL.CreateGLTexture(Data);
         }
-        public override COLOR[] GetData(RECT area)
+        public override COLOR[] GetData(int x, int y, int width, int height)
         {
-            int x = (int)area.X;
-            int y = (int)area.Y;
-            int w = (int)area.Width;
-            int h = (int)area.Height;
-            return COLOR.Convert(Data.data.GetBytes()).GetArray(x, y, w, h, Data.width);
+            return COLOR.Convert(Data.data.GetBytes()).GetArray(x, y, width, height, Data.width);
         }
-        public override void SetData(COLOR[] buffer, RECT area)
+        public override void SetData(COLOR[] buffer, int x, int y, int width, int height)
         {
             byte[] bytes = Data.data.GetBytes();
-            Utility.SetArray(COLOR.Convert(buffer), bytes, (int)(area.X * 4), (int)area.Y, (int)(area.Width * 4), (int)area.Height, Data.width * 4, (int)(area.Width * 4), 0);
+            Utility.SetArray(COLOR.Convert(buffer), bytes, x << 2, y, width << 2, height, Data.width << 2, width << 2, 0);
             bytes.ToUint8ClampedArray(Data.data);
             GraphicsWebGL.SetTextureData(Texture, Data);
         }
@@ -606,9 +602,9 @@ namespace EntryEngine.HTML5
             this.Image = image;
             this.Texture = texture;
         }
-        public override COLOR[] GetData(RECT area)
+        public override COLOR[] GetData(int x, int y, int width, int height)
         {
-            var data = GraphicsCanvas.DrawImage(Image, (int)area.X, (int)area.Y, (int)area.Width, (int)area.Height);
+            var data = GraphicsCanvas.DrawImage(Image, x, y, width, height);
             return COLOR.Convert(data.data.GetBytes());
         }
         //public override void SetData(COLOR[] buffer, RECT area)
