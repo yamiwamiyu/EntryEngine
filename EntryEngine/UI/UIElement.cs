@@ -472,7 +472,7 @@ namespace EntryEngine.UI
     /// IsClip及其相关参数的有不明确的地方，需要修改
     /// </summary>
     [Code(ECode.ToBeContinue)]
-    public abstract class UIElement : Tree<UIElement>, IDisposable
+    public abstract class UIElement : Tree<UIElement>, IDisposable, IMobile
     {
         internal static UIElement __PrevHandledElement;
         internal static UIElement __HandledElement;
