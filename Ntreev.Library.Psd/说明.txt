@@ -1,0 +1,3 @@
+﻿PsdDocument.Create("文件名.psd", new PathResolver()) 即可读取一个psd文件的大部分内容
+
+其它较为完善的还能渲染出图的PSD解析器有Aspose.PSD.dll，但是需要付费，否则渲染出图片会有水印
