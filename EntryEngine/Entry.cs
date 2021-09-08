@@ -588,7 +588,8 @@ namespace EntryEngine
         }
         private void PhaseUpdate()
         {
-            LinkedListNode<UIScene> node = scenes.Last;
+            // loading阶段可能会展示其它更多的菜单，可以从前往后一次加载完
+            LinkedListNode<UIScene> node = scenes.First;
             while (node != null)
             {
                 var item = node.Value;
@@ -605,7 +606,7 @@ namespace EntryEngine
                         item.Phasing = null;
                     }
                 }
-                node = node.Previous;
+                node = node.Next;
             }
 
             switch (phase)
