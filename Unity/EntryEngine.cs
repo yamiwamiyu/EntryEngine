@@ -1026,7 +1026,9 @@ namespace EntryEngine.Unity
         {
             RECT gscreen = AreaToScreen(graphics);
             Rect scissor = gscreen.ToCartesian();
-            if (shader == null)
+            if (shader != null)
+                shader.Begin(this);
+            if (shader == null || !shader.IsRealBeginEnd)
             {
                 if (threeD)
                 {
@@ -1057,10 +1059,6 @@ namespace EntryEngine.Unity
                         ;
                     GL.modelview = view.GetMatrix();
                 }
-            }
-            else
-            {
-                shader.Begin(this);
             }
             // 屏幕左下角0,0
             GL.Viewport(scissor);

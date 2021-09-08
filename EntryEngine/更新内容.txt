@@ -1,4 +1,7 @@
-﻿2021/09/03
+﻿2021/09/08
+1. 新增SHADER.IsRealBeginEnd，修复GRAPHICS.Begin|End相关BUG
+
+2021/09/03
 1. TEXTURE.GetData|SetData修改
 2. 新增TEXTURE_COLOR缓存图片颜色
 

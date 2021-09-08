@@ -117,14 +117,12 @@ namespace EntryEngine.Xna
             spriteTransformMatrix = matrix.GetMatrix();
 
             if (shader != null)
-            {
                 shader.Begin(this);
-            }
-            else
+            if (shader == null || !shader.IsRealBeginEnd)
             {
                 XnaBatch.Begin(SpriteBlendMode.AlphaBlend,
-                        SpriteSortMode.Immediate, SaveStateMode.None,
-                        spriteTransformMatrix);
+                            SpriteSortMode.Immediate, SaveStateMode.None,
+                            spriteTransformMatrix);
                 Device.SetVertexShaderConstant(2, spriteTransformMatrix);
             }
 
@@ -151,9 +149,7 @@ namespace EntryEngine.Xna
         }
         protected override void Ending(GRAPHICS.RenderState render)
         {
-            if (render.Shader != null)
-                render.Shader.End(this);
-            else
+            if (render.Shader == null || !render.Shader.IsRealBeginEnd)
                 XnaBatch.End();
         }
         public override TEXTURE Screenshot(RECT graphics)

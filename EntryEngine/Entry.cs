@@ -7826,6 +7826,8 @@ namespace EntryEngine
                 this.currentPass = value;
             }
         }
+        /// <summary>true: 真实使用着色器时，交由SHADER进行Begin|End / false: 交由GRAPHICS进行Begin|End（SHADER.Begin|End任然会调用）</summary>
+        public virtual bool IsRealBeginEnd { get { return true; } }
         /// <summary>顶点着色器和片元着色器通道的数量</summary>
         public abstract int PassCount { get; }
         /// <summary>生效Shader，在GRAPHICS会自动调用，非特殊情况不要自己调用</summary>
@@ -8099,6 +8101,7 @@ namespace EntryEngine
             }
         }
 
+        public override bool IsRealBeginEnd { get { return false; } }
         public override int PassCount
         {
             get { return 1; }
@@ -8697,6 +8700,8 @@ namespace EntryEngine
             Flush();
             RenderState state = renderStates.Peek();
             renderStates.Pop();
+            if (state.Shader != null)
+                state.Shader.End(this);
             Ending(state);
 
             if (HasRenderTarget)

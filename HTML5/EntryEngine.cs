@@ -1050,7 +1050,7 @@ namespace EntryEngine.HTML5
             // 左下角0,0 单位像素
             gl.scissor((int)rect.X, gl.canvas.height - (int)(rect.Y + rect.Height), (int)rect.Width, (int)rect.Height);
 
-            if (shader == null)
+            if (shader == null || !shader.IsRealBeginEnd)
             {
                 // todo: 大范围使用3D时，不清楚遮挡关系会如何；目前开启深度测试相同深度的对象覆盖关系将发生变化
                 //gl.enable(gl.DEPTH_TEST);
@@ -1082,10 +1082,6 @@ namespace EntryEngine.HTML5
                 vertexShaderMatrixArray[15] = 1;
 
                 gl.uniformMatrix4fv(vertexShaderMatrix, false, vertexShaderMatrixArray);
-            }
-            else
-            {
-                shader.Begin(this);
             }
         }
         protected override void InternalDrawPrimitivesBegin(TEXTURE texture, EPrimitiveType ptype, int textureIndex)
@@ -1155,11 +1151,6 @@ namespace EntryEngine.HTML5
         //{
         //    gl.flush();
         //}
-        protected override void Ending(GRAPHICS.RenderState render)
-        {
-            if (render.Shader != null)
-                render.Shader.End(this);
-        }
     }
     public class GraphicsCanvas
     {
