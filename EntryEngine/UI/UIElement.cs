@@ -441,6 +441,197 @@ namespace EntryEngine.UI
             };
         }
     }
+    /// <summary>UI动态特效，淡入，淡出，从各个方向移出等</summary>
+    public class UIEffect : ICoroutine
+    {
+        public UIEffect(UIElement element) { this.UI = element; }
+
+        CorParallel coroutine = new CorParallel();
+        ShaderAlpha alpha = new ShaderAlpha();
+        public UIElement UI { get; private set; }
+        /// <summary>不透明度，0~1，默认为1，1为不透明</summary>
+        public float Alpha = 1;
+        /// <summary>旋转角度</summary>
+        public float Rotation;
+        /// <summary>坐标偏移，是相对于UI原始坐标的偏移</summary>
+        public VECTOR2 Offset;
+        /// <summary>大小缩放，默认为1</summary>
+        public float Scale = 1;
+
+        public UIEffect Reset()
+        {
+            coroutine.Clear();
+            Alpha = 1;
+            Rotation = 0;
+            Offset.X = 0;
+            Offset.Y = 0;
+            Scale = 1;
+            return this;
+        }
+        /// <summary>用seconds秒钟从origin缩放到target</summary>
+        public UIEffect DoScale(float origin, float target, float seconds)
+        {
+            Scale = origin;
+            DoAnimation(_DoScale(origin, target, seconds));
+            return this;
+        }
+        private IEnumerable<ICoroutine> _DoScale(float origin, float target, float seconds)
+        {
+            float elapsed = 0;
+            while (elapsed < seconds)
+            {
+                elapsed += GameTime.Time.ElapsedSecond;
+                if (elapsed > seconds)
+                    Scale = target;
+                else
+                    Scale = origin + (target - origin) * (elapsed / seconds);
+                yield return null;
+            }
+        }
+        /// <summary>用seconds秒钟从origin透明渐变到target</summary>
+        public UIEffect DoFade(float origin, float target, float seconds)
+        {
+            Alpha = origin;
+            DoAnimation(_DoFade(origin, target, seconds));
+            return this;
+        }
+        /// <summary>用seconds秒钟从透明变为不透明</summary>
+        public UIEffect DoFadeIn(float seconds)
+        {
+            return DoFade(0, 1, seconds);
+        }
+        /// <summary>用seconds秒钟从不透明变为透明</summary>
+        public UIEffect DoFadeOut(float seconds)
+        {
+            return DoFade(1, 0, seconds);
+        }
+        private IEnumerable<ICoroutine> _DoFade(float origin, float target, float seconds)
+        {
+            float elapsed = 0;
+            while (elapsed < seconds)
+            {
+                elapsed += GameTime.Time.ElapsedSecond;
+                if (elapsed > seconds)
+                    Alpha = target;
+                else
+                    Alpha = origin + (target - origin) * (elapsed / seconds);
+                yield return null;
+            }
+        }
+        /// <summary>用seconds秒钟从origin旋转到target</summary>
+        public UIEffect DoRotate(float origin, float target, float seconds)
+        {
+            Rotation = origin;
+            DoAnimation(_DoRotate(origin, target, seconds));
+            return this;
+        }
+        private IEnumerable<ICoroutine> _DoRotate(float origin, float target, float seconds)
+        {
+            float elapsed = 0;
+            while (elapsed < seconds)
+            {
+                elapsed += GameTime.Time.ElapsedSecond;
+                if (elapsed > seconds)
+                    Rotation = target;
+                else
+                    Rotation = origin + (target - origin) * (elapsed / seconds);
+                yield return null;
+            }
+        }
+        /// <summary>用seconds秒钟从origin匀速平移到target</summary>
+        public UIEffect DoMove(VECTOR2 origin, VECTOR2 target, float seconds)
+        {
+            Offset = origin;
+            DoAnimation(_DoMove(origin, target, seconds));
+            return this;
+        }
+        public UIEffect DoMoveX(float origin, float target, float seconds)
+        {
+            return DoMove(new VECTOR2(origin, 0), new VECTOR2(target, 0), seconds);
+        }
+        public UIEffect DoMoveY(float origin, float target, float seconds)
+        {
+            return DoMove(new VECTOR2(0, origin), new VECTOR2(0, target), seconds);
+        }
+        /// <summary>自动从贴近屏幕的位置移入到当前位置</summary>
+        public UIEffect DoMoveAuto(float seconds)
+        {
+            var graphics = Entry.Instance.GRAPHICS.GraphicsSize;
+            float x = UI.X;
+            float ox = 0;
+            if (x > graphics.X * 0.5f)
+            {
+                x = graphics.X - x;
+                ox = graphics.X;
+            }
+            float y = UI.Y;
+            float oy = 0;
+            if (y > graphics.Y * 0.5f)
+            {
+                y = graphics.Y - y;
+                oy = y;
+            }
+            if (x > y)
+                return DoMoveY(oy, 0, seconds);
+            else
+                return DoMoveX(ox, 0, seconds);
+        }
+        private IEnumerable<ICoroutine> _DoMove(VECTOR2 origin, VECTOR2 target, float seconds)
+        {
+            float elapsed = 0;
+            while (elapsed < seconds)
+            {
+                elapsed += GameTime.Time.ElapsedSecond;
+                if (elapsed > seconds)
+                {
+                    Offset.X = target.X;
+                    Offset.Y = target.Y;
+                }
+                else
+                {
+                    float percent = (elapsed / seconds);
+                    Offset.X = origin.X + (target.X - origin.X) * percent;
+                    Offset.Y = origin.Y + (target.Y - origin.Y) * percent;
+                }
+                yield return null;
+            }
+        }
+        /// <summary>用seconds秒钟从origin缩放到target</summary>
+        public UIEffect DoAnimation(IEnumerable<ICoroutine> coroutine)
+        {
+            this.coroutine.Add(coroutine);
+            return this;
+        }
+
+        internal void Begin(GRAPHICS sb)
+        {
+            SHADER shader = null;
+            if (Alpha < 1)
+            {
+                alpha.Alpha = Alpha;
+                shader = alpha;
+            }
+
+            //var viewclip = UI.FinalViewClip;
+            //viewclip.X = UI.PivotAlignmentX * viewclip.Width * 0.5f;
+            //viewclip.Y = UI.PivotAlignmentY * viewclip.Height * 0.5f;
+            float x = UI.X;
+            float y = UI.Y;
+            sb.Begin(
+                sb.FromPrevious(MATRIX2x3.CreateTransform(_MATH.D2R * Rotation, x, y, Scale, Scale, x + Offset.X, y + Offset.Y)),
+                sb.CurrentGraphics,
+                shader);
+        }
+
+        public bool IsEnd
+        {
+            get { return coroutine.IsEnd; }
+        }
+        public void Update(float elapsed)
+        {
+            coroutine.Update(elapsed);
+        }
+    }
 
     public struct UIFlowLayout
     {
@@ -496,6 +687,8 @@ namespace EntryEngine.UI
 
         public string Name;
         public UIFlowLayout Flow;
+        /// <summary>UI特效</summary>
+        public UIEffect Effect { get; private set; }
         private RECT clip;
         private RECT autoClip;
         private MATRIX2x3 model = MATRIX2x3.Identity;
@@ -1080,6 +1273,7 @@ namespace EntryEngine.UI
             {
                 UIStyle.Style.FitStyle(this);
             }
+            Effect = new UIEffect(this);
             RegistEvent(DoEnter);
             RegistEvent(DoMove);
             RegistEvent(DoExit);
@@ -1195,6 +1389,13 @@ namespace EntryEngine.UI
                 DrawAfterBegin(this, spriteBatch, e);
             }
 
+            bool effectDraw = !Effect.IsEnd;
+            if (effectDraw)
+            {
+                Effect.Update(e.GameTime.ElapsedSecond);
+                Effect.Begin(spriteBatch);
+            }
+
             InternalDraw(spriteBatch, e);
             if (DrawBeforeChilds != null)
             {
@@ -1222,6 +1423,10 @@ namespace EntryEngine.UI
                 }
             }
             InternalDrawAfter(spriteBatch, e);
+
+            if (effectDraw)
+                spriteBatch.End();
+
             if (DrawBeforeEnd != null)
             {
                 DrawBeforeEnd(this, spriteBatch, e);
