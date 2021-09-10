@@ -4678,10 +4678,10 @@ namespace EntryEngine
         {
             CheckSize(width, height);
             COLOR[] full = new COLOR[width * height];
-            var real = Base.GetData(x + (int)(SourceRectangle.X), y + (int)(SourceRectangle.Y), 
-                width - (int)(Padding.X + Padding.Width),
-                height - (int)(Padding.Y + Padding.Height));
-            Utility.SetArray(real, full, x, y, width, height, width, width - (int)(Padding.X + Padding.Width), 0);
+            int rwidth = width - (int)(Padding.X + Padding.Width);
+            int rheight = height - (int)(Padding.Y + Padding.Height);
+            var real = Base.GetData(x + (int)(SourceRectangle.X), y + (int)(SourceRectangle.Y), rwidth, rheight);
+            Utility.SetArray(real, full, x + (int)Padding.X, y + (int)Padding.Y, rwidth, rheight, width, rwidth, 0);
             return full;
         }
         public override void SetData(COLOR[] buffer, int x, int y, int width, int height)
