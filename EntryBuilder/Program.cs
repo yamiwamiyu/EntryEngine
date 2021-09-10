@@ -3521,10 +3521,9 @@ return result;"
                                 Bitmap texture = new Bitmap(width, height);
                                 ImageDraw(texture, graphics =>
                                 {
-                                    graphics.DrawImage(source, new Rectangle(
+                                    graphics.DrawImage(source,
                                         (width - source.Width) / 2,
-                                        (height - source.Height) / 2,
-                                        source.Width, source.Height));
+                                        (height - source.Height) / 2);
                                 });
                                 textures[i] = texture;
                             }
@@ -3664,9 +3663,8 @@ return result;"
                     ImageDraw(texture, graphics =>
                     {
                         graphics.DrawImage(source,
-                                new RectangleF(desc.Width * 0.5f - (areaOfPixel.X + areaOfPixel.Width * 0.5f),
-                                    desc.Height * 0.5f - (areaOfPixel.Y + areaOfPixel.Height * 0.5f),
-                                    source.Width, source.Height));
+                                (int)(desc.Width * 0.5f - (areaOfPixel.X + areaOfPixel.Width * 0.5f)),
+                                (int)(desc.Height * 0.5f - (areaOfPixel.Y + areaOfPixel.Height * 0.5f)));
                     });
                     textures[i] = texture;
                 }
@@ -10132,8 +10130,8 @@ return result;"
                         area.Texture = texture;
                         area.Padding.X = minX;
                         area.Padding.Y = minY;
-                        area.Padding.Width -= maxX;
-                        area.Padding.Height -= maxY;
+                        area.Padding.Width -= maxX + 1;
+                        area.Padding.Height -= maxY + 1;
 
                         cuts[i] = area;
 
