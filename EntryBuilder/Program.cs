@@ -9971,9 +9971,8 @@ return result;"
             var target = new PipelinePiece.Piece();
             //var root = Path.GetDirectoryName(Path.GetFullPath(inputXLSX));
 
-            // 所有结果尺寸及尺寸组合
             Dictionary<int, List<Point>> all;
-            #region
+            #region 所有结果尺寸及尺寸组合
 
             all = new Dictionary<int, List<Point>>();
             int[] SIZE = { 1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048 };
@@ -10002,15 +10001,53 @@ return result;"
 
             #endregion
 
+            HashSet<string> outputFiles = new HashSet<string>();
+            #region 记录输出图片防止重新打包时将输出图片一并打包
+            const string AUTO_SUFFIX = ".png";
+            //const string AUTO_SUFFIX = "." + TEXTURE.SPECIAL_TEXTURE_TYPE;
+            foreach (var onePiece in rows)
+            {
+                bool isAutoOutput = string.IsNullOrEmpty(onePiece.Output);
+                if (isAutoOutput)
+                {
+                    if (onePiece.Directories.IndexOf(',') == -1)
+                    {
+                        // 单一目录，输出则跟目录同级且名字和目录一样
+                        onePiece.Output = onePiece.Directories;
+                    }
+                    else
+                    {
+                        // 多个目录，输出则跟目录同级且名字和第一个目录一样
+                        string[] directories = onePiece.Directories.Split(',');
+                        onePiece.Output = directories[0];
+                    }
+                    // 目录符号结尾，则去掉目录符号作为文件名
+                    var last = onePiece.Output[onePiece.Output.Length - 1];
+                    if (last == '/' || last == '\\')
+                        onePiece.Output = onePiece.Output.Substring(0, onePiece.Output.Length - 1);
+                }
+
+                // 缺少后缀则自动添加后缀
+                if (isAutoOutput)
+                {
+                    onePiece.Output += AUTO_SUFFIX;
+                }
+                else
+                {
+                    string suffix = Path.GetExtension(onePiece.Output);
+                    if (string.IsNullOrEmpty(suffix))
+                        onePiece.Output += AUTO_SUFFIX;
+                }
+
+                outputFiles.Add(Path.GetFullPath(outputDir + onePiece.Root + onePiece.Output));
+            }
+            #endregion
+
             Dictionary<string, Dictionary<string, PipelinePiece.Piece>> metadatas = new Dictionary<string, Dictionary<string, PipelinePiece.Piece>>();
             string metadata = null;
             foreach (var onePiece in rows)
             {
-                //if (string.IsNullOrEmpty(onePiece.Directories))
-                //{
-                //    Console.WriteLine("Directories can't be null.");
-                //    continue;
-                //}
+                #region 检查配置合理
 
                 bool isCombine = onePiece.Combine;
                 if (!onePiece.Cut && !isCombine)
@@ -10037,24 +10074,6 @@ return result;"
                 {
                     pieces = new Dictionary<string, PipelinePiece.Piece>();
                     metadatas.Add(metadata, pieces);
-
-                    //if (File.Exists(metadata))
-                    //{
-                    //    PipelinePiece.Piece[] temp = null;
-                    //    reader = new CSVReader(File.ReadAllText(metadata));
-                    //    reader.Read(out temp);
-                    //    pieces.AddRange(temp);
-                    //}
-                }
-
-                string[] directories = onePiece.Directories.Split(',');
-                bool isAutoOutput = string.IsNullOrEmpty(onePiece.Output);
-                if (isAutoOutput)
-                {
-                    onePiece.Output = directories[0];
-                    var last = onePiece.Output[onePiece.Output.Length - 1];
-                    if (last == '/' || last == '\\')
-                        onePiece.Output = onePiece.Output.Substring(0, onePiece.Output.Length - 1);
                 }
 
                 // Map为已拥有的File
@@ -10066,19 +10085,26 @@ return result;"
 
                 if (!string.IsNullOrEmpty(onePiece.Root))
                     BuildDir(ref onePiece.Root);
-                
-                var files = directories.SelectMany(d => GetFiles(inputDir + onePiece.Root + d, onePiece.All ? SearchOption.AllDirectories : SearchOption.TopDirectoryOnly, IMAGE_FORMATS)).ToArray();
+
+                #endregion
+
+                string[] directories = onePiece.Directories.Split(',');
+                var files = directories.SelectMany(d => GetFiles(Path.GetFullPath(inputDir + onePiece.Root + d), onePiece.All ? SearchOption.AllDirectories : SearchOption.TopDirectoryOnly, IMAGE_FORMATS))
+                    .Where(f => !outputFiles.Contains(f)).ToArray();
                 int count = files.Length;
                 if (count == 0)
                 {
                     Console.WriteLine("{0}没有任何可以打包的元素", onePiece.Directories);
                     continue;
                 }
+                // 打开单张图片
                 Bitmap[] textures = new Bitmap[count];
                 for (int i = 0; i < count; i++)
                     textures[i] = OpenBitmap(files[i]);
 
                 string root = inputDir + onePiece.Root;
+                #region 裁切图片
+
                 CutArea[] cuts = null;
                 if (onePiece.Cut)
                 {
@@ -10139,6 +10165,10 @@ return result;"
                         continue;
                 }
 
+                #endregion
+                
+                #region 计算总面积
+
                 // 矩形组的总面积
                 int totalC = 0;
                 for (int i = 0; i < count; i++)
@@ -10161,7 +10191,10 @@ return result;"
                     }
                 }
 
-                // 开始排布
+                #endregion
+
+                #region 开始排布
+
                 bool flag = false;
                 Point[] normal = textures.Select(t => new Point(t.Width, t.Height)).ToArray();
                 for (int i = 0; i < sizes.Count; i++)
@@ -10225,17 +10258,6 @@ return result;"
                             }
                         });
 
-                        if (isAutoOutput)
-                        {
-                            onePiece.Output += ".png";
-                        }
-                        else
-                        {
-                            string suffix = Path.GetExtension(onePiece.Output);
-                            if (string.IsNullOrEmpty(suffix))
-                                //onePiece.Output += "." + TEXTURE.SPECIAL_TEXTURE_TYPE;
-                                onePiece.Output += ".png";
-                        }
                         root = inputDir + onePiece.Root;
                         for (int j = 0; j < count; j++)
                         {
@@ -10267,11 +10289,12 @@ return result;"
                         break;
                     }
                 } // end of combine
-
                 if (!flag)
                 {
                     Console.WriteLine("没有足够的尺寸组合Piece: {0}", onePiece.Output);
                 }
+
+                #endregion
             } // end of all pieces
             // 统一保存metadata
             foreach (var item in metadatas)
