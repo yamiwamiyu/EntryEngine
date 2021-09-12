@@ -4010,19 +4010,19 @@ return result;"
 
             return results;
         }
-        private static Rectangle[] Put(Point[] sizes, Point size, bool widthPriority)
+        private static Rectangle[] Put(Point[] sizes, Point size, bool widthPriority, int space = 0)
 		{
 			Rectangle[] results;
 			if (!widthPriority)
 			{
 				size = new Point(size.Y, size.X);
-				results = sizes.Select(s => new Rectangle(0, 0, s.Y, s.X)).ToArray();
+                results = sizes.Select(s => new Rectangle(0, 0, s.Y + space, s.X + space)).ToArray();
 			}
 			else
-				results = sizes.Select(s => new Rectangle(0, 0, s.X, s.Y)).ToArray();
+                results = sizes.Select(s => new Rectangle(0, 0, s.X + space, s.Y + space)).ToArray();
 
 			Stack<Rectangle> remaind = new Stack<Rectangle>();
-			remaind.Push(new Rectangle(0, 0, size.X, size.Y));
+            remaind.Push(new Rectangle(space, space, size.X - space, size.Y - space));
 
 			HashSet<int> set = new HashSet<int>();
 
@@ -4083,17 +4083,38 @@ return result;"
 				Rectangle temp = results[index];
 				Rectangle split;
 
-				split = new Rectangle(temp.Right, current.Y, current.Width - temp.Width, current.Height);
-				if (split.Width > 0 && split.Height > 0)
-					remaind.Push(split);
+                // 放入当前块后，矩形切割成右侧和下侧两个区域，右下角区域作为公共区域，根据宽高优先级划归给右侧或下侧
+                if (widthPriority)
+                {
+                    // 最宽的已经放下了，公共区域划归给右侧，可以放入更高的块
+                    split = new Rectangle(temp.Right, current.Y, current.Width - temp.Width, current.Height);
+                    if (split.Width > 0 && split.Height > 0)
+                        remaind.Push(split);
 
-				split = new Rectangle(current.X, temp.Bottom, temp.Width, current.Height - temp.Height);
-				if (split.Width > 0 && split.Height > 0)
-					remaind.Push(split);
+                    split = new Rectangle(current.X, temp.Bottom, temp.Width, current.Height - temp.Height);
+                    if (split.Width > 0 && split.Height > 0)
+                        remaind.Push(split);
+                }
+                else
+                {
+                    // 最高的已经放下了，公共区域划归给下侧，可以放入更宽的块
+                    split = new Rectangle(temp.Right, current.Y, current.Width - temp.Width, temp.Height);
+                    if (split.Width > 0 && split.Height > 0)
+                        remaind.Push(split);
+
+                    split = new Rectangle(current.X, temp.Bottom, current.Width, current.Height - temp.Height);
+                    if (split.Width > 0 && split.Height > 0)
+                        remaind.Push(split);
+                }
 
 				count--;
 				set.Add(index);
 			}
+            for (int i = 0; i < results.Length; i++)
+            {
+                results[i].Width -= space;
+                results[i].Height -= space;
+            }
 			return results;
 		}
 		private static string SavePng(Image texture, string dir, string file, bool disposed = true)
@@ -10197,6 +10218,7 @@ return result;"
                 Point[] normal = textures.Select(t => new Point(t.Width, t.Height)).ToArray();
                 for (int i = 0; i < sizes.Count; i++)
                 {
+                    // 检测2的次方尺寸大图，从小到大测试能否装下所有图片
                     Rectangle[] result = Put(normal, sizes[i], true);
                     if (result == null)
                     {
@@ -10228,19 +10250,19 @@ return result;"
                                     maxY = result[j].Bottom;
                             }
 
-                            if (maxX - minX != width || maxY - minY != height)
-                            {
-                                width -= (width - maxX) + minX;
-                                height -= (height - maxY) + minY;
+                            //if (maxX - minX != width || maxY - minY != height)
+                            //{
+                            //    width -= (width - maxX) + minX;
+                            //    height -= (height - maxY) + minY;
 
-                                if (minX != 0)
-                                    for (int j = 0; j < count; j++)
-                                        result[j].X -= minX;
+                            //    if (minX != 0)
+                            //        for (int j = 0; j < count; j++)
+                            //            result[j].X -= minX;
 
-                                if (minY != 0)
-                                    for (int j = 0; j < count; j++)
-                                        result[j].Y -= minY;
-                            }
+                            //    if (minY != 0)
+                            //        for (int j = 0; j < count; j++)
+                            //            result[j].Y -= minY;
+                            //}
                         }
 
                         // draw tiled map
@@ -11478,7 +11500,7 @@ return result;"
             if (string.IsNullOrEmpty(suffixSplitByComma))
             {
                 // 拷贝目录名字
-                foreach (var item in Directory.GetDirectories(dir, "*.*", option))
+                foreach (var item in Directory.GetFiles(dir, "*.*", option))
                 {
                     builder.AppendLine(item.Substring(relation));
                 }
@@ -11495,7 +11517,11 @@ return result;"
                 }
             }
 
-            Clipboard.SetText(builder.ToString());
+            string result = builder.ToString();
+            if (string.IsNullOrEmpty(result))
+                _LOG.Debug("目录中没有符合的文件");
+            else
+                Clipboard.SetText(result);
         }
         public static void RemoveDuplicateChar(string str, bool orderByAscii)
         {
