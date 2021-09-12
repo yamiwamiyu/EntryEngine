@@ -124,6 +124,7 @@ namespace EntryEngine.Xna
                             SpriteSortMode.Immediate, SaveStateMode.None,
                             spriteTransformMatrix);
                 Device.SetVertexShaderConstant(2, spriteTransformMatrix);
+                //SpriteSortMode.
             }
 
             var renderState = XnaBatch.GraphicsDevice.RenderState;
@@ -134,9 +135,11 @@ namespace EntryEngine.Xna
             
             // Draw时设置SrouceRectangle超过Texture的宽高可以达到平铺
             // 设置平铺后，有半像素绘制时上面和左边有时会多出一个像素很难看
-            //SamplerStateCollection samplers = XnaBatch.GraphicsDevice.SamplerStates;
+            SamplerStateCollection samplers = XnaBatch.GraphicsDevice.SamplerStates;
             //samplers[0].AddressU = TextureAddressMode.Wrap;
             //samplers[0].AddressV = TextureAddressMode.Wrap;
+            // 这个设置可以让图片渲染缩小时没有黑线，但是旋转时锯齿严重
+            samplers[0].MinFilter = TextureFilter.Point;
 
             if (screenshot.Capturing)
                 // 截图时，RenderTarget2D在屏幕左上角，Scissor也应该相应调整到左上角
