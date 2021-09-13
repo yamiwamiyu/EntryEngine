@@ -3737,7 +3737,7 @@ return result;"
                         // 设定初始位置
                         split.SetPos(x, y);
 
-                        Pixel.GPS(map[x, y], -1,
+                        var broadcast = Pixel.GPS(map[x, y], -1,
                             p =>
                             {
                                 // 本身有像素
@@ -3777,19 +3777,15 @@ return result;"
                             Bitmap frame = new Bitmap(source.Width, source.Height);
                             LockBits(frame, bytes =>
                             {
-                                foreach (var line in split.Lines)
+                                foreach (var item in broadcast.Keys)
                                 {
-                                    int _y = line.Key;
-                                    for (int _x = line.Value.Min; _x <= line.Value.Max; _x++)
-                                    {
-                                        int index = _y * stride + _x * 4;
-                                        bytes[index + 0] = buffer[index + 0];
-                                        bytes[index + 1] = buffer[index + 1];
-                                        bytes[index + 2] = buffer[index + 2];
-                                        bytes[index + 3] = buffer[index + 3];
-                                        // 删除掉像素，让下次刷全图找像素时不会找到重复的图案
-                                        buffer[index + 3] = 0;
-                                    }
+                                    int index = item.Y * stride + item.X * 4;
+                                    bytes[index + 0] = buffer[index + 0];
+                                    bytes[index + 1] = buffer[index + 1];
+                                    bytes[index + 2] = buffer[index + 2];
+                                    bytes[index + 3] = buffer[index + 3];
+                                    // 删除掉像素，让下次刷全图找像素时不会找到重复的图案
+                                    buffer[index + 3] = 0;
                                 }
                             });
                             results.Add(frame);
