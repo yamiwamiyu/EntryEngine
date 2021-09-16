@@ -3676,9 +3676,8 @@ return result;"
         /// <param name="border">边界像素尺寸，像素周围指定的范围内有空像素时视为边界像素</param>
         /// <param name="isInOriginGraphics">false: 裁图按照其包围盒创建新图片 / true: 裁图按照原始画布图片大小和原始位置创建新图片</param>
         /// <returns>拆分后的小图</returns>
-        private static List<Bitmap> Split(Bitmap source, Size skip, int border, bool isInOriginGraphics)
+        private static IEnumerable<Bitmap> Split(Bitmap source, Size skip, int border, bool isInOriginGraphics)
         {
-            List<Bitmap> results = new List<Bitmap>();
             int border2 = border * 2 + 1;
 
             int width = source.Width;
@@ -3788,7 +3787,7 @@ return result;"
                                     buffer[index + 3] = 0;
                                 }
                             });
-                            results.Add(frame);
+                            yield return frame;
                             break;
                         }
                         else
@@ -3833,7 +3832,7 @@ return result;"
                                             split.Area,
                                             GraphicsUnit.Pixel);
                                     });
-                                    results.Add(frame);
+                                    yield return frame;
                                 }
 
                                 // 删除掉像素，让下次刷全图找像素时不会找到重复的图案
@@ -3846,7 +3845,6 @@ return result;"
                     }// end of split of one piece
                 }// end of split of a hole map
             }
-            return results;
         }
         /// <summary>拆分文字图片，得出每行的每个字体</summary>
         private static List<List<Bitmap>> SplitText(Bitmap source, int border2)
