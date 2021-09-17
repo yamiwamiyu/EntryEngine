@@ -43,6 +43,34 @@ MAIN.AD.ShowAD("广告位ID", EADType.Interaction, 0, 0, 900, 1600,
                 () => _LOG.Debug("点击广告"),
                 null);
 
+// 有时间间隔的显示插屏广告
+private static DateTime lastADTime;
+/// <summary>首次进入关卡不弹广告，之后经过120s后，进入关卡或通过关卡都会弹广告</summary>
+/// <param name="addSeconds">加快播放广告的时间，例如重复进入关卡退出就会提前播放广告</param>
+public static void AD插屏广告(int addSeconds)
+{
+    if (lastADTime.Ticks == 0)
+    {
+        lastADTime = DateTime.Now;
+    }
+    else
+    {
+        if (addSeconds > 0)
+        {
+            lastADTime = lastADTime.AddSeconds(-addSeconds);
+        }
+        if ((DateTime.Now - lastADTime).TotalSeconds > 120 && MAIN.AD != null)
+        {
+            MAIN.AD.ShowAD("946658856", EADType.Interaction, 0, 0, 900, 1600,
+                        (code, msg) => _LOG.Debug("广告异常 Code:{0} Msg:{1}", code, msg),
+                        (ad) => _LOG.Debug("加载广告成功"),
+                        () => _LOG.Debug("点击广告"),
+                        () => _LOG.Debug("播完广告"));
+            lastADTime = DateTime.Now;
+        }
+    }
+}
+
 // 看完后领取奖励的广告
 MAIN.AD.ShowAD("广告位ID", EADType.Video, 0, 0, 900, 1600,
                 (code, msg) => _LOG.Debug("广告异常 Code:{0} Msg:{1}", code, msg),
