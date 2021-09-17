@@ -10244,6 +10244,11 @@ return result;"
                                     maxY = result[j].Bottom;
                             }
 
+                            // 裁切尺寸，默认向左对齐不再重新对齐
+                            width -= (width - maxX);
+                            height -= (height - maxY);
+
+                            // 裁切尺寸，向左对齐
                             //if (maxX - minX != width || maxY - minY != height)
                             //{
                             //    width -= (width - maxX) + minX;
