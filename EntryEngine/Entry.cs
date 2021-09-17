@@ -4358,13 +4358,6 @@ namespace EntryEngine
 
         public static TEXTURE GetDrawableTexture(TEXTURE texture)
         {
-            //if (texture == null)
-            //    return null;
-            //if (texture.IsLinked)
-            //    return GetDrawableTexture(((TEXTURE_Link)texture).Base);
-            //else
-            //    return texture;
-
             while (true)
             {
                 if (texture == null) return null;
@@ -4372,6 +4365,21 @@ namespace EntryEngine
                     texture = ((TEXTURE_Link)texture).Base;
                 else
                     return texture;
+            }
+        }
+        public static T GetTexture<T>(TEXTURE texture) where T : TEXTURE
+        {
+            T target;
+            while (true)
+            {
+                if (texture == null) return null;
+                target = texture as T;
+                if (target != null)
+                    return target;
+                if (texture.IsLinked)
+                    texture = ((TEXTURE_Link)texture).Base;
+                else
+                    return null;
             }
         }
         public static new bool Serializer(ByteRefWriter writer, object value, Type type)
@@ -4580,8 +4588,22 @@ namespace EntryEngine
         /// <summary>坐标是否在图片中的有效像素内</summary>
         public bool IsHover(float x, float y)
         {
-            int width = Width;
-            if (x < 0 || y < 0 || x >= width || y >= Height)
+            int width;
+            int height;
+            PIECE special = TEXTURE.GetTexture<PIECE>(Base);
+            if (special != null)
+            {
+                x -= special.Padding.X;
+                y -= special.Padding.Y;
+                width = (int)special.SourceRectangle.Width;
+                height = (int)special.SourceRectangle.Height;
+            }
+            else
+            {
+                width = Width;
+                height = Height;
+            }
+            if (x < 0 || y < 0 || x > width || y > height)
                 return false;
             return ColorData[width * (int)y + (int)x].A != 0;
         }
@@ -4677,20 +4699,24 @@ namespace EntryEngine
         public override COLOR[] GetData(int x, int y, int width, int height)
         {
             CheckSize(width, height);
-            COLOR[] full = new COLOR[width * height];
-            int rwidth = width - (int)(Padding.X + Padding.Width);
-            int rheight = height - (int)(Padding.Y + Padding.Height);
-            var real = Base.GetData(x + (int)(SourceRectangle.X), y + (int)(SourceRectangle.Y), rwidth, rheight);
-            Utility.SetArray(real, full, x + (int)Padding.X, y + (int)Padding.Y, rwidth, rheight, width, rwidth, 0);
-            return full;
+            //COLOR[] full = new COLOR[width * height];
+            //int rwidth = width - (int)(Padding.X + Padding.Width);
+            //int rheight = height - (int)(Padding.Y + Padding.Height);
+            //var real = Base.GetData(x + (int)(SourceRectangle.X), y + (int)(SourceRectangle.Y), rwidth, rheight);
+            //Utility.SetArray(real, full, x + (int)Padding.X, y + (int)Padding.Y, rwidth, rheight, width, rwidth, 0);
+            //return full;
+            return Base.GetData(x + (int)(SourceRectangle.X), y + (int)(SourceRectangle.Y),
+                width - (int)(Padding.X + Padding.Width), height - (int)(Padding.Y + Padding.Height));
         }
         public override void SetData(COLOR[] buffer, int x, int y, int width, int height)
         {
             CheckSize(width, height);
-            Base.SetData(Utility.GetArray(buffer, x, y, width, height, width), 
-                x + (int)SourceRectangle.X, y + (int)SourceRectangle.Y,
-                width - (int)(Padding.X + Padding.Width),
-                height - (int)(Padding.Y + Padding.Height));
+            //Base.SetData(Utility.GetArray(buffer, x, y, width, height, width), 
+            //    x + (int)SourceRectangle.X, y + (int)SourceRectangle.Y,
+            //    width - (int)(Padding.X + Padding.Width),
+            //    height - (int)(Padding.Y + Padding.Height));
+            Base.SetData(buffer, x + (int)(SourceRectangle.X), y + (int)(SourceRectangle.Y),
+                width - (int)(Padding.X + Padding.Width), height - (int)(Padding.Y + Padding.Height));
         }
 
         protected internal override bool Draw(GRAPHICS graphics, ref SpriteVertex vertex)
@@ -5225,6 +5251,8 @@ namespace EntryEngine
         }
         void Draw(GRAPHICS graphics, ref SpriteVertex vertex, ref PatchPiece param)
         {
+            if (param.W == 0 || param.W == 0 || param.SW == 0 || param.SH == 0)
+                return;
             vertex.Destination.Width = param.W;
             vertex.Destination.Height = param.H;
             vertex.Source.X = param.SX;
