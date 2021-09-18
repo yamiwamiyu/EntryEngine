@@ -333,7 +333,7 @@ namespace EntryEngine.Unity
         public override COLOR[] GetData(int x, int y, int width, int height)
         {
             bool rotate;
-            return GetColor(x, y, width, height, out rotate).GetColor();
+            return GetColor(x, y, width, height, out rotate).GetColor(width);
         }
         Color[] GetColor(int x, int y, int width, int height, out bool whChange)
         {
@@ -479,13 +479,13 @@ namespace EntryEngine.Unity
         public override COLOR[] GetData(int x, int y, int width, int height)
         {
             // 颜色从左下角开始取
-            return ((Texture2D)texture).GetPixels(x, Height - y - height, width, height).GetColor();
+            return ((Texture2D)texture).GetPixels(x, Height - y - height, width, height).GetColor(width);
         }
         public override void SetData(COLOR[] buffer, int x, int y, int width, int height)
         {
             Texture2D tex1 = (Texture2D)texture;
             // 颜色从左下角开始取
-            tex1.SetPixels32(x, Height - y - height, width, height, buffer.GetColor());
+            tex1.SetPixels32(x, Height - y - height, width, height, buffer.GetColor(width));
             tex1.Apply();
         }
         public override void Save(string file)
@@ -592,7 +592,12 @@ namespace EntryEngine.Unity
             int theight = graphics.height;
             //_IO.WriteByte("TEXT.png", graphics.EncodeToPNG());
             // GetPixel矩形为屏幕坐标
-            COLOR[] colors = graphics.GetPixels((int)(info.uv.x * twidth), (int)((info.uv.y + info.uv.height) * theight), (int)(info.uv.width * twidth), (int)(-info.uv.height * theight)).GetColor();
+            COLOR[] colors = graphics.GetPixels(
+                (int)(info.uv.x * twidth), 
+                (int)((info.uv.y + info.uv.height) * theight), 
+                (int)(info.uv.width * twidth), 
+                (int)(-info.uv.height * theight))
+                .GetColor(width);
             float ascent = font.ascent;
 
             System.Threading.WaitCallback call = (_) =>

@@ -149,71 +149,39 @@ namespace EntryEngine.Unity
         {
             return new COLOR(color.r, color.g, color.b, color.a);
         }
-        public static COLOR[] GetColor(this Color[] buffer)
+        /// <summary>左下角坐标转换左上角坐标</summary>
+        public static COLOR[] GetColor(this Color[] buffer, int width)
         {
             int count = buffer.Length;
             COLOR[] colors = new COLOR[count];
-            //unsafe
-            //{
-            //    fixed (Color* ptr1 = buffer)
-            //    {
-            //        fixed (COLOR* ptr2 = colors)
-            //        {
-            //            Color* p1 = ptr1 + count - 1;
-            //            COLOR* p2 = ptr2;
-            //            for (int i = 0; i < count; i++)
-            //            {
-            //                p2->R = (byte)(p1->r * 255);
-            //                p2->G = (byte)(p1->g * 255);
-            //                p2->B = (byte)(p1->b * 255);
-            //                p2->A = (byte)(p1->a * 255);
-            //                p1--;
-            //                p2++;
-            //            }
-            //        }
-            //    }
-            //}
+            int start = count - width;
             for (int i = 0; i < count; i++)
             {
-                int index = count - i - 1;
-                colors[i].R = (byte)(buffer[index].r * 255);
-                colors[i].G = (byte)(buffer[index].g * 255);
-                colors[i].B = (byte)(buffer[index].b * 255);
-                colors[i].A = (byte)(buffer[index].a * 255);
+                colors[start].R = (byte)(buffer[i].r * byte.MaxValue);
+                colors[start].G = (byte)(buffer[i].g * byte.MaxValue);
+                colors[start].B = (byte)(buffer[i].b * byte.MaxValue);
+                colors[start].A = (byte)(buffer[i].a * byte.MaxValue);
+                start++;
+                if (start % width == 0)
+                    start = start - 2 * width;
             }
             return colors;
         }
-        public static Color32[] GetColor(this COLOR[] buffer)
+        /// <summary>左上角坐标转换左下角坐标</summary>
+        public static Color32[] GetColor(this COLOR[] buffer, int width)
         {
             int count = buffer.Length;
             Color32[] colors = new Color32[count];
-            //unsafe
-            //{
-            //    fixed (COLOR* ptr1 = buffer)
-            //    {
-            //        fixed (Color32* ptr2 = colors)
-            //        {
-            //            COLOR* p1 = ptr1 + count - 1;
-            //            Color32* p2 = ptr2;
-            //            for (int i = 0; i < count; i++)
-            //            {
-            //                p2->r = p1->R;
-            //                p2->g = p1->G;
-            //                p2->b = p1->B;
-            //                p2->a = p1->A;
-            //                p1--;
-            //                p2++;
-            //            }
-            //        }
-            //    }
-            //}
+            int start = count - width;
             for (int i = 0; i < count; i++)
             {
-                int index = count - i - 1;
-                colors[i].r = buffer[index].R;
-                colors[i].g = buffer[index].G;
-                colors[i].b = buffer[index].B;
-                colors[i].a = buffer[index].A;
+                colors[start].r = buffer[i].R;
+                colors[start].g = buffer[i].G;
+                colors[start].b = buffer[i].B;
+                colors[start].a = buffer[i].A;
+                start++;
+                if (start % width == 0)
+                    start = start - 2 * width;
             }
             return colors;
         }
