@@ -4603,7 +4603,7 @@ namespace EntryEngine
                 width = Width;
                 height = Height;
             }
-            if (x < 0 || y < 0 || x > width || y > height)
+            if (x < 0 || y < 0 || x >= width || y >= height)
                 return false;
             return ColorData[width * (int)y + (int)x].A != 0;
         }
