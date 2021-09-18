@@ -474,6 +474,8 @@ namespace EntryEngine.Unity
         {
             if (texture == null)
                 throw new ArgumentNullException("texture");
+            // 防黑线，有锯齿
+            texture.filterMode = FilterMode.Point;
             this.texture = texture;
         }
         public override COLOR[] GetData(int x, int y, int width, int height)
