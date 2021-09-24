@@ -861,7 +861,7 @@ namespace EntryEngine.Network
             if (requests.Count == 0 && KeepAlive.Ticks > 0)
             {
                 toKeepAlive = true;
-                GetRequestLink().Send(null);
+                GetRequestLink().Send((byte[])null);
             }
             return data;
         }
@@ -1822,7 +1822,7 @@ namespace EntryEngine.Network
 
             this.uri = uri;
             Request = (HttpWebRequest)HttpWebRequest.Create(uri);
-            Request.ContentType = "application/x-www-form-urlencoded";
+            Request.ContentType = "application/x-www-form-urlencoded; charset=utf-8";
             Request.Method = "POST";
             if (OnConnect != null)
                 OnConnect(Request);
@@ -1830,6 +1830,10 @@ namespace EntryEngine.Network
         public void Connect(string uri)
         {
             Connect(new Uri(uri));
+        }
+        public void Send(string buffer)
+        {
+            Send(Encoding.UTF8.GetBytes(buffer));
         }
         public void Send(byte[] buffer)
         {

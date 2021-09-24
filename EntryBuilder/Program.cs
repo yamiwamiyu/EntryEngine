@@ -2180,7 +2180,7 @@ request.OnReceived += (response) =>
         }
     }
 };
-request.Send(Encoding.UTF8.GetBytes(data));
+request.Send(data);
 
 return result;"
                        );

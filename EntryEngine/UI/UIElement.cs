@@ -1877,6 +1877,13 @@ namespace EntryEngine.UI
                 }
             }
         }
+        public override string ToString()
+        {
+            if (string.IsNullOrEmpty(Name))
+                return base.ToString();
+            else
+                return base.ToString() + ": " + Name;
+        }
         public virtual void Dispose()
         {
             for (int i = 0; i < Childs.Count; i++)
