@@ -888,18 +888,20 @@ namespace EntryEngine.Network
         {
             obj.Timeout = (int)Timeout.TotalMilliseconds;
         }
-        private void FlushWithID(HttpWebRequest request, Stream obj)
+        private bool FlushWithID(HttpWebRequest request, Stream obj, byte[] buffer)
         {
             // 客户端ID
             obj.Write(idBuffer, 0, 2);
+            return false;
         }
-        private void FlushWithPID(HttpWebRequest request, Stream obj)
+        private bool FlushWithPID(HttpWebRequest request, Stream obj, byte[] buffer)
         {
             // 客户端ID
             obj.Write(idBuffer, 0, 2);
             // 数据包ID
             idBuffer[2]++;
             obj.Write(idBuffer, 2, 1);
+            return false;
         }
         public AsyncData<Link> Connect(string host, ushort port)
         {
@@ -1776,10 +1778,8 @@ namespace EntryEngine.Network
     public class HttpRequestPost : IDisposable
     {
         public event Action<HttpWebRequest> OnConnect;
-        /// <summary>异步</summary>
-        public event Action<HttpWebRequest, Stream> OnSend;
-        /// <summary>异步</summary>
-        public event Action<HttpWebRequest, Stream> OnSent;
+        /// <summary>异步执行：请求写入流之前，返回true代表自定义将数据写入流，后面不再写入流</summary>
+        public event Func<HttpWebRequest, Stream, byte[], bool> OnSend;
         /// <summary>异步</summary>
         public event Action<HttpWebResponse> OnReceived;
         /// <summary>异步</summary>
@@ -1846,12 +1846,9 @@ namespace EntryEngine.Network
                         // .net3.5: RequestStream不关闭，GetResponse不能发出请求
                         // .net4.0: RequestStream不关闭，GetResponse可以发出请求，此时KeepAlive=true
                         connection = Request.EndGetRequestStream(ar);
-                        if (OnSend != null)
-                            OnSend(Request, connection);
-                        if (buffer != null && buffer.Length > 0)
-                            connection.Write(buffer, 0, buffer.Length);
-                        if (OnSent != null)
-                            OnSent(Request, connection);
+                        if (OnSend == null || !OnSend(Request, connection, buffer))
+                            if (buffer != null && buffer.Length > 0)
+                                connection.Write(buffer, 0, buffer.Length);
                     }
                     catch (WebException ex)
                     {
@@ -1867,9 +1864,7 @@ namespace EntryEngine.Network
                     finally
                     {
                         if (connection != null)
-                        {
                             connection.Close();
-                        }
                     }
 
                     if (connection == null) return;
@@ -2193,12 +2188,45 @@ namespace EntryEngine.Network
         {
             if (data != null)
             {
-                using (var stream = Request.GetRequestStream())
-                {
-                    stream.Write(data, 0, data.Length);
-                }
+                // 同步
+                //using (var stream = Request.GetRequestStream())
+                //{
+                //    stream.Write(data, 0, data.Length);
+                //}
+                //Run();
+
+                // 异步
+                Request.BeginGetRequestStream(
+                    ar =>
+                    {
+                        Stream connection = null;
+                        try
+                        {
+                            // .net3.5: RequestStream不关闭，GetResponse不能发出请求
+                            // .net4.0: RequestStream不关闭，GetResponse可以发出请求，此时KeepAlive=true
+                            connection = Request.EndGetRequestStream(ar);
+                            if (data != null && data.Length > 0)
+                                connection.Write(data, 0, data.Length);
+                        }
+                        catch (Exception ex)
+                        {
+                            Error(ex);
+                        }
+                        finally
+                        {
+                            if (connection != null)
+                                connection.Close();
+                        }
+
+                        if (connection == null) return;
+
+                        Run();
+                    }, null);
             }
-            Run();
+            else
+            {
+                Run();
+            }
             return this;
         }
         public AsyncHttpRequest Url(string url)
