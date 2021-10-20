@@ -1215,27 +1215,6 @@ namespace EntryEngine.Network
         }
     }
 
-    /// <summary>翻页数据模型</summary>
-    public class PagedModel<T>
-    {
-        public int Count;
-        public int Page;
-        public int PageSize;
-        public List<T> Models;
-
-        public PagedModel<U> ChangeModel<U>(Func<T, U> select)
-        {
-            PagedModel<U> ret = new PagedModel<U>();
-            ret.Count = this.Count;
-            ret.Page = this.Page;
-            ret.PageSize = this.PageSize;
-            int count = Models.Count;
-            ret.Models = new List<U>(count);
-            for (int i = 0; i < Models.Count; i++)
-                ret.Models.Add(select(Models[i]));
-            return ret;
-        }
-    }
     /// <summary>内部级联的树状关系，例如分类和二级分类，账号和邀请账号等</summary>
     public abstract class InnerCascade
     {
@@ -1396,6 +1375,28 @@ namespace EntryEngine.Network
         }
     }
 #endif
+
+    /// <summary>翻页数据模型</summary>
+    public class PagedModel<T>
+    {
+        public int Count;
+        public int Page;
+        public int PageSize;
+        public List<T> Models;
+
+        public PagedModel<U> ChangeModel<U>(Func<T, U> select)
+        {
+            PagedModel<U> ret = new PagedModel<U>();
+            ret.Count = this.Count;
+            ret.Page = this.Page;
+            ret.PageSize = this.PageSize;
+            int count = Models.Count;
+            ret.Models = new List<U>(count);
+            for (int i = 0; i < Models.Count; i++)
+                ret.Models.Add(select(Models[i]));
+            return ret;
+        }
+    }
 
     public enum EIndex : byte
     {
