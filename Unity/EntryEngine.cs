@@ -120,7 +120,7 @@ namespace EntryEngine.Unity
 		{
             base._WriteByte(GetWritePath(file), content);
 		}
-        /// <summary>Android可用，Web没试过</summary>
+        /// <summary>Android可用，Web没试过（UnityGate.Start阶段调用会死循环）</summary>
         [Code(ECode.Attention)]
         internal UnityWebRequest Load(bool needGetReadPath, string file)
         {
