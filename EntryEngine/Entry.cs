@@ -5289,7 +5289,11 @@ namespace EntryEngine
         static PipelinePatch()
         {
             // HACK: 防止构造函数被优化掉
-            new PATCH();
+            Patch patch = new Patch();
+            patch.Anchor = default(RECT);
+            patch.ColorBody = default(COLOR);
+            patch.ColorBorder = default(COLOR);
+            patch.Source = default(string);
         }
 
         public override IEnumerable<string> SuffixProcessable
