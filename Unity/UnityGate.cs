@@ -50,5 +50,14 @@ namespace EntryEngine.Unity
             if (Event.current.type == EventType.Repaint)
                 Entry.Draw();
         }
+        private void OnApplicationPause(bool pause)
+        {
+            // 进程缩小后可能不能后台运行，下次切回进程时会一次更新较长时间，应该让时间静止在那一帧的时间
+            if (!pause)
+            {
+                Entry.GameTime.Elapse();
+                Entry.GameTime.Still();
+            }
+        }
     }
 }
