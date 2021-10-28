@@ -943,9 +943,11 @@ namespace EntryEngine.Network
         public ushort ReconnectInterval = 2000;
         /// <summary>等待服务器回应登录数据的时间，单位ms</summary>
         public ushort WaitResponse = 5000;
+        /// <summary>开始连接服务器；是否断线重连</summary>
+        public event Action<bool> OnConnect;
         /// <summary>写入连接数据；是否断线重连；返回null则断开连接</summary>
         public event Func<bool, byte[]> OnConnectData;
-        /// <summary>连接成功，通过返回的数据构建Agent；是否断线重连</summary>
+        /// <summary>连接成功，通过返回的数据构建Agent，之后会给Agent指定Link；是否断线重连；连接；数据</summary>
         public event Func<bool, byte[], Agent> OnConnectSuccess;
         /// <summary>连接失败；是否断线重连，重连次数，返回是否继续重连</summary>
         public event Func<bool, int, bool> OnConnectFault;
@@ -998,6 +1000,9 @@ namespace EntryEngine.Network
                         _LOG.Info("正在尝试断线重连");
                     }
                     connectCount++;
+
+                    if (OnConnect != null)
+                        OnConnect(reconnect);
 
                     #region 连接网络
 
@@ -1072,6 +1077,7 @@ namespace EntryEngine.Network
                                     if (Agent == null)
                                     {
                                         //throw new ArgumentNullException("Agent");
+                                        link.Close();
                                         Close();
                                     }
                                     else
@@ -2276,6 +2282,13 @@ namespace EntryEngine.Network
         {
             this.errCode = code;
             this.errMsg = msg;
+        }
+
+        static HttpError()
+        {
+            var error = new HttpError();
+            error.errCode = 0;
+            error.errMsg = null;
         }
     }
 
