@@ -2820,4 +2820,67 @@ namespace EntryEngine.Serialize
             return (T)Deserialize(buffer, typeof(T), setting, onDeserialize);
         }
     }
+
+    /// <summary>仅对Class对象采用Json格式序列化，方便对象字段扩展</summary>
+    public class ByteWriterJson : ByteWriter
+    {
+        protected override void WriteClassObject(object value, Type type)
+        {
+            // 写入对象的Json数据，以便扩展字段
+            Write(Encoding.UTF8.GetBytes(JsonWriter.Serialize(value, type, this.Setting)));
+        }
+        public static byte[] Serialize(object value)
+        {
+            if (value == null)
+                return null;
+            return Serialize(value, value.GetType(), SerializeSetting.DefaultSetting);
+        }
+        public static byte[] Serialize(object value, Type type)
+        {
+            return Serialize(value, type, SerializeSetting.DefaultSetting);
+        }
+        public static byte[] Serialize(object value, Type type, SerializeSetting setting)
+        {
+            if (value == null || type == null)
+                throw new ArgumentNullException();
+            ByteWriterJson writer = new ByteWriterJson();
+            writer.Setting = setting;
+            writer.WriteObject(value, type);
+            return writer.GetBuffer();
+        }
+    }
+    /// <summary>仅对Class对象采用Json格式反序列化，方便对象字段扩展</summary>
+    public class ByteReaderJson : ByteReader
+    {
+        public ByteReaderJson(byte[] buffer) : base(buffer) { }
+        public ByteReaderJson(byte[] buffer, int offset) : base(buffer, offset) { }
+        protected override object ReadClassObject(Type type)
+        {
+            byte[] json;
+            Read(out json);
+            return JsonReader.Deserialize(Encoding.UTF8.GetString(json), type, this.Setting);
+        }
+        public static object Deserialize(byte[] buffer, Type type)
+        {
+            return Deserialize(buffer, type, SerializeSetting.DefaultSetting);
+        }
+        public static object Deserialize(byte[] buffer, Type type, SerializeSetting setting)
+        {
+            if (buffer == null)
+                return null;
+            if (type == null)
+                throw new ArgumentNullException();
+            ByteReaderJson reader = new ByteReaderJson(buffer);
+            reader.Setting = setting;
+            return reader.ReadObject(type);
+        }
+        public static T Deserialize<T>(byte[] buffer)
+        {
+            return (T)Deserialize(buffer, typeof(T));
+        }
+        public static T Deserialize<T>(byte[] buffer, SerializeSetting setting)
+        {
+            return (T)Deserialize(buffer, typeof(T), setting);
+        }
+    }
 }

@@ -444,6 +444,7 @@ namespace EntryEngine
             return crc;
         }
     }
+    /// <summary>同步是文件IO，异步是网络IO</summary>
     public class IO_NET : _IO.iO
     {
         protected override AsyncReadFile _ReadAsync(string file)

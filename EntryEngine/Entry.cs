@@ -685,6 +685,11 @@ namespace EntryEngine
         }
         protected override void Elapsed(GameTime gameTime)
         {
+            // 程序缩小后可能不能后台运行，下次切回进程时会一次更新较长时间
+            //if (_IPlatform.RunningState != 0)
+            //{
+            //    gameTime.Still();
+            //}
             if (IsFixedTimeStep)
             {
                 TimeSpan time = IPlatform.FrameRate;
@@ -807,6 +812,8 @@ namespace EntryEngine
         bool IsMouseVisible { get; set; }
         /// <summary>当前程序是否激活，激活将更新用户操作</summary>
         bool IsActive { get; }
+        /// <summary>0.正常 / 1.暂停 / 2.继续</summary>
+        //int RunningState { get; }
     }
 
 
