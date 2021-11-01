@@ -918,6 +918,15 @@ namespace EntryBuilder
         {
             public static Type DELEGATE_TYPE = typeof(Delegate);
 
+            public bool IsUseJson;
+            protected string Writer
+            {
+                get { return (IsUseJson ? typeof(ByteWriterJson) : typeof(ByteWriter)).Name; }
+            }
+            protected string Reader
+            {
+                get { return (IsUseJson ? typeof(ByteReaderJson) : typeof(ByteReader)).Name; }
+            }
             public StringBuilder builder
             {
                 get;
@@ -1072,7 +1081,7 @@ namespace EntryBuilder
                         {
                             builder.AppendLine("if (IsCallback) return;");
                             // 参数
-                            builder.AppendLine("ByteWriter __writer = new ByteWriter();");
+                            builder.AppendLine("{0} __writer = new {0}();", Writer);
                             builder.AppendLine("__writer.Write(__id);");
                             builder.AppendLine("__writer.Write((sbyte)0);");
                             foreach (ParameterInfo param in parameters)
@@ -1102,7 +1111,7 @@ namespace EntryBuilder
                         builder.AppendBlock(() =>
                         {
                             builder.AppendLine("if (IsCallback) return;");
-                            builder.AppendLine("ByteWriter __writer = new ByteWriter();");
+                            builder.AppendLine("{0} __writer = new {0}();", Writer);
                             // 协议及参数信息
                             builder.AppendLine("__writer.Write((byte){0});", agent.Protocol);
                             builder.AppendLine("__writer.Write((ushort){0});", item.Key);
@@ -1182,11 +1191,12 @@ namespace EntryBuilder
                         builder.AppendBlock(() =>
                         {
                             builder.AppendLine("if (__link == null) return;");
-                            builder.AppendLine("ByteWriter __writer = new ByteWriter();");
+                            builder.AppendLine("{0} __writer = new {0}();", Writer);
                             builder.AppendLine("if (__WriteAgent != null) __WriteAgent(__writer);");
                             // 协议
                             builder.AppendLine("__writer.Write((byte){0});", agent.Protocol);
-                            builder.AppendLine("__writer.Write((ushort){0});", i);
+                            //builder.AppendLine("__writer.Write((ushort){0});", i);
+                            builder.AppendLine("__writer.Write(\"{0}\");", method.Name);
                             // 回调参数内容
                             if (isDelegate)
                             {
@@ -1245,7 +1255,7 @@ namespace EntryBuilder
                     {
                         builder.AppendLine("this.__Agent = agent;");
                         foreach (var method in call)
-                            builder.AppendLine("AddMethod({0});", method.Name);
+                            builder.AppendLine("AddMethod(\"{0}\", {0});", method.Name);
                     });
                     builder.AppendLine("public {0}(Func<_{1}> agent) : this((_{1})null)", name, type.Name, agent.Protocol);
                     builder.AppendBlock(() =>
@@ -1268,6 +1278,10 @@ namespace EntryBuilder
                         ParameterInfo[] parameters = method.GetParameters();
                         builder.AppendBlock(() =>
                         {
+                            if (IsUseJson)
+                            {
+                                builder.AppendLine("__stream = new ByteReaderJson(__stream.Buffer, __stream.Position);");
+                            }
                             //builder.AppendLine("Timer timer = Timer.StartNew();");    // 统计方法调用次数，可用于分析用户操作
                             builder.AppendLine("var agent = __Agent;");
                             builder.AppendLine("if (__GetAgent != null) { var temp = __GetAgent(); if (temp != null) agent = temp; }");
@@ -1418,7 +1432,7 @@ namespace EntryBuilder
                                     continue;
                                 method = callback[i - offset];
                             }
-                            builder.AppendLine("AddMethod({1}, {0}_{1});", method.Name, i);
+                            builder.AppendLine("AddMethod(\"{0}\", {0}_{1});", method.Name, i);
                         }
                     });
                     if (agent.Callback != null)
@@ -1476,10 +1490,11 @@ namespace EntryBuilder
                             builder.AppendLine("if (Link == null) return null;");
                         else
                             builder.AppendLine("if (Link == null) return;");
-                        builder.AppendLine("ByteWriter __writer = new ByteWriter();");
+                        builder.AppendLine("{0} __writer = new {0}();", Writer);
                         builder.AppendLine("if (__WriteAgent != null) __WriteAgent(__writer);");
                         builder.AppendLine("__writer.Write((byte){0});", agent.Protocol);
-                        builder.AppendLine("__writer.Write((ushort){0});", i);
+                        //builder.AppendLine("__writer.Write((ushort){0});", i);
+                        builder.AppendLine("__writer.Write(\"{0}\");", method.Name);
                         foreach (ParameterInfo param in parameters)
                         {
                             if (hasAsync && param.ParameterType.Is(typeof(Delegate)))
@@ -1545,6 +1560,10 @@ namespace EntryBuilder
                     builder.AppendLine("void {0}_{1}(ByteReader __stream)", method.Name, i);
                     builder.AppendBlock(() =>
                     {
+                        if (IsUseJson)
+                        {
+                            builder.AppendLine("__stream = new ByteReaderJson(__stream.Buffer, __stream.Position);");
+                        }
                         ParameterInfo[] parameters = method.GetParameters();
                         //builder.AppendLine("Timer timer = Timer.StartNew();");    // 统计方法调用次数，可用于分析用户操作
                         if (!idDelegate)
@@ -5394,11 +5413,13 @@ return result;"
             else
                 Console.WriteLine("编译{0}成功 output={1}", solutionDir, outputAssembly);
         }
-        public static void BuildProtocolAgentBinary(string outputClientPath, string outputServerPath, string dllOrWithType)
+        public static void BuildProtocolAgentBinary(string outputClientPath, string outputServerPath, string dllOrWithType, bool isUseJson)
         {
             Action<Type> build = (type) =>
             {
                 ProtocolDefault writer = new ProtocolDefault();
+                if (isUseJson)
+                    writer.IsUseJson = true;
                 writer.Write(type);
 
                 string clientFile = Path.Combine(outputClientPath, type.Name + "Proxy.cs");

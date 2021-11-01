@@ -361,15 +361,15 @@ namespace EntryEngine.Network
             {
                 int position = reader.Position;
                 byte protocol;
-                ushort index;
+                string id;
                 reader.Read(out protocol);
-                reader.Read(out index);
+                reader.Read(out id);
 
                 Stub agent;
                 if (!protocols.TryGetValue(protocol, out agent))
                     throw new NotImplementedException("no procotol: " + protocol);
 
-                agent[index](reader);
+                agent[id](reader);
                 if (position == reader.Position || reader.IsEnd)
                     break;
             }
@@ -378,7 +378,7 @@ namespace EntryEngine.Network
     // be used to generate code
     public abstract class Stub
     {
-        private Dictionary<ushort, Action<ByteReader>> stubs = new Dictionary<ushort, Action<ByteReader>>();
+        private Dictionary<string, Action<ByteReader>> stubs = new Dictionary<string, Action<ByteReader>>();
         protected internal byte Protocol
         {
             get;
@@ -389,13 +389,13 @@ namespace EntryEngine.Network
         {
             get { return ProtocolAgent.Link; }
         }
-        internal Action<ByteReader> this[ushort index]
+        internal Action<ByteReader> this[string id]
         {
             get
             {
                 Action<ByteReader> stub;
-                if (!stubs.TryGetValue(index, out stub))
-                    throw new ArgumentOutOfRangeException(string.Format("protocol: {0} method stub {1} not find!", Protocol, index));
+                if (!stubs.TryGetValue(id, out stub))
+                    throw new ArgumentOutOfRangeException(string.Format("protocol: {0} method stub {1} not find!", Protocol, id));
                 return stub;
             }
         }
@@ -406,11 +406,7 @@ namespace EntryEngine.Network
         {
             this.Protocol = protocol;
         }
-        protected void AddMethod(Action<ByteReader> method)
-        {
-            AddMethod((ushort)stubs.Count, method);
-        }
-        protected void AddMethod(ushort id, Action<ByteReader> method)
+        protected void AddMethod(string id, Action<ByteReader> method)
         {
             if (method == null)
                 throw new ArgumentNullException("method");
