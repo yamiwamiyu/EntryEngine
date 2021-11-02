@@ -57,7 +57,7 @@ namespace EntryEngine.Serialize
 		}
         public void Seek(int position)
         {
-            if (position < 0 || position >= buffer.Length)
+            if (position < 0 || position > buffer.Length)
                 throw new IndexOutOfRangeException();
             this.index = position;
         }

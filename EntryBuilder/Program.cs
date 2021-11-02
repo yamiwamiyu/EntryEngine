@@ -1280,6 +1280,7 @@ namespace EntryBuilder
                         {
                             if (IsUseJson)
                             {
+                                builder.AppendLine("var __temp = __stream;");
                                 builder.AppendLine("__stream = new ByteReaderJson(__stream.Buffer, __stream.Position);");
                             }
                             //builder.AppendLine("Timer timer = Timer.StartNew();");    // 统计方法调用次数，可用于分析用户操作
@@ -1310,6 +1311,11 @@ namespace EntryBuilder
                             // 参数读取赋值
                             foreach (ParameterInfo param in parameters)
                                 builder.AppendLine("__stream.Read(out {0});", param.Name);
+                            // 若修改了读取器，也要让原本的读取器一起读取数据，以让底层的读取结束
+                            if (IsUseJson)
+                            {
+                                builder.AppendLine("__temp.Seek(__stream.Position);");
+                            }
                             // 日志
                             builder.AppendLine("#if DEBUG");
                             builder.AppendFormat("_LOG.Debug(\"{0}", method.Name);
@@ -1562,6 +1568,7 @@ namespace EntryBuilder
                     {
                         if (IsUseJson)
                         {
+                            builder.AppendLine("var __temp = __stream;");
                             builder.AppendLine("__stream = new ByteReaderJson(__stream.Buffer, __stream.Position);");
                         }
                         ParameterInfo[] parameters = method.GetParameters();
@@ -1669,6 +1676,10 @@ namespace EntryBuilder
                                     builder.Append(", ");
                             }
                             builder.AppendLine(");");
+                        }
+                        if (IsUseJson)
+                        {
+                            builder.AppendLine("__temp.Seek(__stream.Position);");
                         }
                         //builder.AppendLine("\t\tStatistic.Add(\"{0}.{1}\", timer.Stop());", flag ? type.Name : agent.Callback.Name, method.Name);
                     });
