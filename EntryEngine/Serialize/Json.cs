@@ -245,533 +245,6 @@ namespace EntryEngine.Serialize
             return writer.Result;
         }
 	}
-    //public class JsonReader : StringReader
-    //{
-    //    enum EJson
-    //    {
-    //        NONE,
-    //        /// <summary>
-    //        /// new object push
-    //        /// </summary>
-    //        CURLY_OPEN,
-    //        /// <summary>
-    //        /// new object pop
-    //        /// </summary>
-    //        CURLY_CLOSE,
-    //        /// <summary>
-    //        /// [
-    //        /// array object push
-    //        /// </summary>
-    //        SQUARED_OPEN,
-    //        /// <summary>
-    //        /// ]
-    //        /// array object pop
-    //        /// </summary>
-    //        SQUARED_CLOSE,
-    //        /// <summary>
-    //        /// ,
-    //        /// object field over
-    //        /// </summary>
-    //        COMMA,
-    //        /// <summary>
-    //        /// Value
-    //        /// </summary>
-    //        VALUE,
-    //    }
-
-    //    private EJson PeekJson
-    //    {
-    //        get
-    //        {
-    //            EJson token = NextJson;
-    //            if (token != EJson.NONE)
-    //                pos--;
-    //            return token;
-    //        }
-    //    }
-    //    private EJson NextJson
-    //    {
-    //        get
-    //        {
-    //            EatWhitespace();
-
-    //            if (Peek() == -1)
-    //                return EJson.NONE;
-
-    //            char c = NextChar;
-    //            switch (c)
-    //            {
-    //                case '{':
-    //                    return EJson.CURLY_OPEN;
-    //                case '}':
-    //                    return EJson.CURLY_CLOSE;
-    //                case '[':
-    //                    return EJson.SQUARED_OPEN;
-    //                case ']':
-    //                    return EJson.SQUARED_CLOSE;
-    //                case ',':
-    //                    return EJson.COMMA;
-    //                case ':':
-    //                    return EJson.VALUE;
-    //                default:
-    //                    return EJson.VALUE;
-    //            }
-    //        }
-    //    }
-
-    //    public JsonReader() : this(null)
-    //    {
-    //    }
-    //    public JsonReader(string content) : base(content)
-    //    {
-    //        WORD_BREAK = " \t\n\r{}[],:\"";
-    //    }
-
-    //    public object ReadValue()
-    //    {
-    //        return ReadByToken(PeekJson);
-    //    }
-    //    private object ReadByToken(EJson token)
-    //    {
-    //        switch (token)
-    //        {
-    //            case EJson.VALUE:
-    //                char c = PeekChar;
-    //                switch (c)
-    //                {
-    //                    case '\"':
-    //                        return ReadString();
-
-    //                    case '0':
-    //                    case '1':
-    //                    case '2':
-    //                    case '3':
-    //                    case '4':
-    //                    case '5':
-    //                    case '6':
-    //                    case '7':
-    //                    case '8':
-    //                    case '9':
-    //                    case '-':
-    //                        return ReadNumber(NextWord);
-
-    //                    default:
-    //                        string word = NextWord;
-    //                        switch (word)
-    //                        {
-    //                            case "true": return true;
-    //                            case "false": return false;
-    //                            case "null": return null;
-    //                            default: throw new NotImplementedException();
-    //                        }
-    //                }
-    //            case EJson.CURLY_OPEN:
-    //                return ReadDictionary();
-    //            case EJson.SQUARED_OPEN:
-    //                return ReadArray();
-    //            default:
-    //                return null;
-    //        }
-    //    }
-    //    private string ReadString()
-    //    {
-    //        StringBuilder s = new StringBuilder();
-    //        char c = PeekChar;
-
-    //        // ditch opening quote
-    //        if (c == '\"')
-    //            Read();
-
-    //        bool parsing = true;
-    //        while (parsing)
-    //        {
-    //            if (Peek() == -1)
-    //            {
-    //                parsing = false;
-    //                break;
-    //            }
-
-    //            c = NextChar;
-    //            switch (c)
-    //            {
-    //                case '"':
-    //                    parsing = false;
-    //                    break;
-    //                case '\\':
-    //                    if (Peek() == -1)
-    //                    {
-    //                        parsing = false;
-    //                        break;
-    //                    }
-
-    //                    c = NextChar;
-    //                    switch (c)
-    //                    {
-    //                        case '"':
-    //                        case '\\':
-    //                        case '/':
-    //                            s.Append(c);
-    //                            break;
-    //                        case 'b':
-    //                            s.Append('\b');
-    //                            break;
-    //                        case 'f':
-    //                            s.Append('\f');
-    //                            break;
-    //                        case 'n':
-    //                            s.Append('\n');
-    //                            break;
-    //                        case 'r':
-    //                            s.Append('\r');
-    //                            break;
-    //                        case 't':
-    //                            s.Append('\t');
-    //                            break;
-    //                        case 'u':
-    //                            //var hex = new StringBuilder();
-
-    //                            //for (int i = 0; i < 4; i++)
-    //                            //{
-    //                            //    hex.Append(NextChar);
-    //                            //}
-
-    //                            //s.Append((char)Convert.ToInt32(hex.ToString(), 16));
-    //                            s.Append(ConvertString(NextChar, NextChar, NextChar, NextChar));
-    //                            break;
-    //                    }
-    //                    break;
-    //                default:
-    //                    s.Append(c);
-    //                    break;
-    //            }
-    //        }
-
-    //        return s.ToString();
-    //    }
-    //    private object ReadNumber(string number)
-    //    {
-    //        if (number.Contains('.'))
-    //        {
-    //            double parsedDouble;
-    //            double.TryParse(number, out parsedDouble);
-    //            return parsedDouble;
-    //        }
-    //        else
-    //        {
-    //            long parsedLong;
-    //            long.TryParse(number, out parsedLong);
-    //            return parsedLong;
-    //        }
-    //    }
-    //    private List<object> ReadArray()
-    //    {
-    //        List<object> array = new List<object>();
-
-    //        // [
-    //        Read();
-
-    //        while (true)
-    //        {
-    //            var nextToken = PeekJson;
-    //            switch (nextToken)
-    //            {
-    //                case EJson.COMMA:
-    //                    Read();
-    //                    continue;
-
-    //                case EJson.SQUARED_CLOSE:
-    //                    Read();
-    //                    return array;
-
-    //                default:
-    //                    object value = ReadByToken(nextToken);
-    //                    array.Add(value);
-    //                    break;
-    //            }
-    //        }
-    //    }
-    //    public Dictionary<string, object> ReadDictionary()
-    //    {
-    //        Dictionary<string, object> table = new Dictionary<string, object>();
-
-    //        // ditch opening brace
-    //        Read();
-
-    //        while (true)
-    //        {
-    //            switch (PeekJson)
-    //            {
-    //                case EJson.NONE:
-    //                    return null;
-    //                case EJson.COMMA:
-    //                    Read();
-    //                    continue;
-    //                case EJson.CURLY_CLOSE:
-    //                    Read();
-    //                    return table;
-    //                default:
-    //                    // name
-    //                    string name = ReadString();
-
-    //                    // :
-    //                    Read();
-
-    //                    // value
-    //                    table[name] = ReadValue();
-    //                    break;
-    //            }
-    //        }
-    //    }
-    //    public override StringTable ReadTable()
-    //    {
-    //        List<Dictionary<string, string>> table = new List<Dictionary<string, string>>();
-
-    //        var parsing = true;
-    //        while (parsing)
-    //        {
-    //            EJson nextToken = PeekJson;
-
-    //            switch (nextToken)
-    //            {
-    //                case EJson.COMMA:
-    //                    Read();
-    //                    continue;
-
-    //                case EJson.SQUARED_CLOSE:
-    //                    parsing = false;
-    //                    break;
-
-    //                default:
-    //                    Dictionary<string, string> dic = new Dictionary<string, string>();
-
-    //                    // ditch opening brace
-    //                    Read();
-
-    //                    bool readDic = true;
-    //                    while (readDic)
-    //                    {
-    //                        switch (NextJson)
-    //                        {
-    //                            case EJson.NONE:
-    //                                return null;
-    //                            case EJson.COMMA:
-    //                                continue;
-    //                            case EJson.CURLY_CLOSE:
-    //                                readDic = false;
-    //                                break;
-    //                            default:
-    //                                // name
-    //                                string name = ReadString();
-    //                                if (name == null)
-    //                                {
-    //                                    return null;
-    //                                }
-
-    //                                // :
-    //                                if (NextJson != EJson.VALUE)
-    //                                {
-    //                                    return null;
-    //                                }
-
-    //                                // value
-    //                                char c = PeekChar;
-    //                                switch (c)
-    //                                {
-    //                                    case '\"':
-    //                                        dic[name] = ReadString();
-    //                                        break;
-
-    //                                    default:
-    //                                        string word = NextWord;
-    //                                        if (word == _XML.NULL || word == _XML.NULL2)
-    //                                            dic[name] = null;
-    //                                        else
-    //                                            dic[name] = string.Format("\"{0}\"", word);
-    //                                        break;
-    //                                }
-    //                                break;
-    //                        }
-    //                    }
-
-    //                    table.Add(dic);
-    //                    break;
-    //            }
-    //        }
-
-    //        return new StringTable(table);
-    //    }
-    //    public override object ReadObject(Type type)
-    //    {
-    //        if (type.IsCustomType())
-    //        {
-    //            return XmlReader.ReadObject(type, ReadToNode(), Setting);
-    //        }
-    //        else
-    //        {
-    //            return ReadValue();
-    //        }
-    //    }
-    //    public override XmlNode ReadToNode()
-    //    {
-    //        if (str == null)
-    //            throw new ArgumentNullException("read string can not be null");
-
-    //        //if (Setting.AutoType)
-    //        //    ReadType();
-
-    //        XmlNode root = XmlNode.CreateRoot();
-    //        while (pos < len)
-    //        {
-    //            ReadNode(root, null);
-    //        }
-    //        return root;
-    //    }
-    //    private XmlNode ReadNode(XmlNode parent, List<XmlNode> roots)
-    //    {
-    //        XmlNode node = null;
-    //        bool isArray = false;
-    //        while (true)
-    //        {
-    //            EJson token = NextJson;
-    //            if (token == EJson.NONE)
-    //                return node;
-
-    //            bool flag = true;
-    //            while (flag)
-    //            {
-    //                switch (token)
-    //                {
-    //                    case EJson.CURLY_OPEN:
-    //                        // 防止遇到"{}"的内容
-    //                        token = PeekJson;
-    //                        if (token == EJson.CURLY_CLOSE)
-    //                            break;
-
-    //                        isArray = false;
-    //                        node = new XmlNode();
-    //                        if (parent != null)
-    //                            parent.Add(node);
-    //                        else
-    //                            roots.Add(node);
-
-    //                        node.Name = ReadString();
-
-    //                        Read();
-
-    //                        //goto case EJson.VALUE;
-    //                        token = EJson.VALUE;
-    //                        continue;
-
-    //                    case EJson.SQUARED_OPEN:
-    //                        isArray = true;
-    //                        token = PeekJson;
-    //                        // {
-    //                        if (token == EJson.CURLY_CLOSE || token == EJson.SQUARED_CLOSE)
-    //                        {
-    //                            break;
-    //                        } // }
-    //                        node = new XmlNode();
-    //                        node.Name = _XML.ARRAY_NODE;
-    //                        if (parent != null)
-    //                            parent.Add(node);
-    //                        else
-    //                            roots.Add(node);
-    //                        //goto case EJson.VALUE;
-    //                        token = EJson.VALUE;
-    //                        continue;
-
-    //                    case EJson.COMMA:
-    //                        if (isArray)
-    //                        {
-    //                            //goto case EJson.SQUARED_OPEN;
-    //                            token = EJson.SQUARED_OPEN;
-    //                            continue;
-    //                        }
-    //                        else
-    //                        {
-    //                            //goto case EJson.CURLY_OPEN;
-    //                            token = EJson.CURLY_OPEN;
-    //                            continue;
-    //                        }
-
-    //                    case EJson.VALUE:
-    //                        char c = PeekChar;
-    //                        switch (c)
-    //                        {
-    //                            case '\"':
-    //                                node.Value = ReadString();
-    //                                break;
-
-    //                            case '{': // }
-    //                            case '[':
-    //                                ReadNode(node, roots);
-    //                                break;
-
-    //                            default:
-    //                                string word = NextWord;
-    //                                if (word == _XML.NULL || word == _XML.NULL2)
-    //                                    node.Value = null;
-    //                                else
-    //                                    node.Value = word;
-    //                                break;
-    //                        }
-    //                        break;
-
-    //                    default:
-    //                        return node;
-    //                }
-    //                // 打破死循环
-    //                break;
-    //            }
-    //        }
-    //    }
-
-    //    [Obsolete("To use JsonReader.Deserialize")]
-    //    public static T ReadJson<T>(string json)
-    //    {
-    //        if (string.IsNullOrEmpty(json))
-    //            return default(T);
-    //        else
-    //            return new JsonReader(json).ReadObject<T>();
-    //    }
-    //    [Obsolete("To use JsonReader.Deserialize")]
-    //    public static void ReadJson<T>(string json, out T value)
-    //    {
-    //        value = ReadJson<T>(json);
-    //    }
-
-    //    private static char ConvertString(char c1, char c2, char c3, char c4)
-    //    {
-    //        return (char)((CharToInt(c1) << 12) | (CharToInt(c2) << 8) | (CharToInt(c3) << 4) | CharToInt(c4));
-    //    }
-    //    internal static char CharToInt(char value)
-    //    {
-    //        return (char)(value <= '9' ? value - '0' :
-    //            (value >= 'a' ? value - 'a' : value - 'A') + 10);
-    //    }
-    //    public static object Deserialize(string buffer, Type type)
-    //    {
-    //        return Deserialize(buffer, type, SerializeSetting.DefaultSetting);
-    //    }
-    //    public static object Deserialize(string buffer, Type type, SerializeSetting setting)
-    //    {
-    //        if (string.IsNullOrEmpty(buffer))
-    //            return null;
-    //        if (type == null)
-    //            throw new ArgumentNullException();
-    //        JsonReader reader = new JsonReader(buffer);
-    //        reader.Setting = setting;
-    //        return reader.ReadObject(type);
-    //    }
-    //    public static T Deserialize<T>(string buffer)
-    //    {
-    //        return (T)Deserialize(buffer, typeof(T));
-    //    }
-    //    public static T Deserialize<T>(string buffer, SerializeSetting setting)
-    //    {
-    //        return (T)Deserialize(buffer, typeof(T), setting);
-    //    }
-    //}
     public class JsonReader : StringReader
     {
         enum EJson
@@ -997,6 +470,26 @@ namespace EntryEngine.Serialize
             Read();
             EatWhitespace();
 
+            bool isAbstract = PeekChar == '\"' && pos < len && str[pos + 1] == ABSTRACT_CHAR;
+            if (isAbstract)
+            {
+                // #类型SimpleName
+                string absType = ReadString();
+                type = _SERIALIZE.LoadSimpleAQName(absType.Substring(ABSTRACT_TYPE.Length));
+
+                EatWhitespace();
+                if (PeekChar != ':')
+                    throw new FormatException("Key后缺少符号':'");
+                Read();
+                EatWhitespace();
+                if (PeekChar != '{') // }
+                {
+                    if (ReadNextString() == "null") return null;
+                    throw new FormatException("对象缺少'{'"); // }
+                }
+                Read();
+            }
+
             object obj;
             if (isStatic) obj = null;
             else obj = Activator.CreateInstance(type);
@@ -1021,28 +514,18 @@ namespace EntryEngine.Serialize
                     throw new FormatException("Key后缺少符号':'");
                 Read();
                 EatWhitespace();
+
                 object value = null;
-                if (key.StartsWith(ABSTRACT_TYPE))
+                IVariable variable;
+                if (variables.TryGetValue(key, out variable))
                 {
-                    // #类型SimpleName
-                    //obj = Activator.CreateInstance(_SERIALIZE.LoadSimpleAQName(key));
-                    if (PeekChar != '{') // }
-                        throw new FormatException("抽象类型后的值缺少'{'"); // }
-                    return ReadObject(_SERIALIZE.LoadSimpleAQName(key.Substring(ABSTRACT_TYPE.Length)));
+                    value = ReadObject(variable.Type);
+                    variable.SetValue(value);
                 }
                 else
                 {
-                    IVariable variable;
-                    if (variables.TryGetValue(key, out variable))
-                    {
-                        value = ReadObject(variable.Type);
-                        variable.SetValue(value);
-                    }
-                    else
-                    {
-                        // 消耗掉值
-                        ReadValue();
-                    }
+                    // 消耗掉值
+                    ReadValue();
                 }
 
                 EatWhitespace();
@@ -1065,6 +548,15 @@ namespace EntryEngine.Serialize
                         // {
                         throw new FormatException("对象缺少'}' 或 属性间缺少','");
                 }
+            }
+
+            if (isAbstract)
+            {
+                EatWhitespace();
+                // { {
+                if (PeekChar != '}')
+                    throw new FormatException("抽象类型实例后缺少'}'");
+                Read();
             }
 
             return obj;

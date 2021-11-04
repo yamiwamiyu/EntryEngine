@@ -662,6 +662,7 @@ namespace EntryEngine.Serialize
 	public abstract class Serializable
 	{
         internal const string ABSTRACT_TYPE = "#";
+        internal const char ABSTRACT_CHAR = '#';
 		public SerializeSetting Setting = SerializeSetting.DefaultSetting;
 	}
 	public abstract class StringWriter : Serializable, IWriter
