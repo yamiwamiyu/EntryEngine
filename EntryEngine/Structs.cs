@@ -179,7 +179,7 @@ namespace EntryEngine
             if (obj is VECTOR2)
             {
                 VECTOR2 other = (VECTOR2)obj;
-                result = this.X == other.X || this.Y == other.Y;
+                result = this.X == other.X && this.Y == other.Y;
             }
             return result;
         }

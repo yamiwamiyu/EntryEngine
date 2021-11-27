@@ -241,8 +241,8 @@ namespace EditorUI
                 ForParentPriority(EditingScene, null,
                     element =>
                     {
-                        //if (element.IsVisible)
-						spriteBatch.Draw(patchViewportElementBorder, element.ViewClip, GRAPHICS.NullSource, C.ColorBorder);
+                        if (element.IsVisible)
+						    spriteBatch.Draw(patchViewportElementBorder, element.ViewClip, GRAPHICS.NullSource, C.ColorBorder);
                     });
             }
 

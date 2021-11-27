@@ -3217,6 +3217,12 @@ namespace EntryEngine
         {
             coroutines.Add(coroutine);
         }
+        public COROUTINE Add(ICoroutine coroutine)
+        {
+            var add = new COROUTINE(coroutine);
+            coroutines.Add(add);
+            return add;
+        }
         public COROUTINE Add(IEnumerator<ICoroutine> coroutine)
         {
             var add = new COROUTINE(coroutine);

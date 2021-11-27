@@ -54,7 +54,9 @@ namespace EntryEditor
             set
             {
                 if (variable == null || object.Equals(VariableValue, value))
-                    //if (variable == null || VariableValue.Equals(value))
+                //if (variable == null || 
+                //    ((VariableValue != null && VariableValue.Equals(value))
+                //    || (value != null && value.Equals(VariableValue))))
                     return;
                 variable.SetValue(value);
                 SetValue();
@@ -1352,6 +1354,7 @@ namespace EntryEditor
                     return null;
 
                 var value = variable.GetValue();
+                //EditorAllObject all = new EditorAllObject(types, !variable.Type.IsValueType);
                 EditorAllObject all = new EditorAllObject(types, true);
                 if (!all.SingleType && value == null)
                     return all;
