@@ -198,7 +198,14 @@ namespace EntryEngine.UI
 
         public static T Show<T>() where T : UIScene, new()
         {
-            SMask gray = Entry.Instance.ShowDialogScene<SMask>(EState.Dialog);
+            SMask gray;
+            if (Entry.Instance.GetSceneOrCreate<SMask>().IsInStage)
+            {
+                gray = new SMask();
+                Entry.Instance.ShowDialogScene(gray, EState.Dialog);
+            }
+            else
+                gray = Entry.Instance.ShowDialogScene<SMask>(EState.Dialog);
             T scene = Entry.Instance.ShowDialogScene<T>(EState.None);
             gray.Scene = scene;
             return scene;
