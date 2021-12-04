@@ -157,7 +157,7 @@ static class IManagerCallCallbackProxy
         ByteWriter __writer = new ByteWriter();
         if (__WriteAgent != null) __WriteAgent(__writer);
         __writer.Write((byte)1);
-        __writer.Write((ushort)0);
+        __writer.Write("New");
         __writer.WriteBytes(data, 0, position);
         __link.Write(__writer.Buffer, 0, __writer.Position);
     }
@@ -167,7 +167,7 @@ static class IManagerCallCallbackProxy
         ByteWriter __writer = new ByteWriter();
         if (__WriteAgent != null) __WriteAgent(__writer);
         __writer.Write((byte)1);
-        __writer.Write((ushort)1);
+        __writer.Write("Delete");
         __writer.WriteBytes(data, 0, position);
         __link.Write(__writer.Buffer, 0, __writer.Position);
     }
@@ -177,7 +177,7 @@ static class IManagerCallCallbackProxy
         ByteWriter __writer = new ByteWriter();
         if (__WriteAgent != null) __WriteAgent(__writer);
         __writer.Write((byte)1);
-        __writer.Write((ushort)3);
+        __writer.Write("Update");
         __writer.WriteBytes(data, 0, position);
         __link.Write(__writer.Buffer, 0, __writer.Position);
     }
@@ -191,16 +191,16 @@ class IManagerCallStub : Stub
     public IManagerCallStub(_IManagerCall agent) : base(1)
     {
         this.__Agent = agent;
-        AddMethod(New);
-        AddMethod(Delete);
-        AddMethod(Launch);
-        AddMethod(Update);
-        AddMethod(Stop);
-        AddMethod(CallCommand);
-        AddMethod(UpdateSVN);
-        AddMethod(ServiceTypeUpdate);
-        AddMethod(SetLaunchCommand);
-        AddMethod(UpdateLauncher);
+        AddMethod("New", New);
+        AddMethod("Delete", Delete);
+        AddMethod("Launch", Launch);
+        AddMethod("Update", Update);
+        AddMethod("Stop", Stop);
+        AddMethod("CallCommand", CallCommand);
+        AddMethod("UpdateSVN", UpdateSVN);
+        AddMethod("ServiceTypeUpdate", ServiceTypeUpdate);
+        AddMethod("SetLaunchCommand", SetLaunchCommand);
+        AddMethod("UpdateLauncher", UpdateLauncher);
     }
     public IManagerCallStub(Func<_IManagerCall> agent) : this((_IManagerCall)null)
     {

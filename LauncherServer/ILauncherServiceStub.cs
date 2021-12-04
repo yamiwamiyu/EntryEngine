@@ -29,12 +29,12 @@ class ILauncherServiceStub : Stub
     public ILauncherServiceStub(_ILauncherService agent) : base(0)
     {
         this.__Agent = agent;
-        AddMethod(PushServices);
-        AddMethod(RevisionUpdate);
-        AddMethod(StatusUpdate);
-        AddMethod(ServerStatusStatistic);
-        AddMethod(Log);
-        AddMethod(LogServer);
+        AddMethod("PushServices", PushServices);
+        AddMethod("RevisionUpdate", RevisionUpdate);
+        AddMethod("StatusUpdate", StatusUpdate);
+        AddMethod("ServerStatusStatistic", ServerStatusStatistic);
+        AddMethod("Log", Log);
+        AddMethod("LogServer", LogServer);
     }
     public ILauncherServiceStub(Func<_ILauncherService> agent) : this((_ILauncherService)null)
     {

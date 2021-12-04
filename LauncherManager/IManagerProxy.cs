@@ -15,20 +15,20 @@ class IManagerProxy : StubClientAsync
     public IManagerProxy()
     {
         this.Protocol = 101;
-        AddMethod(0, NewServiceType_0);
-        AddMethod(1, ModifyServiceType_1);
-        AddMethod(2, OnGetServers_2);
-        AddMethod(3, OnGetServiceTypes_3);
-        AddMethod(4, OnGetServices_4);
-        AddMethod(5, OnServiceUpdate_5);
-        AddMethod(6, OnRevisionUpdate_6);
-        AddMethod(7, OnStatusUpdate_7);
-        AddMethod(8, OnGetManagers_8);
-        AddMethod(9, OnLoginAgain_9);
-        AddMethod(10, OnGetLog_10);
-        AddMethod(11, OnGetLogRepeat_11);
-        AddMethod(12, OnLog_12);
-        AddMethod(15, GetServerStatusStatistic_15);
+        AddMethod("NewServiceType", NewServiceType_0);
+        AddMethod("ModifyServiceType", ModifyServiceType_1);
+        AddMethod("OnGetServers", OnGetServers_2);
+        AddMethod("OnGetServiceTypes", OnGetServiceTypes_3);
+        AddMethod("OnGetServices", OnGetServices_4);
+        AddMethod("OnServiceUpdate", OnServiceUpdate_5);
+        AddMethod("OnRevisionUpdate", OnRevisionUpdate_6);
+        AddMethod("OnStatusUpdate", OnStatusUpdate_7);
+        AddMethod("OnGetManagers", OnGetManagers_8);
+        AddMethod("OnLoginAgain", OnLoginAgain_9);
+        AddMethod("OnGetLog", OnGetLog_10);
+        AddMethod("OnGetLogRepeat", OnGetLogRepeat_11);
+        AddMethod("OnLog", OnLog_12);
+        AddMethod("GetServerStatusStatistic", GetServerStatusStatistic_15);
     }
     public IManagerProxy(LauncherManagerProtocol.IManagerCallback agent) : this()
     {
@@ -49,7 +49,7 @@ class IManagerProxy : StubClientAsync
         ByteWriter __writer = new ByteWriter();
         if (__WriteAgent != null) __WriteAgent(__writer);
         __writer.Write((byte)101);
-        __writer.Write((ushort)0);
+        __writer.Write("NewServiceType");
         __writer.Write(type);
         var __async = Push(callback);
         if (__async == null) return null;
@@ -66,7 +66,7 @@ class IManagerProxy : StubClientAsync
         ByteWriter __writer = new ByteWriter();
         if (__WriteAgent != null) __WriteAgent(__writer);
         __writer.Write((byte)101);
-        __writer.Write((ushort)1);
+        __writer.Write("ModifyServiceType");
         __writer.Write(name);
         __writer.Write(type);
         var __async = Push(callback);
@@ -84,7 +84,7 @@ class IManagerProxy : StubClientAsync
         ByteWriter __writer = new ByteWriter();
         if (__WriteAgent != null) __WriteAgent(__writer);
         __writer.Write((byte)101);
-        __writer.Write((ushort)2);
+        __writer.Write("DeleteServiceType");
         __writer.Write(name);
         #if DEBUG
         _LOG.Debug("DeleteServiceType({0} bytes) name: {1}", __writer.Position, name);
@@ -97,7 +97,7 @@ class IManagerProxy : StubClientAsync
         ByteWriter __writer = new ByteWriter();
         if (__WriteAgent != null) __WriteAgent(__writer);
         __writer.Write((byte)101);
-        __writer.Write((ushort)3);
+        __writer.Write("UpdateSVN");
         #if DEBUG
         _LOG.Debug("UpdateSVN({0} bytes)", __writer.Position);
         #endif
@@ -109,7 +109,7 @@ class IManagerProxy : StubClientAsync
         ByteWriter __writer = new ByteWriter();
         if (__WriteAgent != null) __WriteAgent(__writer);
         __writer.Write((byte)101);
-        __writer.Write((ushort)4);
+        __writer.Write("GetServices");
         #if DEBUG
         _LOG.Debug("GetServices({0} bytes)", __writer.Position);
         #endif
@@ -121,7 +121,7 @@ class IManagerProxy : StubClientAsync
         ByteWriter __writer = new ByteWriter();
         if (__WriteAgent != null) __WriteAgent(__writer);
         __writer.Write((byte)101);
-        __writer.Write((ushort)5);
+        __writer.Write("GetServers");
         #if DEBUG
         _LOG.Debug("GetServers({0} bytes)", __writer.Position);
         #endif
@@ -133,7 +133,7 @@ class IManagerProxy : StubClientAsync
         ByteWriter __writer = new ByteWriter();
         if (__WriteAgent != null) __WriteAgent(__writer);
         __writer.Write((byte)101);
-        __writer.Write((ushort)6);
+        __writer.Write("NewService");
         __writer.Write(serverID);
         __writer.Write(serviceType);
         __writer.Write(name);
@@ -149,7 +149,7 @@ class IManagerProxy : StubClientAsync
         ByteWriter __writer = new ByteWriter();
         if (__WriteAgent != null) __WriteAgent(__writer);
         __writer.Write((byte)101);
-        __writer.Write((ushort)7);
+        __writer.Write("SetServiceLaunchCommand");
         __writer.Write(serviceName);
         __writer.Write(command);
         #if DEBUG
@@ -163,7 +163,7 @@ class IManagerProxy : StubClientAsync
         ByteWriter __writer = new ByteWriter();
         if (__WriteAgent != null) __WriteAgent(__writer);
         __writer.Write((byte)101);
-        __writer.Write((ushort)8);
+        __writer.Write("CallCommand");
         __writer.Write(serviceName);
         __writer.Write(command);
         #if DEBUG
@@ -177,7 +177,7 @@ class IManagerProxy : StubClientAsync
         ByteWriter __writer = new ByteWriter();
         if (__WriteAgent != null) __WriteAgent(__writer);
         __writer.Write((byte)101);
-        __writer.Write((ushort)9);
+        __writer.Write("DeleteService");
         __writer.Write(serviceName);
         #if DEBUG
         _LOG.Debug("DeleteService({0} bytes) serviceName: {1}", __writer.Position, serviceName);
@@ -190,7 +190,7 @@ class IManagerProxy : StubClientAsync
         ByteWriter __writer = new ByteWriter();
         if (__WriteAgent != null) __WriteAgent(__writer);
         __writer.Write((byte)101);
-        __writer.Write((ushort)10);
+        __writer.Write("Launch");
         __writer.Write(name);
         #if DEBUG
         _LOG.Debug("Launch({0} bytes) name: {1}", __writer.Position, name);
@@ -203,7 +203,7 @@ class IManagerProxy : StubClientAsync
         ByteWriter __writer = new ByteWriter();
         if (__WriteAgent != null) __WriteAgent(__writer);
         __writer.Write((byte)101);
-        __writer.Write((ushort)11);
+        __writer.Write("Update");
         __writer.Write(name);
         #if DEBUG
         _LOG.Debug("Update({0} bytes) name: {1}", __writer.Position, name);
@@ -216,7 +216,7 @@ class IManagerProxy : StubClientAsync
         ByteWriter __writer = new ByteWriter();
         if (__WriteAgent != null) __WriteAgent(__writer);
         __writer.Write((byte)101);
-        __writer.Write((ushort)12);
+        __writer.Write("Stop");
         __writer.Write(name);
         #if DEBUG
         _LOG.Debug("Stop({0} bytes) name: {1}", __writer.Position, name);
@@ -229,7 +229,7 @@ class IManagerProxy : StubClientAsync
         ByteWriter __writer = new ByteWriter();
         if (__WriteAgent != null) __WriteAgent(__writer);
         __writer.Write((byte)101);
-        __writer.Write((ushort)13);
+        __writer.Write("NewManager");
         __writer.Write(manager);
         #if DEBUG
         _LOG.Debug("NewManager({0} bytes) manager: {1}", __writer.Position, JsonWriter.Serialize(manager));
@@ -242,7 +242,7 @@ class IManagerProxy : StubClientAsync
         ByteWriter __writer = new ByteWriter();
         if (__WriteAgent != null) __WriteAgent(__writer);
         __writer.Write((byte)101);
-        __writer.Write((ushort)14);
+        __writer.Write("DeleteManager");
         __writer.Write(name);
         #if DEBUG
         _LOG.Debug("DeleteManager({0} bytes) name: {1}", __writer.Position, name);
@@ -255,7 +255,7 @@ class IManagerProxy : StubClientAsync
         ByteWriter __writer = new ByteWriter();
         if (__WriteAgent != null) __WriteAgent(__writer);
         __writer.Write((byte)101);
-        __writer.Write((ushort)15);
+        __writer.Write("GetServerStatusStatistic");
         __writer.Write(serverID);
         var __async = Push(callback);
         if (__async == null) return null;
@@ -272,7 +272,7 @@ class IManagerProxy : StubClientAsync
         ByteWriter __writer = new ByteWriter();
         if (__WriteAgent != null) __WriteAgent(__writer);
         __writer.Write((byte)101);
-        __writer.Write((ushort)16);
+        __writer.Write("GetLog");
         __writer.Write(name);
         __writer.Write(start);
         __writer.Write(end);
@@ -292,7 +292,7 @@ class IManagerProxy : StubClientAsync
         ByteWriter __writer = new ByteWriter();
         if (__WriteAgent != null) __WriteAgent(__writer);
         __writer.Write((byte)101);
-        __writer.Write((ushort)17);
+        __writer.Write("GroupLog");
         __writer.Write(name);
         __writer.Write(start);
         __writer.Write(end);
@@ -310,7 +310,7 @@ class IManagerProxy : StubClientAsync
         ByteWriter __writer = new ByteWriter();
         if (__WriteAgent != null) __WriteAgent(__writer);
         __writer.Write((byte)101);
-        __writer.Write((ushort)18);
+        __writer.Write("GetLogRepeat");
         __writer.Write(index);
         #if DEBUG
         _LOG.Debug("GetLogRepeat({0} bytes) index: {1}", __writer.Position, index);
@@ -323,7 +323,7 @@ class IManagerProxy : StubClientAsync
         ByteWriter __writer = new ByteWriter();
         if (__WriteAgent != null) __WriteAgent(__writer);
         __writer.Write((byte)101);
-        __writer.Write((ushort)19);
+        __writer.Write("FindContext");
         __writer.Write(index);
         __writer.Write(start);
         __writer.Write(end);
@@ -342,7 +342,7 @@ class IManagerProxy : StubClientAsync
         ByteWriter __writer = new ByteWriter();
         if (__WriteAgent != null) __WriteAgent(__writer);
         __writer.Write((byte)101);
-        __writer.Write((ushort)20);
+        __writer.Write("UpdateManager");
         #if DEBUG
         _LOG.Debug("UpdateManager({0} bytes)", __writer.Position);
         #endif

@@ -20,7 +20,7 @@ class ILauncherServiceProxy : StubClientAsync, ILauncherService
         ByteWriter __writer = new ByteWriter();
         if (__WriteAgent != null) __WriteAgent(__writer);
         __writer.Write((byte)0);
-        __writer.Write((ushort)0);
+        __writer.Write("PushServices");
         __writer.Write(services);
         #if DEBUG
         _LOG.Debug("PushServices({0} bytes) services: {1}", __writer.Position, JsonWriter.Serialize(services));
@@ -33,7 +33,7 @@ class ILauncherServiceProxy : StubClientAsync, ILauncherService
         ByteWriter __writer = new ByteWriter();
         if (__WriteAgent != null) __WriteAgent(__writer);
         __writer.Write((byte)0);
-        __writer.Write((ushort)1);
+        __writer.Write("RevisionUpdate");
         __writer.Write(revision);
         #if DEBUG
         _LOG.Debug("RevisionUpdate({0} bytes) revision: {1}", __writer.Position, JsonWriter.Serialize(revision));
@@ -46,7 +46,7 @@ class ILauncherServiceProxy : StubClientAsync, ILauncherService
         ByteWriter __writer = new ByteWriter();
         if (__WriteAgent != null) __WriteAgent(__writer);
         __writer.Write((byte)0);
-        __writer.Write((ushort)2);
+        __writer.Write("StatusUpdate");
         __writer.Write(name);
         __writer.Write(status);
         __writer.Write(time);
@@ -61,7 +61,7 @@ class ILauncherServiceProxy : StubClientAsync, ILauncherService
         ByteWriter __writer = new ByteWriter();
         if (__WriteAgent != null) __WriteAgent(__writer);
         __writer.Write((byte)0);
-        __writer.Write((ushort)3);
+        __writer.Write("ServerStatusStatistic");
         __writer.Write(data);
         #if DEBUG
         _LOG.Debug("ServerStatusStatistic({0} bytes) data: {1}", __writer.Position, JsonWriter.Serialize(data));
@@ -74,7 +74,7 @@ class ILauncherServiceProxy : StubClientAsync, ILauncherService
         ByteWriter __writer = new ByteWriter();
         if (__WriteAgent != null) __WriteAgent(__writer);
         __writer.Write((byte)0);
-        __writer.Write((ushort)4);
+        __writer.Write("Log");
         __writer.Write(name);
         __writer.Write(record);
         #if DEBUG
@@ -88,7 +88,7 @@ class ILauncherServiceProxy : StubClientAsync, ILauncherService
         ByteWriter __writer = new ByteWriter();
         if (__WriteAgent != null) __WriteAgent(__writer);
         __writer.Write((byte)0);
-        __writer.Write((ushort)5);
+        __writer.Write("LogServer");
         __writer.Write(name);
         __writer.Write(record);
         #if DEBUG

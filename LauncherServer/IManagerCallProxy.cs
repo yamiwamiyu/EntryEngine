@@ -12,9 +12,9 @@ class IManagerCallProxy : StubClientAsync
     public IManagerCallProxy()
     {
         this.Protocol = 1;
-        AddMethod(0, New_0);
-        AddMethod(1, Delete_1);
-        AddMethod(3, Update_3);
+        AddMethod("New", New_0);
+        AddMethod("Delete", Delete_1);
+        AddMethod("Update", Update_3);
     }
     
     public StubClientAsync.AsyncWaitCallback New(LauncherProtocolStructure.ServiceType serviceType, string name, System.Action<LauncherProtocolStructure.Service> callback)
@@ -23,7 +23,7 @@ class IManagerCallProxy : StubClientAsync
         ByteWriter __writer = new ByteWriter();
         if (__WriteAgent != null) __WriteAgent(__writer);
         __writer.Write((byte)1);
-        __writer.Write((ushort)0);
+        __writer.Write("New");
         __writer.Write(serviceType);
         __writer.Write(name);
         var __async = Push(callback);
@@ -41,7 +41,7 @@ class IManagerCallProxy : StubClientAsync
         ByteWriter __writer = new ByteWriter();
         if (__WriteAgent != null) __WriteAgent(__writer);
         __writer.Write((byte)1);
-        __writer.Write((ushort)1);
+        __writer.Write("Delete");
         __writer.Write(name);
         var __async = Push(callback);
         if (__async == null) return null;
@@ -58,7 +58,7 @@ class IManagerCallProxy : StubClientAsync
         ByteWriter __writer = new ByteWriter();
         if (__WriteAgent != null) __WriteAgent(__writer);
         __writer.Write((byte)1);
-        __writer.Write((ushort)2);
+        __writer.Write("Launch");
         __writer.Write(name);
         #if DEBUG
         _LOG.Debug("Launch({0} bytes) name: {1}", __writer.Position, name);
@@ -71,7 +71,7 @@ class IManagerCallProxy : StubClientAsync
         ByteWriter __writer = new ByteWriter();
         if (__WriteAgent != null) __WriteAgent(__writer);
         __writer.Write((byte)1);
-        __writer.Write((ushort)3);
+        __writer.Write("Update");
         __writer.Write(name);
         var __async = Push(callback);
         if (__async == null) return null;
@@ -88,7 +88,7 @@ class IManagerCallProxy : StubClientAsync
         ByteWriter __writer = new ByteWriter();
         if (__WriteAgent != null) __WriteAgent(__writer);
         __writer.Write((byte)1);
-        __writer.Write((ushort)4);
+        __writer.Write("Stop");
         __writer.Write(name);
         #if DEBUG
         _LOG.Debug("Stop({0} bytes) name: {1}", __writer.Position, name);
@@ -101,7 +101,7 @@ class IManagerCallProxy : StubClientAsync
         ByteWriter __writer = new ByteWriter();
         if (__WriteAgent != null) __WriteAgent(__writer);
         __writer.Write((byte)1);
-        __writer.Write((ushort)5);
+        __writer.Write("CallCommand");
         __writer.Write(name);
         __writer.Write(command);
         #if DEBUG
@@ -115,7 +115,7 @@ class IManagerCallProxy : StubClientAsync
         ByteWriter __writer = new ByteWriter();
         if (__WriteAgent != null) __WriteAgent(__writer);
         __writer.Write((byte)1);
-        __writer.Write((ushort)6);
+        __writer.Write("UpdateSVN");
         #if DEBUG
         _LOG.Debug("UpdateSVN({0} bytes)", __writer.Position);
         #endif
@@ -127,7 +127,7 @@ class IManagerCallProxy : StubClientAsync
         ByteWriter __writer = new ByteWriter();
         if (__WriteAgent != null) __WriteAgent(__writer);
         __writer.Write((byte)1);
-        __writer.Write((ushort)7);
+        __writer.Write("ServiceTypeUpdate");
         __writer.Write(type);
         #if DEBUG
         _LOG.Debug("ServiceTypeUpdate({0} bytes) type: {1}", __writer.Position, JsonWriter.Serialize(type));
@@ -140,7 +140,7 @@ class IManagerCallProxy : StubClientAsync
         ByteWriter __writer = new ByteWriter();
         if (__WriteAgent != null) __WriteAgent(__writer);
         __writer.Write((byte)1);
-        __writer.Write((ushort)8);
+        __writer.Write("SetLaunchCommand");
         __writer.Write(name);
         __writer.Write(command);
         #if DEBUG
@@ -154,7 +154,7 @@ class IManagerCallProxy : StubClientAsync
         ByteWriter __writer = new ByteWriter();
         if (__WriteAgent != null) __WriteAgent(__writer);
         __writer.Write((byte)1);
-        __writer.Write((ushort)9);
+        __writer.Write("UpdateLauncher");
         #if DEBUG
         _LOG.Debug("UpdateLauncher({0} bytes)", __writer.Position);
         #endif

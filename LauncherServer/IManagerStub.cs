@@ -169,7 +169,7 @@ static class IManagerCallbackProxy
         ByteWriter __writer = new ByteWriter();
         if (__WriteAgent != null) __WriteAgent(__writer);
         __writer.Write((byte)101);
-        __writer.Write((ushort)0);
+        __writer.Write("NewServiceType");
         __writer.WriteBytes(data, 0, position);
         __link.Write(__writer.Buffer, 0, __writer.Position);
     }
@@ -179,7 +179,7 @@ static class IManagerCallbackProxy
         ByteWriter __writer = new ByteWriter();
         if (__WriteAgent != null) __WriteAgent(__writer);
         __writer.Write((byte)101);
-        __writer.Write((ushort)1);
+        __writer.Write("ModifyServiceType");
         __writer.WriteBytes(data, 0, position);
         __link.Write(__writer.Buffer, 0, __writer.Position);
     }
@@ -189,7 +189,7 @@ static class IManagerCallbackProxy
         ByteWriter __writer = new ByteWriter();
         if (__WriteAgent != null) __WriteAgent(__writer);
         __writer.Write((byte)101);
-        __writer.Write((ushort)2);
+        __writer.Write("OnGetServers");
         __writer.Write(servers);
         #if DEBUG
         _LOG.Debug("OnGetServers({0} bytes) servers: {1}", __writer.Position, JsonWriter.Serialize(servers));
@@ -202,7 +202,7 @@ static class IManagerCallbackProxy
         ByteWriter __writer = new ByteWriter();
         if (__WriteAgent != null) __WriteAgent(__writer);
         __writer.Write((byte)101);
-        __writer.Write((ushort)3);
+        __writer.Write("OnGetServiceTypes");
         __writer.Write(serviceTypes);
         #if DEBUG
         _LOG.Debug("OnGetServiceTypes({0} bytes) serviceTypes: {1}", __writer.Position, JsonWriter.Serialize(serviceTypes));
@@ -215,7 +215,7 @@ static class IManagerCallbackProxy
         ByteWriter __writer = new ByteWriter();
         if (__WriteAgent != null) __WriteAgent(__writer);
         __writer.Write((byte)101);
-        __writer.Write((ushort)4);
+        __writer.Write("OnGetServices");
         __writer.Write(serverId);
         __writer.Write(services);
         #if DEBUG
@@ -229,7 +229,7 @@ static class IManagerCallbackProxy
         ByteWriter __writer = new ByteWriter();
         if (__WriteAgent != null) __WriteAgent(__writer);
         __writer.Write((byte)101);
-        __writer.Write((ushort)5);
+        __writer.Write("OnServiceUpdate");
         __writer.Write(service);
         #if DEBUG
         _LOG.Debug("OnServiceUpdate({0} bytes) service: {1}", __writer.Position, JsonWriter.Serialize(service));
@@ -242,7 +242,7 @@ static class IManagerCallbackProxy
         ByteWriter __writer = new ByteWriter();
         if (__WriteAgent != null) __WriteAgent(__writer);
         __writer.Write((byte)101);
-        __writer.Write((ushort)6);
+        __writer.Write("OnRevisionUpdate");
         __writer.Write(serverId);
         __writer.Write(revision);
         #if DEBUG
@@ -256,7 +256,7 @@ static class IManagerCallbackProxy
         ByteWriter __writer = new ByteWriter();
         if (__WriteAgent != null) __WriteAgent(__writer);
         __writer.Write((byte)101);
-        __writer.Write((ushort)7);
+        __writer.Write("OnStatusUpdate");
         __writer.Write(serviceName);
         __writer.Write(status);
         __writer.Write(time);
@@ -271,7 +271,7 @@ static class IManagerCallbackProxy
         ByteWriter __writer = new ByteWriter();
         if (__WriteAgent != null) __WriteAgent(__writer);
         __writer.Write((byte)101);
-        __writer.Write((ushort)8);
+        __writer.Write("OnGetManagers");
         __writer.Write(managers);
         #if DEBUG
         _LOG.Debug("OnGetManagers({0} bytes) managers: {1}", __writer.Position, JsonWriter.Serialize(managers));
@@ -284,7 +284,7 @@ static class IManagerCallbackProxy
         ByteWriter __writer = new ByteWriter();
         if (__WriteAgent != null) __WriteAgent(__writer);
         __writer.Write((byte)101);
-        __writer.Write((ushort)9);
+        __writer.Write("OnLoginAgain");
         #if DEBUG
         _LOG.Debug("OnLoginAgain({0} bytes)", __writer.Position);
         #endif
@@ -296,7 +296,7 @@ static class IManagerCallbackProxy
         ByteWriter __writer = new ByteWriter();
         if (__WriteAgent != null) __WriteAgent(__writer);
         __writer.Write((byte)101);
-        __writer.Write((ushort)10);
+        __writer.Write("OnGetLog");
         __writer.Write(page);
         __writer.Write(logs);
         __writer.Write(pages);
@@ -311,7 +311,7 @@ static class IManagerCallbackProxy
         ByteWriter __writer = new ByteWriter();
         if (__WriteAgent != null) __WriteAgent(__writer);
         __writer.Write((byte)101);
-        __writer.Write((ushort)11);
+        __writer.Write("OnGetLogRepeat");
         __writer.Write(data);
         #if DEBUG
         _LOG.Debug("OnGetLogRepeat({0} bytes) data: {1}", __writer.Position, JsonWriter.Serialize(data));
@@ -324,7 +324,7 @@ static class IManagerCallbackProxy
         ByteWriter __writer = new ByteWriter();
         if (__WriteAgent != null) __WriteAgent(__writer);
         __writer.Write((byte)101);
-        __writer.Write((ushort)12);
+        __writer.Write("OnLog");
         __writer.Write(name);
         __writer.Write(record);
         #if DEBUG
@@ -338,7 +338,7 @@ static class IManagerCallbackProxy
         ByteWriter __writer = new ByteWriter();
         if (__WriteAgent != null) __WriteAgent(__writer);
         __writer.Write((byte)101);
-        __writer.Write((ushort)15);
+        __writer.Write("GetServerStatusStatistic");
         __writer.WriteBytes(data, 0, position);
         __link.Write(__writer.Buffer, 0, __writer.Position);
     }
@@ -352,27 +352,27 @@ class IManagerStub : Stub
     public IManagerStub(_IManager agent) : base(101)
     {
         this.__Agent = agent;
-        AddMethod(NewServiceType);
-        AddMethod(ModifyServiceType);
-        AddMethod(DeleteServiceType);
-        AddMethod(UpdateSVN);
-        AddMethod(GetServices);
-        AddMethod(GetServers);
-        AddMethod(NewService);
-        AddMethod(SetServiceLaunchCommand);
-        AddMethod(CallCommand);
-        AddMethod(DeleteService);
-        AddMethod(Launch);
-        AddMethod(Update);
-        AddMethod(Stop);
-        AddMethod(NewManager);
-        AddMethod(DeleteManager);
-        AddMethod(GetServerStatusStatistic);
-        AddMethod(GetLog);
-        AddMethod(GroupLog);
-        AddMethod(GetLogRepeat);
-        AddMethod(FindContext);
-        AddMethod(UpdateManager);
+        AddMethod("NewServiceType", NewServiceType);
+        AddMethod("ModifyServiceType", ModifyServiceType);
+        AddMethod("DeleteServiceType", DeleteServiceType);
+        AddMethod("UpdateSVN", UpdateSVN);
+        AddMethod("GetServices", GetServices);
+        AddMethod("GetServers", GetServers);
+        AddMethod("NewService", NewService);
+        AddMethod("SetServiceLaunchCommand", SetServiceLaunchCommand);
+        AddMethod("CallCommand", CallCommand);
+        AddMethod("DeleteService", DeleteService);
+        AddMethod("Launch", Launch);
+        AddMethod("Update", Update);
+        AddMethod("Stop", Stop);
+        AddMethod("NewManager", NewManager);
+        AddMethod("DeleteManager", DeleteManager);
+        AddMethod("GetServerStatusStatistic", GetServerStatusStatistic);
+        AddMethod("GetLog", GetLog);
+        AddMethod("GroupLog", GroupLog);
+        AddMethod("GetLogRepeat", GetLogRepeat);
+        AddMethod("FindContext", FindContext);
+        AddMethod("UpdateManager", UpdateManager);
     }
     public IManagerStub(Func<_IManager> agent) : this((_IManager)null)
     {
