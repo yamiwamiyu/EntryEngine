@@ -665,11 +665,15 @@ namespace EntryBuilder
 		}
 		private static IEnumerable<string> GetFiles(string dirOrFile, SearchOption option = SearchOption.TopDirectoryOnly, params string[] patterns)
 		{
+            if (Path.GetDirectoryName(dirOrFile).StartsWith("#") ||
+                Path.GetFileName(dirOrFile).StartsWith("#"))
+                yield break;
 			foreach (var pattern in patterns)
 			{
 				foreach (var file in GetFiles(dirOrFile, pattern, option))
 				{
-                    if (Path.GetFileName(file).StartsWith("#")) continue;
+                    if (_IO.RelativePathForward(file, dirOrFile).Contains("#"))
+                        continue;
 					yield return file;
 				}
 			}
@@ -10128,7 +10132,7 @@ return result;"
                     BuildDir(ref onePiece.Root);
 
                 #endregion
-
+                
                 string[] directories = onePiece.Directories.Split(',');
                 var files = directories.SelectMany(d => GetFiles(Path.GetFullPath(inputDir + onePiece.Root + d), onePiece.All ? SearchOption.AllDirectories : SearchOption.TopDirectoryOnly, IMAGE_FORMATS))
                     .Where(f => !outputFiles.Contains(f)).ToArray();
