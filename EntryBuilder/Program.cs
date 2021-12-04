@@ -2115,13 +2115,15 @@ public Action<HttpRequestPost> OnSend;
 public Action<string> OnCallback;
 /// <summary>接口返回HttpError实例或口返回状态码不为200(OnError有指定则仅执行OnError)时</summary>
 public Action<int, string> OnHttpError;
-/// <summary>接口返回状态码不为200或请求抛出WebException时</summary>
+/// <summary>请求抛出WebException时</summary>
 public Action<HttpRequestPost, WebException> OnError;
 /// <summary>回调函数异步还是同步执行，true为异步</summary>
 public bool IsAsync = true;
 
 private void _onError(HttpRequestPost req, WebException e, byte[] resultBytes)
 {
+    AsyncData<string> result = req.Tag as AsyncData<string>;
+    if (result != null) result.Error(e);
     if (OnError != null) OnError(req, e);
     else _LOG.Error(e, ""发送请求错误 {0}"", req.Request.RequestUri.ToString());
 }");
@@ -2142,13 +2144,10 @@ private AsyncData<string> send<T>(string url, string data, Action<T> callback)")
 AsyncData<string> result = new AsyncData<string>();
 
 var request = new HttpRequestPost();
-var requestURL = Host + url;
-request.Connect(requestURL);
+request.Tag = result;
+request.Connect(Host + url);
 
-if (OnSend != null)
-{
-    OnSend(request);
-}
+if (OnSend != null) OnSend(request);
 
 request.OnError += _onError;
 request.OnReceived += (response) =>
@@ -2194,12 +2193,9 @@ request.OnReceived += (response) =>
         }
         result.SetData(ret);
     }
-    else if (OnError != null)
-    {
-         OnError(request, null);
-    }
     else
     {
+        result.Cancel();
         if (OnHttpError != null)
         {
             OnHttpError((int)response.StatusCode, response.StatusDescription);
