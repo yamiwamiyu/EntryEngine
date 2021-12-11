@@ -261,6 +261,8 @@ namespace EntryEngine.Network
         public event Action<Link> ClientDisconnect;
         public event Action<Link, EAcceptClose> AcceptDisconnect;
         public event Action Stop;
+        /// <summary>处理前端发来的协议数据错误时触发，返回true代表断开连接</summary>
+        public event Func<Link, Exception, bool> OnProtocolError;
 
 		public Link Link
 		{
@@ -422,29 +424,33 @@ namespace EntryEngine.Network
                     continue;
                 }
                 Agent agent = item.Value;
-                try
+                TIMER timer = TIMER.StartNew();
+                int count = 0;
+                foreach (byte[] data in agent.Receive())
                 {
-                    TIMER timer = TIMER.StartNew();
-                    int count = 0;
-                    foreach (byte[] data in agent.Receive())
+                    count += data.Length;
+                    try
                     {
-                        count += data.Length;
                         agent.OnProtocol(data);
-                        if (PermitReceiveTimeout.HasValue)
+                    }
+                    catch (Exception ex)
+                    {
+                        if (OnProtocolError == null || OnProtocolError(agent.Link, ex))
                         {
-                            TimeSpan elapsed = timer.ElapsedNow;
-                            if (elapsed > PermitReceiveTimeout.Value)
-                            {
-                                _LOG.Warning("{0} process timeout:{1}! byte count={2}", item.Key, elapsed.TotalMilliseconds, count);
-                                break;
-                            }
+                            _LOG.Error(ex, "agent: {0} process error!", item.Key);
+                            disconnected.Enqueue(item.Key);
+                            break;
                         }
                     }
-                }
-                catch (Exception ex)
-                {
-                    _LOG.Error(ex, "agent: {0} process error!", item.Key);
-                    disconnected.Enqueue(item.Key);
+                    if (PermitReceiveTimeout.HasValue)
+                    {
+                        TimeSpan elapsed = timer.ElapsedNow;
+                        if (elapsed > PermitReceiveTimeout.Value)
+                        {
+                            _LOG.Warning("{0} process timeout:{1}! byte count={2}", item.Key, elapsed.TotalMilliseconds, count);
+                            break;
+                        }
+                    }
                 }
             }
 		}
@@ -792,6 +798,32 @@ namespace EntryEngine.Network
 		{
 			get { return socket.Poll(0, SelectMode.SelectRead); }
 		}
+
+        public ProxyTcp()
+        {
+            OnProtocolError += ProxyTcp_DefaultOnProtocolError;
+        }
+
+        /// <summary>返回一条错误信息给AgentProtocolStub接收到并触发OnError</summary>
+        public void CallbackError(Link link, int errCode, string errMsg)
+        {
+            ByteWriter writer = new ByteWriter();
+            writer.Write((byte)0);
+            writer.Write((string)null);
+            writer.Write(errCode);
+            writer.Write(errMsg);
+            link.Write(writer.GetBuffer());
+        }
+        /// <summary>OnProtocolError的默认处理函数，函数调用CallbackError返回异常信息</summary>
+        public bool ProxyTcp_DefaultOnProtocolError(Link arg1, Exception arg2)
+        {
+            HttpException ex = arg2 as HttpException;
+            if (ex != null)
+                CallbackError(arg1, (int)ex.StatusCode, ex.Message);
+            else
+                CallbackError(arg1, 400, ex.Message);
+            return false;
+        }
 
 		protected override void Launch(IPAddress address, ushort port)
 		{

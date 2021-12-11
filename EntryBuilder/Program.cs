@@ -1194,7 +1194,7 @@ namespace EntryBuilder
                         // 方法体
                         builder.AppendBlock(() =>
                         {
-                            builder.AppendLine("if (__link == null) return;");
+                            builder.AppendLine("if (__link == null || !__link.IsConnected) return;");
                             builder.AppendLine("{0} __writer = new {0}();", Writer);
                             builder.AppendLine("if (__WriteAgent != null) __WriteAgent(__writer);");
                             // 协议
@@ -1497,9 +1497,9 @@ namespace EntryBuilder
                     builder.AppendBlock(() =>
                     {
                         if (hasAsync)
-                            builder.AppendLine("if (Link == null) return null;");
+                            builder.AppendLine("if (Link == null || !Link.IsConnected) return null;");
                         else
-                            builder.AppendLine("if (Link == null) return;");
+                            builder.AppendLine("if (Link == null || !Link.IsConnected) return;");
                         builder.AppendLine("{0} __writer = new {0}();", Writer);
                         builder.AppendLine("if (__WriteAgent != null) __WriteAgent(__writer);");
                         builder.AppendLine("__writer.Write((byte){0});", agent.Protocol);
@@ -2512,7 +2512,7 @@ return result;"
                         // 方法体
                         builder.AppendBlock(() =>
                         {
-                            builder.AppendLine("if (__link == null) return;");
+                            builder.AppendLine("if (__link == null || !__link.IsConnected) return;");
                             builder.AppendLine("var __cb = new RET_{0}_{1}();", type.Name, method.Name);
                             // 协议
                             builder.AppendLine("__cb.Protocol = ((byte){0});", agent.Protocol);

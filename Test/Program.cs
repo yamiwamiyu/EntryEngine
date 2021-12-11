@@ -25,22 +25,14 @@ namespace Test
         SHADER shader;
         protected override IEnumerable<ICoroutine> Loading()
         {
-            TabPage tp = new TabPage();
-            tp.IsRadioButton = false;
-            tp.X = 200;
-            tp.Y = 500;
-            tp.Width = 100;
-            tp.Height = 20;
-            tp.SourceNormal = TEXTURE.Pixel;
-            tp.Color = new COLOR(255, 0, 0, 128);
-            Add(tp);
-            Panel page = new Panel();
-            page.Width = 100;
-            page.Height = tp.Height * 2;
-            page.Y = tp.Height;
-            page.Background = TEXTURE.Pixel;
-            page.Color = new COLOR(0, 255, 0, 128);
-            tp.Page = page;
+            Label label = new Label();
+            label.UIText.FontColor = COLOR.Black;
+            label.X = 200;
+            label.Y = 200;
+            label.Pivot = EPivot.MiddleCenter;
+            label.Text = "测试";
+            label.Effect.DoMoveX(400, 0, 1).DoFadeIn(1).DoScale(5, 1, 1).DoRotate(-360, 0, 1);
+            Add(label);
 
             //Content.Load<DRAGONBONES>("dragonbones/战士.json");
 

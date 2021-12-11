@@ -1,4 +1,8 @@
-﻿2021/11/04
+﻿2021/12/11
+1. 新增Proxy.OnProtocolError处理接口错误
+2. 新增AgentProtocolStub.OnError回调处理服务端返回的接口处理错误
+
+2021/11/04
 1. 修复Json反序列化抽象类实例的BUG
 
 2021/11/01

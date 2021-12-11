@@ -327,6 +327,8 @@ namespace EntryEngine.Network
     public class AgentProtocolStub : Agent
     {
         private Dictionary<byte, Stub> protocols = new Dictionary<byte, Stub>();
+        /// <summary>收到0,null协议时回调，会返回错误码和错误信息</summary>
+        public Action<int, string> OnError;
 
         public AgentProtocolStub()
         {
@@ -357,13 +359,26 @@ namespace EntryEngine.Network
         public override void OnProtocol(byte[] data)
         {
             ByteReader reader = new ByteReader(data);
-            while (true)
+            while (!reader.IsEnd)
             {
                 int position = reader.Position;
                 byte protocol;
                 string id;
                 reader.Read(out protocol);
                 reader.Read(out id);
+
+                if (protocol == 0 && id == null)
+                {
+                    int errCode;
+                    string errMsg;
+                    reader.Read(out errCode);
+                    reader.Read(out errMsg);
+                    if (OnError != null)
+                        OnError(errCode, errMsg);
+                    else
+                        _LOG.Warning("协议异常：code={0} msg={1}", errCode, errMsg);
+                    continue;
+                }
 
                 Stub agent;
                 if (!protocols.TryGetValue(protocol, out agent))
@@ -1162,12 +1177,15 @@ namespace EntryEngine.Network
         public static ushort MaxBuffer = 8192;
         public const int MAX_BUFFER_SIZE = sizeof(int);
 
+        public object Tag;
+
         public abstract bool IsConnected { get; }
         public abstract bool CanRead { get; }
         public virtual IPEndPoint EndPoint { get { throw new NotImplementedException(); } }
 
         public void Write(byte[] data)
         {
+            if (!IsConnected) throw new InvalidOperationException("尚未连接不能写入数据");
             Write(data, 0, data.Length);
         }
         public abstract void Write(byte[] buffer, int offset, int size);
