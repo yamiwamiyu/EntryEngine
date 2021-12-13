@@ -8294,7 +8294,7 @@ return result;"
                         builder.AppendLine("public new string {0}", field.Name);
                         builder.AppendBlock(() =>
                         {
-                            builder.AppendLine("get {{ return JsonWriter.Serialize(base.{0}); }}", field.Name);
+                            builder.AppendLine("get {{ return JsonWriter.Serialize(base.{0}, typeof({1})); }}", field.Name, field.FieldType.Name);
                             builder.AppendLine("set {{ base.{0} = JsonReader.Deserialize<{1}>(value); }}", field.Name, field.FieldType.CodeName());
                         });
                         hasSpecial = true;
