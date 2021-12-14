@@ -8317,6 +8317,14 @@ return result;"
                             foreach (var field in fields)
                                 builder.AppendLine("base.{0} = __clone.{0};", field.Name);
                         });
+                        builder.AppendLine("{0} __TO()", table.Name);
+                        builder.AppendBlock(() =>
+                        {
+                            builder.AppendLine("{0} __copy = new {0}();", table.Name);
+                            foreach (var field in fields)
+                                builder.AppendLine("__copy.{0} = base.{0};", field.Name);
+                            builder.AppendLine("return __copy;");
+                        });
                     }
                     else
                     {
@@ -8409,30 +8417,36 @@ return result;"
                     }
 
                     // 读取方法
-                    builderOP.AppendLine("public {1}{0} Read(IDataReader reader)", tableMapperName, _static);
+                    builderOP.AppendLine("public {1}{0} Read(IDataReader reader)", table.Name, _static);
                     builderOP.AppendBlock(() =>
                     {
                         builderOP.AppendLine("return Read(reader, 0, FieldCount);");
                     });
-                    builderOP.AppendLine("public {1}{0} Read(IDataReader reader, int offset)", tableMapperName, _static);
+                    builderOP.AppendLine("public {1}{0} Read(IDataReader reader, int offset)", table.Name, _static);
                     builderOP.AppendBlock(() =>
                     {
                         builderOP.AppendLine("return Read(reader, offset, FieldCount);");
                     });
-                    builderOP.AppendLine("public {1}{0} Read(IDataReader reader, int offset, int fieldCount)", tableMapperName, _static);
+                    builderOP.AppendLine("public {1}{0} Read(IDataReader reader, int offset, int fieldCount)", table.Name, _static);
                     builderOP.AppendBlock(() =>
                     {
-                        builderOP.AppendLine("return _DATABASE.ReadObject<{0}>(reader, offset, fieldCount);", tableMapperName);
+                        builderOP.Append("return _DATABASE.ReadObject<{0}>(reader, offset, fieldCount)", tableMapperName);
+                        if (hasSpecial)
+                            builderOP.Append(".__TO()");
+                        builderOP.AppendLine(";");
                     });
                     builderOP.AppendLine("public {0}void MultiReadPrepare(IDataReader reader, int offset, int fieldCount, out List<PropertyInfo> properties, out List<FieldInfo> fields, ref int[] indices)", _static);
                     builderOP.AppendBlock(() =>
                     {
                         builderOP.AppendLine("_DATABASE.MultiReadPrepare(reader, typeof({0}), offset, fieldCount, out properties, out fields, ref indices);", tableMapperName);
                     });
-                    builderOP.AppendLine("public {1}{0} MultiRead(IDataReader reader, int offset, int fieldCount, List<PropertyInfo> properties, List<FieldInfo> fields, int[] indices)", tableMapperName, _static);
+                    builderOP.AppendLine("public {1}{0} MultiRead(IDataReader reader, int offset, int fieldCount, List<PropertyInfo> properties, List<FieldInfo> fields, int[] indices)", table.Name, _static);
                     builderOP.AppendBlock(() =>
                     {
-                        builderOP.AppendLine("return _DATABASE.MultiRead<{0}>(reader, offset, fieldCount, properties, fields, indices);", tableMapperName);
+                        builderOP.AppendLine("return _DATABASE.MultiRead<{0}>(reader, offset, fieldCount, properties, fields, indices)", tableMapperName);
+                        if (hasSpecial)
+                            builderOP.Append(".__TO()");
+                        builderOP.AppendLine(";");
                     });
 
                     // 增
@@ -8756,7 +8770,10 @@ return result;"
                             builderOP.Append("var ret = _DAO.SelectObject<{0}>(builder.ToString()", tableMapperName);
                             foreach (var field in primaryFields)
                                 builderOP.Append(", __{0}", field.Name);
-                            builderOP.AppendLine(");");
+                            builderOP.Append(")");
+                            if (hasSpecial)
+                                builderOP.Append(".__TO()");
+                            builderOP.AppendLine(";");
                             builderOP.AppendLine("if (ret != default({0}))", table.Name);
                             builderOP.AppendBlock(() =>
                             {
@@ -8784,7 +8801,10 @@ return result;"
                         //    builderOP.AppendLine("if (i != count) builder.Append(\",\");");
                         //});
                         //builderOP.AppendLine("builder.AppendLine(\" FROM {0} {{0}};\", condition);", table.Name);
-                        builderOP.AppendLine("return _DAO.SelectObject<{0}>(builder.ToString(), param);", tableMapperName);
+                        builderOP.Append("return _DAO.SelectObject<{0}>(builder.ToString(), param)", tableMapperName);
+                        if (hasSpecial)
+                            builderOP.Append(".__TO()");
+                        builderOP.AppendLine(";");
                     });
                     // Exists
                     builderOP.Append("public {0}bool Exists(", _static);
@@ -8828,11 +8848,9 @@ return result;"
                     builderOP.AppendLine("public {1}List<{0}> SelectMultiple(E{0}[] fields, string condition, params object[] param)", table.Name, _static);
                     builderOP.AppendBlock(() =>
                     {
-                        if (table.Name == tableMapperName)
-                            builderOP.AppendLine("if (fields == null || fields.Length == 0) return _DAO.SelectObjects<{1}>(string.Format(\"SELECT * FROM {0} {{0}};\", condition), param);", table.Name, tableMapperName);
-                        else
-                            builderOP.AppendLine("if (fields == null || fields.Length == 0) return new List<{0}>(_DAO.SelectObjects<{1}>(string.Format(\"SELECT * FROM {0} {{0}};\", condition), param).ToArray());", table.Name, tableMapperName);
-                        builderOP.AppendLine("StringBuilder builder = GetSelectSQL(fields);");
+                        builderOP.AppendLine("StringBuilder builder;");
+                        builderOP.AppendLine("if (fields == null || fields.Length == 0) builder = new StringBuilder(\"SELECT * FROM {0}\");", table.Name);
+                        builderOP.AppendLine("else builder = GetSelectSQL(fields);");
                         builderOP.AppendLine("if (!string.IsNullOrEmpty(condition)) builder.Append(\" {0}\", condition);");
                         builderOP.AppendLine("builder.Append(';');");
                         if (table.Name == tableMapperName)
@@ -8840,7 +8858,9 @@ return result;"
                         else
                         {
                             builderOP.AppendLine("List<{0}> __temp = _DAO.SelectObjects<{0}>(builder.ToString(), param);", tableMapperName);
-                            builderOP.AppendLine("return new List<{0}>(__temp.ToArray());", table.Name);
+                            builderOP.AppendLine("List<{0}> __result = new List<{0}>(__temp.Count);", table.Name);
+                            builderOP.AppendLine("__result.AddRange(__temp.Select(i => i.__TO()));");
+                            builderOP.AppendLine("return __result;");
                         }
                     });
                     if (groupFields.Count > 0 || primaryFields.Count > 1)
@@ -8919,7 +8939,10 @@ return result;"
                                             builderOP.Append(", ");
                                     }
                                     builderOP.AppendLine("));");
-                                    builderOP.AppendLine("return new List<{0}>(__temp.ToArray());", table.Name);
+                                    //builderOP.AppendLine("return new List<{0}>(__temp.ToArray());", table.Name);
+                                    builderOP.AppendLine("List<{0}> __result = new List<{0}>(__temp.Count);", table.Name);
+                                    builderOP.AppendLine("__result.AddRange(__temp.Select(i => i.__TO()));");
+                                    builderOP.AppendLine("return __result;");
                                 }
                             });
                         }
@@ -9083,7 +9106,7 @@ return result;"
                         builderOP.AppendLine("public {0}PagedModel<{1}> ChangePageModel(PagedModel<{2}> model)", _static, table.Name, tableMapperName);
                         builderOP.AppendBlock(() =>
                         {
-                            builderOP.AppendLine("return model.ChangeModel<{0}>(m => ({1})m);", table.Name, tableMapperName);
+                            builderOP.AppendLine("return model.ChangeModel<{0}>(m => m.__TO());", table.Name);
                         });
                     }
                     if (fields.Length > 0)

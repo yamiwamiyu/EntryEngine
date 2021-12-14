@@ -115,6 +115,7 @@ namespace EntryEngine.Network
         {
             BuildConnection();
             Socket.Connect(host, port);
+            Beat();
         }
         public virtual AsyncData<Link> Connect(string host, ushort port)
         {
@@ -130,6 +131,7 @@ namespace EntryEngine.Network
                         async.SetData(this);
                     else
                         async.Cancel();
+                    Beat();
                 }
                 catch (Exception ex)
                 {
@@ -974,7 +976,7 @@ namespace EntryEngine.Network
         public ushort Port { get; private set; }
         public COROUTINE Coroutine { get; private set; }
         public IConnector NetConnector { get; private set; }
-        public IEnumerable<ICoroutine> Connect(EntryService entry, IConnector connector, string host, ushort port)
+        public COROUTINE Connect(EntryService entry, IConnector connector, string host, ushort port)
         {
             if (string.IsNullOrEmpty(host))
                 throw new ArgumentNullException("ip");
@@ -990,14 +992,10 @@ namespace EntryEngine.Network
 
             IEnumerable<ICoroutine> coroutine = Connect();
             if (entry != null)
-            {
                 Coroutine = entry.SetCoroutine(coroutine);
-            }
             else
-            {
-                Coroutine = null;
-            }
-            return coroutine;
+                Coroutine = new COROUTINE(coroutine);
+            return Coroutine;
         }
         private IEnumerable<ICoroutine> Connect()
         {
@@ -1556,6 +1554,8 @@ namespace EntryEngine.Network
                         var now = DateTime.Now;
                         if ((now - lastBeat).Ticks > -tick)
                         {
+                            // 抛出异常可能任然继续使用当前实例，需要重置心跳时间
+                            Beat();
                             throw new ExceptionHeartbeatStop();
                         }
                     }

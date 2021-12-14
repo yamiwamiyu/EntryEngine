@@ -551,12 +551,11 @@ namespace EntryEngine.Network
 		}
         private void RemoveNewLink(NewLink link, bool close, EAcceptClose status)
         {
-            if (close)
-                link.Link.Close();
-            if (!newLink.Remove(link))
-                return;
+            newLink.RemoveAt(link);
             if (AcceptDisconnect != null)
                 AcceptDisconnect(link.Link, status);
+            if (close)
+                link.Link.Close();
         }
 		protected virtual void OnConnect(ref Agent agent)
 		{
@@ -805,7 +804,7 @@ namespace EntryEngine.Network
         }
 
         /// <summary>返回一条错误信息给AgentProtocolStub接收到并触发OnError</summary>
-        public void CallbackError(Link link, int errCode, string errMsg)
+        public static void CallbackError(Link link, int errCode, string errMsg)
         {
             ByteWriter writer = new ByteWriter();
             writer.Write((byte)0);
