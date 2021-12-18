@@ -303,6 +303,11 @@ namespace EntryEngine.Game
         {
             return Save(output, BAG_PACKAGE.BATCH, new StringBuilder(), new List<object>());
         }
+        public bool Save(StringBuilder builder, List<object> args)
+        {
+            List<BAG_PACKAGE> output = new List<BAG_PACKAGE>();
+            return Save(output, -1, builder, args);
+        }
 
         public IEnumerator<T> GetEnumerator()
         {

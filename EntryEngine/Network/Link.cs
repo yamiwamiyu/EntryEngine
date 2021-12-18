@@ -115,7 +115,6 @@ namespace EntryEngine.Network
         {
             BuildConnection();
             Socket.Connect(host, port);
-            Beat();
         }
         public virtual AsyncData<Link> Connect(string host, ushort port)
         {
@@ -131,7 +130,6 @@ namespace EntryEngine.Network
                         async.SetData(this);
                     else
                         async.Cancel();
-                    Beat();
                 }
                 catch (Exception ex)
                 {
@@ -1415,7 +1413,7 @@ namespace EntryEngine.Network
             int available = DataLength;
             if (available >= MAX_BUFFER_SIZE)
             {
-                beat = true;
+                Beat();
 
                 if (HasBigData)
                     return ReadBigData(ref available);
@@ -1544,7 +1542,6 @@ namespace EntryEngine.Network
                         var now = DateTime.Now;
                         if (now - lastBeat > Heartbeat)
                         {
-                            lastBeat = now;
                             Write(HeartbeatProtocol);
                         }
                     }
@@ -1566,7 +1563,11 @@ namespace EntryEngine.Network
             byte[] buffer = writer.GetBuffer();
             writer.Reset();
             if (IsConnected)
+            {
                 InternalFlush(buffer);
+                // 发出数据也需要心跳，否则收到数据的一方重置了心跳时间，不向发送方发出心跳包，就可能直接断连
+                Beat();
+            }
             if (writer.Position > MaxBuffer)
                 writer = new ByteWriter(MaxBuffer);
             return buffer;
