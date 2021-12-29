@@ -1,4 +1,10 @@
-﻿2021/12/17
+﻿2021/12/29
+1. Entry.ShowMainScene可以重复加载当前正在显示的场景，方便场景刷新
+2. 修复StringStreamReader初始化空字符串时的BUG
+3. 修复LinkSocket.CanRead在Socket关闭后抛出不必要的异常的BUG
+4. 新增FontStatic.SpaceWidth定义空格字符的宽度，否则原来图片字体无法渲染空格
+
+2021/12/17
 1. Link数据发出时也重置心跳，否则可能单方发送数据时，一直不收到数据而断连
 2. SMask允许点击蒙版区域不关闭
 3. BAG<>增加Save重载

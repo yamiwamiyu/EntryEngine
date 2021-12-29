@@ -170,8 +170,8 @@ namespace EntryEngine
         public UIScene ShowMainScene(UIScene scene)
         {
             // 相同主场景不做任何操作
-            if (scenes.Count > 0 && scenes.First.Value == scene)
-                return scene;
+            //if (scenes.Count > 0 && scenes.First.Value == scene)
+            //    return scene;
             if (scenes.Count > 0)
             {
                 scenes.ForFirstToLast((item) =>
@@ -230,25 +230,28 @@ namespace EntryEngine
                 OnShowScene(scene, dialogState, isMain);
 
             // 已显示的场景重新进入Showing阶段
-            if (scenes.Contains(scene))
-            {
-                scene.State = dialogState;
-                if (phase == EPhase.Running)
-                {
-                    scene.Show(this);
-                    scene.OnPhaseShowing();
-                    phase = EPhase.Showing;
-                }
-                ToFront(scene);
-                return;
-            }
+            //if (scenes.Contains(scene))
+            //{
+            //    scene.State = dialogState;
+            //    if (phase == EPhase.Running)
+            //    {
+            //        scene.Show(this);
+            //        scene.OnPhaseShowing();
+            //        phase = EPhase.Showing;
+            //    }
+            //    ToFront(scene);
+            //    return;
+            //}
 
             // new scene loading
             if (isMain)
             {
-                // 缓存前一个主场景
-                PrevMainScene = this.Scene;
-                scenes.AddFirst(scene);
+                if (this.Scene != scene)
+                {
+                    // 缓存前一个主场景
+                    PrevMainScene = this.Scene;
+                    scenes.AddFirst(scene);
+                }
                 phase = EPhase.Ending;
             }
             else
@@ -7254,6 +7257,7 @@ namespace EntryEngine
 
         protected float fontSize;
         protected float lineHeight;
+        private float spaceWidth;
         protected CacheInfo cache;
         public VECTOR2 Spacing;
         public TextShader Effect;
@@ -7266,6 +7270,23 @@ namespace EntryEngine
         public override float LineHeight
         {
             get { return lineHeight + Spacing.Y; }
+        }
+        /// <summary>空格字符' '的宽度，默认为字体拥有字符集中首个字符的宽度，没有字符则是字体宽度；可以自定义这个宽度</summary>
+        public virtual float SpaceWidth
+        {
+            get
+            {
+                if (spaceWidth != 0)
+                    return spaceWidth;
+                else if (cache.Maps.Count > 0)
+                    return cache.Maps.First().Value.Space;
+                else
+                    return FontSize;
+            }
+            set
+            {
+                spaceWidth = value;
+            }
         }
         public override bool IsDisposed
         {
@@ -7293,6 +7314,8 @@ namespace EntryEngine
             }
             else
             {
+                if (c == ' ')
+                    return SpaceWidth;
                 //_LOG.Warning("字体不包含文字:{0}", c);
                 return 0;
             }
@@ -7343,7 +7366,13 @@ namespace EntryEngine
                 {
                     var buffer = GetBuffer(c);
                     if (buffer == null)
+                    {
+                        if (c == ' ')
+                        {
+                            area.X += SpaceWidth * scale + Spacing.X;
+                        }
                         continue;
+                    }
 
                     area.Y = y;
                     //area.Y = y + (height - uv.Height) / 2;
@@ -7374,6 +7403,7 @@ namespace EntryEngine
             target._Key = this._Key;
             target.fontSize = this.fontSize;
             target.lineHeight = this.lineHeight;
+            target.spaceWidth = this.spaceWidth;
             target.Spacing = this.Spacing;
             target.cache = this.cache;
             if (this.Effect != null)

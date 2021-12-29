@@ -36,7 +36,7 @@ namespace EntryEngine.Network
         }
         public override bool CanRead
         {
-            get { return Socket.Available >= MAX_BUFFER_SIZE; }
+            get { return Socket != null && Socket.Available >= MAX_BUFFER_SIZE; }
         }
         protected override int DataLength
         {

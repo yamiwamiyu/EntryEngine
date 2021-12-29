@@ -1260,10 +1260,11 @@ namespace EntryEngine.Serialize
         public void SetContent(string content, int startIndex)
         {
             if (content == null)
-                throw new ArgumentNullException("content");
+                content = string.Empty;
 
-            if (startIndex >= content.Length || startIndex < 0)
-                throw new ArgumentOutOfRangeException("startIndex");
+            if (startIndex != 0)
+                if (startIndex >= content.Length || startIndex < 0)
+                    throw new ArgumentOutOfRangeException("startIndex");
 
             this.str = content;
             this.len = content.Length;
