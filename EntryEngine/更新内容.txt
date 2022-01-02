@@ -1,4 +1,8 @@
-﻿2021/12/29
+﻿2022/01/02
+1. 修改UIScene.ShowPosition的生效时间
+2. 新增AUDIO.BGM，方便判断当前正在播放的背景音乐以免造成打断重新播放相同的背景音乐
+
+2021/12/29
 1. Entry.ShowMainScene可以重复加载当前正在显示的场景，方便场景刷新
 2. 修复StringStreamReader初始化空字符串时的BUG
 3. 修复LinkSocket.CanRead在Socket关闭后抛出不必要的异常的BUG

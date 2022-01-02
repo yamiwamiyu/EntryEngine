@@ -256,7 +256,8 @@ namespace EntryEngine
             }
             else
             {
-                scenes.AddLast(scene);
+                if (!scene.IsInStage)
+                    scenes.AddLast(scene);
                 if (phase > EPhase.Loading)
                     phase = EPhase.Loading;
             }
@@ -3854,6 +3855,7 @@ namespace EntryEngine
         {
             public IAudioSource AudioSource;
             public SoundSource SoundSource;
+            public SOUND Content;
         }
 
         private float volume = 1;
@@ -3870,6 +3872,8 @@ namespace EntryEngine
         private float _maxDistanceSquared;
         private float _maxDistanceSquaredD;
 
+        /// <summary>当前正在播放的音乐</summary>
+        public SOUND BGM { get { return sound.Content; } }
         /// <summary>音量：0 ~ 1</summary>
         public virtual float Volume
         {
@@ -4002,6 +4006,7 @@ namespace EntryEngine
             if (sound.SoundSource == null)
                 return;
             wave.Source = sound.SoundSource;
+            sound.Content = wave;
             sound.SoundSource.SetLoop(loop);
             sound.SoundSource.Volume = volume * this.Volume;
             sound.SoundSource.Channel = channel;

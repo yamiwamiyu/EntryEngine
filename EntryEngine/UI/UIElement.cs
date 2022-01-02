@@ -2423,6 +2423,25 @@ namespace EntryEngine.UI
         {
             OnLoadCompleted();
             Phase = EPhase.Preparing;
+            switch (ShowPosition)
+            {
+                case EShowPosition.ParentCenter:
+                    Pivot = EPivot.MiddleCenter;
+                    if (Parent != null)
+                        Location = Parent.Size * 0.5f;
+                    else
+                    {
+                        //goto case EShowPosition.GraphicsCenter;
+                        Pivot = EPivot.MiddleCenter;
+                        Location = Entry.GRAPHICS.GraphicsSize * 0.5f;
+                    }
+                    break;
+
+                case EShowPosition.GraphicsCenter:
+                    Pivot = EPivot.MiddleCenter;
+                    Location = Entry.GRAPHICS.GraphicsSize * 0.5f;
+                    break;
+            }
             SetPhase(Preparing());
             if (PhasePreparing != null)
                 PhasePreparing(this);
@@ -2620,26 +2639,6 @@ namespace EntryEngine.UI
             this.Entry = entry;
 
             SetPhase(null);
-
-            switch (ShowPosition)
-            {
-                case EShowPosition.ParentCenter:
-                    Pivot = EPivot.MiddleCenter;
-                    if (Parent != null)
-                        Location = Parent.Size * 0.5f;
-                    else
-                    {
-                        //goto case EShowPosition.GraphicsCenter;
-                        Pivot = EPivot.MiddleCenter;
-                        Location = Entry.GRAPHICS.GraphicsSize * 0.5f;
-                    }
-                    break;
-
-                case EShowPosition.GraphicsCenter:
-                    Pivot = EPivot.MiddleCenter;
-                    Location = Entry.GRAPHICS.GraphicsSize * 0.5f;
-                    break;
-            }
 
             if (IsDisposed)
             {

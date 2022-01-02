@@ -20,6 +20,10 @@ namespace EntryEngine
             get { return __instance.MaxDistance; }
             set { __instance.MaxDistance = value; }
         }
+        public static EntryEngine.SOUND BGM
+        {
+            get { return __instance.BGM; }
+        }
         public static float Volume
         {
             get { return __instance.Volume; }
