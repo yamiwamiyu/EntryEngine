@@ -91,6 +91,26 @@ namespace EntryEngine
         {
             __instance.PlayMusic(sound, volume, channel);
         }
+        public static void ChangeMusic(string name, System.Action<EntryEngine.SOUND> callback)
+        {
+            __instance.ChangeMusic(name, callback);
+        }
+        public static void ChangeMusic(string name, EntryEngine.IAudioSource source, System.Action<EntryEngine.SOUND> callback)
+        {
+            __instance.ChangeMusic(name, source, callback);
+        }
+        public static void ChangeMusic(string name, float volume, float channel, System.Action<EntryEngine.SOUND> callback)
+        {
+            __instance.ChangeMusic(name, volume, channel, callback);
+        }
+        public static void ChangeMusic(EntryEngine.SOUND sound, EntryEngine.IAudioSource source)
+        {
+            __instance.ChangeMusic(sound, source);
+        }
+        public static void ChangeMusic(EntryEngine.SOUND sound, float volume, float channel)
+        {
+            __instance.ChangeMusic(sound, volume, channel);
+        }
         public static void PlayVoice(object obj, string name, System.Action<EntryEngine.SOUND> callback)
         {
             __instance.PlayVoice(obj, name, callback);

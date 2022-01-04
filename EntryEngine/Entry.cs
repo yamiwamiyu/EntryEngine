@@ -3975,7 +3975,9 @@ namespace EntryEngine
                 else if (sounds[sound.PoolIndex] == sound)
                     sounds.RemoveAt(sound);
                 Stop(sound.SoundSource);
+                sound.SoundSource = null;
             }
+            sound.Content = null;
             //sound.SoundEffect.Unload();
         }
         private float GetVolume(ref VECTOR2 reference, IAudioSource source)
@@ -4095,6 +4097,85 @@ namespace EntryEngine
 
             if (sound == null)
                 return;
+
+            this.sound.AudioSource = null;
+
+            Play(this.sound, sound, volume, channel, true);
+        }
+        /// <summary>播放背景音乐</summary>
+        public void ChangeMusic(string name, Action<SOUND> callback)
+        {
+            ChangeMusic(name, null, callback);
+        }
+        /// <summary>播放背景音乐</summary>
+        public void ChangeMusic(string name, IAudioSource source, Action<SOUND> callback)
+        {
+            Content.LoadAsync<SOUND>(name,
+            a =>
+            {
+                ChangeMusic(a, source);
+                if (callback != null)
+                    callback(a);
+            });
+        }
+        /// <summary>播放背景音乐</summary>
+        public void ChangeMusic(string name, float volume, float channel, Action<SOUND> callback)
+        {
+            Content.LoadAsync<SOUND>(name,
+            a =>
+            {
+                ChangeMusic(a, volume, channel);
+                if (callback != null)
+                    callback(a);
+            });
+        }
+        /// <summary>播放背景音乐</summary>
+        public void ChangeMusic(SOUND sound, IAudioSource source)
+        {
+            if (sound == null)
+                return;
+
+            if (this.sound.Content == sound && sound.State == ESoundState.Playing)
+            {
+                if (source != null)
+                {
+                    VECTOR2 listener = ListenerLocation;
+                    this.sound.SoundSource.Volume = GetVolume(ref listener, source);
+                    this.sound.SoundSource.Channel = GetChannel(listener.X, source.SourceX);
+                }
+                return;
+            }
+
+            StopMusic();
+
+            this.sound.AudioSource = source;
+
+            float volume = 1, channel = 0;
+            if (source != null)
+            {
+                VECTOR2 listener = ListenerLocation;
+                volume = GetVolume(ref listener, source);
+                channel = GetChannel(listener.X, source.SourceX);
+            }
+            Play(this.sound, sound, volume, channel, true);
+        }
+        /// <summary>播放背景音乐：整个播放器仅允许播放一个的声音，二次播放会打断之前的播放，没有更换音乐时不会重新播放</summary>
+        /// <param name="sound">要播放的音乐</param>
+        /// <param name="volume">播放音乐的声音大小</param>
+        /// <param name="channel">声道(-1左 ~ 1右)</param>
+        public void ChangeMusic(SOUND sound, float volume, float channel)
+        {
+            if (sound == null)
+                return;
+
+            if (this.sound.Content == sound && sound.State == ESoundState.Playing)
+            {
+                this.sound.SoundSource.Volume = volume;
+                this.sound.SoundSource.Channel = channel;
+                return;
+            }
+
+            StopMusic();
 
             this.sound.AudioSource = null;
 

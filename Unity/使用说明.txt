@@ -534,3 +534,29 @@ Settings.System.getString(Context.getContentResolver(), Settings.Secure.ANDROID_
 2. 直接输入adb命令即可
   2.1. 查看Android ID: adb shell content query --uri content://settings/secure --where "name=\'android_id\'"
   2.2. 修改Android ID: adb shell content update --uri content://settings/secure --bind value:s:新AndroidID --where "name=\'android_id\'"
+
+关掉Unity的闪频动画：将一下代码粘贴到Unity工程中能读取到的任意代码位置即可
+/// <summary>Unity个人版跳过Unity3D闪屏动画
+/// <para>RuntimeInitializeOnLoadMethod可以在闪频前执行</para>
+/// <para>UnityEngine.Rendering.SplashScreen.Stop(UnityEngine.Rendering.SplashScreen.StopBehavior.StopImmediate);可以直接关掉闪频</para>
+/// <para>UnityEngine.Rendering.SplashScreen内部调用的是CancelSplashScreen</para>
+/// <para>若UnityRuntime.bytes用的加密版本，那么这段代码应该放到Unity工程的Main.cs中</para>
+/// </summary>
+[RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSplashScreen)]
+public static void Init()
+{
+    AndroidJavaClass javaClass = new AndroidJavaClass("com.unity3d.player.UnityPlayer");
+    AndroidJavaObject java = javaClass.GetStatic<AndroidJavaObject>("currentActivity");
+    AndroidJavaRunnable runnable = null;
+    runnable = new AndroidJavaRunnable(() =>
+    {
+        if (!UnityEngine.Rendering.SplashScreen.isFinished)
+        {
+                    
+            typeof(UnityEngine.Rendering.SplashScreen).GetMethod("CancelSplashScreen",
+                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static).Invoke(null, new object[0]);
+            java.Call("runOnUiThread", runnable);
+        }
+    });
+    java.Call("runOnUiThread", runnable);
+}
