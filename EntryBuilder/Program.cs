@@ -2171,6 +2171,7 @@ request.OnReceived += (response) =>
             {
                 _LOG.Warning(""未设置错误回调函数: {0} {1}"", err.errCode, err.errMsg);
             }
+            result.Error(new HttpException(err.errCode, err.errMsg));
         }
         else
         {
@@ -2194,12 +2195,12 @@ request.OnReceived += (response) =>
             {
                 _LOG.Warning(""未设置回调函数: {0}"", ret);
             }
+            result.SetData(ret);
         }
-        result.SetData(ret);
     }
     else
     {
-        result.Cancel();
+        result.Error(new HttpException((int)response.StatusCode, response.StatusDescription));
         if (OnHttpError != null)
         {
             OnHttpError((int)response.StatusCode, response.StatusDescription);
