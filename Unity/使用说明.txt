@@ -535,7 +535,8 @@ Settings.System.getString(Context.getContentResolver(), Settings.Secure.ANDROID_
   2.1. 查看Android ID: adb shell content query --uri content://settings/secure --where "name=\'android_id\'"
   2.2. 修改Android ID: adb shell content update --uri content://settings/secure --bind value:s:新AndroidID --where "name=\'android_id\'"
 
-关掉Unity的闪频动画：将一下代码粘贴到Unity工程中能读取到的任意代码位置即可
+关掉Unity的闪频动画：将以下代码粘贴到Unity工程中能读取到的任意代码位置即可
+#if !UNITY_EDITOR && UNITY_ANDROID
 /// <summary>Unity个人版跳过Unity3D闪屏动画
 /// <para>RuntimeInitializeOnLoadMethod可以在闪频前执行</para>
 /// <para>UnityEngine.Rendering.SplashScreen.Stop(UnityEngine.Rendering.SplashScreen.StopBehavior.StopImmediate);可以直接关掉闪频</para>
@@ -560,3 +561,4 @@ public static void Init()
     });
     java.Call("runOnUiThread", runnable);
 }
+#endif

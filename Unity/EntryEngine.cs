@@ -470,12 +470,14 @@ namespace EntryEngine.Unity
     }
     public class Texture2DUnity : TextureUnity
     {
+        public static FilterMode FilterMode = FilterMode.Bilinear;
+
         public Texture2DUnity(Texture2D texture)
         {
             if (texture == null)
                 throw new ArgumentNullException("texture");
             // 防黑线，有锯齿
-            //texture.filterMode = FilterMode.Point;
+            texture.filterMode = FilterMode;
             this.texture = texture;
         }
         public override COLOR[] GetData(int x, int y, int width, int height)
@@ -572,6 +574,7 @@ namespace EntryEngine.Unity
             }
 
             uv.Space = (byte)info.advance;
+            // 这个宽是原始文字没有旋转的宽
             int width = info.glyphWidth;
             int height = info.glyphHeight;
             if (width > uv.W)
@@ -594,12 +597,11 @@ namespace EntryEngine.Unity
             int theight = graphics.height;
             //_IO.WriteByte("TEXT.png", graphics.EncodeToPNG());
             // GetPixel矩形为屏幕坐标
-            COLOR[] colors = graphics.GetPixels(
+            var colors = graphics.GetPixels(
                 (int)(info.uv.x * twidth), 
                 (int)((info.uv.y + info.uv.height) * theight), 
                 (int)(info.uv.width * twidth), 
-                (int)(-info.uv.height * theight))
-                .GetColor(width);
+                (int)(-info.uv.height * theight));
             float ascent = font.ascent;
 
             System.Threading.WaitCallback call = (_) =>
@@ -635,35 +637,34 @@ namespace EntryEngine.Unity
                 if (info.flipped)
                 {
                     // 图像顺时针旋转了90°
-                    //for (int i = height - 1; i >= 0; i--)
-                    //{
-                    //    for (int j = 0; j < width; j++)
-                    for (int i = 0; i < height; i++)
+                    for (int i = 1; i <= height; i++)
                     {
-                        for (int j = width - 1; j >= 0; j--)
+                        index = width * height - i;
+                        for (int j = 0; j < width; j++)
                         {
-                            index = j * height + i;
-                            result[presult].R = colors[index].R;
-                            result[presult].G = colors[index].G;
-                            result[presult].B = colors[index].B;
-                            result[presult].A = colors[index].A;
+                            //index = j * height + i;
+                            result[presult].R = (byte)(colors[index].r * byte.MaxValue);
+                            result[presult].G = (byte)(colors[index].g * byte.MaxValue);
+                            result[presult].B = (byte)(colors[index].b * byte.MaxValue);
+                            result[presult].A = (byte)(colors[index].a * byte.MaxValue);
                             presult++;
+                            index -= height;
                         }
                         presult += right + left;
                     }
                 }
                 else
                 {
-                    // 图像时上下镜像的
-                    for (int i = height - 1; i >= 0; i--)
+                    // 图像是上下镜像的
+                    for (int i = 0; i < height; i++)
                     {
                         index = i * width;
-                        for (int j = 0; j < width; j++)
+                        for (int j = width - 1; j >= 0; j--)
                         {
-                            result[presult].R = colors[index].R;
-                            result[presult].G = colors[index].G;
-                            result[presult].B = colors[index].B;
-                            result[presult].A = colors[index].A;
+                            result[presult].R = (byte)(colors[index].r * byte.MaxValue);
+                            result[presult].G = (byte)(colors[index].g * byte.MaxValue);
+                            result[presult].B = (byte)(colors[index].b * byte.MaxValue);
+                            result[presult].A = (byte)(colors[index].a * byte.MaxValue);
                             presult++;
                             index++;
                         }
@@ -679,7 +680,6 @@ namespace EntryEngine.Unity
                 //    _LOG.Error("越界 c:{6} flip:{7} presult:{0} index:{1} u:{2} v:{3} y:{4} h:{5} lineHeight:{8} start:{9} left:{10} right:{11} ascent:{12} uw:{13} uh:{14}", presult, index, uvwidth, uvheight, info.vert.y, info.vert.height, c, info.flipped, lineHeight, tempStart, left, right, font.ascent, info.uv.width * twidth, info.uv.height * theight);
                 //}
 
-                //_LOG.Debug(c.ToString());
                 if (_ == this)
                     Entry.Instance.Synchronize(() => async.SetData(result));
                 else
