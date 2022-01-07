@@ -1,5 +1,6 @@
 ﻿2022/01/04
 1. Unity导出apk可以跳过启动动画
+2. 修复FontDynamicUnity字体乱码的BUG（20210918修复Color[]转置BUG留下的）
 
 2022/01/02
 1. 修改UIScene.ShowPosition的生效时间
