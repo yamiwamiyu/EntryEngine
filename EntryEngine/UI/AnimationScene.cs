@@ -204,7 +204,7 @@ namespace EntryEngine.UI
         }
         public UIScene ShowScene(UIScene scene)
         {
-            Entry.Instance.ShowDialogScene(this);
+            Entry.Instance.ShowDialogScene(this, EState.Dialog);
             if (scene.Parent != null)
                 scene.Parent.Remove(scene);
             Entry.Instance.ShowDialogScene(scene, EState.None);
@@ -213,7 +213,7 @@ namespace EntryEngine.UI
         }
         public T ShowScene<T>() where T : UIScene, new()
         {
-            var mask = Entry.Instance.ShowDialogScene(this);
+            var mask = Entry.Instance.ShowDialogScene(this, EState.Dialog);
             var scene = Entry.Instance.GetSceneOrCreate<T>();
             if (scene.Parent != null)
                 scene.Parent.Remove(scene);

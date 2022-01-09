@@ -211,7 +211,7 @@ namespace EntryEngine
         }
         public T ShowDialogScene<T>(T scene) where T : UIScene
         {
-            InternalShowScene(scene, EState.None, false);
+            InternalShowScene(scene, EState.Dialog, false);
             return scene;
         }
         public T ShowDialogScene<T>(T scene, EState state) where T : UIScene
@@ -686,6 +686,16 @@ namespace EntryEngine
         protected virtual void InputUpdate()
         {
             INPUT.Update(this);
+            //if (INPUT.Pointer.ComboClick.IsDoubleClick)
+            //{
+            //    StringBuilder builder = new StringBuilder();
+            //    builder.AppendLine("Entry State: {0}", Entry.Instance.Phase);
+            //    scenes.ForFirstToLast(s =>
+            //    {
+            //        builder.AppendLine("scene: {0} phase: {1}", s.GetType(), s.Phase);
+            //    });
+            //    _LOG.Debug(builder.ToString());
+            //}
         }
         protected override void Elapsed(GameTime gameTime)
         {

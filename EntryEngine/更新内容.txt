@@ -1,4 +1,7 @@
-﻿2022/01/04
+﻿2022/01/09
+1. Entry.ShowDialogScene默认状态为对话框，SMask设置为对话框
+
+2022/01/04
 1. Unity导出apk可以跳过启动动画
 2. 修复FontDynamicUnity字体乱码的BUG（20210918修复Color[]转置BUG留下的）
 
