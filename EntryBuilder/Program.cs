@@ -9155,13 +9155,27 @@ return result;"
                 builder.AppendBlock(() =>
                 {
                     builder.AppendLine("StringBuilder builder = new StringBuilder();");
+                    builder.AppendLine("PagedModel<T> result = new PagedModel<T>();");
+                    builder.AppendLine("if (page < 0)");
+                    builder.AppendBlock(() =>
+                    {
+                        builder.AppendLine("builder.AppendLine(\"{0} {1} {2}\", selectSQL, __where, conditionAfterWhere);");
+                        builder.AppendLine("db.ExecuteReader((reader) =>");
+                        builder.AppendBlock(() =>
+                        {
+                            builder.AppendLine("result.Models = new List<T>();");
+                            builder.AppendLine("read(reader, result.Models);");
+                            builder.AppendLine("result.Count = result.Models.Count;");
+                        });
+                        builder.AppendLine(", builder.ToString(), param);");
+                        builder.AppendLine("return result;");
+                    });
                     builder.AppendLine("builder.AppendLine(\"{0} {1};\", selectCountSQL, __where);");
                     builder.AppendLine("builder.AppendLine(\"{0} {1} {2} LIMIT @p{3},@p{4};\", selectSQL, __where, conditionAfterWhere, param.Length, param.Length + 1);");
                     builder.AppendLine("object[] __param = new object[param.Length + 2];");
                     builder.AppendLine("Array.Copy(param, __param, param.Length);");
                     builder.AppendLine("__param[param.Length] = page * pageSize;");
                     builder.AppendLine("__param[param.Length + 1] = pageSize;");
-                    builder.AppendLine("PagedModel<T> result = new PagedModel<T>();");
                     builder.AppendLine("result.Page = page;");
                     builder.AppendLine("result.PageSize = pageSize;");
                     builder.AppendLine("db.ExecuteReader((reader) =>");
