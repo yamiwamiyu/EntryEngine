@@ -815,9 +815,15 @@ namespace EntryEngine.Serialize
     {
         public object Value;
 
+        /// <summary>字典获取字段名，没有该字段也不会抛出异常</summary>
         public JsonObject this[string key]
         {
-            get { return new JsonObject(((Dictionary<string, object>)Value)[key]); }
+            get
+            {
+                object value;
+                ((Dictionary<string, object>)Value).TryGetValue(key, out value);
+                return new JsonObject(value);
+            }
         }
         public JsonObject this[int arrayIndex]
         {
@@ -852,6 +858,13 @@ namespace EntryEngine.Serialize
             }
         }
 
+        public bool ContainsKey(string key)
+        {
+            var dic = Value as Dictionary<string, object>;
+            if (dic == null)
+                return false;
+            return dic.ContainsKey(key);
+        }
         //public T GetValue<T>()
         //{
         //    return (T)Value;
