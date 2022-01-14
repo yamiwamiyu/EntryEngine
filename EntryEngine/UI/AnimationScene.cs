@@ -199,7 +199,7 @@ namespace EntryEngine.UI
         /// <summary>灰色蒙版不可以点击关闭</summary>
         public SMask CantClickClose()
         {
-            this.Eventable = true;
+            this.Eventable = false;
             return this;
         }
         public UIScene ShowScene(UIScene scene)
