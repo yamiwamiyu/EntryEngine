@@ -1232,12 +1232,29 @@ namespace EntryEngine.Network
         [Index(EIndex.Group)]
         [Foreign(typeof(InnerCascade), "ID")]
         public int ParentID;
-        /// <summary>父类的级联数组，格式为0,1,2，越靠前计别越高</summary>
+        /// <summary>父类的级联数组，格式为0,1,2，越靠前级别越高</summary>
         [Index]
         public string Parents;
+        /// <summary>父类的级联数组，越靠前级别越高</summary>
         public int[] ParentsIDs
         {
             get { return ToCascadeParentsArray(Parents); }
+        }
+        public bool HasParent { get { return ParentID != 0; } }
+        /// <summary>顶级ID，若没有上级，则顶级是自己</summary>
+        public int Top
+        {
+            get
+            {
+                if (ParentID == 0)
+                    return ID;
+
+                int index = Parents.IndexOf(',');
+                if (index == -1)
+                    return ParentID;
+                else
+                    return int.Parse(Parents.Substring(0, index));
+            }
         }
         public EModifiedFlag ModifiedFlag { get; internal set; }
         public void SetParent(InnerCascade parent)
