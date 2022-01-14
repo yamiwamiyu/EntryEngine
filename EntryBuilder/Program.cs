@@ -2277,9 +2277,9 @@ return result;"
                         }
                         // 生成请求调用
                         if (hasAsync)
-                            builder.AppendLine("return send(\"{0}/{1}\", parameters.ToString(), {2});", agent.Protocol, method.Name, parameters.Length == 0 ? "null" : parameters[parameters.Length - 1].Name);
+                            builder.AppendLine("return send(\"{0}/{1}\", parameters.ToString(), {2});", agent.Protocol, method.Name, parameters.Length == 0 ? "(Action<string>)null" : parameters[parameters.Length - 1].Name);
                         else
-                            builder.AppendLine("send(\"{0}/{1}\", parameters.ToString(), {2});", agent.Protocol, method.Name, parameters.Length == 0 ? "null" : parameters[parameters.Length - 1].Name);
+                            builder.AppendLine("send(\"{0}/{1}\", parameters.ToString(), {2});", agent.Protocol, method.Name, parameters.Length == 0 ? "(Action<string>)null" : parameters[parameters.Length - 1].Name);
                     });
                 }
                 builder.AppendLine();
