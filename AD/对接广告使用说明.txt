@@ -77,3 +77,9 @@ MAIN.AD.ShowAD("广告位ID", EADType.Video, 0, 0, 900, 1600,
                 (ad) => _LOG.Debug("加载广告成功"),
                 () => _LOG.Debug("点击广告"),
                 () => _LOG.Debug("这里可以领取广告奖励"));
+
+
+广告SDK可能要求gradle版本，可以在此地址下载https://services.gradle.org/distributions/
+下载后替换到如下位置2018.4.10f1\Editor\Data\PlaybackEngines\AndroidPlayer\Tools\gradle\lib
+注意：拷贝复制进入到Unity目录时，可能不是覆盖而是部分追加拷贝进去的，旧文件还在也会导致不可用
+建议删除调原本Unity里的文件夹，再整个文件夹拷贝进去

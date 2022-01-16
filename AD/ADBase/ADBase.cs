@@ -106,6 +106,10 @@ public abstract class ADBase
             return new ADEmpty();
         return (ADBase)Activator.CreateInstance(_AutoType);
     }
+    public static ADBase CreateEmpty()
+    {
+        return new ADEmpty();
+    }
 }
 internal class ADEmpty : ADBase
 {
