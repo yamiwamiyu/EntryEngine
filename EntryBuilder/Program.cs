@@ -12077,5 +12077,25 @@ return result;"
                 File.WriteAllText(output, root.ToString(), Encoding.UTF8);
             }
         }
+        public static void DeleteContentExcept(string dir, string exceptSplitByComma)
+        {
+            HashSet<string> split = new HashSet<string>(exceptSplitByComma.Split(';'));
+            foreach (var item in Directory.GetDirectories(dir))
+            {
+                string target = Path.GetFileName(item);
+                if (!split.Contains(target))
+                {
+                    Directory.Delete(item, true);
+                    _LOG.Debug("删除文件夹：{0}", target);
+                }
+                else
+                    _LOG.Debug("忽略文件夹：{0}", target);
+            }
+            foreach (var item in Directory.GetFiles(dir, "*.*", SearchOption.TopDirectoryOnly))
+            {
+                File.Delete(item);
+                _LOG.Debug("删除文件：{0}", item);
+            }
+        }
 	}
 }
