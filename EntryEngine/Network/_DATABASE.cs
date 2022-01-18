@@ -1396,10 +1396,26 @@ namespace EntryEngine.Network
     /// <summary>翻页数据模型</summary>
     public class PagedModel<T>
     {
+        /// <summary>数据总条数</summary>
         public int Count;
+        /// <summary>当前页数，从0开始</summary>
         public int Page;
+        /// <summary>每页的数据条数</summary>
         public int PageSize;
+        /// <summary>总页数，从0开始</summary>
+        public int TotalPage;
+        /// <summary>当前页的数据</summary>
         public List<T> Models;
+
+        /// <summary>根据数据总条数和每页数据条数自动计算总页数并返回总页数</summary>
+        public int CalcTotalPage()
+        {
+            if (PageSize == 0)
+                TotalPage = 0;
+            else
+                TotalPage = (Count - 1) / PageSize;
+            return TotalPage;
+        }
 
         public PagedModel<U> ChangeModel<U>(Func<T, U> select)
         {
@@ -1407,6 +1423,7 @@ namespace EntryEngine.Network
             ret.Count = this.Count;
             ret.Page = this.Page;
             ret.PageSize = this.PageSize;
+            ret.TotalPage = this.TotalPage;
             int count = Models.Count;
             ret.Models = new List<U>(count);
             for (int i = 0; i < Models.Count; i++)
