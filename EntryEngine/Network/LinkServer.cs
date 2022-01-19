@@ -2635,6 +2635,8 @@ namespace EntryEngine.Network
     }
     public class ParallelJsonHttpService : ParallelQueue<HttpListenerContext>
     {
+        public Action<AgentHttp> OnFixAgent;
+
         public AgentHttp Agent { get; protected set; }
         public LinkHttpResponseShort Link { get; protected set; }
         private AgentHttp hotFixAgent;
@@ -2669,6 +2671,8 @@ namespace EntryEngine.Network
             {
                 this.Agent = hotFixAgent;
                 hotFixAgent = null;
+                if (OnFixAgent != null)
+                    OnFixAgent(Agent);
             }
         }
         /// <summary>热更新Agent处理协议：StubHttp[] Method(Func&lt;HttpListenerContext> getData)</summary>
