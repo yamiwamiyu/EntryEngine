@@ -820,7 +820,7 @@ namespace EntryEngine.Network
             if (ex != null)
                 CallbackError(arg1, (int)ex.StatusCode, ex.Message);
             else
-                CallbackError(arg1, 400, ex.Message);
+                CallbackError(arg1, 400, arg2.Message);
             return false;
         }
 
