@@ -283,8 +283,9 @@ namespace EntryEngine.Network
 
                         if (reader.Read())
                         {
-                            instance = Activator.CreateInstance<T>();
-                            Read(reader, type, 0, count, instance);
+                            object __instance = Activator.CreateInstance<T>();
+                            Read(reader, type, 0, count, __instance);
+                            instance = (T)__instance;
                         }
                     }, sql, parameters);
                 return instance;
@@ -311,9 +312,9 @@ namespace EntryEngine.Network
 
                         while (reader.Read())
                         {
-                            T instance = Activator.CreateInstance<T>();
+                            object instance = Activator.CreateInstance<T>();
                             MultiRead(reader, 0, count, instance, properties, fields, indices);
-                            newInstance(instance);
+                            newInstance((T)instance);
                         }
                     }, sql, parameters);
             }
