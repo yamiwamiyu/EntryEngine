@@ -8318,7 +8318,7 @@ return result;"
                             foreach (var field in fields)
                                 builder.AppendLine("base.{0} = __clone.{0};", field.Name);
                         });
-                        builder.AppendLine("static {0} __TO({1} __base)", table.Name, tableMapperName);
+                        builder.AppendLine("public static {0} __TO({1} __base)", table.Name, tableMapperName);
                         builder.AppendBlock(() =>
                         {
                             builder.AppendLine("if (__base == null) return null;");
