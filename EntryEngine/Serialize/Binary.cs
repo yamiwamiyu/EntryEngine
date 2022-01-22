@@ -63,7 +63,7 @@ namespace EntryEngine.Serialize
         }
 		public void Skip(int bytes)
 		{
-			index = _MATH.Clamp(index + bytes, 0, buffer.Length - 1);
+			index = _MATH.Clamp(index + bytes, 0, buffer.Length);
 		}
         public virtual byte[] GetBuffer()
         {
