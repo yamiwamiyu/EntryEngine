@@ -1212,6 +1212,55 @@ namespace EntryEngine.Serialize
                 }
             }
         }
+        private void InternalToJsonString(StringBuilder builder)
+        {
+            if (IsNull)
+            {
+                builder.Append("null");
+            }
+            else if (IsObject)
+            {
+                builder.Append('{');
+                foreach (var item in (Dictionary<string, object>)Value)
+                {
+                    builder.Append("\"");
+                    builder.Append(item.Key);
+                    builder.Append("\":");
+                    new JsonObject(item.Value).InternalToJsonString(builder);
+                    builder.Append(',');
+                }
+                builder.Remove(builder.Length - 1, 1);
+                builder.Append('}');
+            }
+            else if (IsArray)
+            {
+                builder.Append('[');
+                List<object> list = (List<object>)Value;
+                for (int i = 0, e = list.Count - 1; i <= e; i++)
+                {
+                    new JsonObject(list[i]).InternalToJsonString(builder);
+                    if (i != e)
+                        builder.Append(',');
+                }
+                builder.Append(']');
+            }
+            else if (IsString)
+            {
+                builder.Append("\"");
+                builder.Append(Value);
+                builder.Append("\"");
+            }
+            else
+            {
+                builder.Append(Value);
+            }
+        }
+        public string ToJsonString()
+        {
+            StringBuilder builder = new StringBuilder();
+            InternalToJsonString(builder);
+            return builder.ToString();
+        }
         public override string ToString()
         {
             if (Value == null) return string.Empty;
