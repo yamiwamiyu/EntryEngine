@@ -2394,6 +2394,9 @@ return result;"
                         var param = parameters[j];
                         builder.Append("{0}", param.Name);
                     }
+                    // 后端接口没有回调，这里固定一个回调函数
+                    if (!hasAsync)
+                        builder.Append(", callback");
                     // 直接传对象
                     //builder.Append("data, callback");
                     builder.AppendLine(")");
