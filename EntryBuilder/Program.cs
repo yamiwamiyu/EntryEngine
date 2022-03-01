@@ -2376,6 +2376,19 @@ return result;"
                     builder.AppendLine(");");
                     builder.AppendLine("return promise;");
                 });
+                builder.AppendLine("// Example: Download(param1, param2, {0}.download(\"download.txt\"));", name);
+                builder.AppendLine("{0}.download = function(filename)", name);
+                builder.AppendBlock(() =>
+                {
+                    builder.AppendLine("return (ret) =>");
+                    builder.AppendBlockWithEnd(() =>
+                    {
+                        builder.AppendLine("var a = window.document.createElement(\"a\");");
+                        builder.AppendLine("a.href = URL.createObjectURL(new Blob([ret]));");
+                        builder.AppendLine("a.download = filename;");
+                        builder.AppendLine("a.click();");
+                    });
+                });
                 // 通过代理调用接口方法
                 //WCCallProxy(builder, call, asyncCB);
                 for (int i = 0; i < call.Length; i++)

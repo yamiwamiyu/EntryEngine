@@ -345,6 +345,8 @@ namespace EntryEngine.Network
                 }, sql, parameters);
                 return result;
             }
+            /// <summary>SQL语句不能查询相同名字的字段，主要是获取数据总数量时，SQL被作为临时表有相同名字字段会报错Duplicate column name</summary>
+            [Code(ECode.BUG)]
             public PagedModel<T> SelectPaged<T>(string sql, int pageIndex, int pageSize, Action<IDataReader, List<T>> read, params object[] _params) where T : new()
             {
                 if (_params == null) _params = new object[0];
