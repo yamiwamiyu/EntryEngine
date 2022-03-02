@@ -2336,7 +2336,8 @@ return result;"
                     builder.AppendBlock(() =>
                     {
                         builder.AppendLine("var req = new XMLHttpRequest();");
-                        builder.AppendLine("req.onreadystatechange = function()");
+                        builder.AppendLine("req.callback = callback;");
+                        builder.AppendLine("req.onreadystatechange = async function()");
                         builder.AppendBlock(() =>
                         {
                             builder.AppendLine("if (req.readyState == 4)");
@@ -2346,7 +2347,17 @@ return result;"
                                 builder.AppendLine("if (req.status == 200)");
                                 builder.AppendBlock(() =>
                                 {
-                                    builder.AppendLine("var obj = req.responseText ? JSON.parse(req.responseText) : null;");
+                                    //builder.AppendLine("var obj = req.responseText ? JSON.parse(req.responseText) : null;");
+                                    builder.AppendLine("var obj = null;");
+                                    builder.AppendLine("switch (req.responseType)");
+                                    builder.AppendBlock(() =>
+                                    {
+                                        builder.AppendLine("case \"text\": if (req.response) obj = JSON.parse(req.responseText); break;");
+                                        builder.AppendLine("case \"blob\": ");
+                                        builder.AppendLine("if (req.response.type == \"text/plain\") await req.response.text().then((value) => obj = JSON.parse(value));");
+                                        builder.AppendLine("else obj = req.response; ");
+                                        builder.AppendLine("break;");
+                                    });
                                     builder.AppendLine("if (obj && obj.errCode)");
                                     builder.AppendBlock(() =>
                                     {
@@ -2357,7 +2368,7 @@ return result;"
                                     builder.AppendLine("else");
                                     builder.AppendBlock(() =>
                                     {
-                                        builder.AppendLine("if (callback) { callback(obj); }");
+                                        builder.AppendLine("if (req.callback) { req.callback(obj); }");
                                         builder.AppendLine("else { console.log(obj); }");
                                         builder.AppendLine("if (resolve) { resolve(obj); }");
                                     });
@@ -2376,18 +2387,28 @@ return result;"
                     builder.AppendLine(");");
                     builder.AppendLine("return promise;");
                 });
-                builder.AppendLine("// Example: Download(param1, param2, {0}.download(\"download.txt\"));", name);
-                builder.AppendLine("{0}.download = function(filename)", name);
+                builder.AppendLine("// Example: {0}.download(\"download.txt\", () => {0}.Download(param1, param2));", name);
+                builder.AppendLine("{0}.download = function(filename, download)", name);
                 builder.AppendBlock(() =>
                 {
-                    builder.AppendLine("return (ret) =>");
-                    builder.AppendBlockWithEnd(() =>
+                    builder.AppendLine("if (!download) throw new Error(\"下载文件必须指定下载函数\");");
+                    builder.AppendLine("ICenterProxy.onSendOnce = (req) =>");
+                    builder.AppendBlock(() =>
                     {
-                        builder.AppendLine("var a = window.document.createElement(\"a\");");
-                        builder.AppendLine("a.href = URL.createObjectURL(new Blob([ret]));");
-                        builder.AppendLine("a.download = filename;");
-                        builder.AppendLine("a.click();");
+                        builder.AppendLine("req.responseType = \"blob\";");
+                        builder.AppendLine("var __callback = req.callback;");
+                        builder.AppendLine("req.callback = (ret) =>");
+                        builder.AppendBlock(() =>
+                        {
+                            builder.AppendLine("var a = window.document.createElement(\"a\");");
+                            builder.AppendLine("a.href = URL.createObjectURL(ret);");
+                            builder.AppendLine("a.download = filename;");
+                            builder.AppendLine("a.click();");
+                            builder.AppendLine("if (__callback) __callback(ret);");
+                        });
                     });
+                    builder.AppendLine("download();");
+                    builder.AppendLine("if (ICenterProxy.onSendOnce) throw new Error(\"下载文件必须发送接口下载\");");
                 });
                 // 通过代理调用接口方法
                 //WCCallProxy(builder, call, asyncCB);
