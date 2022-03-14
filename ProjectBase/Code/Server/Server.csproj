@@ -49,12 +49,16 @@
     <Reference Include="System.Data" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Impl\ImplProtocol1.cs" />
-    <Compile Include="Impl\ImplProtocol2.cs" />
+    <Compile Include="Auto\ICenterStub.cs" />
+    <Compile Include="Auto\IServiceStub.cs" />
+    <Compile Include="Auto\IUserStub.cs" />
+    <Compile Include="Auto\_DB.design.cs" />
+    <Compile Include="Impl\ImplIService.cs" />
+    <Compile Include="Impl\ImplIUser.cs" />
+    <Compile Include="Impl\ImplUserBase.cs" />
+    <Compile Include="Impl\ImplICenter.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Protocol1Stub.cs" />
-    <Compile Include="Protocol2Stub.cs" />
     <Compile Include="Service.cs" />
     <Compile Include="_DB.cs" />
   </ItemGroup>
@@ -67,6 +71,7 @@
       <Name>Protocol %28Protocol\Protocol%29</Name>
     </ProjectReference>
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.

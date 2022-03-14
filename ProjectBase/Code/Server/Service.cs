@@ -14,10 +14,28 @@ namespace Server
 {
     public interface ICmd
     {
-        void LoggerToManager();
-        void LoadTable();
+        /// <summary>设置数据库</summary>
+        /// <param name="dbconn">数据库连接字符串</param>
+        /// <param name="dbname">数据库名称</param>
+        /// <param name="isRebuild">是否自动更新数据库结构</param>
         void SetDatabase(string dbconn, string dbname, bool isRebuild);
+        /// <summary>执行查询语句并将执行结果打印到控制台</summary>
+        void Select(string sql);
+        /// <summary>执行非查询语句</summary>
+        void Update(string sql);
+
+        /// <summary>线上采用运维管理工具开启服务时，应调用此方法来将日志写入运维管理工具</summary>
+        void LoggerToManager();
+        /// <summary>设置上传文件的资源目录</summary>
+        /// <param name="localDir">写入文件的计算机本地目录</param>
+        /// <param name="accessUrl">访问上传的资源的外网地址</param>
+        void SetResourceDir(string localDir, string accessUrl);
+        /// <summary>加载游戏数据表</summary>
+        void LoadTable();
+        /// <summary>启动服务器</summary>
+        /// <param name="port">服务器端口</param>
         void Launch(ushort port);
+        
     }
     partial class Service : ProxyHttpAsync, ICmd
     {
@@ -39,24 +57,7 @@ namespace Server
             // 每帧执行的业务逻辑
         }
 
-        void ICmd.LoggerToManager()
-        {
-            if (_LOG._Logger is LoggerFile)
-            {
-                ((LoggerFile)_LOG._Logger).Dispose();
-            }
-            _LOG._Logger = new LoggerFile(new LoggerToShell());
-        }
-        void ICmd.LoadTable()
-        {
-            // 加载数据表
-            //_TABLE.Load("Tables");
-            //_LOG.Info("加载数据表完成");
-            //_C.Load(_IO.ReadText("Tables\\C.xml"));
-            //_LOG.Info("加载共用常量表完成");
-            //_CS.Load(_IO.ReadText("Tables\\CS.xml"));
-            //_LOG.Info("加载服务端常量表完成");
-        }
+        
         void ICmd.SetDatabase(string dbconn, string dbname, bool isRebuild)
         {
             // 设置数据库
@@ -75,6 +76,54 @@ namespace Server
             }
             _DB._DAO.TestConnection();
             _LOG.Info("设置数据库：{0} 连接字符串：{1}", dbname, dbconn);
+        }
+        void ICmd.Select(string sql)
+        {
+            _LOG.Info("查询SQL: {0}", sql);
+            _DB._DAO.ExecuteReader(reader =>
+            {
+                StringBuilder builder = new StringBuilder();
+                int field = reader.FieldCount;
+                while (reader.Read())
+                {
+                    for (int i = 0; i < field; i++)
+                    {
+                        builder.Append(reader[i]);
+                        builder.Append('\t');
+                    }
+                    builder.AppendLine();
+                }
+                _LOG.Info(builder.ToString());
+            }, sql);
+        }
+        void ICmd.Update(string sql)
+        {
+            _LOG.Info("更新SQL: {0}, 结果{1}", sql, _DB._DAO.ExecuteNonQuery(sql));
+        }
+
+        void ICmd.LoggerToManager()
+        {
+            if (_LOG._Logger is LoggerFile)
+                ((LoggerFile)_LOG._Logger).Base = new LoggerToShell();
+            else
+                _LOG._Logger = new LoggerFile(new LoggerToShell());
+        }
+        void ICmd.SetResourceDir(string localDir, string accessUrl)
+        {
+            localDir = Path.GetFullPath(localDir);
+            _LOG.Info("上传资源目录：{0} 资源访问URL：{1}", localDir, accessUrl);
+            Environment.CurrentDirectory = localDir;
+            _FILE.AccessURL = accessUrl;
+        }
+        void ICmd.LoadTable()
+        {
+            // 加载数据表
+            //_TABLE.Load("Tables");
+            //_LOG.Info("加载数据表完成");
+            //_C.Load(_IO.ReadText("Tables\\C.xml"));
+            //_LOG.Info("加载共用常量表完成");
+            //_CS.Load(_IO.ReadText("Tables\\CS.xml"));
+            //_LOG.Info("加载服务端常量表完成");
         }
         void ICmd.Launch(ushort port)
         {
@@ -142,113 +191,33 @@ namespace Server
             StubHttp[]
             GetStubs(Func<HttpListenerContext> getContext)
         {
-            var impl1 = new ImplProtocol1();
-            Protocol1Stub _p1 = new Protocol1Stub(impl1);
+            var _service = new ImplIService();
+            var _iservice = new IServiceStub(_service);
 
-            var impl2 = new ImplProtocol2();
-            Protocol2Stub _p2 = new Protocol2Stub(impl2);
-            _p2.__GetAgent = () =>
+            var _user = new ImplIUser();
+            var _iuser = new IUserStub(_user);
+            _iuser.__GetAgent = () =>
             {
-                impl2.CheckToken(getContext());
+                _user.CheckToken(getContext());
+                return null;
+            };
+
+            var _center = new ImplICenter();
+            var _icenter = new ICenterStub(_center);
+            _icenter.__GetAgent = () =>
+            {
+                _center.CheckToken(getContext());
                 return null;
             };
 
             StubHttp[]
                 stubs = 
                 { 
-                    _p1, 
-                    _p2 
+                    _iservice, 
+                    _iuser,
+                    _icenter,
                 };
             return stubs;
-        }
-    }
-    public class StubBase
-    {
-        public T_PLAYER Player;
-        protected static Dictionary<string, T_PLAYER> _cachePlayer = new Dictionary<string, T_PLAYER>();
-
-        public void OP(string op, string way, int sign, int statistic, string detail)
-        {
-            T_OPLog log = new T_OPLog();
-            log.PID = Player.ID;
-            log.Time = DateTime.Now;
-            log.Operation = op;
-            log.Way = way;
-            log.Sign = sign;
-            log.Statistic = statistic;
-            log.Detail = detail;
-            _DB._T_OPLog.Insert(log);
-        }
-        public void OP(string op, string way, int sign, int statistic)
-        {
-            OP(op, way, sign, statistic, null);
-        }
-        public void OP(string op, string way, int sign)
-        {
-            OP(op, way, sign, 0, null);
-        }
-        public void OP(string op, string way)
-        {
-            OP(op, way, 0, 0, null);
-        }
-        public void OP(string op, int sign)
-        {
-            OP(op, null, sign, 0, null);
-        }
-
-        public void CheckToken(HttpListenerContext context)
-        {
-            string token = context.Request.Headers["AccessToken"];
-            if (string.IsNullOrEmpty(token))
-                throw new InvalidOperationException("没有登录!");
-
-            // 做分布式使用多进程时，请不要使用以下缓存机制
-
-            // 缓存
-            lock (_cachePlayer)
-            {
-                _cachePlayer.TryGetValue(token, out Player);
-            }
-            bool hasCache = Player != null;
-            if (!hasCache)
-            {
-                Player = _DB._T_PLAYER.Select(null, "WHERE Token=@p0", token);
-                if (Player != null)
-                {
-                    Player.LastRefreshLoginTime = Player.LastLoginTime;
-                    lock (_cachePlayer)
-                    {
-                        _cachePlayer.Add(token, Player);
-                    }
-                }
-            }
-            // 检查登录
-            if (Player != null)
-            {
-                var now = GameTime.Time.CurrentFrame;
-                var elapsed = (now - Player.LastLoginTime).TotalMinutes;
-                // Token过期时间
-                if (elapsed < 30)
-                {
-                    // 刷新Token过期时间到数据库
-                    if (elapsed > 5)
-                    {
-                        Player.LastLoginTime = now;
-                        Player.LastRefreshLoginTime = now;
-                        _DB._T_PLAYER.Update(Player, null, ET_PLAYER.LastLoginTime);
-                    }
-                    return;
-                }
-                else
-                {
-                    _LOG.Debug("用户:{0}缓存过期", Player.Name);
-                    lock (_cachePlayer)
-                    {
-                        _cachePlayer.Remove(token);
-                    }
-                }
-            }
-            throw new InvalidOperationException("没有登录!");
         }
     }
 }

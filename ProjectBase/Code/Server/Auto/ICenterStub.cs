@@ -7,26 +7,26 @@ using EntryEngine.Serialize;
 using System.Linq;
 using System.Text;
 using System.Net;
-interface _Protocol2
+interface _ICenter
 {
-    void TestLogin(CBProtocol2_TestLogin callback);
+    void GetUserInfo(CBICenter_GetUserInfo callback);
 }
-public class CBProtocol2_TestLogin : IDisposable
+public class CBICenter_GetUserInfo : IDisposable
 {
     internal HttpListenerContext __context { get; private set; }
     internal StubHttp __link { get; private set; }
     internal bool IsCallback { get; private set; }
-    public CBProtocol2_TestLogin(StubHttp link)
+    public CBICenter_GetUserInfo(StubHttp link)
     {
         this.__link = link;
         this.__context = link.Context;
     }
-    public void Callback(T_PLAYER obj) // INDEX = 0
+    public void Callback(T_CENTER_USER obj) // INDEX = 0
     {
         if (IsCallback) return;
         string __ret = JsonWriter.Serialize(obj);
         #if DEBUG
-        _LOG.Debug("CBProtocol2_TestLogin {0}", __ret);
+        _LOG.Debug("CBICenter_GetUserInfo {0}", __ret);
         #endif
         __link.Response(__context, __ret);
         IsCallback = true;
@@ -36,7 +36,7 @@ public class CBProtocol2_TestLogin : IDisposable
         if (IsCallback) return;
         string __ret = JsonWriter.Serialize(new HttpError(ret, msg));
         #if DEBUG
-        _LOG.Debug("CBProtocol2_TestLogin Error ret={0} msg={1}", ret, msg);
+        _LOG.Debug("CBICenter_GetUserInfo Error ret={0} msg={1}", ret, msg);
         #endif
         __link.Response(__context, __ret);
         IsCallback = true;
@@ -47,28 +47,28 @@ public class CBProtocol2_TestLogin : IDisposable
     }
 }
 
-class Protocol2Stub : StubHttp
+class ICenterStub : StubHttp
 {
     public Action<HttpListenerContext, object> __AutoCallback;
-    public _Protocol2 __Agent;
-    public Func<_Protocol2> __GetAgent;
-    public Func<HttpListenerContext, _Protocol2> __ReadAgent;
-    public Protocol2Stub(_Protocol2 agent)
+    public _ICenter __Agent;
+    public Func<_ICenter> __GetAgent;
+    public Func<HttpListenerContext, _ICenter> __ReadAgent;
+    public ICenterStub(_ICenter agent)
     {
         this.__Agent = agent;
         this.Protocol = "2";
-        AddMethod("TestLogin", TestLogin);
+        AddMethod("GetUserInfo", GetUserInfo);
     }
-    void TestLogin(HttpListenerContext __context)
+    void GetUserInfo(HttpListenerContext __context)
     {
         var agent = __Agent;
         if (__GetAgent != null) { var temp = __GetAgent(); if (temp != null) agent = temp; }
         if (__ReadAgent != null) { var temp = __ReadAgent(__context); if (temp != null) agent = temp; }
         string __temp;
         #if DEBUG
-        _LOG.Debug("TestLogin");
+        _LOG.Debug("GetUserInfo");
         #endif
-        var callback = new CBProtocol2_TestLogin(this);
-        agent.TestLogin(callback);
+        var callback = new CBICenter_GetUserInfo(this);
+        agent.GetUserInfo(callback);
     }
 }

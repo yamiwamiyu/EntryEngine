@@ -1,0 +1,273 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Net;
+using EntryEngine.Network;
+using System.IO;
+using EntryEngine;
+
+/// <summary>扩展方法</summary>
+public static class _EX
+{
+    public static void Check(this string message, bool isThrow)
+    {
+        if (isThrow)
+            throw new HttpException(400, message);
+    }
+    public static string Mask(this string str)
+    {
+        return Mask(str, 3, 4);
+    }
+    public static string Mask(this string str, int prevLen, int lastLen)
+    {
+        if (string.IsNullOrEmpty(str))
+            return str;
+        else
+        {
+            int len = prevLen + lastLen;
+            if (str.Length <= len)
+                return str;
+            StringBuilder builder = new StringBuilder();
+            builder.Append(str.Substring(0, prevLen));
+            for (int i = 0, n = str.Length - lastLen - prevLen; i < n; i++)
+                builder.Append('*');
+            builder.Append(str.Substring(str.Length - lastLen));
+            return builder.ToString();
+        }
+    }
+    public static IPAddress ToIP(this int ip)
+    {
+        return new IPAddress(BitConverter.GetBytes(ip));
+    }
+    public static int ToIP(this string ip)
+    {
+        return BitConverter.ToInt32(IPAddress.Parse(ip).GetAddressBytes(), 0);
+    }
+    public static U TryAdd<T, U>(this Dictionary<T, U> dic, T key, Action<U> setKey) where U : new()
+    {
+        U result;
+        if (!dic.TryGetValue(key, out result))
+        {
+            result = new U();
+            if (setKey != null)
+                setKey(result);
+            dic.Add(key, result);
+        }
+        return result;
+    }
+    public static void Add<T, U>(this Dictionary<T, List<U>> dic, Func<U, T> v2k, U item)
+    {
+        List<U> temp;
+        T key = v2k(item);
+        if (!dic.TryGetValue(key, out temp))
+        {
+            temp = new List<U>();
+            dic.Add(key, temp);
+        }
+        temp.Add(item);
+    }
+    public static void Add<T, U>(this Dictionary<T, List<U>> dic, Func<U, T> v2k, params U[] items)
+    {
+        Add(dic, v2k, (IEnumerable<U>)items);
+    }
+    public static void Add<T, U>(this Dictionary<T, List<U>> dic, Func<U, T> v2k, IEnumerable<U> items)
+    {
+        List<U> temp;
+        foreach (var item in items)
+        {
+            T key = v2k(item);
+            if (!dic.TryGetValue(key, out temp))
+            {
+                temp = new List<U>();
+                dic.Add(key, temp);
+            }
+            temp.Add(item);
+        }
+    }
+}
+/// <summary>上传/下载文件通用</summary>
+public static class _FILE
+{
+    /// <summary>本地资源访问的路径</summary>
+    public static string AccessURL;
+
+    public const string NATIVE_UPLOAD_PATH = "temp/";
+
+    public static void CheckPath(string path)
+    {
+        if (!string.IsNullOrEmpty(path) && !Directory.Exists(path))
+            Directory.CreateDirectory(path);
+    }
+    public static void CheckFilePath(string nativeFileName)
+    {
+        CheckPath(Path.GetDirectoryName(nativeFileName));
+    }
+    public static void DeleteFile(string key)
+    {
+        _LOG.Debug("删除本地文件：{0}", key);
+        if (File.Exists(key)) File.Delete(key);
+    }
+    public static void DeleteDirectory(string relativePath)
+    {
+        if (Directory.Exists(relativePath))
+            Directory.Delete(relativePath, true);
+    }
+
+    public static void ResolveImage(this string image, out string imageFull)
+    {
+        if (string.IsNullOrEmpty(image))
+            imageFull = string.Empty;
+        else
+            imageFull = string.Format("{0}{1}", AccessURL, image);
+    }
+    public static void ResolveImage(this string[] image, out string[] imageFull)
+    {
+        imageFull = new string[image.Length];
+        for (int i = 0; i < image.Length; i++)
+            image[i].ResolveImage(out imageFull[i]);
+    }
+    public static void CheckFileTypeCanEmpty(this string filename, params string[] suffix)
+    {
+        if (!string.IsNullOrEmpty(filename))
+            CheckFileType(filename, suffix);
+    }
+    public static void CheckFileTypeCanEmpty(this string[] filenames, params string[] suffix)
+    {
+        if (filenames != null)
+        {
+            foreach (var item in filenames)
+            {
+                CheckFileType(item, suffix);
+            }
+        }
+    }
+    /// <summary>检查文件类型</summary>
+    /// <param name="suffix">包含'.'</param>
+    public static void CheckFileType(this string filename, params string[] suffix)
+    {
+        string extension = Path.GetExtension(filename);
+        "不支持的文件格式".Check(suffix.Length > 0 && !suffix.Any(s => s == extension));
+    }
+
+    /// <summary>将上传的文件写入临时文件夹暂存</summary>
+    /// <param name="file">上传的文件</param>
+    /// <returns>返回临时文件名（不带临时文件夹路径，带后缀）</returns>
+    public static string WriteUploadFile(FileUpload file, bool SaveOriginName = false)
+    {
+        CheckPath(NATIVE_UPLOAD_PATH);
+        string fileName = Guid.NewGuid().ToString("n");
+        if (SaveOriginName)
+            fileName += ("_" + Path.GetFileName(file.Filename));
+        else
+            fileName += Path.GetExtension(file.Filename);
+        file.SaveAs(NATIVE_UPLOAD_PATH + fileName);
+        return fileName;
+    }
+    /// <summary>拷贝uploadFile到targetFileName，删除uploadFile的文件</summary>
+    /// <param name="uploadFile">WriteUploadFile返回的路径</param>
+    /// <param name="targetFileName">要保存的目标路径</param>
+    private static void SaveUploadFile(string uploadFile, ref string targetFileName)
+    {
+        // 最后要保存的文件
+        if (string.IsNullOrEmpty(Path.GetExtension(targetFileName)))
+        {
+            // 自动添加后缀
+            string extension = Path.GetExtension(uploadFile);
+            if (!string.IsNullOrEmpty(extension))
+                targetFileName += extension;
+        }
+
+        if (uploadFile != targetFileName)
+        {
+            CheckFilePath(targetFileName);
+            // 写入本地
+            _LOG.Debug("本地保存上传的文件：{0} - {1}", uploadFile, targetFileName);
+            File.Copy(uploadFile, targetFileName, true);
+            if (File.Exists(uploadFile))
+                File.Delete(uploadFile);
+        }
+    }
+    /// <summary>图片上传</summary>
+    /// <param name="oldFile">之前已经上传过的文件路径，若上传了新文件，此路径将变为新路径</param>
+    /// <param name="upload">本次上传的图片路径，有可能没有变化</param>
+    /// <param name="newFile">本次要保存的图片目标路径</param>
+    public static void SaveUploadFile(ref string oldFile, ref string upload, string newFile)
+    {
+        bool isOldEmpty = string.IsNullOrEmpty(oldFile);
+        bool isNewEmpty = string.IsNullOrEmpty(upload);
+
+        if (!isNewEmpty)
+        {
+            // 上传新文件 | 新旧文件不一样替换文件
+            if (oldFile != upload)
+            {
+                if (!isOldEmpty)
+                {
+                    // 新旧文件不一样，删除旧文件
+                    DeleteFile(oldFile);
+                }
+
+                // 上传新文件
+                SaveUploadFile(NATIVE_UPLOAD_PATH + upload, ref newFile);
+                oldFile = newFile;
+                upload = newFile;
+            }
+        }
+        else
+        {
+            if (!isOldEmpty)
+            {
+                // 删除旧文件
+                DeleteFile(oldFile);
+                oldFile = null;
+            }
+            // 都为null，不做任何操作
+        }
+    }
+    public static void SaveUploadFile(ref string[] oldFiles, ref string[] uploads, string[] newFiles)
+    {
+        if (oldFiles == null)
+            oldFiles = new string[0];
+        if (uploads == null)
+            uploads = new string[0];
+        if (newFiles == null)
+            newFiles = new string[0];
+
+        if (uploads.Length != newFiles.Length)
+            throw new ArgumentException("上传的文件和相对应的文件名数组长度应该一样");
+
+        // 需要删除的文件
+        List<string> delete = new List<string>();
+
+        // 文件已经不存在，需要删除
+        for (int i = 0; i < oldFiles.Length; i++)
+            if (!uploads.Contains(oldFiles[i]))
+                DeleteFile(oldFiles[i]);
+
+        // 新文件，需要重新上传
+        for (int i = 0; i < uploads.Length; i++)
+        {
+            int index = oldFiles.IndexOf(uploads[i]);
+            if (index == -1)
+                // 新文件
+                SaveUploadFile(NATIVE_UPLOAD_PATH + uploads[i], ref newFiles[i]);
+            //_LOG.Debug("新文件：{0}", newFiles[i]);
+            else
+                // 没有变化的文件
+                newFiles[i] = oldFiles[index];
+            //_LOG.Debug("没有变化的文件：{0}", uploads[i]);
+        }
+
+        oldFiles = newFiles;
+        uploads = newFiles;
+    }
+    public static void SaveUploadFile(ref string[] oldFiles, ref string[] uploads, string dir)
+    {
+        int len = uploads == null ? 0 : uploads.Length;
+        string[] newFiles = new string[len];
+        for (int i = 0; i < len; i++)
+            newFiles[i] = dir + uploads[i];
+        SaveUploadFile(ref oldFiles, ref uploads, newFiles);
+    }
+}

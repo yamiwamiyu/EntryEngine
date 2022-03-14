@@ -1,1432 +1,1289 @@
 ﻿using System;
-using System.Data;
-using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using System.Reflection;
 using System.Text;
+using System.Net;
+using System.IO;
 using EntryEngine;
 using EntryEngine.Serialize;
+using System.Security.Cryptography.X509Certificates;
 using EntryEngine.Network;
+using System.Net.Security;
+using System.Security.Cryptography;
 
 namespace Server
 {
-    public enum ET_PLAYER
+    public partial class _DB
     {
-        ID,
-        Name,
-        Password,
-        RegisterDate,
-        Platform,
-        Token,
-        LastLoginTime,
-    }
-    public enum ET_OPLog
-    {
-        ID,
-        PID,
-        Operation,
-        Time,
-        Way,
-        Sign,
-        Statistic,
-        Detail,
-    }
-    public class MYSQL_DATABASE : _DATABASE.Database
-    {
-        protected override System.Data.IDbConnection CreateConnection()
+        // 网络请求通用方法
+        public static string HttpRequest(string url, Action<string> callback, string method = "GET", Dictionary<string, string> headers = null, string postData = null, int timeout = 5000, bool keepAlive = true, bool protocalVersion10 = false, string userAgent = "Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.2; .NET CLR 1.0.3705;)")
         {
-            var conn = new MySql.Data.MySqlClient.MySqlConnection();
-            conn.ConnectionString = ConnectionString;
-            conn.Open();
-            return conn;
-        }
-    }
-    public class MYSQL_TABLE_COLUMN
-    {
-        public string COLUMN_NAME;
-        public string COLUMN_KEY;
-        public string EXTRA;
-        public string DATA_TYPE;
-        public bool IsPrimary { get { return COLUMN_KEY == "PRI"; } }
-        public bool IsIndex { get { return COLUMN_KEY == "MUL"; } }
-        public bool IsUnique { get { return COLUMN_KEY == "UNI"; } }
-        public bool IsIdentity { get { return EXTRA == "auto_increment"; } }
-    }
-    public class MASTER_STATUS
-    {
-        public string File;
-        public int Position;
-        public string Binlog_Do_DB;
-    }
-    public class SLAVE_STATUS
-    {
-        public string Master_Host;
-        public string Master_User;
-        public int Master_Port;
-        public string Master_Log_File;
-        public int Read_Master_Log_Pos;
-        public string Slave_IO_Running;
-        public string Slave_SQL_Running;
-        public string Replicate_Do_DB;
-        public string Last_Error;
-        public int Exec_Master_Log_Pos;
-        public int Master_Server_Id;
-        public bool IsRunning { get { return Slave_IO_Running == "Yes" && Slave_SQL_Running == "Yes"; } }
-        public bool IsSynchronous { get { return Read_Master_Log_Pos == Exec_Master_Log_Pos; } }
-    }
-    public static partial class _DB
-    {
-        public static bool IsDropColumn;
-        public static string DatabaseName;
-        public static Action<_DATABASE.Database> OnConstructDatabase;
-        public static List<MergeTable> AllMergeTable = new List<MergeTable>()
-        {
-            new MergeTable("T_PLAYER"),
-            new MergeTable("T_OPLog"),
-        };
-        private static _DATABASE.Database _dao;
-        /// <summary>Set this will set the event 'OnCreateConnection' and 'OnTestConnection'</summary>
-        public static _DATABASE.Database _DAO
-        {
-            get { if (_dao == null) return _DATABASE._Database; else return _dao; }
-            set
+            var request = (HttpWebRequest)WebRequest.Create(url);
+            // 基本设置
+            request.Method = method;
+            request.KeepAlive = keepAlive;
+            request.ProtocolVersion = protocalVersion10 ? HttpVersion.Version10 : HttpVersion.Version11;
+            request.UserAgent = userAgent;
+            request.Timeout = timeout;
+            // 头部设置
+            if (headers == null)
+                headers = new Dictionary<string, string>();
+            if (headers.ContainsKey("Content-Type"))
             {
-                if (_dao == value) return;
-                _dao = value;
-                if (value != null)
-                {
-                    value.OnCreateConnection = CREATE_CONNECTION;
-                    value.OnTestConnection = UPDATE_DATABASE_STRUCTURE;
-                }
-            }
-        }
-        /// <summary>Set this to the _DATABASE.Database.OnCreateConnection event</summary>
-        public static void CREATE_CONNECTION(System.Data.IDbConnection conn, _DATABASE.Database database)
-        {
-            if (string.IsNullOrEmpty(conn.Database) && !string.IsNullOrEmpty(DatabaseName) && !_DAO.Available)
-            {
-                var cmd = conn.CreateCommand();
-                cmd.CommandText = string.Format("CREATE DATABASE IF NOT EXISTS `{0}`;", DatabaseName);
-                int create = cmd.ExecuteNonQuery();
-                conn.ChangeDatabase(DatabaseName);
-                _DAO.ConnectionString += string.Format("Database={0};", DatabaseName);
-                _DAO.OnCreateConnection -= CREATE_CONNECTION;
-                if (create > 0)
-                {
-                    _LOG.Info("Create database[`{0}`].", DatabaseName);
-                }
-                _LOG.Info("Set database[`{0}`].", DatabaseName);
-            }
-        }
-        /// <summary>Set this to the _DATABASE.Database.OnTestConnection event</summary>
-        public static void UPDATE_DATABASE_STRUCTURE(System.Data.IDbConnection conn, _DATABASE.Database database)
-        {
-            var cmd = conn.CreateCommand();
-            cmd.CommandTimeout = database.Timeout;
-            cmd.CommandText = string.Format("SELECT EXISTS (SELECT 1 FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = '{0}');", conn.Database);
-            bool __exists = Convert.ToBoolean(cmd.ExecuteScalar());
-            #region Create table
-            cmd.CommandText =
-            @"
-            CREATE TABLE IF NOT EXISTS `T_PLAYER`
-            (
-            `ID` INT PRIMARY KEY AUTO_INCREMENT,
-            `Name` TEXT,
-            `Password` TEXT,
-            `RegisterDate` DATETIME,
-            `Platform` TEXT,
-            `Token` TEXT,
-            `LastLoginTime` DATETIME
-            );
-            CREATE TABLE IF NOT EXISTS `T_OPLog`
-            (
-            `ID` INT PRIMARY KEY AUTO_INCREMENT,
-            `PID` INT,
-            `Operation` TEXT,
-            `Time` DATETIME,
-            `Way` TEXT,
-            `Sign` INT,
-            `Statistic` INT,
-            `Detail` TEXT
-            );
-            ";
-            _LOG.Info("Begin create table.");
-            cmd.ExecuteNonQuery();
-            _LOG.Info("Create table completed.");
-            #endregion
-            
-            Dictionary<string, MYSQL_TABLE_COLUMN> __columns = new Dictionary<string, MYSQL_TABLE_COLUMN>();
-            MYSQL_TABLE_COLUMN __value;
-            bool __noneChangePrimary;
-            bool __hasPrimary;
-            IDataReader reader;
-            StringBuilder builder = new StringBuilder();
-            
-            #region Table structure "T_PLAYER"
-            _LOG.Info("Begin update table[`T_PLAYER`] structure.");
-            __columns.Clear();
-            builder.Remove(0, builder.Length);
-            cmd.CommandText = "SELECT COLUMN_NAME, COLUMN_KEY, EXTRA, DATA_TYPE FROM information_schema.COLUMNS WHERE TABLE_NAME = 'T_PLAYER' AND TABLE_SCHEMA = '" + conn.Database + "';";
-            reader = cmd.ExecuteReader();
-            __hasPrimary = false;
-            foreach (var __column in _DATABASE.ReadMultiple<MYSQL_TABLE_COLUMN>(reader))
-            {
-                if (__column.IsPrimary) __hasPrimary = true;
-                __columns.Add(__column.COLUMN_NAME, __column);
-            }
-            reader.Close();
-            __noneChangePrimary = true;
-            __noneChangePrimary &= (__columns.TryGetValue("ID", out __value) && __value.IsPrimary);
-            if (!__noneChangePrimary && __hasPrimary)
-            {
-                var pk = __columns.Values.FirstOrDefault(f => f.IsPrimary);
-                if (pk.IsIdentity) builder.AppendLine("ALTER TABLE `T_PLAYER` CHANGE COLUMN `{0}` `{0}` {1};", pk.COLUMN_NAME, pk.DATA_TYPE);
-                builder.AppendLine("ALTER TABLE `T_PLAYER` DROP PRIMARY KEY;");
-                _LOG.Debug("Drop primary key.");
-            }
-            if (__columns.TryGetValue("ID", out __value))
-            {
-                builder.AppendLine("ALTER TABLE `T_PLAYER` CHANGE COLUMN `ID` `ID` INT" + (__value.IsPrimary ? "" : " PRIMARY KEY") + " AUTO_INCREMENT;");
-                if (__value.IsIndex || __value.IsUnique)
-                {
-                    builder.AppendLine("ALTER TABLE T_PLAYER DROP INDEX `{0}`;", __value.COLUMN_NAME);
-                    _LOG.Debug("Drop index[`{0}`].", __value.COLUMN_NAME);
-                }
-                __columns.Remove(__value.COLUMN_NAME);
+                request.ContentType = headers["Content-Type"];
+                headers.Remove("Content-Type");
             }
             else
             {
-                builder.AppendLine("ALTER TABLE `T_PLAYER` ADD COLUMN `ID` INT PRIMARY KEY AUTO_INCREMENT;");
-                _LOG.Debug("Add column[`{0}`].", "ID");
+                request.ContentType = "text/html;charset=UTF-8";
             }
-            if (__columns.TryGetValue("Name", out __value))
+            foreach (var header in headers)
+                request.Headers[header.Key] = header.Value;
+            // POST数据
+            if (!string.IsNullOrEmpty(postData))
             {
-                if (__value.DATA_TYPE != "text" && (__value.IsIndex || __value.IsUnique))
+                request.Method = "POST";
+                using (var stream = request.GetRequestStream())
                 {
-                    __value.COLUMN_KEY = null;
-                    builder.AppendLine("ALTER TABLE T_PLAYER DROP INDEX `{0}`;", __value.COLUMN_NAME);
-                    _LOG.Debug("Drop index[`{0}`].", __value.COLUMN_NAME);
+                    byte[] data = Encoding.UTF8.GetBytes(postData);
+                    stream.Write(data, 0, data.Length);
                 }
-                builder.AppendLine("ALTER TABLE `T_PLAYER` CHANGE COLUMN `Name` `Name` TEXT;");
-                if (!__value.IsIndex && !__value.IsUnique)
-                {
-                    builder.AppendLine("ALTER TABLE `T_PLAYER` ADD INDEX(`Name`(10));");
-                    _LOG.Debug("Add index[`{0}`].", __value.COLUMN_NAME);
-                }
-                __columns.Remove(__value.COLUMN_NAME);
+            }
+            // 发出请求
+            if (callback == null)
+            {
+                var response = (HttpWebResponse)request.GetResponse();
+                using (var stream = response.GetResponseStream())
+                using (var reader = new StreamReader(stream, Encoding.UTF8))
+                    return reader.ReadToEnd();
             }
             else
             {
-                builder.AppendLine("ALTER TABLE `T_PLAYER` ADD COLUMN `Name` TEXT;");
-                builder.AppendLine("ALTER TABLE `T_PLAYER` ADD INDEX(`Name`(10));");
-                _LOG.Debug("Add index[`{0}`].", "Name");
-                _LOG.Debug("Add column[`{0}`].", "Name");
-            }
-            if (__columns.TryGetValue("Password", out __value))
-            {
-                if (__value.DATA_TYPE != "text" && (__value.IsIndex || __value.IsUnique))
+                request.BeginGetResponse((async) =>
                 {
-                    __value.COLUMN_KEY = null;
-                    builder.AppendLine("ALTER TABLE T_PLAYER DROP INDEX `{0}`;", __value.COLUMN_NAME);
-                    _LOG.Debug("Drop index[`{0}`].", __value.COLUMN_NAME);
-                }
-                builder.AppendLine("ALTER TABLE `T_PLAYER` CHANGE COLUMN `Password` `Password` TEXT;");
-                if (!__value.IsIndex && !__value.IsUnique)
-                {
-                    builder.AppendLine("ALTER TABLE `T_PLAYER` ADD INDEX(`Password`(10));");
-                    _LOG.Debug("Add index[`{0}`].", __value.COLUMN_NAME);
-                }
-                __columns.Remove(__value.COLUMN_NAME);
-            }
-            else
-            {
-                builder.AppendLine("ALTER TABLE `T_PLAYER` ADD COLUMN `Password` TEXT;");
-                builder.AppendLine("ALTER TABLE `T_PLAYER` ADD INDEX(`Password`(10));");
-                _LOG.Debug("Add index[`{0}`].", "Password");
-                _LOG.Debug("Add column[`{0}`].", "Password");
-            }
-            if (__columns.TryGetValue("RegisterDate", out __value))
-            {
-                builder.AppendLine("ALTER TABLE `T_PLAYER` CHANGE COLUMN `RegisterDate` `RegisterDate` DATETIME;");
-                if (!__value.IsIndex && !__value.IsUnique)
-                {
-                    builder.AppendLine("ALTER TABLE `T_PLAYER` ADD INDEX(`RegisterDate`);");
-                    _LOG.Debug("Add index[`{0}`].", __value.COLUMN_NAME);
-                }
-                __columns.Remove(__value.COLUMN_NAME);
-            }
-            else
-            {
-                builder.AppendLine("ALTER TABLE `T_PLAYER` ADD COLUMN `RegisterDate` DATETIME;");
-                builder.AppendLine("ALTER TABLE `T_PLAYER` ADD INDEX(`RegisterDate`);");
-                _LOG.Debug("Add index[`{0}`].", "RegisterDate");
-                _LOG.Debug("Add column[`{0}`].", "RegisterDate");
-            }
-            if (__columns.TryGetValue("Platform", out __value))
-            {
-                if (__value.DATA_TYPE != "text" && (__value.IsIndex || __value.IsUnique))
-                {
-                    __value.COLUMN_KEY = null;
-                    builder.AppendLine("ALTER TABLE T_PLAYER DROP INDEX `{0}`;", __value.COLUMN_NAME);
-                    _LOG.Debug("Drop index[`{0}`].", __value.COLUMN_NAME);
-                }
-                builder.AppendLine("ALTER TABLE `T_PLAYER` CHANGE COLUMN `Platform` `Platform` TEXT;");
-                if (!__value.IsIndex && !__value.IsUnique)
-                {
-                    builder.AppendLine("ALTER TABLE `T_PLAYER` ADD INDEX(`Platform`(10));");
-                    _LOG.Debug("Add index[`{0}`].", __value.COLUMN_NAME);
-                }
-                __columns.Remove(__value.COLUMN_NAME);
-            }
-            else
-            {
-                builder.AppendLine("ALTER TABLE `T_PLAYER` ADD COLUMN `Platform` TEXT;");
-                builder.AppendLine("ALTER TABLE `T_PLAYER` ADD INDEX(`Platform`(10));");
-                _LOG.Debug("Add index[`{0}`].", "Platform");
-                _LOG.Debug("Add column[`{0}`].", "Platform");
-            }
-            if (__columns.TryGetValue("Token", out __value))
-            {
-                if (__value.DATA_TYPE != "text" && (__value.IsIndex || __value.IsUnique))
-                {
-                    __value.COLUMN_KEY = null;
-                    builder.AppendLine("ALTER TABLE T_PLAYER DROP INDEX `{0}`;", __value.COLUMN_NAME);
-                    _LOG.Debug("Drop index[`{0}`].", __value.COLUMN_NAME);
-                }
-                builder.AppendLine("ALTER TABLE `T_PLAYER` CHANGE COLUMN `Token` `Token` TEXT;");
-                if (!__value.IsIndex && !__value.IsUnique)
-                {
-                    builder.AppendLine("ALTER TABLE `T_PLAYER` ADD INDEX(`Token`(10));");
-                    _LOG.Debug("Add index[`{0}`].", __value.COLUMN_NAME);
-                }
-                __columns.Remove(__value.COLUMN_NAME);
-            }
-            else
-            {
-                builder.AppendLine("ALTER TABLE `T_PLAYER` ADD COLUMN `Token` TEXT;");
-                builder.AppendLine("ALTER TABLE `T_PLAYER` ADD INDEX(`Token`(10));");
-                _LOG.Debug("Add index[`{0}`].", "Token");
-                _LOG.Debug("Add column[`{0}`].", "Token");
-            }
-            if (__columns.TryGetValue("LastLoginTime", out __value))
-            {
-                builder.AppendLine("ALTER TABLE `T_PLAYER` CHANGE COLUMN `LastLoginTime` `LastLoginTime` DATETIME;");
-                if (__value.IsIndex || __value.IsUnique)
-                {
-                    builder.AppendLine("ALTER TABLE T_PLAYER DROP INDEX `{0}`;", __value.COLUMN_NAME);
-                    _LOG.Debug("Drop index[`{0}`].", __value.COLUMN_NAME);
-                }
-                __columns.Remove(__value.COLUMN_NAME);
-            }
-            else
-            {
-                builder.AppendLine("ALTER TABLE `T_PLAYER` ADD COLUMN `LastLoginTime` DATETIME;");
-                _LOG.Debug("Add column[`{0}`].", "LastLoginTime");
-            }
-            if (IsDropColumn)
-            {
-                foreach (var __column in __columns.Keys)
-                {
-                    builder.AppendLine("ALTER TABLE `T_PLAYER` DROP COLUMN `{0}`;", __column);
-                    _LOG.Debug("Drop column[`{0}`].", __column);
-                }
-            }
-            
-            cmd.CommandText = builder.ToString();
-            _LOG.Info("Building table[`T_PLAYER`] structure.");
-            cmd.ExecuteNonQuery();
-            #endregion
-            
-            #region Table structure "T_OPLog"
-            _LOG.Info("Begin update table[`T_OPLog`] structure.");
-            __columns.Clear();
-            builder.Remove(0, builder.Length);
-            cmd.CommandText = "SELECT COLUMN_NAME, COLUMN_KEY, EXTRA, DATA_TYPE FROM information_schema.COLUMNS WHERE TABLE_NAME = 'T_OPLog' AND TABLE_SCHEMA = '" + conn.Database + "';";
-            reader = cmd.ExecuteReader();
-            __hasPrimary = false;
-            foreach (var __column in _DATABASE.ReadMultiple<MYSQL_TABLE_COLUMN>(reader))
-            {
-                if (__column.IsPrimary) __hasPrimary = true;
-                __columns.Add(__column.COLUMN_NAME, __column);
-            }
-            reader.Close();
-            __noneChangePrimary = true;
-            __noneChangePrimary &= (__columns.TryGetValue("ID", out __value) && __value.IsPrimary);
-            if (!__noneChangePrimary && __hasPrimary)
-            {
-                var pk = __columns.Values.FirstOrDefault(f => f.IsPrimary);
-                if (pk.IsIdentity) builder.AppendLine("ALTER TABLE `T_OPLog` CHANGE COLUMN `{0}` `{0}` {1};", pk.COLUMN_NAME, pk.DATA_TYPE);
-                builder.AppendLine("ALTER TABLE `T_OPLog` DROP PRIMARY KEY;");
-                _LOG.Debug("Drop primary key.");
-            }
-            if (__columns.TryGetValue("ID", out __value))
-            {
-                builder.AppendLine("ALTER TABLE `T_OPLog` CHANGE COLUMN `ID` `ID` INT" + (__value.IsPrimary ? "" : " PRIMARY KEY") + " AUTO_INCREMENT;");
-                if (__value.IsIndex || __value.IsUnique)
-                {
-                    builder.AppendLine("ALTER TABLE T_OPLog DROP INDEX `{0}`;", __value.COLUMN_NAME);
-                    _LOG.Debug("Drop index[`{0}`].", __value.COLUMN_NAME);
-                }
-                __columns.Remove(__value.COLUMN_NAME);
-            }
-            else
-            {
-                builder.AppendLine("ALTER TABLE `T_OPLog` ADD COLUMN `ID` INT PRIMARY KEY AUTO_INCREMENT;");
-                _LOG.Debug("Add column[`{0}`].", "ID");
-            }
-            if (__columns.TryGetValue("PID", out __value))
-            {
-                builder.AppendLine("ALTER TABLE `T_OPLog` CHANGE COLUMN `PID` `PID` INT;");
-                if (!__value.IsIndex && !__value.IsUnique)
-                {
-                    builder.AppendLine("ALTER TABLE `T_OPLog` ADD INDEX(`PID`);");
-                    _LOG.Debug("Add index[`{0}`].", __value.COLUMN_NAME);
-                }
-                __columns.Remove(__value.COLUMN_NAME);
-            }
-            else
-            {
-                builder.AppendLine("ALTER TABLE `T_OPLog` ADD COLUMN `PID` INT;");
-                builder.AppendLine("ALTER TABLE `T_OPLog` ADD INDEX(`PID`);");
-                _LOG.Debug("Add index[`{0}`].", "PID");
-                _LOG.Debug("Add column[`{0}`].", "PID");
-            }
-            if (__columns.TryGetValue("Operation", out __value))
-            {
-                if (__value.DATA_TYPE != "text" && (__value.IsIndex || __value.IsUnique))
-                {
-                    __value.COLUMN_KEY = null;
-                    builder.AppendLine("ALTER TABLE T_OPLog DROP INDEX `{0}`;", __value.COLUMN_NAME);
-                    _LOG.Debug("Drop index[`{0}`].", __value.COLUMN_NAME);
-                }
-                builder.AppendLine("ALTER TABLE `T_OPLog` CHANGE COLUMN `Operation` `Operation` TEXT;");
-                if (!__value.IsIndex && !__value.IsUnique)
-                {
-                    builder.AppendLine("ALTER TABLE `T_OPLog` ADD INDEX(`Operation`(10));");
-                    _LOG.Debug("Add index[`{0}`].", __value.COLUMN_NAME);
-                }
-                __columns.Remove(__value.COLUMN_NAME);
-            }
-            else
-            {
-                builder.AppendLine("ALTER TABLE `T_OPLog` ADD COLUMN `Operation` TEXT;");
-                builder.AppendLine("ALTER TABLE `T_OPLog` ADD INDEX(`Operation`(10));");
-                _LOG.Debug("Add index[`{0}`].", "Operation");
-                _LOG.Debug("Add column[`{0}`].", "Operation");
-            }
-            if (__columns.TryGetValue("Time", out __value))
-            {
-                builder.AppendLine("ALTER TABLE `T_OPLog` CHANGE COLUMN `Time` `Time` DATETIME;");
-                if (!__value.IsIndex && !__value.IsUnique)
-                {
-                    builder.AppendLine("ALTER TABLE `T_OPLog` ADD INDEX(`Time`);");
-                    _LOG.Debug("Add index[`{0}`].", __value.COLUMN_NAME);
-                }
-                __columns.Remove(__value.COLUMN_NAME);
-            }
-            else
-            {
-                builder.AppendLine("ALTER TABLE `T_OPLog` ADD COLUMN `Time` DATETIME;");
-                builder.AppendLine("ALTER TABLE `T_OPLog` ADD INDEX(`Time`);");
-                _LOG.Debug("Add index[`{0}`].", "Time");
-                _LOG.Debug("Add column[`{0}`].", "Time");
-            }
-            if (__columns.TryGetValue("Way", out __value))
-            {
-                if (__value.DATA_TYPE != "text" && (__value.IsIndex || __value.IsUnique))
-                {
-                    __value.COLUMN_KEY = null;
-                    builder.AppendLine("ALTER TABLE T_OPLog DROP INDEX `{0}`;", __value.COLUMN_NAME);
-                    _LOG.Debug("Drop index[`{0}`].", __value.COLUMN_NAME);
-                }
-                builder.AppendLine("ALTER TABLE `T_OPLog` CHANGE COLUMN `Way` `Way` TEXT;");
-                if (!__value.IsIndex && !__value.IsUnique)
-                {
-                    builder.AppendLine("ALTER TABLE `T_OPLog` ADD INDEX(`Way`(10));");
-                    _LOG.Debug("Add index[`{0}`].", __value.COLUMN_NAME);
-                }
-                __columns.Remove(__value.COLUMN_NAME);
-            }
-            else
-            {
-                builder.AppendLine("ALTER TABLE `T_OPLog` ADD COLUMN `Way` TEXT;");
-                builder.AppendLine("ALTER TABLE `T_OPLog` ADD INDEX(`Way`(10));");
-                _LOG.Debug("Add index[`{0}`].", "Way");
-                _LOG.Debug("Add column[`{0}`].", "Way");
-            }
-            if (__columns.TryGetValue("Sign", out __value))
-            {
-                builder.AppendLine("ALTER TABLE `T_OPLog` CHANGE COLUMN `Sign` `Sign` INT;");
-                if (!__value.IsIndex && !__value.IsUnique)
-                {
-                    builder.AppendLine("ALTER TABLE `T_OPLog` ADD INDEX(`Sign`);");
-                    _LOG.Debug("Add index[`{0}`].", __value.COLUMN_NAME);
-                }
-                __columns.Remove(__value.COLUMN_NAME);
-            }
-            else
-            {
-                builder.AppendLine("ALTER TABLE `T_OPLog` ADD COLUMN `Sign` INT;");
-                builder.AppendLine("ALTER TABLE `T_OPLog` ADD INDEX(`Sign`);");
-                _LOG.Debug("Add index[`{0}`].", "Sign");
-                _LOG.Debug("Add column[`{0}`].", "Sign");
-            }
-            if (__columns.TryGetValue("Statistic", out __value))
-            {
-                builder.AppendLine("ALTER TABLE `T_OPLog` CHANGE COLUMN `Statistic` `Statistic` INT;");
-                if (__value.IsIndex || __value.IsUnique)
-                {
-                    builder.AppendLine("ALTER TABLE T_OPLog DROP INDEX `{0}`;", __value.COLUMN_NAME);
-                    _LOG.Debug("Drop index[`{0}`].", __value.COLUMN_NAME);
-                }
-                __columns.Remove(__value.COLUMN_NAME);
-            }
-            else
-            {
-                builder.AppendLine("ALTER TABLE `T_OPLog` ADD COLUMN `Statistic` INT;");
-                _LOG.Debug("Add column[`{0}`].", "Statistic");
-            }
-            if (__columns.TryGetValue("Detail", out __value))
-            {
-                builder.AppendLine("ALTER TABLE `T_OPLog` CHANGE COLUMN `Detail` `Detail` TEXT;");
-                if (__value.IsIndex || __value.IsUnique)
-                {
-                    builder.AppendLine("ALTER TABLE T_OPLog DROP INDEX `{0}`;", __value.COLUMN_NAME);
-                    _LOG.Debug("Drop index[`{0}`].", __value.COLUMN_NAME);
-                }
-                __columns.Remove(__value.COLUMN_NAME);
-            }
-            else
-            {
-                builder.AppendLine("ALTER TABLE `T_OPLog` ADD COLUMN `Detail` TEXT;");
-                _LOG.Debug("Add column[`{0}`].", "Detail");
-            }
-            if (IsDropColumn)
-            {
-                foreach (var __column in __columns.Keys)
-                {
-                    builder.AppendLine("ALTER TABLE `T_OPLog` DROP COLUMN `{0}`;", __column);
-                    _LOG.Debug("Drop column[`{0}`].", __column);
-                }
-            }
-            
-            cmd.CommandText = builder.ToString();
-            _LOG.Info("Building table[`T_OPLog`] structure.");
-            cmd.ExecuteNonQuery();
-            #endregion
-            if (!__exists)
-            {
-                _LOG.Info("The first time to construct database.");
-                if (OnConstructDatabase != null) OnConstructDatabase(database);
-            }
-        }
-        /// <summary>/* Phase说明 */ BuildTemp: 原库，可用于延长Timeout，_DB操作原库 / ChangeTemp: 临时库，可用于修改主键可能重复的数据，_DB操作临时库 / Merge: 临时库，可用于修改需要参考其它合服数据的数据，_DB操作目标库</summary>
-        public static void MERGE(MergeDatabase[] dbs, Action<_DATABASE.Database> phaseBuildTemp, Action<_DATABASE.Database> phaseChangeTemp, Action<_DATABASE.Database[]> phaseMerge)
-        {
-            _DATABASE.Database __target = _DAO;
-            if (__target == null) throw new ArgumentNullException("_DAO");
-            if (__target.Available) throw new InvalidOperationException("_DAO can't be available.");
-            _DATABASE.Database[] sources = new _DATABASE.Database[dbs.Length];
-            int __T_PLAYER_ID = 0;
-            int __T_OPLog_ID = 0;
-            
-            #region create temp database
-            for (int i = 0; i < sources.Length; i++)
-            {
-                _DATABASE.Database db = new ConnectionPool() { Base = new MYSQL_DATABASE() };
-                db.ConnectionString = dbs[i].ConnectionStringWithDB;
-                db.OnTestConnection = (__conn, __db) =>
-                {
-                    string __temp = "TEMP_" + db.DatabaseName;
-                    db.ExecuteNonQuery(string.Format("DROP DATABASE IF EXISTS `{0}`; CREATE DATABASE `{0}`;", __temp));
-                    __conn.ChangeDatabase(__temp);
-                };
-                db.OnTestConnection += UPDATE_DATABASE_STRUCTURE;
-                db.OnTestConnection += (__conn, __db) => __conn.ChangeDatabase(db.DatabaseName);
-                db.TestConnection();
-                _DAO = db;
-                if (phaseBuildTemp != null) phaseBuildTemp(db);
-                sources[i] = db;
-                string dbName = db.DatabaseName;
-                string tempName = "TEMP_" + dbName;
-                _LOG.Info("Begin build temp database[{0}].", dbName);
-                
-                if (dbs[i].Tables == null) dbs[i].Tables = AllMergeTable.ToArray();
-                
-                StringBuilder builder = new StringBuilder();
-                string result;
-                MergeTable table;
-                table = dbs[i].Tables.FirstOrDefault(t => t.TableName == "T_PLAYER");
-                if (table != null)
-                {
-                    builder.Append("INSERT INTO {0}.{1} SELECT {1}.`ID`,{1}.`Name`,{1}.`Password`,{1}.`RegisterDate`,{1}.`Platform`,{1}.`Token`,{1}.`LastLoginTime` FROM {2}.{1}", tempName, table.TableName, dbName);
-                    if (!string.IsNullOrEmpty(table.Where)) builder.Append(" " + table.Where);
-                    builder.AppendLine(";");
-                    result = builder.ToString();
-                    builder.Remove(0, builder.Length);
-                    _LOG.Info("Merge table[`{0}`] data.", table.TableName);
-                    _LOG.Debug("SQL: {0}", result);
-                    db.ExecuteNonQuery(result);
-                }
-                table = dbs[i].Tables.FirstOrDefault(t => t.TableName == "T_OPLog");
-                if (table != null)
-                {
-                    bool __flag = false;
-                    builder.Append("INSERT INTO {0}.{1} SELECT {1}.`ID`,{1}.`PID`,{1}.`Operation`,{1}.`Time`,{1}.`Way`,{1}.`Sign`,{1}.`Statistic`,{1}.`Detail` FROM {2}.{1}", tempName, table.TableName, dbName);
-                    if (!string.IsNullOrEmpty(table.Where)) builder.Append(" " + table.Where);
-                    if (dbs[i].Tables.Any(t => t.TableName == "T_PLAYER"))
+                    try
                     {
-                        if (!__flag)
-                        {
-                            __flag = true;
-                            builder.Append(" WHERE EXISTS ");
-                            builder.Append("(SELECT {0}.T_PLAYER.ID FROM {0}.T_PLAYER WHERE T_OPLog.PID = {0}.T_PLAYER.ID)", tempName);
-                        }
+                        var response = request.EndGetResponse(async);
+                        using (var reader = new StreamReader(response.GetResponseStream(), Encoding.UTF8))
+                            callback(reader.ReadToEnd());
                     }
-                    builder.AppendLine(";");
-                    result = builder.ToString();
-                    builder.Remove(0, builder.Length);
-                    _LOG.Info("Merge table[`{0}`] data.", table.TableName);
-                    _LOG.Debug("SQL: {0}", result);
-                    db.ExecuteNonQuery(result);
-                }
-                _LOG.Info("Build temp database[{0}] completed.", dbName);
-                db.OnCreateConnection = (conn, __db) => conn.ChangeDatabase(tempName);
-                // 对临时数据库的表自动修改自增列
-                table = dbs[i].Tables.FirstOrDefault(t => t.TableName == "T_PLAYER");
-                if (table.AutoMergeIdentity)
-                {
-                    UpdateIdentityKey_T_PLAYER_ID(ref __T_PLAYER_ID);
-                    _LOG.Info("自动修改自增列`T_PLAYER`.ID");
-                }
-                table = dbs[i].Tables.FirstOrDefault(t => t.TableName == "T_OPLog");
-                if (table.AutoMergeIdentity)
-                {
-                    UpdateIdentityKey_T_OPLog_ID(ref __T_OPLog_ID);
-                    _LOG.Info("自动修改自增列`T_OPLog`.ID");
-                }
-                if (phaseChangeTemp != null) phaseChangeTemp(db);
-            }
-            #endregion
-            
-            _LOG.Info("Build all temp database completed.");
-            #region import data in temp database to merge target
-            
-            if (phaseMerge != null) phaseMerge(sources);
-            _DAO = __target;
-            _DAO.OnCreateConnection = (conn, __db) =>
-            {
-                if (string.IsNullOrEmpty(conn.Database) && !string.IsNullOrEmpty(DatabaseName))
-                {
-                    var cmd = conn.CreateCommand();
-                    cmd.CommandText = string.Format("DROP DATABASE IF EXISTS `{0}`; CREATE DATABASE `{0}`;", DatabaseName);
-                    cmd.ExecuteNonQuery();
-                    conn.ChangeDatabase(DatabaseName);
-                    _DAO.ConnectionString += string.Format("Database={0};", DatabaseName);
-                }
-            };
-            _DAO.TestConnection();
-            for (int i = 0; i < sources.Length; i++)
-            {
-                var db = sources[i];
-                var tables = dbs[i].Tables;
-                string tempName = "TEMP_" + db.DatabaseName;
-                _LOG.Info("Begin merge from temp database[`{0}`].", db.DatabaseName);
-                if (db.DataSource == _DAO.DataSource)
-                {
-                    for (int j = 0; j < tables.Length; j++)
+                    catch (Exception ex)
                     {
-                        _LOG.Debug("Merge table[`{0}`].", tables[j].TableName);
-                        _DAO.ExecuteNonQuery(string.Format("INSERT INTO {1} SELECT * FROM {0}.{1};", tempName, tables[j].TableName));
+                        _LOG.Warning("HttpRequestAsync异步请求异常：{0}\r\nStack: {1}", ex.Message, ex.StackTrace);
                     }
-                }
-                else
-                {
-                    StringBuilder builder = new StringBuilder();
-                    MergeTable table;
-                    table = dbs[i].Tables.FirstOrDefault(t => t.TableName == "T_PLAYER");
-                    if (table != null)
-                    {
-                        _LOG.Debug("Merge table[`{0}`].", table.TableName);
-                        var list = db.SelectObjects<T_PLAYER>("SELECT * FROM T_PLAYER;");
-                        if (list.Count > 0)
-                        {
-                            foreach (var item in list)
-                            {
-                                _T_PLAYER.Insert(item);
-                            }
-                        }
-                    }
-                    table = dbs[i].Tables.FirstOrDefault(t => t.TableName == "T_OPLog");
-                    if (table != null)
-                    {
-                        _LOG.Debug("Merge table[`{0}`].", table.TableName);
-                        var list = db.SelectObjects<T_OPLog>("SELECT * FROM T_OPLog;");
-                        if (list.Count > 0)
-                        {
-                            foreach (var item in list)
-                            {
-                                _T_OPLog.Insert(item);
-                            }
-                        }
-                    }
-                }
-                _LOG.Info("Merge database[`{0}`] completed!", db.DatabaseName);
-                db.ExecuteNonQuery("DROP DATABASE " + tempName);
-                db.Dispose();
+                }, request);
+                return null;
             }
-            #endregion
         }
-        public static int DeleteForeignKey_T_PLAYER_ID(int target)
+        public static string HttpGet(string url, Dictionary<string, string> headers = null)
         {
-            StringBuilder builder = new StringBuilder();
-            builder.AppendLine("DELETE FROM `T_PLAYER` WHERE `ID` = @p0;");
-            builder.AppendLine("DELETE FROM `T_OPLog` WHERE `PID` = @p0;");
-            return _DAO.ExecuteNonQuery(builder.ToString(), target);
+            return HttpRequest(url, null, "GET", headers);
         }
-        public static int UpdateForeignKey_T_PLAYER_ID(int origin, int target)
+        public static string HttpPost(string url, Dictionary<string, string> headers = null, string postData = null)
         {
-            StringBuilder builder = new StringBuilder();
-            builder.AppendLine("UPDATE `T_PLAYER` SET `ID` = @p0 WHERE `ID` = @p1;");
-            builder.AppendLine("UPDATE `T_OPLog` SET `PID` = @p0 WHERE `PID` = @p1;");
-            return _DAO.ExecuteNonQuery(builder.ToString(), target, origin);
+            return HttpRequest(url, null, "POST", headers, postData);
         }
-        public static void UpdateIdentityKey_T_PLAYER_ID(ref int start)
+        public static IPAddress GetRemoteIP(HttpListenerContext context)
         {
-            int min = _DAO.ExecuteScalar<int>("SELECT MIN(`ID`) FROM `T_PLAYER`;");
-            int max = _DAO.ExecuteScalar<int>("SELECT MAX(`ID`) FROM `T_PLAYER`;");
-            if (start > 0)
-            {
-                if (min > start) min = start - min;
-                else min = Math.Max(start, max + 1) - min;
-                start = max + min + 1;
-            }
-            else
-            {
-                start = max + 1;
-                return;
-            }
-            StringBuilder builder = new StringBuilder();
-            builder.AppendLine("UPDATE `T_PLAYER` SET `ID` = `ID` + @p0;");
-            builder.AppendLine("UPDATE `T_OPLog` SET `PID` = `PID` + @p0;");
-            _DAO.ExecuteNonQuery(builder.ToString(), min);
+            var xff = context.Request.Headers["X-Real-IP"];
+            if (!string.IsNullOrWhiteSpace(xff)) return IPAddress.Parse(xff);
+            else return context.Request.RemoteEndPoint.Address;
         }
-        public static void UpdateIdentityKey_T_OPLog_ID(ref int start)
+
+        // 发送验证码
+        public static void SendSMSCode(T_SMSCode sms)
         {
-            int min = _DAO.ExecuteScalar<int>("SELECT MIN(`ID`) FROM `T_OPLog`;");
-            int max = _DAO.ExecuteScalar<int>("SELECT MAX(`ID`) FROM `T_OPLog`;");
-            if (start > 0)
-            {
-                if (min > start) min = start - min;
-                else min = Math.Max(start, max + 1) - min;
-                start = max + min + 1;
-            }
-            else
-            {
-                start = max + 1;
-                return;
-            }
-            StringBuilder builder = new StringBuilder();
-            builder.AppendLine("UPDATE `T_OPLog` SET `ID` = `ID` + @p0;");
-            _DAO.ExecuteNonQuery(builder.ToString(), min);
+            HttpRequest(
+                string.Format("https://api.smsbao.com/sms?u=yyhlm&p=24e7bd23c11c471091ff857773b46687&m={0}&c=【暗和科技】您的验证码是{1}，请不要随意告诉他人哦。",
+                sms.Mobile, sms.Code), null);
         }
-        public class JoinT_OPLog
+
+        public interface IPayResult
         {
-            public T_OPLog T_OPLog;
-            public T_PLAYER PID;
+            /// <summary>是否支付成功</summary>
+            bool IsTradeSuccess { get; }
+            /// <summary>支付时间</summary>
+            DateTime PayTime { get; }
+            /// <summary>订单号</summary>
+            string Voucher { get; }
         }
-        public partial class _T_PLAYER : T_PLAYER
+        public class TestPayResult : IPayResult
         {
-            public static ET_PLAYER[] FIELD_ALL = { ET_PLAYER.ID, ET_PLAYER.Name, ET_PLAYER.Password, ET_PLAYER.RegisterDate, ET_PLAYER.Platform, ET_PLAYER.Token, ET_PLAYER.LastLoginTime };
-            public static ET_PLAYER[] FIELD_UPDATE = { ET_PLAYER.Name, ET_PLAYER.Password, ET_PLAYER.RegisterDate, ET_PLAYER.Platform, ET_PLAYER.Token, ET_PLAYER.LastLoginTime };
-            public static ET_PLAYER[] NoNeedField(params ET_PLAYER[] noNeed)
+            public bool IsTradeSuccess { get; set; }
+            public DateTime PayTime { get; set; }
+            public string Voucher { get; set; }
+            public TestPayResult(bool success)
             {
-                if (noNeed.Length == 0) return FIELD_ALL;
-                List<ET_PLAYER> list = new List<ET_PLAYER>(FIELD_ALL.Length);
-                for (int i = 0; i < FIELD_ALL.Length; i++)
-                {
-                    if (!noNeed.Contains(FIELD_ALL[i])) list.Add(FIELD_ALL[i]);
-                }
-                return list.ToArray();
-            }
-            public static int FieldCount { get { return FIELD_ALL.Length; } }
-            
-            public static T_PLAYER Read(IDataReader reader)
-            {
-                return Read(reader, 0, FieldCount);
-            }
-            public static T_PLAYER Read(IDataReader reader, int offset)
-            {
-                return Read(reader, offset, FieldCount);
-            }
-            public static T_PLAYER Read(IDataReader reader, int offset, int fieldCount)
-            {
-                return _DATABASE.ReadObject<T_PLAYER>(reader, offset, fieldCount);
-            }
-            public static void MultiReadPrepare(IDataReader reader, int offset, int fieldCount, out List<PropertyInfo> properties, out List<FieldInfo> fields, ref int[] indices)
-            {
-                _DATABASE.MultiReadPrepare(reader, typeof(T_PLAYER), offset, fieldCount, out properties, out fields, ref indices);
-            }
-            public static T_PLAYER MultiRead(IDataReader reader, int offset, int fieldCount, List<PropertyInfo> properties, List<FieldInfo> fields, int[] indices)
-            {
-                return _DATABASE.MultiRead<T_PLAYER>(reader, offset, fieldCount, properties, fields, indices);
-            }
-            public static void GetInsertSQL(T_PLAYER target, StringBuilder builder, List<object> values)
-            {
-                int index = values.Count;
-                builder.AppendFormat("INSERT `T_PLAYER`(`Name`, `Password`, `RegisterDate`, `Platform`, `Token`, `LastLoginTime`) VALUES(");
-                for (int i = 0, n = 5; i <= n; i++)
-                {
-                    builder.AppendFormat("@p{0}", index++);
-                    if (i != n) builder.Append(", ");
-                }
-                builder.AppendLine(");");
-                values.Add(target.Name);
-                values.Add(target.Password);
-                values.Add(target.RegisterDate);
-                values.Add(target.Platform);
-                values.Add(target.Token);
-                values.Add(target.LastLoginTime);
-            }
-            public static int Insert(T_PLAYER target)
-            {
-                StringBuilder builder = new StringBuilder();
-                List<object> values = new List<object>(7);
-                GetInsertSQL(target, builder, values);
-                builder.Append("SELECT LAST_INSERT_ID();");
-                target.ID = _DAO.SelectValue<int>(builder.ToString(), values.ToArray());
-                return target.ID;
-            }
-            public static void GetDeleteSQL(int ID, StringBuilder builder, List<object> values)
-            {
-                int index = values.Count;
-                builder.AppendFormat("DELETE FROM `T_PLAYER` WHERE `ID` = @p{0};", index++);
-                values.Add(ID);
-            }
-            public static int Delete(int ID)
-            {
-                return _DAO.ExecuteNonQuery("DELETE FROM `T_PLAYER` WHERE `ID` = @p0", ID);
-            }
-            public static int DeleteByPlatform(string Platform)
-            {
-                return _DAO.ExecuteNonQuery("DELETE FROM `T_PLAYER` WHERE `Platform` = @p0;", Platform);
-            }
-            public static void GetUpdateSQL(T_PLAYER target, string condition, StringBuilder builder, List<object> values, params ET_PLAYER[] fields)
-            {
-                int index = values.Count;
-                bool all = fields.Length == 0 || fields == FIELD_UPDATE;
-                builder.Append("UPDATE `T_PLAYER` SET");
-                if (all || fields.Contains(ET_PLAYER.Name))
-                {
-                    builder.AppendFormat(" `Name` = @p{0},", index++);
-                    values.Add(target.Name);
-                }
-                if (all || fields.Contains(ET_PLAYER.Password))
-                {
-                    builder.AppendFormat(" `Password` = @p{0},", index++);
-                    values.Add(target.Password);
-                }
-                if (all || fields.Contains(ET_PLAYER.RegisterDate))
-                {
-                    builder.AppendFormat(" `RegisterDate` = @p{0},", index++);
-                    values.Add(target.RegisterDate);
-                }
-                if (all || fields.Contains(ET_PLAYER.Platform))
-                {
-                    builder.AppendFormat(" `Platform` = @p{0},", index++);
-                    values.Add(target.Platform);
-                }
-                if (all || fields.Contains(ET_PLAYER.Token))
-                {
-                    builder.AppendFormat(" `Token` = @p{0},", index++);
-                    values.Add(target.Token);
-                }
-                if (all || fields.Contains(ET_PLAYER.LastLoginTime))
-                {
-                    builder.AppendFormat(" `LastLoginTime` = @p{0},", index++);
-                    values.Add(target.LastLoginTime);
-                }
-                if (index == 0) return;
-                builder[builder.Length - 1] = ' ';
-                if (!string.IsNullOrEmpty(condition)) builder.Append(condition);
-                else
-                {
-                    builder.AppendFormat("WHERE `ID` = @p{0}", index++);
-                    values.Add(target.ID);
-                }
-                builder.AppendLine(";");
-            }
-            /// <summary>condition that 'where' or 'join' without ';'</summary>
-            public static int Update(T_PLAYER target, string condition, params ET_PLAYER[] fields)
-            {
-                StringBuilder builder = new StringBuilder();
-                List<object> values = new List<object>(fields.Length + 1);
-                GetUpdateSQL(target, condition, builder, values, fields);
-                return _DAO.ExecuteNonQuery(builder.ToString(), values.ToArray());
-            }
-            public static void GetSelectField(string tableName, StringBuilder builder, params ET_PLAYER[] fields)
-            {
-                if (string.IsNullOrEmpty(tableName)) tableName = "`T_PLAYER`";
-                int count = fields == null ? 0 : fields.Length;
-                if (count == 0)
-                {
-                    builder.Append("{0}.*", tableName);
-                    return;
-                }
-                count--;
-                for (int i = 0; i <= count; i++)
-                {
-                    builder.Append("{0}.{1}", tableName, fields[i].ToString());
-                    if (i != count) builder.Append(",");
-                }
-            }
-            public static StringBuilder GetSelectSQL(params ET_PLAYER[] fields)
-            {
-                StringBuilder builder = new StringBuilder();
-                builder.AppendLine("SELECT ");
-                GetSelectField(null, builder, fields);
-                builder.AppendLine(" FROM `T_PLAYER`");
-                return builder;
-            }
-            public static T_PLAYER Select(int __ID, params ET_PLAYER[] fields)
-            {
-                StringBuilder builder = GetSelectSQL(fields);
-                builder.Append(" WHERE `ID` = @p0;");
-                var ret = _DAO.SelectObject<T_PLAYER>(builder.ToString(), __ID);
-                if (ret != default(T_PLAYER))
-                {
-                    ret.ID = __ID;
-                }
-                return ret;
-            }
-            public static T_PLAYER Select(ET_PLAYER[] fields, string condition, params object[] param)
-            {
-                StringBuilder builder = GetSelectSQL(fields);
-                if (!string.IsNullOrEmpty(condition)) builder.Append(" {0}", condition);
-                builder.Append(';');
-                return _DAO.SelectObject<T_PLAYER>(builder.ToString(), param);
-            }
-            public static bool Exists(int __ID)
-            {
-                return _DAO.ExecuteScalar<bool>("SELECT EXISTS(SELECT 1 FROM `T_PLAYER` WHERE `ID` = @p0)", __ID);
-            }
-            public static bool Exists2(string condition, params object[] param)
-            {
-                return _DAO.ExecuteScalar<bool>(string.Format("SELECT EXISTS(SELECT 1 FROM `T_PLAYER` {0})", condition), param);
-            }
-            public static List<T_PLAYER> SelectMultiple(ET_PLAYER[] fields, string condition, params object[] param)
-            {
-                if (fields == null || fields.Length == 0) return _DAO.SelectObjects<T_PLAYER>(string.Format("SELECT * FROM T_PLAYER {0};", condition), param);
-                StringBuilder builder = GetSelectSQL(fields);
-                if (!string.IsNullOrEmpty(condition)) builder.Append(" {0}", condition);
-                builder.Append(';');
-                return _DAO.SelectObjects<T_PLAYER>(builder.ToString(), param);
-            }
-            public static List<T_PLAYER> SelectMultipleByPlatform(ET_PLAYER[] fields, string Platform, string conditionAfterWhere, params object[] param)
-            {
-                StringBuilder builder = GetSelectSQL(fields);
-                builder.AppendFormat(" WHERE `Platform` = @p{0}", param.Length + 0);
-                if (!string.IsNullOrEmpty(conditionAfterWhere)) builder.Append(" {0}", conditionAfterWhere);
-                builder.Append(';');
-                if (param.Length == 0) return _DAO.SelectObjects<T_PLAYER>(builder.ToString(), Platform);
-                else return _DAO.SelectObjects<T_PLAYER>(builder.ToString(), param.Add(Platform));
-            }
-            public static PagedModel<T_PLAYER> SelectPages(string __where, ET_PLAYER[] fields, string conditionAfterWhere, int page, int pageSize, params object[] param)
-            {
-                var ret = SelectPages<T_PLAYER>(__where, GetSelectSQL(fields).ToString(), conditionAfterWhere, page, pageSize, param);
-                return ret;
-            }
-            public static PagedModel<T> SelectPages<T>(string __where, string selectSQL, string conditionAfterWhere, int page, int pageSize, params object[] param) where T : new()
-            {
-                return _DB.SelectPages<T>(_DAO, "SELECT count(`T_PLAYER`.`ID`) FROM `T_PLAYER`", __where, selectSQL, conditionAfterWhere, page, pageSize, param);
+                IsTradeSuccess = success;
+                PayTime = DateTime.Now;
+                if (IsTradeSuccess)
+                    Voucher = PayTime.Ticks.ToString();
             }
         }
-        public partial class _T_OPLog : T_OPLog
-        {
-            public static ET_OPLog[] FIELD_ALL = { ET_OPLog.ID, ET_OPLog.PID, ET_OPLog.Operation, ET_OPLog.Time, ET_OPLog.Way, ET_OPLog.Sign, ET_OPLog.Statistic, ET_OPLog.Detail };
-            public static ET_OPLog[] FIELD_UPDATE = { ET_OPLog.PID, ET_OPLog.Operation, ET_OPLog.Time, ET_OPLog.Way, ET_OPLog.Sign, ET_OPLog.Statistic, ET_OPLog.Detail };
-            public static ET_OPLog[] NoNeedField(params ET_OPLog[] noNeed)
-            {
-                if (noNeed.Length == 0) return FIELD_ALL;
-                List<ET_OPLog> list = new List<ET_OPLog>(FIELD_ALL.Length);
-                for (int i = 0; i < FIELD_ALL.Length; i++)
-                {
-                    if (!noNeed.Contains(FIELD_ALL[i])) list.Add(FIELD_ALL[i]);
-                }
-                return list.ToArray();
-            }
-            public static int FieldCount { get { return FIELD_ALL.Length; } }
-            
-            public static T_OPLog Read(IDataReader reader)
-            {
-                return Read(reader, 0, FieldCount);
-            }
-            public static T_OPLog Read(IDataReader reader, int offset)
-            {
-                return Read(reader, offset, FieldCount);
-            }
-            public static T_OPLog Read(IDataReader reader, int offset, int fieldCount)
-            {
-                return _DATABASE.ReadObject<T_OPLog>(reader, offset, fieldCount);
-            }
-            public static void MultiReadPrepare(IDataReader reader, int offset, int fieldCount, out List<PropertyInfo> properties, out List<FieldInfo> fields, ref int[] indices)
-            {
-                _DATABASE.MultiReadPrepare(reader, typeof(T_OPLog), offset, fieldCount, out properties, out fields, ref indices);
-            }
-            public static T_OPLog MultiRead(IDataReader reader, int offset, int fieldCount, List<PropertyInfo> properties, List<FieldInfo> fields, int[] indices)
-            {
-                return _DATABASE.MultiRead<T_OPLog>(reader, offset, fieldCount, properties, fields, indices);
-            }
-            public static void GetInsertSQL(T_OPLog target, StringBuilder builder, List<object> values)
-            {
-                int index = values.Count;
-                builder.AppendFormat("INSERT `T_OPLog`(`PID`, `Operation`, `Time`, `Way`, `Sign`, `Statistic`, `Detail`) VALUES(");
-                for (int i = 0, n = 6; i <= n; i++)
-                {
-                    builder.AppendFormat("@p{0}", index++);
-                    if (i != n) builder.Append(", ");
-                }
-                builder.AppendLine(");");
-                values.Add(target.PID);
-                values.Add(target.Operation);
-                values.Add(target.Time);
-                values.Add(target.Way);
-                values.Add(target.Sign);
-                values.Add(target.Statistic);
-                values.Add(target.Detail);
-            }
-            public static int Insert(T_OPLog target)
-            {
-                StringBuilder builder = new StringBuilder();
-                List<object> values = new List<object>(8);
-                GetInsertSQL(target, builder, values);
-                builder.Append("SELECT LAST_INSERT_ID();");
-                target.ID = _DAO.SelectValue<int>(builder.ToString(), values.ToArray());
-                return target.ID;
-            }
-            public static void GetDeleteSQL(int ID, StringBuilder builder, List<object> values)
-            {
-                int index = values.Count;
-                builder.AppendFormat("DELETE FROM `T_OPLog` WHERE `ID` = @p{0};", index++);
-                values.Add(ID);
-            }
-            public static int Delete(int ID)
-            {
-                return _DAO.ExecuteNonQuery("DELETE FROM `T_OPLog` WHERE `ID` = @p0", ID);
-            }
-            public static int DeleteByPID(int PID)
-            {
-                return _DAO.ExecuteNonQuery("DELETE FROM `T_OPLog` WHERE `PID` = @p0;", PID);
-            }
-            public static int DeleteByOperation(string Operation)
-            {
-                return _DAO.ExecuteNonQuery("DELETE FROM `T_OPLog` WHERE `Operation` = @p0;", Operation);
-            }
-            public static int DeleteByWay(string Way)
-            {
-                return _DAO.ExecuteNonQuery("DELETE FROM `T_OPLog` WHERE `Way` = @p0;", Way);
-            }
-            public static int DeleteBySign(int Sign)
-            {
-                return _DAO.ExecuteNonQuery("DELETE FROM `T_OPLog` WHERE `Sign` = @p0;", Sign);
-            }
-            public static void GetUpdateSQL(T_OPLog target, string condition, StringBuilder builder, List<object> values, params ET_OPLog[] fields)
-            {
-                int index = values.Count;
-                bool all = fields.Length == 0 || fields == FIELD_UPDATE;
-                builder.Append("UPDATE `T_OPLog` SET");
-                if (all || fields.Contains(ET_OPLog.PID))
-                {
-                    builder.AppendFormat(" `PID` = @p{0},", index++);
-                    values.Add(target.PID);
-                }
-                if (all || fields.Contains(ET_OPLog.Operation))
-                {
-                    builder.AppendFormat(" `Operation` = @p{0},", index++);
-                    values.Add(target.Operation);
-                }
-                if (all || fields.Contains(ET_OPLog.Time))
-                {
-                    builder.AppendFormat(" `Time` = @p{0},", index++);
-                    values.Add(target.Time);
-                }
-                if (all || fields.Contains(ET_OPLog.Way))
-                {
-                    builder.AppendFormat(" `Way` = @p{0},", index++);
-                    values.Add(target.Way);
-                }
-                if (all || fields.Contains(ET_OPLog.Sign))
-                {
-                    builder.AppendFormat(" `Sign` = @p{0},", index++);
-                    values.Add(target.Sign);
-                }
-                if (all || fields.Contains(ET_OPLog.Statistic))
-                {
-                    builder.AppendFormat(" `Statistic` = @p{0},", index++);
-                    values.Add(target.Statistic);
-                }
-                if (all || fields.Contains(ET_OPLog.Detail))
-                {
-                    builder.AppendFormat(" `Detail` = @p{0},", index++);
-                    values.Add(target.Detail);
-                }
-                if (index == 0) return;
-                builder[builder.Length - 1] = ' ';
-                if (!string.IsNullOrEmpty(condition)) builder.Append(condition);
-                else
-                {
-                    builder.AppendFormat("WHERE `ID` = @p{0}", index++);
-                    values.Add(target.ID);
-                }
-                builder.AppendLine(";");
-            }
-            /// <summary>condition that 'where' or 'join' without ';'</summary>
-            public static int Update(T_OPLog target, string condition, params ET_OPLog[] fields)
-            {
-                StringBuilder builder = new StringBuilder();
-                List<object> values = new List<object>(fields.Length + 1);
-                GetUpdateSQL(target, condition, builder, values, fields);
-                return _DAO.ExecuteNonQuery(builder.ToString(), values.ToArray());
-            }
-            public static void GetSelectField(string tableName, StringBuilder builder, params ET_OPLog[] fields)
-            {
-                if (string.IsNullOrEmpty(tableName)) tableName = "`T_OPLog`";
-                int count = fields == null ? 0 : fields.Length;
-                if (count == 0)
-                {
-                    builder.Append("{0}.*", tableName);
-                    return;
-                }
-                count--;
-                for (int i = 0; i <= count; i++)
-                {
-                    builder.Append("{0}.{1}", tableName, fields[i].ToString());
-                    if (i != count) builder.Append(",");
-                }
-            }
-            public static StringBuilder GetSelectSQL(params ET_OPLog[] fields)
-            {
-                StringBuilder builder = new StringBuilder();
-                builder.AppendLine("SELECT ");
-                GetSelectField(null, builder, fields);
-                builder.AppendLine(" FROM `T_OPLog`");
-                return builder;
-            }
-            public static T_OPLog Select(int __ID, params ET_OPLog[] fields)
-            {
-                StringBuilder builder = GetSelectSQL(fields);
-                builder.Append(" WHERE `ID` = @p0;");
-                var ret = _DAO.SelectObject<T_OPLog>(builder.ToString(), __ID);
-                if (ret != default(T_OPLog))
-                {
-                    ret.ID = __ID;
-                }
-                return ret;
-            }
-            public static T_OPLog Select(ET_OPLog[] fields, string condition, params object[] param)
-            {
-                StringBuilder builder = GetSelectSQL(fields);
-                if (!string.IsNullOrEmpty(condition)) builder.Append(" {0}", condition);
-                builder.Append(';');
-                return _DAO.SelectObject<T_OPLog>(builder.ToString(), param);
-            }
-            public static bool Exists(int __ID)
-            {
-                return _DAO.ExecuteScalar<bool>("SELECT EXISTS(SELECT 1 FROM `T_OPLog` WHERE `ID` = @p0)", __ID);
-            }
-            public static bool Exists2(string condition, params object[] param)
-            {
-                return _DAO.ExecuteScalar<bool>(string.Format("SELECT EXISTS(SELECT 1 FROM `T_OPLog` {0})", condition), param);
-            }
-            public static List<T_OPLog> SelectMultiple(ET_OPLog[] fields, string condition, params object[] param)
-            {
-                if (fields == null || fields.Length == 0) return _DAO.SelectObjects<T_OPLog>(string.Format("SELECT * FROM T_OPLog {0};", condition), param);
-                StringBuilder builder = GetSelectSQL(fields);
-                if (!string.IsNullOrEmpty(condition)) builder.Append(" {0}", condition);
-                builder.Append(';');
-                return _DAO.SelectObjects<T_OPLog>(builder.ToString(), param);
-            }
-            public static List<T_OPLog> SelectMultipleByPID(ET_OPLog[] fields, int PID, string conditionAfterWhere, params object[] param)
-            {
-                StringBuilder builder = GetSelectSQL(fields);
-                builder.AppendFormat(" WHERE `PID` = @p{0}", param.Length + 0);
-                if (!string.IsNullOrEmpty(conditionAfterWhere)) builder.Append(" {0}", conditionAfterWhere);
-                builder.Append(';');
-                if (param.Length == 0) return _DAO.SelectObjects<T_OPLog>(builder.ToString(), PID);
-                else return _DAO.SelectObjects<T_OPLog>(builder.ToString(), param.Add(PID));
-            }
-            public static List<T_OPLog> SelectMultipleByOperation(ET_OPLog[] fields, string Operation, string conditionAfterWhere, params object[] param)
-            {
-                StringBuilder builder = GetSelectSQL(fields);
-                builder.AppendFormat(" WHERE `Operation` = @p{0}", param.Length + 0);
-                if (!string.IsNullOrEmpty(conditionAfterWhere)) builder.Append(" {0}", conditionAfterWhere);
-                builder.Append(';');
-                if (param.Length == 0) return _DAO.SelectObjects<T_OPLog>(builder.ToString(), Operation);
-                else return _DAO.SelectObjects<T_OPLog>(builder.ToString(), param.Add(Operation));
-            }
-            public static List<T_OPLog> SelectMultipleByWay(ET_OPLog[] fields, string Way, string conditionAfterWhere, params object[] param)
-            {
-                StringBuilder builder = GetSelectSQL(fields);
-                builder.AppendFormat(" WHERE `Way` = @p{0}", param.Length + 0);
-                if (!string.IsNullOrEmpty(conditionAfterWhere)) builder.Append(" {0}", conditionAfterWhere);
-                builder.Append(';');
-                if (param.Length == 0) return _DAO.SelectObjects<T_OPLog>(builder.ToString(), Way);
-                else return _DAO.SelectObjects<T_OPLog>(builder.ToString(), param.Add(Way));
-            }
-            public static List<T_OPLog> SelectMultipleBySign(ET_OPLog[] fields, int Sign, string conditionAfterWhere, params object[] param)
-            {
-                StringBuilder builder = GetSelectSQL(fields);
-                builder.AppendFormat(" WHERE `Sign` = @p{0}", param.Length + 0);
-                if (!string.IsNullOrEmpty(conditionAfterWhere)) builder.Append(" {0}", conditionAfterWhere);
-                builder.Append(';');
-                if (param.Length == 0) return _DAO.SelectObjects<T_OPLog>(builder.ToString(), Sign);
-                else return _DAO.SelectObjects<T_OPLog>(builder.ToString(), param.Add(Sign));
-            }
-            public static List<T_OPLog> SelectMultipleByPID_Operation(ET_OPLog[] fields, int PID, string Operation, string conditionAfterWhere, params object[] param)
-            {
-                StringBuilder builder = GetSelectSQL(fields);
-                builder.AppendFormat(" WHERE `PID` = @p{0} AND `Operation` = @p{1}", param.Length + 0, param.Length + 1);
-                if (!string.IsNullOrEmpty(conditionAfterWhere)) builder.Append(" {0}", conditionAfterWhere);
-                builder.Append(';');
-                if (param.Length == 0) return _DAO.SelectObjects<T_OPLog>(builder.ToString(), PID, Operation);
-                else return _DAO.SelectObjects<T_OPLog>(builder.ToString(), param.Add(PID, Operation));
-            }
-            public static List<T_OPLog> SelectMultipleByPID_Way(ET_OPLog[] fields, int PID, string Way, string conditionAfterWhere, params object[] param)
-            {
-                StringBuilder builder = GetSelectSQL(fields);
-                builder.AppendFormat(" WHERE `PID` = @p{0} AND `Way` = @p{1}", param.Length + 0, param.Length + 1);
-                if (!string.IsNullOrEmpty(conditionAfterWhere)) builder.Append(" {0}", conditionAfterWhere);
-                builder.Append(';');
-                if (param.Length == 0) return _DAO.SelectObjects<T_OPLog>(builder.ToString(), PID, Way);
-                else return _DAO.SelectObjects<T_OPLog>(builder.ToString(), param.Add(PID, Way));
-            }
-            public static List<T_OPLog> SelectMultipleByPID_Sign(ET_OPLog[] fields, int PID, int Sign, string conditionAfterWhere, params object[] param)
-            {
-                StringBuilder builder = GetSelectSQL(fields);
-                builder.AppendFormat(" WHERE `PID` = @p{0} AND `Sign` = @p{1}", param.Length + 0, param.Length + 1);
-                if (!string.IsNullOrEmpty(conditionAfterWhere)) builder.Append(" {0}", conditionAfterWhere);
-                builder.Append(';');
-                if (param.Length == 0) return _DAO.SelectObjects<T_OPLog>(builder.ToString(), PID, Sign);
-                else return _DAO.SelectObjects<T_OPLog>(builder.ToString(), param.Add(PID, Sign));
-            }
-            public static List<T_OPLog> SelectMultipleByOperation_Way(ET_OPLog[] fields, string Operation, string Way, string conditionAfterWhere, params object[] param)
-            {
-                StringBuilder builder = GetSelectSQL(fields);
-                builder.AppendFormat(" WHERE `Operation` = @p{0} AND `Way` = @p{1}", param.Length + 0, param.Length + 1);
-                if (!string.IsNullOrEmpty(conditionAfterWhere)) builder.Append(" {0}", conditionAfterWhere);
-                builder.Append(';');
-                if (param.Length == 0) return _DAO.SelectObjects<T_OPLog>(builder.ToString(), Operation, Way);
-                else return _DAO.SelectObjects<T_OPLog>(builder.ToString(), param.Add(Operation, Way));
-            }
-            public static List<T_OPLog> SelectMultipleByOperation_Sign(ET_OPLog[] fields, string Operation, int Sign, string conditionAfterWhere, params object[] param)
-            {
-                StringBuilder builder = GetSelectSQL(fields);
-                builder.AppendFormat(" WHERE `Operation` = @p{0} AND `Sign` = @p{1}", param.Length + 0, param.Length + 1);
-                if (!string.IsNullOrEmpty(conditionAfterWhere)) builder.Append(" {0}", conditionAfterWhere);
-                builder.Append(';');
-                if (param.Length == 0) return _DAO.SelectObjects<T_OPLog>(builder.ToString(), Operation, Sign);
-                else return _DAO.SelectObjects<T_OPLog>(builder.ToString(), param.Add(Operation, Sign));
-            }
-            public static List<T_OPLog> SelectMultipleByWay_Sign(ET_OPLog[] fields, string Way, int Sign, string conditionAfterWhere, params object[] param)
-            {
-                StringBuilder builder = GetSelectSQL(fields);
-                builder.AppendFormat(" WHERE `Way` = @p{0} AND `Sign` = @p{1}", param.Length + 0, param.Length + 1);
-                if (!string.IsNullOrEmpty(conditionAfterWhere)) builder.Append(" {0}", conditionAfterWhere);
-                builder.Append(';');
-                if (param.Length == 0) return _DAO.SelectObjects<T_OPLog>(builder.ToString(), Way, Sign);
-                else return _DAO.SelectObjects<T_OPLog>(builder.ToString(), param.Add(Way, Sign));
-            }
-            public static List<T_OPLog> SelectMultipleByPID_Operation_Way(ET_OPLog[] fields, int PID, string Operation, string Way, string conditionAfterWhere, params object[] param)
-            {
-                StringBuilder builder = GetSelectSQL(fields);
-                builder.AppendFormat(" WHERE `PID` = @p{0} AND `Operation` = @p{1} AND `Way` = @p{2}", param.Length + 0, param.Length + 1, param.Length + 2);
-                if (!string.IsNullOrEmpty(conditionAfterWhere)) builder.Append(" {0}", conditionAfterWhere);
-                builder.Append(';');
-                if (param.Length == 0) return _DAO.SelectObjects<T_OPLog>(builder.ToString(), PID, Operation, Way);
-                else return _DAO.SelectObjects<T_OPLog>(builder.ToString(), param.Add(PID, Operation, Way));
-            }
-            public static List<T_OPLog> SelectMultipleByPID_Operation_Sign(ET_OPLog[] fields, int PID, string Operation, int Sign, string conditionAfterWhere, params object[] param)
-            {
-                StringBuilder builder = GetSelectSQL(fields);
-                builder.AppendFormat(" WHERE `PID` = @p{0} AND `Operation` = @p{1} AND `Sign` = @p{2}", param.Length + 0, param.Length + 1, param.Length + 2);
-                if (!string.IsNullOrEmpty(conditionAfterWhere)) builder.Append(" {0}", conditionAfterWhere);
-                builder.Append(';');
-                if (param.Length == 0) return _DAO.SelectObjects<T_OPLog>(builder.ToString(), PID, Operation, Sign);
-                else return _DAO.SelectObjects<T_OPLog>(builder.ToString(), param.Add(PID, Operation, Sign));
-            }
-            public static List<T_OPLog> SelectMultipleByPID_Way_Sign(ET_OPLog[] fields, int PID, string Way, int Sign, string conditionAfterWhere, params object[] param)
-            {
-                StringBuilder builder = GetSelectSQL(fields);
-                builder.AppendFormat(" WHERE `PID` = @p{0} AND `Way` = @p{1} AND `Sign` = @p{2}", param.Length + 0, param.Length + 1, param.Length + 2);
-                if (!string.IsNullOrEmpty(conditionAfterWhere)) builder.Append(" {0}", conditionAfterWhere);
-                builder.Append(';');
-                if (param.Length == 0) return _DAO.SelectObjects<T_OPLog>(builder.ToString(), PID, Way, Sign);
-                else return _DAO.SelectObjects<T_OPLog>(builder.ToString(), param.Add(PID, Way, Sign));
-            }
-            public static List<T_OPLog> SelectMultipleByOperation_Way_Sign(ET_OPLog[] fields, string Operation, string Way, int Sign, string conditionAfterWhere, params object[] param)
-            {
-                StringBuilder builder = GetSelectSQL(fields);
-                builder.AppendFormat(" WHERE `Operation` = @p{0} AND `Way` = @p{1} AND `Sign` = @p{2}", param.Length + 0, param.Length + 1, param.Length + 2);
-                if (!string.IsNullOrEmpty(conditionAfterWhere)) builder.Append(" {0}", conditionAfterWhere);
-                builder.Append(';');
-                if (param.Length == 0) return _DAO.SelectObjects<T_OPLog>(builder.ToString(), Operation, Way, Sign);
-                else return _DAO.SelectObjects<T_OPLog>(builder.ToString(), param.Add(Operation, Way, Sign));
-            }
-            public static List<T_OPLog> SelectMultipleByPID_Operation_Way_Sign(ET_OPLog[] fields, int PID, string Operation, string Way, int Sign, string conditionAfterWhere, params object[] param)
-            {
-                StringBuilder builder = GetSelectSQL(fields);
-                builder.AppendFormat(" WHERE `PID` = @p{0} AND `Operation` = @p{1} AND `Way` = @p{2} AND `Sign` = @p{3}", param.Length + 0, param.Length + 1, param.Length + 2, param.Length + 3);
-                if (!string.IsNullOrEmpty(conditionAfterWhere)) builder.Append(" {0}", conditionAfterWhere);
-                builder.Append(';');
-                if (param.Length == 0) return _DAO.SelectObjects<T_OPLog>(builder.ToString(), PID, Operation, Way, Sign);
-                else return _DAO.SelectObjects<T_OPLog>(builder.ToString(), param.Add(PID, Operation, Way, Sign));
-            }
-            public static StringBuilder GetSelectJoinSQL(ref ET_OPLog[] fT_OPLog, ref ET_PLAYER[] fPID)
-            {
-                StringBuilder builder = new StringBuilder();
-                builder.Append("SELECT ");
-                _T_OPLog.GetSelectField("t0", builder, fT_OPLog);
-                if (fT_OPLog == null || fT_OPLog.Length == 0) fT_OPLog = FIELD_ALL;
-                if (fPID != null)
-                {
-                    builder.Append(", ");
-                    _T_PLAYER.GetSelectField("t1", builder, fPID);
-                    if (fPID.Length == 0) fPID = _T_PLAYER.FIELD_ALL;
-                }
-                builder.Append(" FROM `T_OPLog` as t0");
-                if (fPID != null) builder.Append(" LEFT JOIN `T_PLAYER` as t1 ON (t0.PID = t1.ID)");
-                return builder;
-            }
-            public static void SelectJoinRead(IDataReader reader, List<JoinT_OPLog> list, ET_OPLog[] fT_OPLog, ET_PLAYER[] fPID)
-            {
-                int offset = 0;
-                int[] indices = new int[reader.FieldCount];
-                List<PropertyInfo> _pT_OPLog;
-                List<FieldInfo> _fT_OPLog;
-                _T_OPLog.MultiReadPrepare(reader, 0, fT_OPLog.Length, out _pT_OPLog, out _fT_OPLog, ref indices);
-                offset = fT_OPLog.Length;
-                List<PropertyInfo> _pPID = null;
-                List<FieldInfo> _fPID = null;
-                if (fPID != null)
-                {
-                    _T_PLAYER.MultiReadPrepare(reader, offset, fPID.Length, out _pPID, out _fPID, ref indices);
-                    offset += fPID.Length;
-                }
-                while (reader.Read())
-                {
-                    JoinT_OPLog join = new JoinT_OPLog();
-                    list.Add(join);
-                    join.T_OPLog = _T_OPLog.MultiRead(reader, 0, fT_OPLog.Length, _pT_OPLog, _fT_OPLog, indices);
-                    offset = fT_OPLog.Length;
-                    if (fPID != null)
-                    {
-                        join.PID = _T_PLAYER.MultiRead(reader, offset, fPID.Length, _pPID, _fPID, indices);
-                        offset += fPID.Length;
-                    }
-                }
-            }
-            public static List<JoinT_OPLog> SelectJoin(ET_OPLog[] fT_OPLog, ET_PLAYER[] fPID, string condition, params object[] param)
-            {
-                StringBuilder builder = GetSelectJoinSQL(ref fT_OPLog, ref fPID);
-                if (!string.IsNullOrEmpty(condition)) builder.Append(" {0}", condition);
-                builder.Append(';');
-                List<JoinT_OPLog> results = new List<JoinT_OPLog>();
-                _DAO.ExecuteReader((reader) => SelectJoinRead(reader, results, fT_OPLog, fPID), builder.ToString(), param);
-                return results;
-            }
-            public static PagedModel<JoinT_OPLog> SelectJoinPages(ET_OPLog[] fT_OPLog, ET_PLAYER[] fPID, string __where, string conditionAfterWhere, int page, int pageSize, params object[] param)
-            {
-                StringBuilder builder = GetSelectJoinSQL(ref fT_OPLog, ref fPID);
-                StringBuilder builder2 = new StringBuilder();
-                builder2.Append("SELECT count(t0.`ID`) FROM `T_OPLog` as t0");
-                if (fPID != null) builder2.Append(" LEFT JOIN `T_PLAYER` as t1 ON (t0.PID = t1.ID)");
-                return _DB.SelectPages<JoinT_OPLog>(_DAO, builder2.ToString(), __where, builder.ToString(), conditionAfterWhere, page, pageSize, (reader, list) => SelectJoinRead(reader, list, fT_OPLog, fPID), param);
-            }
-            public static PagedModel<T_OPLog> SelectPages(string __where, ET_OPLog[] fields, string conditionAfterWhere, int page, int pageSize, params object[] param)
-            {
-                var ret = SelectPages<T_OPLog>(__where, GetSelectSQL(fields).ToString(), conditionAfterWhere, page, pageSize, param);
-                return ret;
-            }
-            public static PagedModel<T> SelectPages<T>(string __where, string selectSQL, string conditionAfterWhere, int page, int pageSize, params object[] param) where T : new()
-            {
-                return _DB.SelectPages<T>(_DAO, "SELECT count(`T_OPLog`.`ID`) FROM `T_OPLog`", __where, selectSQL, conditionAfterWhere, page, pageSize, param);
-            }
-        }
-        public static PagedModel<T> SelectPages<T>(_DATABASE.Database db, string selectCountSQL, string __where, string selectSQL, string conditionAfterWhere, int page, int pageSize, params object[] param) where T : new()
-        {
-            return SelectPages(db, selectCountSQL, __where, selectSQL, conditionAfterWhere, page, pageSize, new Action<IDataReader, List<T>>((reader, list) => { while (reader.Read()) list.Add(_DATABASE.ReadObject<T>(reader, 0, reader.FieldCount)); }), param);
-        }
-        public static PagedModel<T> SelectPages<T>(_DATABASE.Database db, string selectCountSQL, string __where, string selectSQL, string conditionAfterWhere, int page, int pageSize, Action<IDataReader, List<T>> read, params object[] param)
-        {
-            StringBuilder builder = new StringBuilder();
-            builder.AppendLine("{0} {1};", selectCountSQL, __where);
-            builder.AppendLine("{0} {1} {2} LIMIT @p{3},@p{4};", selectSQL, __where, conditionAfterWhere, param.Length, param.Length + 1);
-            object[] __param = new object[param.Length + 2];
-            Array.Copy(param, __param, param.Length);
-            __param[param.Length] = page * pageSize;
-            __param[param.Length + 1] = pageSize;
-            PagedModel<T> result = new PagedModel<T>();
-            result.Page = page;
-            result.PageSize = pageSize;
-            db.ExecuteReader((reader) =>
-            {
-                reader.Read();
-                result.Count = (int)(long)reader[0];
-                result.Models = new List<T>();
-                reader.NextResult();
-                read(reader, result.Models);
-            }
-            , builder.ToString(), __param);
-            return result;
-        }
-        public static void MasterSlave(string masterConnString, string slaveConnStrings)
-        {
-            Dictionary<string, string> dic = _DATABASE.ParseConnectionString(masterConnString, true);
-            string host = dic["server"];
-            string port = dic["port"];
-            string user = dic["user"];
-            string password = dic["password"];
-            MASTER_STATUS masterStatus;
-            using (MYSQL_DATABASE master = new MYSQL_DATABASE())
-            {
-                master.ConnectionString = masterConnString;
-                master.TestConnection();
-                masterStatus = master.SelectObject<MASTER_STATUS>("SHOW MASTER STATUS");
-            }
-            string user2 = null;
-            string password2 = null;
-            StringBuilder builder = new StringBuilder();
-            builder.AppendLine("stream {");
-            builder.AppendFormat("    upstream {0} {{", masterStatus.Binlog_Do_DB);
-            builder.AppendLine();
-            string[] slaves = slaveConnStrings.Split(',');
-            for (int i = 0; i < slaves.Length; i++)
-            {
-                using (MYSQL_DATABASE slave = new MYSQL_DATABASE())
-                {
-                    var dic2 = _DATABASE.ParseConnectionString(slaves[i], true);
-                    if (user2 == null) user2 = dic2["user"];
-                    else if (user2 != dic2["user"]) throw new InvalidOperationException("从库作为分布式读库时登录用户名必须一致");
-                    if (password2 == null) password2 = dic2["password"];
-                    else if (password2 != dic2["password"]) throw new InvalidOperationException("从库作为分布式读库时登录密码必须一致");
-                    builder.AppendLine("        server {0}:{1};", dic2["server"], dic2["port"]);
-                    slave.ConnectionString = slaves[i];
-                    slave.TestConnection();
-                    var slaveStatus = slave.SelectObject<SLAVE_STATUS>("SHOW SLAVE STATUS");
-                    if (slaveStatus == null || slaveStatus.IsRunning) continue;
-                    slave.ExecuteNonQuery("CHANGE MASTER TO MASTER_HOST=@p0,MASTER_PORT=@p1,MASTER_USER=@p2,MASTER_PASSWORD=@p3,MASTER_LOG_FILE=@p4,MASTER_LOG_POS=@p5;", host, port, user, password, masterStatus.File, masterStatus.Position);
-                }
-            }
-            builder.AppendLine("    }");
-            builder.AppendLine("    server {");
-            builder.AppendLine("        listen nginxport;");
-            builder.AppendLine("        proxy_pass {0};", masterStatus.Binlog_Do_DB);
-            builder.AppendLine("    }");
-            builder.AppendLine("}");
-            _LOG.Debug("Nginx配置文件代码\r\n{0}", builder.ToString());
-            _LOG.Debug("服务器启动的主从数据库连接字符串配置命令");
-            _LOG.Info("\"Server={0};Port={1};User={2};Password={3}; {4} Server=nginxip;Port=nginxport;User={5};Password={6};\"", host, port, user, password, masterStatus.Binlog_Do_DB, user2, password2);
-        }
+
+        #region 支付宝支付
+        // 需要更高的.net framework版本
+        // 需要以下dll，已经放入Launch\Server\
+        // AlipaySDKNet.dll
+        // Aliyun.MNS.dll
+        // Aliyun.OSS.dll
+        // aliyun-net-sdk-core.dll
+        // aliyun-net-sdk-dybaseapi.dll
+        // aliyun-net-sdk-dysmsapi.dll
+        // jose-jwt.dll
+        // Newtonsoft.Json.dll
+        /// <summary>支付宝支付</summary>
+        //public static class _ZFB
+        //{
+        //    // 正式环境
+        //    const string URL = "https://openapi.alipay.com/gateway.do";
+        //    // 沙箱环境
+        //    //const string URL = "https://openapi.alipaydev.com/gateway.do";
+
+        //    public static string APP_ID = "20210031********";
+        //    /// <summary>应用私钥和下面的应用公钥，可以在支付宝网页版加签工具生成https://miniu.alipay.com/keytool/create</summary>
+        //    public static string APP_PRIVATE_KEY = "MIIEpQIBAAKCAQEAgDotn4+sxAUo29ayC5aXgSxeNuTYgPfqxUZbvrCuK2ZkQ0OUz4m+iKYLn6d5DgnzKwFJLCJJ4aSAi/2MB95H+/Hiq/iGGQj5YLSIwtzmlVTDisT9RRMO/Mgl4rNq0TkgETD8jZKNrY6zSZ5Hvy5/tgnNkcoH65F4nL3L+OgYqKks6pIrnlzXpqe4V7V0a50u5/Cort8ykLS6GcWX1or7w6TGmCEzriBLTxiC4imSo2Zu3g6FYLPofZ7wUy3YPEUWFF5lvCjKDuiBnFeTTgp3kWhUx1RH3tUDkbihO7C65EZOSfVDzyRrUcYgGH6LIAGouIaHX6vN/6vM4F6KwWwXSwIDAQABAoIBAEpQbWySOhCI5Psz3JA2wKuOaTPrQUbNZ/TZKAbGIsroVqddHXuCWzia8xWeW9w1DAcagavgW204h3+afHN68cEkmLgOGrmbp9vSBYjZuZFGROXB8P79YqxB2yMd1IRZVSphd50dGJtDnsjFwNMeQcnguJELw7dU4dAFd5dT/CaSvsp0fNzFcAPwZY/8O5jUuaVIFP2CdMEEt0nQusQZGL9ue6aDoz3HKuBdiDK/uLCzUZSEPXnmTL1uCITINT199WLJ9lvdvfCoNNpG+vM+v5V76vZVvSEkNgC89Haw3TlBGuIGaxgNZGfOeXZZUHkT5sA8bNC3oRbCwuhibtyTN8ECgYEA39iflFnXt4i0RYX4bT9fUoY6PFZtR1GER2wWFNp8VKwIjNRlTifqOONYGFJjSsZ8Jl1cxpp+hmkf4xq1i3QriP9zi4X0BEq21UoG2LpKR9Ltu7nnT7+QvjC1xoCxNpKL4XDMirQ+9Uy8KXmDC07wWOxv2Ne7lHuQbmfHx0Z8ZdsCgYEAkqVpNOUlgYqqOmcSbVTCtCg40Gkp/M0qN9WZltJZz9bDSJlzqJW15ifPL8XsrPzSivzOeKZlpqQ6pADOSgUu85e0ll4iKGks9Vpx6JHTOm6jyjndXqHTWq8+NmkqRrbrv3JPlBzSGb2TPF/1Nke+Xrf+0KC9HAvFdnipJ846p1ECgYEAvy7fLO+HBKRng7GmungTzAIEnyAZ+X2wAuhX+7uX0SGVs+J8G8KPk8LorO1BDM51nrbC1IWDZv1GVMutHsw7mqjDYPkprri5a3XsXxLM+oc2sM1YuI4e67HirwWfVcLYYdXbfOPxmcTOOIYl3HSxZuGZrZSkC291rjZJNPQIr10CgYEAjQMH3ng2D5HyTMSOQJmPvEMtFqL5YAE9BoGb9h6BhEzEbcw5HjQPvKgtH4gYJOPb5RBhzjxbZNlpFgk8VIsVceFAIpOUDv3L4IY/IF8RGZAIac4oovXDUeFPVmzb3THKEcbu5MKt+ViE+zpehfqJAXW2TpEyJ4TeNSSjrAYv+nECgYEAjF4MmCNibz5wbh468mRglayvFJ0UUCM3ltGedKcmnvB0c5XH5xkJAm3bkYNx4o593hloX18Emy5z6ua5jJ2FZygvOgYfn2ClWsvPN7IYWtaR+69OTUb0RGUl3Z4LkU1FhM6KkPQGjIx4NOi9TrQT+YXMsOA85BY1SpLWkuA7LSg=";
+        //    // 应用公钥，在应用后台生成支付宝公钥
+        //    //public static string APP_PUBLIC_KEY = "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAgDotn4+sxAUo29ayC5aXgSxeNuTYgPfqxUZbvrCuK2ZkQ0OUz4m+iKYLn6d5DgnzKwFJLCJJ4aSAi/2MB95H+/Hiq/iGGQj5YLSIwtzmlVTDisT9RRMO/Mgl4rNq0TkgETD8jZKNrY6zSZ5Hvy5/tgnNkcoH65F4nL3L+OgYqKks6pIrnlzXpqe4V7V0a50u5/Cort8ykLS6GcWX1or7w6TGmCEzriBLTxiC4imSo2Zu3g6FYLPofZ7wUy3YPEUWFF5lvCjKDuiBnFeTTgp3kWhUx1RH3tUDkbihO7C65EZOSfVDzyRrUcYgGH6LIAGouIaHX6vN/6vM4F6KwWwXSwIDAQAB";
+        //    /// <summary>支付宝公钥，可以用于最终的付款</summary>
+        //    public static string APP_PUBLIC_KEY = "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAlMJws27InXL7ZldgtZ3wcycucV4DQgt5yYN2XPALKdeOqo2L7GLfk8fQzXIrGsaMAMY3iCCcmh4vN8tjz9KRLFZzZglGBA4XkQyQk8WeSvUR5xN/SfEDgE9KtcVyyW23u+s5juMKkSi/NICJ+toLpIGVu6KpK0tJPok4TzUS3MHoz4qx7STvgW+m1CbHW+nl8l1F36A7EGlaDa1yUdfq2acN25XDFfZ/T+OZ94zrlD2wk1Ug8qjpuJChK8OzxHtpQcz4YVveWs56k+K9O0027vnuWNcblC0QFJT7vVxR1b+BgwGdgDWwYaA4AytstJxSys57wBNiOl6e2Y743CVsbwIDAQAB";
+
+        //    /// <summary>支付完成后通知服务端的地址</summary>
+        //    public static string NOTIFY_URL = "http://8.134.82.110:30005/Action/0/AlipayCallback";
+        //    /// <summary>支付完成后前端的跳转地址</summary>
+        //    public static string RETURN_URL = "https://8.134.82.110:31000/pages/oder/paySuccess";
+        //    /// <summary>H5网页支付的网页html内容</summary>
+        //    const string BODY = "<meta charset=\"utf-8\"><!-- {0} -->\r\n{1}";
+
+
+        //    private static Dictionary<string, string> OrderPageCodes = new Dictionary<string, string>();
+        //    public static string GetOrderPageCode(string out_trade_no)
+        //    {
+        //        string result;
+        //        if (!OrderPageCodes.TryGetValue(out_trade_no, out result))
+        //            result = "<h1 text-align:'center'>支付页已过期，请重新下单</h1>";
+        //        return result;
+        //    }
+
+        //    static DefaultAopClient GetClient()
+        //    {
+        //        DefaultAopClient client = new DefaultAopClient(URL, APP_ID, APP_PRIVATE_KEY, "json", "1.0", "RSA2", APP_PUBLIC_KEY, "utf-8", false);
+        //        client.SetTimeout(3000);
+        //        client.notify_url = NOTIFY_URL;
+        //        return client;
+        //    }
+
+        //    class ReqOrderPage
+        //    {
+        //        public string out_trade_no;
+        //        public string product_code = "FAST_INSTANT_TRADE_PAY";
+        //        public double total_amount;
+        //        /// <summary>订单标题</summary>
+        //        public string subject;
+        //        /// <summary>订单描述</summary>
+        //        public string body;
+        //        /// <summary>公用回传参数，如果请求时传递了该参数，则返回给商户时会回传该参数。支付宝会在异步通知时将该参数原样返回。本参数必须进行UrlEncode之后才可以发送给支付宝。</summary>
+        //        //public string passback_params;
+        //        /// <summary>该笔订单允许的最晚付款时间，逾期将关闭交易</summary>
+        //        public string timeout_express = "60m";
+        //    }
+        //    public class RetAlipay
+        //    {
+        //        /// <summary>10000</summary>
+        //        public string code;
+        //        /// <summary>Success</summary>
+        //        public string msg;
+
+        //        public void Check()
+        //        {
+        //            if (code != "10000")
+        //            {
+        //                _LOG.Error("支付宝异常：{0}", msg);
+        //                throw new Exception("支付宝异常");
+        //            }
+        //        }
+        //    }
+        //    public class RetOrderQueryData : RetAlipay, IPayResult
+        //    {
+        //        /// <summary>买家登录的账号：137******63</summary>
+        //        public string buyer_logon_id;
+        //        /// <summary>买家支付宝的账号：2088702599874210</summary>
+        //        public string buyer_user_id;
+        //        /// <summary>我们系统的订单号</summary>
+        //        public string out_trade_no;
+        //        /// <summary>实付款：0.01</summary>
+        //        public string total_amount;
+        //        /// <summary>支付宝订单号</summary>
+        //        public string trade_no;
+        //        /// <summary>交易结果：TRADE_SUCCESS</summary>
+        //        public string trade_status;
+        //        /// <summary>支付时间：2020-03-23 15:20:55</summary>
+        //        public string send_pay_date;
+
+        //        public bool IsTradeSuccess { get { return trade_status == "TRADE_SUCCESS"; } }
+        //        public DateTime PayTime { get { return DateTime.Parse(send_pay_date); } }
+        //        public string Voucher { get { return trade_no; } }
+        //    }
+        //    class RetOrderQuery
+        //    {
+        //        public RetOrderQueryData alipay_trade_query_response;
+        //        public string sign;
+        //    }
+        //    static string PageExecute<T>(DefaultAopClient client, IAopRequest<T> request) where T : AopResponse
+        //    {
+        //        if (client == null)
+        //            client = GetClient();
+        //        request.SetNotifyUrl(client.notify_url);
+        //        request.SetReturnUrl(client.return_url);
+        //        //var response = client.SdkExecute(request);
+        //        //return ImplHelper.HttpGet(URL + "?" + response.Body);
+        //        var response = client.pageExecute(request);
+        //        return response.Body;
+        //    }
+        //    static string SDKExecute<T>(DefaultAopClient client, IAopRequest<T> request) where T : AopResponse
+        //    {
+        //        if (client == null)
+        //            client = GetClient();
+        //        request.SetNotifyUrl(client.notify_url);
+        //        request.SetReturnUrl(client.return_url);
+        //        var response = client.SdkExecute(request);
+        //        return HttpGet(URL + "?" + response.Body);
+        //    }
+        //    static string SDKExecute<T>(IAopRequest<T> request) where T : AopResponse
+        //    {
+        //        return SDKExecute(null, request);
+        //    }
+        //    /// <summary>支付宝订单</summary>
+        //    /// <param name="out_trade_no">外部订单号，商户网站订单系统中唯一的订单号</param>
+        //    /// <param name="price">单位分</param>
+        //    public static string OrderPage(int id, string out_trade_no, string title, string desc, int price)
+        //    {
+        //        if (!T_SMSCode.IsValid)
+        //            price = 1;
+
+        //        DefaultAopClient client = GetClient();
+        //        // 支付成功后的跳转页面
+        //        client.return_url = RETURN_URL + "?orderID=" + id;
+        //        //client.return_url = RETURN_URL;
+
+        //        var request = new AlipayTradeWapPayRequest();
+        //        //var request = new AlipayTradePagePayRequest();
+        //        double __price = price / 100.0;
+        //        string __tempPrice = __price.ToString();
+        //        int point = __tempPrice.IndexOf('.');
+        //        if (point != -1)
+        //        {
+        //            if (__tempPrice.Length - point - 1 > 2)
+        //            {
+        //                _LOG.Info("支付宝支付金额超过2位小数 {0}", __tempPrice);
+        //                __tempPrice = __tempPrice.Substring(0, point + 1 + 2);
+        //                __price = double.Parse(__tempPrice);
+        //            }
+        //        }
+        //        request.BizContent = JsonWriter.Serialize(new ReqOrderPage()
+        //        {
+        //            out_trade_no = out_trade_no,
+        //            total_amount = __price,
+        //            subject = title,
+        //            body = desc,
+        //        });
+
+        //        _FILE.CheckFilePath("order");
+        //        string get = string.Format(BODY, out_trade_no, PageExecute(client, request));
+        //        //OrderPageCodes[out_trade_no] = get;
+        //        // 写入文件，返回URL
+        //        _FILE.CheckPath("order");
+        //        string result = string.Format("order/{0}.html", out_trade_no);
+        //        File.WriteAllText(result, get);
+        //        //return string.Format("{0}ZFBURL?orderID={1}", OrderPageURL, out_trade_no);
+        //        result.ResolveImage(out result);
+        //        return result;
+        //        // 写入文件，返回URL
+        //        //string url = string.Format("orders/{0}.html", out_trade_no);
+        //        //_RES.CheckFilePath(_IO.RootDirectory + url);
+        //        //_IO.WriteText(url, get);
+
+        //        //url = _RES.GetAccessURL(url, true);
+        //        //return url;
+        //    }
+        //    public static RetOrderQueryData OrderQuery(string out_trade_no)
+        //    {
+        //        AlipayTradeQueryRequest request = new AlipayTradeQueryRequest();
+        //        request.BizContent = string.Format("{{\"out_trade_no\":\"{0}\"}}", out_trade_no);
+        //        string get = SDKExecute(request);
+        //        var data = JsonReader.Deserialize<RetOrderQuery>(get);
+        //        //data.alipay_trade_query_response.Check();
+        //        return data.alipay_trade_query_response;
+        //    }
+        //}
+        #endregion
+        #region 微信支付
+        /// <summary>微信支付</summary>
+        //public static class _WX
+        //{
+        //    public class WXPay
+        //    {
+        //        public string appId;
+        //        public string nonceStr;
+        //        public string paySign;
+        //        public string prepayid;
+        //        public string partnerid;
+        //        public string timeStamp;
+        //        public string package = "Sign=WXPay";
+        //    }
+        //    /// <summary>
+        //    /// 微信支付协议接口数据类，所有的API接口通信都依赖这个数据结构，
+        //    /// 在调用接口之前先填充各个字段的值，然后进行接口通信，
+        //    /// 这样设计的好处是可扩展性强，用户可随意对协议进行更改而不用重新设计数据结构，
+        //    /// 还可以随意组合出不同的协议数据包，不用为每个协议设计一个数据包结构
+        //    /// </summary>
+        //    public class WxPayData
+        //    {
+        //        public const string SIGN_TYPE_MD5 = "MD5";
+        //        public const string SIGN_TYPE_HMAC_SHA256 = "HMAC-SHA256";
+
+        //        //采用排序的Dictionary的好处是方便对数据包进行签名，不用再签名之前再做一次排序
+        //        private SortedDictionary<string, object> m_values = new SortedDictionary<string, object>();
+
+        //        public void SetValue(string key, object value)
+        //        {
+        //            m_values[key] = value;
+        //        }
+        //        public string GetValue(string key)
+        //        {
+        //            return GetValue<string>(key);
+        //        }
+        //        public T GetValue<T>(string key)
+        //        {
+        //            object o = null;
+        //            m_values.TryGetValue(key, out o);
+        //            if (o == null)
+        //                return default(T);
+        //            return (T)o;
+        //        }
+
+        //        public string ToXml()
+        //        {
+        //            //数据为空时不能转化为xml格式
+        //            if (0 == m_values.Count)
+        //                throw new InvalidOperationException("WxPayData数据为空!");
+
+        //            StringBuilder xml = new StringBuilder("<xml>");
+        //            foreach (KeyValuePair<string, object> pair in m_values)
+        //            {
+        //                // 字段值不能为null，会影响后续流程
+        //                if (pair.Value == null)
+        //                    throw new InvalidOperationException("WxPayData内部含有值为null的字段" + pair.Key);
+
+        //                if (pair.Value.GetType() == typeof(int))
+        //                    xml.AppendFormat("<{0}>{1}</{0}>", pair.Key, pair.Value);
+        //                else if (pair.Value.GetType() == typeof(string))
+        //                    xml.AppendFormat("<{0}><![CDATA[{1}]]></{0}>", pair.Key, pair.Value);
+        //                else
+        //                    // 除了string和int类型不能含有其他数据类型
+        //                    throw new InvalidOperationException("WxPayData字段数据类型错误!");
+        //            }
+        //            xml.Append("</xml>");
+        //            return xml.ToString();
+        //        }
+        //        public void FromXml(string xml)
+        //        {
+        //            if (string.IsNullOrEmpty(xml))
+        //                throw new InvalidOperationException("将空的xml串转换为WxPayData不合法!");
+
+        //            XmlDocument xmlDoc = new XmlDocument();
+        //            xmlDoc.LoadXml(xml);
+        //            System.Xml.XmlNode xmlNode = xmlDoc.FirstChild;//获取到根节点<xml>
+        //            XmlNodeList nodes = xmlNode.ChildNodes;
+        //            foreach (System.Xml.XmlNode xn in nodes)
+        //            {
+        //                XmlElement xe = (XmlElement)xn;
+        //                m_values[xe.Name] = xe.InnerText;//获取xml的键值对到WxPayData内部的数据中
+        //            }
+
+        //            if (m_values["return_code"].ToString() == "SUCCESS" && !string.IsNullOrEmpty(GetValue("sign")))
+        //                if (!CheckSign())
+        //                    throw new InvalidOperationException("签名验证失败");
+        //        }
+
+        //        /// <summary>Dictionary格式转化成url参数格式（不包含sign字段值）</summary>
+        //        string ToUrl()
+        //        {
+        //            StringBuilder buff = new StringBuilder();
+        //            foreach (KeyValuePair<string, object> pair in m_values)
+        //            {
+        //                if (pair.Value == null)
+        //                    throw new InvalidOperationException("WxPayData内部含有值为null的字段" + pair.Key);
+
+        //                if (pair.Key != "sign" && pair.Value.ToString() != "")
+        //                    buff.AppendFormat("{0}={1}&", pair.Key, pair.Value);
+        //            }
+        //            if (buff.Length > 0)
+        //                buff = buff.Remove(buff.Length - 1, 1);
+        //            return buff.ToString();
+        //        }
+        //        /// <summary>生成签名，详见签名生成算法，sign字段不参加签名</summary>
+        //        public string MakeSign(string signType)
+        //        {
+        //            //转url格式
+        //            string str = ToUrl();
+        //            //在string后加入API KEY
+        //            str += "&key=" + APP_KEY;
+        //            if (signType == SIGN_TYPE_MD5)
+        //            {
+        //                var md5 = MD5.Create();
+        //                var bs = md5.ComputeHash(Encoding.UTF8.GetBytes(str));
+        //                var sb = new StringBuilder();
+        //                foreach (byte b in bs)
+        //                {
+        //                    sb.Append(b.ToString("x2"));
+        //                }
+        //                //所有字符转为大写
+        //                return sb.ToString().ToUpper();
+        //            }
+        //            else if (signType == SIGN_TYPE_HMAC_SHA256)
+        //            {
+        //                var enc = Encoding.Default;
+        //                byte[] baText2BeHashed = enc.GetBytes(str),
+        //                baSalt = enc.GetBytes(APP_KEY);
+        //                HMACSHA256 hasher = new HMACSHA256(baSalt);
+        //                byte[] baHashedText = hasher.ComputeHash(baText2BeHashed);
+        //                return string.Join("", baHashedText.ToList().Select(b => b.ToString("x2")).ToArray());
+        //            }
+        //            else
+        //                throw new InvalidOperationException("sign_type 不合法");
+        //        }
+        //        /// <summary>SIGN_TYPE_MD5生成签名</summary>
+        //        public string MakeSign()
+        //        {
+        //            return MakeSign(SIGN_TYPE_MD5);
+        //        }
+        //        /// <summary>检测签名是否正确</summary>
+        //        public bool CheckSign(string signType)
+        //        {
+        //            // 如果没有设置签名或设置了签名但是签名为空，则跳过检测
+        //            object sign;
+        //            if (!m_values.TryGetValue("sign", out sign) || sign == null)
+        //                return false;
+        //            return sign.ToString() == MakeSign(signType);
+        //        }
+        //        /// <summary>检测MD5签名是否正确</summary>
+        //        public bool CheckSign()
+        //        {
+        //            return CheckSign(SIGN_TYPE_MD5);
+        //        }
+        //    }
+        //    /// <summary>查询订单付款状态</summary>
+        //    public class RetQueryOrder : IPayResult
+        //    {
+        //        public enum ETradeState
+        //        {
+        //            /// <summary>支付成功</summary>
+        //            SUCCESS,
+        //            /// <summary>转入退款</summary>
+        //            REFUND,
+        //            /// <summary>未支付</summary>
+        //            NOTPAY,
+        //            /// <summary>已关闭</summary>
+        //            CLOSED,
+        //            /// <summary>已撤销（刷卡支付）</summary>
+        //            REVOKED,
+        //            /// <summary>用户支付中</summary>
+        //            USERPAYING,
+        //            /// <summary>支付失败(其他原因，如银行返回失败)</summary>
+        //            PAYERROR,
+        //        }
+
+        //        public string device_info;
+        //        public string openid;
+        //        public string trade_type;
+        //        public string trade_state;
+        //        public ETradeState TradeState
+        //        {
+        //            get { return (ETradeState)Enum.Parse(typeof(ETradeState), trade_state); }
+        //        }
+        //        public string bank_type;
+        //        public int total_fee;
+        //        public string fee_type;
+        //        public string transaction_id;
+        //        public string out_trade_no;
+        //        public string time_end;
+        //        public string trade_state_desc;
+
+        //        public bool IsTradeSuccess { get { return trade_state == "SUCCESS"; } }
+        //        public DateTime PayTime { get { return DateTime.ParseExact(time_end, "yyyyMMddHHmmss", null); } }
+        //        public string Voucher { get { return transaction_id; } }
+
+        //        public static RetQueryOrder FromWxPayData(WxPayData data)
+        //        {
+        //            RetQueryOrder ret = new RetQueryOrder();
+        //            if (data.GetValue("device_info") != null) ret.device_info = data.GetValue("device_info");
+        //            ret.openid = data.GetValue("openid");
+        //            ret.trade_type = data.GetValue("trade_type");
+        //            ret.trade_state = data.GetValue("trade_state");
+        //            if (string.IsNullOrEmpty(ret.trade_state)) ret.trade_state = data.GetValue("result_code");
+        //            ret.bank_type = data.GetValue("bank_type");
+        //            ret.total_fee = Convert.ToInt32(data.GetValue("total_fee"));
+        //            if (data.GetValue("fee_type") != null) ret.fee_type = data.GetValue("fee_type");
+        //            ret.transaction_id = data.GetValue("transaction_id");
+        //            ret.out_trade_no = data.GetValue("out_trade_no");
+        //            ret.time_end = data.GetValue("time_end");
+        //            ret.trade_state_desc = data.GetValue("trade_state_desc");
+        //            return ret;
+        //        }
+        //    }
+        //    public class RetTransfers
+        //    {
+        //        public string mch_appid;
+        //        public string mchid;
+        //        public string device_info;
+        //        public string nonce_str;
+        //        public string result_code;
+        //        public string err_code;
+        //        public string err_code_des;
+        //        public string partner_trade_no;
+        //        public string payment_no;
+        //        public string payment_time;
+
+        //        public static RetTransfers FromWxPayData(WxPayData data)
+        //        {
+        //            RetTransfers ret = new RetTransfers();
+        //            ret.mch_appid = data.GetValue("mch_appid");
+        //            ret.mchid = data.GetValue("mchid");
+        //            ret.device_info = data.GetValue("device_info");
+        //            ret.nonce_str = data.GetValue("nonce_str");
+        //            ret.result_code = data.GetValue("result_code");
+        //            ret.err_code = data.GetValue("err_code");
+        //            ret.err_code_des = data.GetValue("err_code_des");
+        //            ret.partner_trade_no = data.GetValue("partner_trade_no");
+        //            ret.payment_no = data.GetValue("payment_no");
+        //            ret.payment_time = data.GetValue("payment_time");
+        //            return ret;
+        //        }
+        //    }
+
+        //    public class WXOauth
+        //    {
+        //        public string access_token;
+        //        public int expires_in;
+        //        public string refresh_token;
+        //        public string openid;
+        //        public string scope;
+        //    }
+        //    public class WXUserInfo
+        //    {
+        //        public bool subscribe;
+        //        public string openid;
+        //        public string nickname;
+        //        /// <summary>用户的性别，值为1时是男性，值为2时是女性，值为0时是未知</summary>
+        //        public int sex;
+        //        public string language;
+        //        public string city;
+        //        public string province;
+        //        public string country;
+        //        /// <summary>用户头像，最后一个数值代表正方形头像大小（有0、46、64、96、132数值可选，0代表640*640正方形头像），用户没有头像时该项为空。若用户更换头像，原有头像URL将失效。</summary>
+        //        public string headimgurl;
+        //        /// <summary>用户关注时间，为时间戳。如果用户曾多次关注，则取最后关注时间</summary>
+        //        public long subscribe_time;
+        //        public string unionid;
+        //        public string remark;
+        //        public int groupid;
+        //        public int[] tagid_list;
+        //        public string subscribe_scene;
+        //    }
+
+        //    public static string WXToken = "ddz123456789";
+
+        //    public static string APP_ID = "wxcb58cff2ad9855b5";
+        //    public static string APP_KEY = "bba60ac760de4JHgLZPa11966c41c135";
+        //    public static string SHOP_ID = "1542949881";
+        //    /// <summary>这个不对，无法拉起微信登录</summary>
+        //    public static string APP_SECRET = "650c9cd33ae6cf1d77add725c06afd45";
+        //    public static string PAY_CALLBACK = "http//8.134.53.149:35001/Action/1/WeChatPayCallback";
+        //    public static string REFUND_CALLBACK = "https://api.1996yx.com/Action/219/WeChatRefundCallback";
+        //    public static string RETURN_URL = "https://api.1996yx.com/pages/oder/paySuccess";
+
+
+        //    /// <summary>获得AccessToken(默认过期时间为2小时)</summary>
+        //    public static JsonObject GetAccessToken()
+        //    {
+        //        string send_url = string.Format("https://api.weixin.qq.com/cgi-bin/token?grant_type=client_credential&appid={0}&secret={1}", APP_ID, APP_SECRET);
+        //        //发送并接受返回值
+        //        string result = HttpGet(send_url);
+        //        if (result.Contains("errmsg"))
+        //            throw new InvalidOperationException(string.Format("GetAccessToken异常 Err:{0}", result));
+        //        return JsonReader.Deserialize(result);
+        //    }
+        //    /// <summary>文档：https://developers.weixin.qq.com/doc/offiaccount/OA_Web_Apps/Wechat_webpage_authorization.html#0</summary>
+        //    /// <param name="code">参见文档第一步，前端获取</param>
+        //    public static WXOauth oauth2_access_token(string code)
+        //    {
+        //        string url = string.Format("https://api.weixin.qq.com/sns/oauth2/access_token?appid={0}&secret={1}&code={2}&grant_type=authorization_code", APP_ID, APP_SECRET, code);
+        //        //发送并接受返回值
+        //        string result = HttpGet(url);
+        //        if (result.StartsWith("{\"errcode\":"))
+        //        {
+        //            _LOG.Warning("sns/oauth2/access_token错误：{0}", result);
+        //            "获得微信信息失败".Check(true);
+        //        }
+        //        return JsonReader.Deserialize<WXOauth>(result);
+        //    }
+        //    /// <summary>获取微信用户的基本资料</summary>
+        //    /// <param name="auth">oauth2_access_token返回的对象</param>
+        //    public static WXUserInfo user_info(WXOauth auth)
+        //    {
+        //        // 没有关注公众号信息
+        //        // https://api.weixin.qq.com/sns/userinfo?access_token=" + access_token + "&openid=" + open_id;
+        //        // 有关注公众号信息，据网上说有每日2000次的限制
+        //        // https://api.weixin.qq.com/cgi-bin/user/info?access_token=$access_token&openid=$openid&lang=zh_CN
+
+        //        // 先通过公众号信息获取微信信息
+        //        string result = HttpGet(
+        //            string.Format("https://api.weixin.qq.com/cgi-bin/user/info?access_token={0}&openid={1}", AccessTokenService.AccessToken, auth.openid));
+        //        WXUserInfo userinfo = null;
+        //        if (!result.StartsWith("{\"errcode\":"))
+        //        {
+        //            userinfo = JsonReader.Deserialize<WXUserInfo>(result);
+        //            // 没有关注公众号，拉不出玩家信息
+        //            if (!userinfo.subscribe)
+        //                userinfo = null;
+        //            else
+        //                return userinfo;
+        //        }
+
+        //        if (userinfo == null)
+        //        {
+        //            // 通过个人授权拉取公众号信息
+        //            result = HttpGet(
+        //                string.Format("https://api.weixin.qq.com/sns/userinfo?access_token={0}&openid={1}", auth.access_token, auth.openid));
+        //            string.Format("获取微信用户信息错误：{0}", result).Check(result.StartsWith("{\"errcode\":"));
+        //            userinfo = JsonReader.Deserialize<WXUserInfo>(result);
+        //        }
+
+        //        string.Format("获取微信用户信息错误：{0}", result).Check(userinfo == null);
+        //        return userinfo;
+        //    }
+
+
+        //    public static string GenerateNonceStr()
+        //    {
+        //        return Guid.NewGuid().ToString("n");
+        //    }
+
+
+        //    private static WxPayData InternalOrder(string out_trade_no, string body, int total_fee, string ip, string trade_type, string openid)
+        //    {
+        //        string url = "https://api.mch.weixin.qq.com/pay/unifiedorder";
+        //        //检测必填参数
+        //        if (string.IsNullOrEmpty(out_trade_no))
+        //            throw new InvalidOperationException("缺少统一支付接口必填参数out_trade_no！");
+        //        else if (string.IsNullOrEmpty(body))
+        //            throw new InvalidOperationException("缺少统一支付接口必填参数body！");
+        //        else if (total_fee <= 0)
+        //            throw new InvalidOperationException("缺少统一支付接口必填参数total_fee！");
+
+        //        WxPayData inputObj = new WxPayData();
+        //        inputObj.SetValue("out_trade_no", out_trade_no);
+        //        inputObj.SetValue("body", body);
+        //        inputObj.SetValue("total_fee", total_fee);
+        //        inputObj.SetValue("trade_type", trade_type);
+        //        inputObj.SetValue("spbill_create_ip", ip);//终端ip
+        //        inputObj.SetValue("notify_url", PAY_CALLBACK);//异步通知url
+
+        //        inputObj.SetValue("appid", APP_ID);//公众账号ID
+        //        inputObj.SetValue("mch_id", SHOP_ID);//商户号
+        //        inputObj.SetValue("nonce_str", GenerateNonceStr());//随机字符串
+        //        if (!string.IsNullOrEmpty(openid))
+        //            inputObj.SetValue("openid", openid);
+
+        //        //签名
+        //        inputObj.SetValue("sign", inputObj.MakeSign(WxPayData.SIGN_TYPE_MD5));
+        //        string xml = inputObj.ToXml();
+
+        //        var start = DateTime.Now;
+
+        //        string response = Post(xml, url, false);
+
+        //        var end = DateTime.Now;
+        //        int timeCost = (int)((end - start).TotalMilliseconds);
+
+        //        WxPayData result = new WxPayData();
+        //        result.FromXml(response);
+        //        if (result.GetValue("return_code") != "SUCCESS")
+        //        {
+        //            _LOG.Warning("UnifiedOrder错误：{0}", result.GetValue("return_msg"));
+        //            throw new Exception(result.GetValue("return_msg"));
+        //        }
+
+        //        return result;
+        //    }
+        //    /// <summary>微信订单</summary>
+        //    /// <param name="out_trade_no">外部订单号，商户网站订单系统中唯一的订单号</param>
+        //    /// <param name="price">单位分</param>
+        //    public static string OrderPage(string out_trade_no, string body, int total_fee, string ip)
+        //    {
+        //        var result = InternalOrder(out_trade_no, body, total_fee, ip, "MWEB", null);
+        //        return result.GetValue("mweb_url") + "&redirect_url=" + _NETWORK.UrlEncode(RETURN_URL + "?oid=" + out_trade_no);
+        //    }
+        //    /// <summary>微信APP方式登录</summary>
+        //    public static WXPay UnifiedOrder(string out_trade_no, string body, int total_fee, string ip)
+        //    {
+        //        var result = InternalOrder(out_trade_no, body, total_fee, ip, "APP", null);
+
+        //        WxPayData resign = new WxPayData();
+        //        resign.SetValue("appid", result.GetValue("appid"));
+        //        resign.SetValue("partnerid", SHOP_ID);
+        //        resign.SetValue("prepayid", result.GetValue("prepay_id"));
+        //        resign.SetValue("package", "Sign=WXPay");
+        //        resign.SetValue("noncestr", result.GetValue("nonce_str"));
+        //        resign.SetValue("timestamp", Utility.UnixTimestamp.ToString());
+        //        resign.SetValue("sign", resign.MakeSign());
+
+        //        WXPay ret = new WXPay();
+        //        ret.appId = result.GetValue("appid");
+        //        ret.nonceStr = result.GetValue("nonce_str");
+        //        ret.prepayid = result.GetValue("prepay_id");
+        //        ret.timeStamp = resign.GetValue("timestamp");
+        //        ret.paySign = resign.GetValue("sign");
+        //        ret.partnerid = SHOP_ID;
+        //        ret.package = "Sign=WXPay";
+        //        return ret;
+        //    }
+        //    /// <summary>微信JSAPI方式登录</summary>
+        //    public static WXPay UnifiedOrder(string out_trade_no, string body, int total_fee, string ip, string openid)
+        //    {
+        //        var result = InternalOrder(out_trade_no, body, total_fee, ip, "JSAPI", openid);
+
+        //        WxPayData resign = new WxPayData();
+        //        resign.SetValue("appId", result.GetValue("appid"));
+        //        resign.SetValue("nonceStr", result.GetValue("nonce_str"));
+        //        resign.SetValue("timeStamp", Utility.UnixTimestamp.ToString());
+        //        resign.SetValue("package", "prepay_id=" + result.GetValue("prepay_id"));
+        //        resign.SetValue("signType", "MD5");
+        //        resign.SetValue("sign", resign.MakeSign());
+
+        //        WXPay ret = new WXPay();
+        //        ret.appId = result.GetValue("appid");
+        //        ret.nonceStr = result.GetValue("nonce_str");
+        //        ret.prepayid = result.GetValue("prepay_id");
+        //        ret.timeStamp = resign.GetValue("timeStamp");
+        //        ret.paySign = resign.GetValue("sign");
+        //        ret.partnerid = SHOP_ID;
+        //        ret.package = "prepay_id=" + ret.prepayid;
+        //        return ret;
+        //    }
+        //    public static RetQueryOrder OrderQuery(string out_trade_no)
+        //    {
+        //        string url = "https://api.mch.weixin.qq.com/pay/orderquery";
+        //        //检测必填参数
+        //        //if (!inputObj.IsSet("out_trade_no") && !inputObj.IsSet("transaction_id"))
+        //        if (string.IsNullOrEmpty(out_trade_no))
+        //        {
+        //            throw new InvalidOperationException("订单查询接口中，out_trade_no、transaction_id至少填一个！");
+        //        }
+
+        //        WxPayData inputObj = new WxPayData();
+        //        inputObj.SetValue("out_trade_no", out_trade_no);
+
+        //        inputObj.SetValue("appid", APP_ID);//公众账号ID
+        //        inputObj.SetValue("mch_id", SHOP_ID);//商户号
+        //        inputObj.SetValue("nonce_str", GenerateNonceStr());//随机字符串
+        //        inputObj.SetValue("sign", inputObj.MakeSign());//签名
+
+        //        string xml = inputObj.ToXml();
+
+        //        var start = DateTime.Now;
+
+        //        string response = Post(xml, url, false);//调用HTTP通信接口提交数据
+
+        //        var end = DateTime.Now;
+        //        int timeCost = (int)((end - start).TotalMilliseconds);//获得接口耗时
+
+        //        //将xml格式的数据转化为对象以返回
+        //        WxPayData result = new WxPayData();
+        //        result.FromXml(response);
+
+        //        if (result.GetValue("return_code") != "SUCCESS")
+        //        {
+        //            _LOG.Error("OrderQuery错误：{0}", result.GetValue("return_msg"));
+        //            return null;
+        //        }
+
+        //        return RetQueryOrder.FromWxPayData(result);
+        //    }
+        //    public static WxPayData CloseOrder(string out_trade_no)
+        //    {
+        //        string url = "https://api.mch.weixin.qq.com/pay/closeorder";
+        //        //检测必填参数
+        //        if (string.IsNullOrEmpty(out_trade_no))
+        //        {
+        //            throw new InvalidOperationException("关闭订单接口中，out_trade_no必填！");
+        //        }
+
+        //        WxPayData inputObj = new WxPayData();
+        //        inputObj.SetValue("out_trade_no", out_trade_no);
+
+        //        inputObj.SetValue("appid", APP_ID);//公众账号ID
+        //        inputObj.SetValue("mch_id", SHOP_ID);//商户号
+        //        inputObj.SetValue("nonce_str", GenerateNonceStr());//随机字符串
+        //        inputObj.SetValue("sign", inputObj.MakeSign());//签名
+        //        string xml = inputObj.ToXml();
+
+        //        var start = DateTime.Now;//请求开始时间
+
+        //        string response = Post(xml, url, false);
+
+        //        var end = DateTime.Now;
+        //        int timeCost = (int)((end - start).TotalMilliseconds);
+
+        //        WxPayData result = new WxPayData();
+        //        result.FromXml(response);
+
+        //        return result;
+        //    }
+        //    public static WxPayData DownloadBill(DateTime date)
+        //    {
+        //        string url = "https://api.mch.weixin.qq.com/pay/downloadbill";
+        //        //检测必填参数
+
+        //        WxPayData inputObj = new WxPayData();
+        //        inputObj.SetValue("bill_date", date.ToString("yyyyMMdd"));
+
+        //        inputObj.SetValue("appid", APP_ID);//公众账号ID
+        //        inputObj.SetValue("mch_id", SHOP_ID);//商户号
+        //        inputObj.SetValue("nonce_str", GenerateNonceStr());//随机字符串
+        //        inputObj.SetValue("sign", inputObj.MakeSign());//签名
+
+        //        string xml = inputObj.ToXml();
+
+        //        _LOG.Debug("WxPayApi", "DownloadBill request : " + xml);
+        //        string response = Post(xml, url, false);//调用HTTP通信接口以提交数据到API
+        //        _LOG.Debug("WxPayApi", "DownloadBill result : " + response);
+
+        //        WxPayData result = new WxPayData();
+        //        //若接口调用失败会返回xml格式的结果
+        //        if (response.Substring(0, 5) == "<xml>")
+        //        {
+        //            result.FromXml(response);
+        //        }
+        //        //接口调用成功则返回非xml格式的数据
+        //        else
+        //            result.SetValue("result", response);
+
+        //        return result;
+        //    }
+        //    /// <summary>退款</summary>
+        //    /// <param name="out_trade_no">支付订单号：标识要退哪一单</param>
+        //    /// <param name="out_refund_no">退款订单号：标识一个唯一退款订单，同一订单多个商品可以分为多次退款</param>
+        //    /// <param name="refund_desc">退款理由</param>
+        //    public static WxPayData Refund(string out_trade_no, string out_refund_no, int total_fee, int refund_fee, string refund_desc)
+        //    {
+        //        string url = "https://api.mch.weixin.qq.com/secapi/pay/refund";
+        //        //检测必填参数
+        //        if (string.IsNullOrEmpty("out_trade_no"))
+        //            throw new InvalidOperationException("退款申请接口中，out_trade_no、transaction_id至少填一个！");
+        //        else if (string.IsNullOrEmpty("out_refund_no"))
+        //            throw new InvalidOperationException("退款申请接口中，缺少必填参数out_refund_no！");
+        //        else if (total_fee <= 0)
+        //            throw new InvalidOperationException("退款申请接口中，缺少必填参数total_fee！");
+        //        else if (refund_fee <= 0 || refund_fee > total_fee)
+        //            throw new InvalidOperationException("退款申请接口中，缺少必填参数refund_fee！");
+
+        //        WxPayData inputObj = new WxPayData();
+        //        inputObj.SetValue("out_trade_no", out_trade_no);
+        //        inputObj.SetValue("notify_url", REFUND_CALLBACK);//异步通知url
+        //        if (!string.IsNullOrEmpty(refund_desc))
+        //            inputObj.SetValue("refund_desc", refund_desc);
+
+        //        inputObj.SetValue("appid", APP_ID);//公众账号ID
+        //        inputObj.SetValue("mch_id", SHOP_ID);//商户号
+        //        inputObj.SetValue("nonce_str", Guid.NewGuid().ToString().Replace("-", ""));//随机字符串
+        //        inputObj.SetValue("sign", inputObj.MakeSign());//签名
+
+        //        string xml = inputObj.ToXml();
+        //        var start = DateTime.Now;
+
+        //        _LOG.Debug("WxPayApi", "Refund request : " + xml);
+        //        string response = Post(xml, url, true);//调用HTTP通信接口提交数据到API
+        //        _LOG.Debug("WxPayApi", "Refund response : " + response);
+
+        //        var end = DateTime.Now;
+        //        int timeCost = (int)((end - start).TotalMilliseconds);//获得接口耗时
+
+        //        //将xml格式的结果转换为对象以返回
+        //        WxPayData result = new WxPayData();
+        //        result.FromXml(response);
+
+        //        return result;
+        //    }
+        //    public static WxPayData RefundQuery(string out_trade_no)
+        //    {
+        //        string url = "https://api.mch.weixin.qq.com/pay/refundquery";
+        //        //检测必填参数
+        //        //if (!inputObj.IsSet("out_refund_no") && !inputObj.IsSet("out_trade_no") &&
+        //        //    !inputObj.IsSet("transaction_id") && !inputObj.IsSet("refund_id"))
+        //        if (string.IsNullOrEmpty(out_trade_no))
+        //            throw new InvalidOperationException("退款查询接口中，out_refund_no、out_trade_no、transaction_id、refund_id四个参数必填一个！");
+
+        //        WxPayData inputObj = new WxPayData();
+        //        inputObj.SetValue("out_trade_no", out_trade_no);
+
+        //        inputObj.SetValue("appid", APP_ID);//公众账号ID
+        //        inputObj.SetValue("mch_id", SHOP_ID);//商户号
+        //        inputObj.SetValue("nonce_str", GenerateNonceStr());//随机字符串
+        //        inputObj.SetValue("sign", inputObj.MakeSign());//签名
+
+        //        string xml = inputObj.ToXml();
+
+        //        var start = DateTime.Now;//请求开始时间
+
+        //        _LOG.Debug("WxPayApi", "RefundQuery request : " + xml);
+        //        string response = Post(xml, url, false);//调用HTTP通信接口以提交数据到API
+        //        _LOG.Debug("WxPayApi", "RefundQuery response : " + response);
+
+        //        var end = DateTime.Now;
+        //        int timeCost = (int)((end - start).TotalMilliseconds);//获得接口耗时
+
+        //        //将xml格式的结果转换为对象以返回
+        //        WxPayData result = new WxPayData();
+        //        result.FromXml(response);
+
+        //        return result;
+        //    }
+        //    /// <summary>企业付款到微信账号</summary>
+        //    /// <param name="partner_trade_no">订单号</param>
+        //    /// <param name="openid">到账人的微信OpenID</param>
+        //    /// <param name="amount">付款金额，单位分</param>
+        //    /// <param name="desc">付款描述</param>
+        //    public static RetTransfers Transfers(string partner_trade_no, string openid, int amount, string desc)
+        //    {
+        //        //检测必填参数
+        //        if (string.IsNullOrEmpty(partner_trade_no))
+        //            throw new InvalidOperationException("缺少统一支付接口必填参数partner_trade_no！");
+        //        if (string.IsNullOrEmpty(openid))
+        //            throw new InvalidOperationException("缺少统一支付接口必填参数openid！");
+        //        if (string.IsNullOrEmpty(desc))
+        //            throw new InvalidOperationException("缺少统一支付接口必填参数desc！");
+        //        if (amount < 30)
+        //            throw new InvalidOperationException("付款金额最低0.3元");
+
+        //        string url = "https://api.mch.weixin.qq.com/mmpaymkttransfers/promotion/transfers";
+
+        //        WxPayData inputObj = new WxPayData();
+        //        inputObj.SetValue("mch_appid", APP_ID);
+        //        // MARK: 文档上是mch_id，这里其实是mchid
+        //        inputObj.SetValue("mchid", SHOP_ID);//商户号
+        //        inputObj.SetValue("nonce_str", GenerateNonceStr());//随机字符串
+        //        inputObj.SetValue("partner_trade_no", partner_trade_no);
+        //        inputObj.SetValue("openid", openid);
+        //        inputObj.SetValue("check_name", "NO_CHECK");
+        //        inputObj.SetValue("amount", amount);
+        //        inputObj.SetValue("desc", desc);
+
+        //        //签名
+        //        inputObj.SetValue("sign", inputObj.MakeSign(WxPayData.SIGN_TYPE_MD5));
+        //        string xml = inputObj.ToXml();
+        //        string response = Post(xml, url, true);
+
+        //        WxPayData result = new WxPayData();
+        //        result.FromXml(response);
+
+        //        if (result.GetValue("result_code") != "SUCCESS")
+        //            throw new Exception(result.GetValue("err_code_des"));
+
+        //        return RetTransfers.FromWxPayData(result);
+        //    }
+        //    public static WxPayData GetTransferInfo(string partner_trade_no)
+        //    {
+        //        //检测必填参数
+        //        if (string.IsNullOrEmpty(partner_trade_no))
+        //            throw new InvalidOperationException("缺少统一支付接口必填参数partner_trade_no！");
+
+        //        string url = "https://api.mch.weixin.qq.com/mmpaymkttransfers/gettransferinfo";
+
+        //        WxPayData inputObj = new WxPayData();
+        //        inputObj.SetValue("appid", APP_ID);
+        //        // MARK: 文档上是mch_id，这里其实是mchid
+        //        inputObj.SetValue("mch_id", SHOP_ID);//商户号
+        //        inputObj.SetValue("nonce_str", GenerateNonceStr());//随机字符串
+        //        inputObj.SetValue("partner_trade_no", partner_trade_no);
+
+        //        //签名
+        //        inputObj.SetValue("sign", inputObj.MakeSign(WxPayData.SIGN_TYPE_MD5));
+        //        string xml = inputObj.ToXml();
+        //        string response = Post(xml, url, true);
+
+        //        WxPayData result = new WxPayData();
+        //        result.FromXml(response);
+
+        //        if (result.GetValue("result_code") != "SUCCESS")
+        //            throw new Exception(result.GetValue("err_code_des"));
+
+        //        return result;
+        //    }
+
+        //    private static string USER_AGENT = string.Format("WXPaySDK/{3} ({0}) .net/{1} {2}", Environment.OSVersion, Environment.Version, SHOP_ID, typeof(_DB).Assembly.GetName().Version);
+        //    public static bool CheckValidationResult(object sender, X509Certificate certificate, X509Chain chain, SslPolicyErrors errors)
+        //    {
+        //        //直接确认，否则打不开    
+        //        return true;
+        //    }
+        //    public static string Post(string xml, string url, bool isUseCert, int timeoutSecond = 6)
+        //    {
+        //        System.GC.Collect();//垃圾回收，回收没有正常关闭的http连接
+
+        //        string result = "";//返回结果
+
+        //        HttpWebRequest request = null;
+        //        HttpWebResponse response = null;
+        //        Stream reqStream = null;
+
+        //        try
+        //        {
+        //            //设置最大连接数
+        //            ServicePointManager.DefaultConnectionLimit = 200;
+        //            //设置https验证方式
+        //            if (url.StartsWith("https", StringComparison.OrdinalIgnoreCase))
+        //            {
+        //                ServicePointManager.ServerCertificateValidationCallback =
+        //                        new RemoteCertificateValidationCallback(CheckValidationResult);
+        //            }
+
+        //            /***************************************************************
+        //            * 下面设置HttpWebRequest的相关属性
+        //            * ************************************************************/
+        //            request = (HttpWebRequest)WebRequest.Create(url);
+        //            request.UserAgent = USER_AGENT;
+        //            request.Method = "POST";
+        //            request.Timeout = timeoutSecond * 1000;
+
+        //            //设置代理服务器
+        //            //WebProxy proxy = new WebProxy();                          //定义一个网关对象
+        //            //proxy.Address = new Uri(WxPayConfig.PROXY_URL);              //网关服务器端口:端口
+        //            //request.Proxy = proxy;
+
+        //            //设置POST的数据类型和长度
+        //            request.ContentType = "text/xml";
+        //            byte[] data = System.Text.Encoding.UTF8.GetBytes(xml);
+        //            request.ContentLength = data.Length;
+
+        //            //是否使用证书
+        //            if (isUseCert)
+        //            {
+        //                X509Certificate2 cert = new X509Certificate2("apiclient_cert.p12", SHOP_ID);
+        //                request.ClientCertificates.Add(cert);
+        //            }
+
+        //            //往服务器写入数据
+        //            reqStream = request.GetRequestStream();
+        //            reqStream.Write(data, 0, data.Length);
+        //            reqStream.Close();
+
+        //            //获取服务端返回
+        //            response = (HttpWebResponse)request.GetResponse();
+
+        //            //获取服务端返回数据
+        //            StreamReader sr = new StreamReader(response.GetResponseStream(), Encoding.UTF8);
+        //            result = sr.ReadToEnd().Trim();
+        //            sr.Close();
+        //        }
+        //        catch (System.Threading.ThreadAbortException e)
+        //        {
+        //            _LOG.Error(e, "HttpService");
+        //            System.Threading.Thread.ResetAbort();
+        //        }
+        //        catch (WebException e)
+        //        {
+        //            _LOG.Error(e, "HttpService");
+        //            if (e.Status == WebExceptionStatus.ProtocolError)
+        //            {
+        //                _LOG.Error("ProtocolError StatusCode : {0} StatusDescription : {1}", ((HttpWebResponse)e.Response).StatusCode, ((HttpWebResponse)e.Response).StatusDescription);
+        //            }
+        //            throw new InvalidOperationException(e.ToString());
+        //        }
+        //        catch (Exception e)
+        //        {
+        //            _LOG.Error(e, "HttpService");
+        //            throw new InvalidOperationException(e.ToString());
+        //        }
+        //        finally
+        //        {
+        //            //关闭连接和流
+        //            if (response != null)
+        //            {
+        //                response.Close();
+        //            }
+        //            if (request != null)
+        //            {
+        //                request.Abort();
+        //            }
+        //        }
+        //        return result;
+        //    }
+        //    public static string Get(string url)
+        //    {
+        //        System.GC.Collect();
+        //        string result = "";
+
+        //        HttpWebRequest request = null;
+        //        HttpWebResponse response = null;
+
+        //        //请求url以获取数据
+        //        try
+        //        {
+        //            //设置最大连接数
+        //            ServicePointManager.DefaultConnectionLimit = 200;
+        //            //设置https验证方式
+        //            if (url.StartsWith("https", StringComparison.OrdinalIgnoreCase))
+        //            {
+        //                ServicePointManager.ServerCertificateValidationCallback =
+        //                        new RemoteCertificateValidationCallback(CheckValidationResult);
+        //            }
+
+        //            /***************************************************************
+        //            * 下面设置HttpWebRequest的相关属性
+        //            * ************************************************************/
+        //            request = (HttpWebRequest)WebRequest.Create(url);
+        //            request.UserAgent = USER_AGENT;
+        //            request.Method = "GET";
+
+        //            //获取服务器返回
+        //            response = (HttpWebResponse)request.GetResponse();
+
+        //            //获取HTTP返回数据
+        //            StreamReader sr = new StreamReader(response.GetResponseStream(), Encoding.UTF8);
+        //            result = sr.ReadToEnd().Trim();
+        //            sr.Close();
+        //        }
+        //        catch (System.Threading.ThreadAbortException e)
+        //        {
+        //            _LOG.Error("HttpService", "Thread - caught ThreadAbortException - resetting.");
+        //            _LOG.Error("Exception message: {0}", e.Message);
+        //            System.Threading.Thread.ResetAbort();
+        //        }
+        //        catch (WebException e)
+        //        {
+        //            _LOG.Error("HttpService", e.ToString());
+        //            if (e.Status == WebExceptionStatus.ProtocolError)
+        //            {
+        //                _LOG.Error("HttpService", "StatusCode : " + ((HttpWebResponse)e.Response).StatusCode);
+        //                _LOG.Error("HttpService", "StatusDescription : " + ((HttpWebResponse)e.Response).StatusDescription);
+        //            }
+        //            throw new InvalidOperationException(e.ToString());
+        //        }
+        //        catch (Exception e)
+        //        {
+        //            _LOG.Error("HttpService", e.ToString());
+        //            throw new InvalidOperationException(e.ToString());
+        //        }
+        //        finally
+        //        {
+        //            //关闭连接和流
+        //            if (response != null)
+        //            {
+        //                response.Close();
+        //            }
+        //            if (request != null)
+        //            {
+        //                request.Abort();
+        //            }
+        //        }
+        //        return result;
+        //    }
+
+        //    /// <summary>微信AccessToken服务</summary>
+        //    public static class AccessTokenService
+        //    {
+        //        const string FILE = "wxtoken.bin";
+        //        const string API_ACCESSTOKEN = @"https://api.weixin.qq.com/cgi-bin/token?grant_type=client_credential&appid={0}&secret={1}";
+        //        const string API_TICKET = @"https://api.weixin.qq.com/cgi-bin/ticket/getticket?access_token={0}&type=jsapi";
+
+        //        private static string __Token;
+        //        private static DateTime __TokenExpire;
+        //        private static string __Ticket;
+        //        private static DateTime __TicketExpire;
+
+        //        public static string AccessToken
+        //        {
+        //            get
+        //            {
+        //                if (string.IsNullOrEmpty(__Token) || DateTime.Now >= __TokenExpire)
+        //                {
+        //                    HttpRequest(
+        //                        string.Format(API_ACCESSTOKEN, _WX.APP_ID, _WX.APP_SECRET)
+        //                        , ret =>
+        //                        {
+        //                            var obj = JsonReader.Deserialize(ret);
+        //                            if (obj.ContainsKey("errcode"))
+        //                            {
+        //                                _LOG.Warning("刷新微信AccessToken异常 errcode: {0} errmsg: {1}", obj["errcode"], obj["errmsg"]);
+        //                                throw new InvalidOperationException("刷新微信AccessToken异常");
+        //                            }
+        //                            __Token = obj["access_token"].GetString();
+        //                            __TokenExpire = DateTime.Now.AddSeconds(obj["expires_in"].GetInt32() - 300);
+        //                            Save();
+        //                            _LOG.Debug("刷新微信AccessToken: {0} 过期时间: {1}", __Token, __TokenExpire);
+        //                        });
+        //                }
+        //                return __Token;
+        //            }
+        //        }
+        //        public static string Ticket
+        //        {
+        //            get
+        //            {
+        //                if (string.IsNullOrEmpty(__Ticket) || DateTime.Now >= __TicketExpire)
+        //                {
+        //                    HttpRequest(
+        //                        string.Format(API_ACCESSTOKEN, AccessToken, _WX.APP_SECRET)
+        //                        , ret =>
+        //                        {
+        //                            var obj = JsonReader.Deserialize(ret);
+        //                            int err = obj["errcode"].GetInt32();
+        //                            if (err != 0)
+        //                            {
+        //                                if (err == 40001)
+        //                                {
+        //                                    // 需要重新刷新AccessToken
+        //                                    __Token = null;
+        //                                    return;
+        //                                }
+        //                                _LOG.Warning("刷新微信Ticket异常 errcode: {0} errmsg: {1}", err, obj["errmsg"]);
+        //                                throw new InvalidOperationException("刷新微信AccessToken异常");
+        //                            }
+        //                            __Ticket = obj["ticket"].GetString();
+        //                            __TicketExpire = DateTime.Now.AddSeconds(obj["expires_in"].GetInt32() - 300);
+        //                            Save();
+        //                            _LOG.Debug("刷新微信Ticket: {0} 过期时间: {1}", __Ticket, __TicketExpire);
+        //                        });
+        //                }
+        //                if (__Token == null)
+        //                {
+        //                    return Ticket;
+        //                }
+        //                return __Ticket;
+        //            }
+        //        }
+        //        public static void Load()
+        //        {
+        //            if (!File.Exists(FILE)) return;
+        //            ByteReader reader = new ByteReader(File.ReadAllBytes(FILE));
+        //            reader.Read(out __Token);
+        //            reader.Read(out __TokenExpire);
+        //            reader.Read(out __Ticket);
+        //            reader.Read(out __TicketExpire);
+        //        }
+        //        public static void Save()
+        //        {
+        //            ByteWriter writer = new ByteWriter();
+        //            writer.Write(__Token);
+        //            writer.Write(__TokenExpire);
+        //            writer.Write(__Ticket);
+        //            writer.Write(__TicketExpire);
+        //            File.WriteAllBytes(FILE, writer.GetBuffer());
+        //        }
+        //    }
+        //}
+        #endregion
     }
 }

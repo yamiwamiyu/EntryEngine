@@ -41,8 +41,11 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Database.cs" />
-    <Compile Include="Protocol.cs" />
+    <Compile Include="ICenter.cs" />
+    <Compile Include="IService.cs" />
+    <Compile Include="IUser.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="_UTIL.cs" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="说明.txt" />
@@ -50,11 +53,12 @@
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
     <PostBuildEvent>:: 生成HTTP交互协议
-$(ProjectDir)..\..\EntryBuilder.exe BuildProtocolAgentHttp $(ProjectDir)..\Client\Client\ $(ProjectDir)..\Server\ $(TargetPath)\Protocol1 0
-$(ProjectDir)..\..\EntryBuilder.exe BuildProtocolAgentHttp $(ProjectDir)..\Client\Client\ $(ProjectDir)..\Server\ $(TargetPath)\Protocol2 0
+$(ProjectDir)..\..\EntryBuilder.exe BuildProtocolAgentHttp $(ProjectDir)..\Client\Client\ $(ProjectDir)..\Server\Auto\ $(TargetPath)\IService 0
+$(ProjectDir)..\..\EntryBuilder.exe BuildProtocolAgentHttp $(ProjectDir)..\Client\Client\ $(ProjectDir)..\Server\Auto\ $(TargetPath)\IUser 0
+$(ProjectDir)..\..\EntryBuilder.exe BuildProtocolAgentHttp $(ProjectDir)..\Client\Client\ $(ProjectDir)..\Server\Auto\ $(TargetPath)\ICenter 0
 
 ::生成数据库
-$(ProjectDir)..\..\EntryBuilder.exe BuildDatabaseMysql $(TargetPath) Server._DB $(ProjectDir)..\Server\_DB.cs "" "" true</PostBuildEvent>
+$(ProjectDir)..\..\EntryBuilder.exe BuildDatabaseMysql $(TargetPath) Server._DB $(ProjectDir)..\Server\Auto\_DB.design.cs "" "" true</PostBuildEvent>
   </PropertyGroup>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
