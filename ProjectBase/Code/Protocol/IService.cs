@@ -27,6 +27,9 @@ public interface IService
     /// <summary>忘记密码：手机号和验证码登录，并修改密码</summary>
     void ForgetPassword(string telphone, string code, string password, Action<T_USER> callback);
 
+    /// <summary>清理用户缓存，数据库有修改时，可以用此接口强制清空用户缓存而同步数据库数据</summary>
+    void ClearUserCache(int id, Action<bool> callback);
+
     #endregion
 
     #region 后台登录

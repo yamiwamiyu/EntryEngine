@@ -198,7 +198,7 @@ namespace Server
             var _iuser = new IUserStub(_user);
             _iuser.__GetAgent = () =>
             {
-                _user.CheckToken(getContext());
+                _user.CheckToken(getContext().Request.Headers["AccessToken"]);
                 return null;
             };
 
@@ -206,7 +206,7 @@ namespace Server
             var _icenter = new ICenterStub(_center);
             _icenter.__GetAgent = () =>
             {
-                _center.CheckToken(getContext());
+                _center.CheckToken(getContext().Request.Headers["AccessToken"]);
                 return null;
             };
 

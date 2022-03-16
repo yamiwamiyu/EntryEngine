@@ -20,27 +20,40 @@ namespace Server.Impl
     /// <typeparam name="T">用户类型</typeparam>
     public class ImplUserBase<T> where T : T_UserBase, new()
     {
+        // hack: 做分布式使用多进程时，请不要缓存机制
+        /// <summary>使用缓存：加速访问，数据库改用户数据无法自动刷新，多进程时无法同步</summary>
+        internal static bool UseCache = true;
         internal static Dictionary<string, T> cacheByToken = new Dictionary<string, T>();
         internal static Dictionary<int, T> cacheByID = new Dictionary<int, T>();
         internal static Dictionary<long, T> cacheByPhone = new Dictionary<long, T>();
-
-        public static I Create<I>(int pid) where I : ImplUserBase<T>, new()
+        internal static Dictionary<string, T> cacheByAccount = new Dictionary<string, T>();
+        public static bool ClearUserCache(int id)
         {
-            I result = new I();
-
-            // 缓存
-            lock (cacheByToken)
-                cacheByID.TryGetValue(pid, out result.User);
-            bool hasCache = result.User != null;
-            if (!hasCache)
-                // 从数据库登录
-                result.User = result.LoadFromDatabaseByID(pid);
-
-            string.Format("未找到ID为{0}的用户", pid).Check(result.User == null);
-
-            result.LoginFromDatabase(result.User);
-            result.User.MaskData();
-            return result;
+            T user;
+            lock (cacheByID)
+                cacheByID.TryGetValue(id, out user);
+            if (user != null)
+                return ClearUserCache(user);
+            return false;
+        }
+        public static bool ClearUserCache(T user)
+        {
+            bool flag = false;
+            lock (cacheByID)
+                if (cacheByID.TryGetValue(user.ID, out user))
+                    flag |= cacheByID.Remove(user.ID);
+            if (user != null)
+            {
+                lock (cacheByPhone)
+                    flag |= cacheByPhone.Remove(user.Phone);
+                if (!string.IsNullOrEmpty(user.Token))
+                    lock (cacheByToken)
+                        flag |= cacheByToken.Remove(user.Token);
+                if (!string.IsNullOrEmpty(user.Account))
+                    lock (cacheByAccount)
+                        flag |= cacheByAccount.Remove(user.Account);
+            }
+            return flag;
         }
 
         public T User;
@@ -110,30 +123,13 @@ namespace Server.Impl
             OP(op, null, sign, 0, null);
         }
 
-        public void CheckToken(HttpListenerContext context)
+        public void CheckToken(string token)
         {
-            string token = context.Request.Headers["AccessToken"];
             if (string.IsNullOrEmpty(token))
                 throw new HttpException(100, "没有登录!");
 
-            // 做分布式使用多进程时，请不要使用以下缓存机制
-
             // 缓存
-            lock (cacheByToken)
-            {
-                cacheByToken.TryGetValue(token, out User);
-            }
-            bool hasCache = User != null;
-            if (!hasCache)
-            {
-                // 从数据库登录
-                User = LoadFromDatabaseByToken(token);
-                if (User != null)
-                {
-                    LoginFromDatabase(User);
-                    User.MaskData();
-                }
-            }
+            InitializeByToken(token);
             // 检查登录
             if (User != null)
             {
@@ -153,38 +149,34 @@ namespace Server.Impl
                 }
                 else
                 {
-                    _LOG.Debug("用户:{0}缓存过期", User.ID);
+                    // Token过期
                     lock (cacheByToken)
-                    {
                         cacheByToken.Remove(token);
-                    }
                 }
             }
             throw new HttpException(100, "没有登录!");
         }
 
         /// <summary>首次从数据库加载出来T_USER对象时调用</summary>
-        private void LoginFromDatabase(T player)
+        private void LoginFromDatabase(T user)
         {
-            lock (cacheByPhone)
+            if (UseCache)
             {
-                cacheByPhone[player.Phone] = player;
-            }
-            lock (cacheByID)
-            {
-                cacheByID[player.ID] = player;
-            }
-            if (!string.IsNullOrEmpty(player.Token))
-            {
-                lock (cacheByToken)
-                {
-                    cacheByToken[player.Token] = player;
-                }
+                lock (cacheByPhone)
+                    cacheByPhone[user.Phone] = user;
+                lock (cacheByID)
+                    cacheByID[user.ID] = user;
+                if (!string.IsNullOrEmpty(user.Token))
+                    lock (cacheByToken)
+                        cacheByToken[user.Token] = user;
+                if (!string.IsNullOrEmpty(user.Account))
+                    lock (cacheByAccount)
+                        cacheByAccount[user.Account] = user;
             }
 
-            OnLoginFromDatabase(player);
+            OnLoginFromDatabase(user);
 
-            player.LastRefreshLoginTime = player.LastLoginTime;
+            user.LastRefreshLoginTime = user.LastLoginTime;
         }
         /// <summary>从数据库将用户数据拉出来时，可以初始化一些内存数据</summary>
         protected virtual void OnLoginFromDatabase(T user)
@@ -213,172 +205,141 @@ namespace Server.Impl
         /// <summary>更新Token过期时间，默认为数据库语句更新</summary>
         protected virtual void OnUpdateLastLoginTime()
         {
-            _DB._DAO.ExecuteNonQuery(string.Format("UPDATE `{0}` SET LastLoginTime = @p1 WHERE ID = @p0", typeof(T).Name), User.ID, User.LastLoginTime);
+            SaveBuilder.AppendFormat("UPDATE `{0}` SET LastLoginTime = @p{2} WHERE ID = @p{1}", typeof(T).Name, SaveValues.Count, SaveValues.Count + 1);
+            SaveValues.Add(User.ID);
+            SaveValues.Add(User.LastLoginTime);
+            //_DB._DAO.ExecuteNonQuery(string.Format("UPDATE `{0}` SET LastLoginTime = @p1 WHERE ID = @p0", typeof(T).Name), User.ID, User.LastLoginTime);
         }
         /// <summary>更新Token，默认为数据库语句更新</summary>
         protected virtual void OnUpdateToken()
         {
-            _DB._DAO.ExecuteNonQuery(string.Format("UPDATE `{0}` SET Token = @p1 WHERE ID = @p0", typeof(T).Name), User.ID, User.Token);
+            SaveBuilder.AppendFormat("UPDATE `{0}` SET LastLoginTime = @p{2} WHERE ID = @p{1}", typeof(T).Name, SaveValues.Count, SaveValues.Count + 1);
+            SaveValues.Add(User.ID);
+            SaveValues.Add(User.Token);
+            //_DB._DAO.ExecuteNonQuery(string.Format("UPDATE `{0}` SET Token = @p1 WHERE ID = @p0", typeof(T).Name), User.ID, User.Token);
         }
 
-        protected virtual void InternalRegister(T user, ELoginWay way)
+        /// <summary>注册一个账号</summary>
+        public virtual void Register(T user, ELoginWay way)
         {
-        }
-        protected virtual void InternalLogin(T user, ELoginWay way)
-        {
-        }
-        /// <summary>账号登录或注册</summary>
-        /// <param name="onNewUser">注册时，写入玩家信息，例如游戏名，手机号等</param>
-        /// <param name="onRegister">玩家已经成功注册并登录后回调</param>
-        /// <param name="loginWay">登录途径，例如手机，Token，微信等</param>
-        protected T InternalLogin(T user, Action<T> onNewUser, Action<T> onRegister, ELoginWay loginWay)
-        {
-            // 没有角色则自动创建角色
-            bool isRegister = user == null;
-            if (user == null)
-            {
-                user = new T();
-            }
-            this.User = user;
-            if (isRegister)
-            {
-                if (onNewUser != null)
-                    onNewUser(user);
-                user.RegisterTime = DateTime.Now;
-                user.LastLoginTime = user.RegisterTime;
-                user.Token = Guid.NewGuid().ToString();
-                user.ID = OnInsert(user);
-            }
-            else
-            {
-                user.LastLoginTime = DateTime.Now;
-                OnUpdateLastLoginTime();
-
-                if (loginWay != ELoginWay.Token)
-                {
-                    if (user.Token != null)
-                    {
-                        lock (cacheByToken)
-                        {
-                            cacheByToken.Remove(user.Token);
-                        }
-                    }
-
-                    user.Token = Guid.NewGuid().ToString("n");
-                    OnUpdateToken();
-                }
-            }
+            user.RegisterTime = DateTime.Now;
+            user.LastLoginTime = user.RegisterTime;
+            user.Token = Guid.NewGuid().ToString();
+            user.ID = OnInsert(user);
 
             LoginFromDatabase(user);
 
-            // 注册账号
-            if (isRegister)
-            {
-                if (onRegister != null)
-                    onRegister(User);
-            }
-
-            OP("登录", null, (int)loginWay, isRegister ? 1 : 0);
+            OP("登录", typeof(T).Name, (int)way, 1);
             Save();
 
             user.MaskData();
-            return user;
+            this.User = user;
         }
         /// <summary>插入一个用户，返回用户ID</summary>
         protected virtual int OnInsert(T user)
         {
             return _DB._DAO.SelectValue<int>(
-string.Format(@"INSERT `{0}`(RegisterTime, Token, Password, Phone, LastLoginTime) VALUES(@p0, @p1, @p2, @p3, @p4)
-SELECT LAST_INSERT_ID();", typeof(T).Name), 
+string.Format(@"INSERT `{0}`(RegisterTime, Token, Account, Password, Phone, LastLoginTime) VALUES(@p0, @p1, @p2, @p3, @p4)
+SELECT LAST_INSERT_ID();", typeof(T).Name),
                          user.RegisterTime,
                          user.Token,
+                         user.Account,
                          user.Password,
                          user.Phone,
                          user.LastLoginTime);
         }
-        /// <summary>手机号登录 / 注册</summary>
-        public T LoginByPhone(string telphone, string password, Action<T> onNewUser, Action<T> onRegister)
+        /// <summary>登录一个账号</summary>
+        public virtual void Login(T user, ELoginWay way)
         {
-            long phone = long.Parse(telphone);
+            user.LastLoginTime = DateTime.Now;
+            OnUpdateLastLoginTime();
 
-            T player = null;
-            // 翻缓存
-            lock (cacheByPhone)
+            if (way != ELoginWay.Token)
             {
-                cacheByPhone.TryGetValue(phone, out player);
-            }
-            // 缓存没有则找数据库
-            if (player == null)
-            {
-                player = LoadFromDatabaseByPhone(phone);
-            }
-            return InternalLogin(player, p =>
-            {
-                _LOG.Info("手机号创建用户：{0}", telphone);
-                p.Phone = phone;
-                p.Password = password;
-                if (onNewUser != null)
-                    onNewUser(p);
-            }, onRegister, ELoginWay.手机号);
-        }
-        /// <summary>忘记密码：手机号登录，重设密码</summary>
-        public T ForgetPassword(string telphone, string password)
-        {
-            long phone = long.Parse(telphone);
+                if (user.Token != null)
+                    lock (cacheByToken)
+                        cacheByToken.Remove(user.Token);
 
-            T player = null;
-            // 翻缓存
-            lock (cacheByPhone)
-            {
-                cacheByPhone.TryGetValue(phone, out player);
+                user.Token = Guid.NewGuid().ToString("n");
+                OnUpdateToken();
             }
-            // 缓存没有则找数据库
-            if (player == null)
-            {
-                player = LoadFromDatabaseByPhone(phone);
-            }
-            "账号不存在".Check(player == null);
-            player.Password = password;
-            return InternalLogin(player, null, null, ELoginWay.忘记密码);
+
+            LoginFromDatabase(user);
+
+            OP("登录", typeof(T).Name, (int)way, 0);
+            Save();
+
+            user.MaskData();
+            this.User = user;
         }
-        /// <summary>Token登录</summary>
-        public T LoginByToken(string token)
+
+        // 根据不同加载用户
+        public T InitializeByID(int id)
         {
             // 缓存
-            lock (cacheByToken)
-            {
-                cacheByToken.TryGetValue(token, out User);
-            }
-            bool hasCache = User != null;
-            if (!hasCache)
-            {
-                User = LoadFromDatabaseByToken(token);
-                "Token已过期".Check(User == null || User.TokenExpired);
-            }
-            return InternalLogin(User, null, null, ELoginWay.Token);
-        }
-        /// <summary>账号密码：登录 | 注册</summary>
-        /// <param name="isLoginOnly">true：仅登录，没有账号则抛出一场 / false: 没有账号则注册</param>
-        public T LoginByPassword(string account, string password, bool isLoginOnly)
-        {
-            User = LoadFromDatabaseByAccount(account);
-            "不存在此用户".Check(isLoginOnly && User == null);
+            if (UseCache)
+                lock (cacheByID)
+                    cacheByID.TryGetValue(id, out User);
             if (User == null)
             {
-                // 注册
-                return InternalLogin(User, 
-                    (u) =>
-                    {
-                        u.Account = account;
-                        u.Password = password;
-                    }, null, ELoginWay.密码);
+                // 从数据库加载
+                User = LoadFromDatabaseByID(id);
+                LoginFromDatabase(User);
+                User.MaskData();
             }
-            else
+            return User;
+        }
+        public T InitializeByPhone(long phone)
+        {
+            // 缓存
+            if (UseCache)
+                lock (cacheByPhone)
+                    cacheByPhone.TryGetValue(phone, out User);
+            if (User == null)
             {
-                // 登录
-                "密码不正确".Check(User.Password != password);
-                return InternalLogin(User, null, null, ELoginWay.密码);
+                // 从数据库加载
+                User = LoadFromDatabaseByPhone(phone);
+                LoginFromDatabase(User);
+                User.MaskData();
             }
+            return User;
+        }
+        public T InitializeByToken(string token)
+        {
+            // 缓存
+            if (UseCache)
+                lock (cacheByToken)
+                    cacheByToken.TryGetValue(token, out User);
+            if (User == null)
+            {
+                // 从数据库加载
+                User = LoadFromDatabaseByToken(token);
+                LoginFromDatabase(User);
+                User.MaskData();
+            }
+            return User;
+        }
+        public T InitializeByAccount(string account)
+        {
+            long phone;
+            if (UseCache)
+                if (long.TryParse(account, out phone))
+                    // 缓存
+                    lock (cacheByPhone)
+                        cacheByPhone.TryGetValue(phone, out User);
+            if (UseCache)
+                if (User == null)
+                    // 缓存
+                    lock (cacheByAccount)
+                        cacheByAccount.TryGetValue(account, out User);
+            if (User == null)
+            {
+                // 从数据库加载
+                User = LoadFromDatabaseByAccount(account);
+                LoginFromDatabase(User);
+                User.MaskData();
+            }
+            return User;
         }
     }
 }

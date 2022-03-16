@@ -23,21 +23,51 @@ namespace Server.Impl
             T_SMSCode.CheckTelephone(telphone);
             T_SMSCode.CheckSMSCodeFormat(code);
             T_SMSCode.ValidCode(telphone, code);
-            // 登录账号
-            //var player = _DB._T_USER.Select(null, "WHERE Name=@p0", name);
+
             // 并行时用此接口创建角色会创建多个相同角色
-            // 仅方便测试的话，可以不需要这个检测，以自动创建角色或登录角色
-            //if (player == null)
-            //    throw new InvalidOperationException("账号不存在");
-            callback.Callback(new ImplIUser().LoginByPhone(telphone, null, null, null));
+            long phone = long.Parse(telphone);
+            var impl = new ImplIUser();
+            impl.InitializeByPhone(phone);
+            if (impl.User == null)
+            {
+                T_USER newUser = new T_USER();
+                newUser.Phone = phone;
+                newUser.Account = telphone;
+                newUser.Name = telphone.Mask();
+                impl.Register(newUser, ELoginWay.手机号);
+            }
+            else
+            {
+                impl.Login(impl.User, ELoginWay.手机号);
+            }
+            callback.Callback(impl.User);
         }
         void _IService.LoginByToken(string token, CBIService_LoginByToken callback)
         {
-            callback.Callback(new ImplIUser().LoginByToken(token));
+            if (string.IsNullOrEmpty(token))
+            {
+                callback.Callback(null);
+                return;
+            }
+            var impl = new ImplIUser();
+            impl.InitializeByToken(token);
+            if (impl.User == null || impl.User.TokenExpired)
+            {
+                callback.Callback(null);
+                return;
+            }
+            impl.Login(impl.User, ELoginWay.Token);
+            callback.Callback(impl.User);
         }
         void _IService.LoginByPassword(string telphone, string password, CBIService_LoginByPassword callback)
         {
-            callback.Callback(new ImplIUser().LoginByPassword(telphone, password, true));
+            "账户名不能为空".Check(string.IsNullOrEmpty(telphone));
+            "密码不能为空".Check(string.IsNullOrEmpty(password));
+            var impl = new ImplIUser();
+            impl.InitializeByAccount(telphone);
+            "账号密码不正确".Check(impl.User == null || impl.User.IsMatchPassword(password));
+            impl.Login(impl.User, ELoginWay.密码);
+            callback.Callback(impl.User);
         }
         void _IService.ForgetPassword(string telphone, string code, string password, CBIService_ForgetPassword callback)
         {
@@ -46,7 +76,25 @@ namespace Server.Impl
             T_SMSCode.CheckTelephone(telphone);
             T_SMSCode.CheckSMSCodeFormat(code);
             T_SMSCode.ValidCode(telphone, code);
-            callback.Callback(new ImplIUser().ForgetPassword(telphone, password));
+
+            long phone = long.Parse(telphone);
+            var impl = new ImplIUser();
+            impl.InitializeByPhone(phone);
+            "此用户不存在".Check(impl.User == null);
+            // 修改密码
+            impl.User.Password = password;
+            _DB._T_USER.GetUpdateSQL(impl.User, null, impl.SaveBuilder, impl.SaveValues, ET_USER.Password);
+            if (impl.User.Masked)
+            {
+                impl.User.__Password = password;
+                impl.User.Password = null;
+            }
+            impl.Login(impl.User, ELoginWay.忘记密码);
+            callback.Callback(impl.User);
+        }
+        void _IService.ClearUserCache(int id, CBIService_ClearUserCache callback)
+        {
+            callback.Callback(ImplIUser.ClearUserCache(id));
         }
 
         void _IService.CenterLoginBySMSCode(string telphone, string code, CBIService_CenterLoginBySMSCode callback)
@@ -55,10 +103,22 @@ namespace Server.Impl
             T_SMSCode.CheckTelephone(telphone);
             T_SMSCode.CheckSMSCodeFormat(code);
             T_SMSCode.ValidCode(telphone, code);
+            var impl = new ImplICenter();
+            long phone = long.Parse(telphone);
+            impl.InitializeByPhone(phone);
+            "此用户不存在".Check(impl.User == null);
+            impl.Login(impl.User, ELoginWay.手机号);
+            callback.Callback(impl.User);
         }
         void _IService.CenterLoginByPassword(string name, string password, CBIService_CenterLoginByPassword callback)
         {
-            throw new NotImplementedException();
+            "账户名不能为空".Check(string.IsNullOrEmpty(name));
+            "密码不能为空".Check(string.IsNullOrEmpty(password));
+            var impl = new ImplICenter();
+            impl.InitializeByAccount(name);
+            "账号密码不正确".Check(impl.User == null || impl.User.IsMatchPassword(password));
+            impl.Login(impl.User, ELoginWay.密码);
+            callback.Callback(impl.User);
         }
 
         void _IService.UploadImage(FileUpload file, CBIService_UploadImage callback)

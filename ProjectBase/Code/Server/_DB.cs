@@ -89,6 +89,20 @@ namespace Server
             if (!string.IsNullOrWhiteSpace(xff)) return IPAddress.Parse(xff);
             else return context.Request.RemoteEndPoint.Address;
         }
+        /// <summary>发送下载内容给前端</summary>
+        public static void Download(HttpListenerContext __context, byte[] buffer, string filename = null, string contentType = "application/octet-stream")
+        {
+            __context.Response.ContentType = contentType;
+            // 指定下载文件名
+            __context.Response.AddHeader("Content-Disposition", string.Format("attachment; filename={0}", filename));
+            __context.Response.OutputStream.Write(buffer, 0, buffer.Length);
+            __context.Response.Close();
+        }
+        /// <summary>发送下载内容给前端，编码格式为Response.ContentEncoding</summary>
+        public static void Download(HttpListenerContext __context, string buffer, string filename = null, string contentType = "application/octet-stream")
+        {
+            Download(__context, __context.Response.ContentEncoding.GetBytes(buffer), filename, contentType);
+        }
 
         // 发送验证码
         public static void SendSMSCode(T_SMSCode sms)

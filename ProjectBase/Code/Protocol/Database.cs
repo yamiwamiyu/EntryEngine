@@ -26,13 +26,7 @@ public class T_SMSCode
     /// <summary>过期时间</summary>
     public DateTime ExpireTime { get { return CreatedTime.AddMinutes(15); } }
     /// <summary>是否过期</summary>
-    public bool IsExpired
-    {
-        get
-        {
-            return DateTime.Now >= ExpireTime;
-        }
-    }
+    public bool IsExpired { get { return DateTime.Now >= ExpireTime; } }
     /// <summary>重发剩余秒数</summary>
     public int ResendCountdown { get { return Math.Max(0, (int)((CreatedTime.AddSeconds(60) - DateTime.Now).TotalSeconds) + 1); } }
 
@@ -65,7 +59,7 @@ public class T_SMSCode
         lock (smsCodes)
             smsCodes[telphone] = data;
 
-        _LOG.Debug("{0}的验证码:{1}", telphone, data.Code);
+        _LOG.Info("{0}的验证码:{1}", telphone, data.Code);
 
         return data;
     }
@@ -117,13 +111,14 @@ public class T_UserBase
         get { return DateTime.Now >= LastLoginTime + TimeSpan.FromMinutes(TOKEN_EXPIRE_MINUTES); }
     }
 
-    private bool __masked;
+    /// <summary>是否已经调用过MaskData</summary>
+    public bool Masked { get; private set; }
     /// <summary>防止敏感信息泄露</summary>
     public void MaskData()
     {
-        if (__masked)
+        if (Masked)
             return;
-        __masked = true;
+        Masked = true;
         //if (RealName != null)
         //    RealName = RealName.Mask(1, 0);
         //if (IDCard != null)
@@ -134,6 +129,10 @@ public class T_UserBase
         __Password = Password;
         Password = null;
         OnMaskData();
+    }
+    public bool IsMatchPassword(string password)
+    {
+        return Masked ? __Password == password : this.Password == password;
     }
     protected virtual void OnMaskData()
     {
@@ -155,11 +154,6 @@ public class T_CENTER_USER : T_UserBase
 {
     [Index]
     public string Name;
-
-    protected override void OnMaskData()
-    {
-        Password = Password.Mask(0, 0);
-    }
 }
 
 /// <summary>操作日志</summary>
