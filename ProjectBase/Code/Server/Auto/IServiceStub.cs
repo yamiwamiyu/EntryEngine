@@ -14,6 +14,7 @@ interface _IService
     void LoginByToken(string token, CBIService_LoginByToken callback);
     void LoginByPassword(string telphone, string password, CBIService_LoginByPassword callback);
     void ForgetPassword(string telphone, string code, string password, CBIService_ForgetPassword callback);
+    void ClearUserCache(int id, CBIService_ClearUserCache callback);
     void CenterLoginByPassword(string name, string password, CBIService_CenterLoginByPassword callback);
     void CenterLoginBySMSCode(string telphone, string code, CBIService_CenterLoginBySMSCode callback);
     void UploadImage(EntryEngine.Network.FileUpload file, CBIService_UploadImage callback);
@@ -196,6 +197,41 @@ public class CBIService_ForgetPassword : IDisposable
         if (!IsCallback) Error(-2, "no callback");
     }
 }
+public class CBIService_ClearUserCache : IDisposable
+{
+    internal HttpListenerContext __context { get; private set; }
+    internal StubHttp __link { get; private set; }
+    internal bool IsCallback { get; private set; }
+    public CBIService_ClearUserCache(StubHttp link)
+    {
+        this.__link = link;
+        this.__context = link.Context;
+    }
+    public void Callback(bool obj) // INDEX = 5
+    {
+        if (IsCallback) return;
+        string __ret = JsonWriter.Serialize(obj);
+        #if DEBUG
+        _LOG.Debug("CBIService_ClearUserCache {0}", __ret);
+        #endif
+        __link.Response(__context, __ret);
+        IsCallback = true;
+    }
+    public void Error(int ret, string msg)
+    {
+        if (IsCallback) return;
+        string __ret = JsonWriter.Serialize(new HttpError(ret, msg));
+        #if DEBUG
+        _LOG.Debug("CBIService_ClearUserCache Error ret={0} msg={1}", ret, msg);
+        #endif
+        __link.Response(__context, __ret);
+        IsCallback = true;
+    }
+    public void Dispose()
+    {
+        if (!IsCallback) Error(-2, "no callback");
+    }
+}
 public class CBIService_CenterLoginByPassword : IDisposable
 {
     internal HttpListenerContext __context { get; private set; }
@@ -206,7 +242,7 @@ public class CBIService_CenterLoginByPassword : IDisposable
         this.__link = link;
         this.__context = link.Context;
     }
-    public void Callback(T_CENTER_USER obj) // INDEX = 5
+    public void Callback(T_CENTER_USER obj) // INDEX = 6
     {
         if (IsCallback) return;
         string __ret = JsonWriter.Serialize(obj);
@@ -241,7 +277,7 @@ public class CBIService_CenterLoginBySMSCode : IDisposable
         this.__link = link;
         this.__context = link.Context;
     }
-    public void Callback(T_CENTER_USER obj) // INDEX = 6
+    public void Callback(T_CENTER_USER obj) // INDEX = 7
     {
         if (IsCallback) return;
         string __ret = JsonWriter.Serialize(obj);
@@ -276,7 +312,7 @@ public class CBIService_UploadImage : IDisposable
         this.__link = link;
         this.__context = link.Context;
     }
-    public void Callback(string obj) // INDEX = 7
+    public void Callback(string obj) // INDEX = 8
     {
         if (IsCallback) return;
         string __ret = JsonWriter.Serialize(obj);
@@ -311,7 +347,7 @@ public class CBIService_UploadFile : IDisposable
         this.__link = link;
         this.__context = link.Context;
     }
-    public void Callback(string obj) // INDEX = 8
+    public void Callback(string obj) // INDEX = 9
     {
         if (IsCallback) return;
         string __ret = JsonWriter.Serialize(obj);
@@ -346,7 +382,7 @@ public class CBIService_AlipayCallback : IDisposable
         this.__link = link;
         this.__context = link.Context;
     }
-    public void Callback(string obj) // INDEX = 10
+    public void Callback(string obj) // INDEX = 11
     {
         if (IsCallback) return;
         string __ret = JsonWriter.Serialize(obj);
@@ -387,6 +423,7 @@ class IServiceStub : StubHttp
         AddMethod("LoginByToken", LoginByToken);
         AddMethod("LoginByPassword", LoginByPassword);
         AddMethod("ForgetPassword", ForgetPassword);
+        AddMethod("ClearUserCache", ClearUserCache);
         AddMethod("CenterLoginByPassword", CenterLoginByPassword);
         AddMethod("CenterLoginBySMSCode", CenterLoginBySMSCode);
         AddMethod("UploadImage", UploadImage);
@@ -471,6 +508,20 @@ class IServiceStub : StubHttp
         #endif
         var callback = new CBIService_ForgetPassword(this);
         agent.ForgetPassword(telphone, code, password, callback);
+    }
+    void ClearUserCache(HttpListenerContext __context)
+    {
+        var agent = __Agent;
+        if (__GetAgent != null) { var temp = __GetAgent(); if (temp != null) agent = temp; }
+        if (__ReadAgent != null) { var temp = __ReadAgent(__context); if (temp != null) agent = temp; }
+        string __temp;
+        __temp = GetParam("id");
+        int id = string.IsNullOrEmpty(__temp) ? default(int) : int.Parse(__temp);
+        #if DEBUG
+        _LOG.Debug("ClearUserCache id: {0},", id);
+        #endif
+        var callback = new CBIService_ClearUserCache(this);
+        agent.ClearUserCache(id, callback);
     }
     void CenterLoginByPassword(HttpListenerContext __context)
     {

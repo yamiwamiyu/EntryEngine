@@ -40,8 +40,65 @@
             <param name="uiType">UI控件类型</param>
             <param name="setStyle">设置UI样式的方法，返回true则设置了样式（例如CheckBox的单选框和复选框就可能类型都是CheckBox但是样式不同）</param>
         </member>
-        <member name="M:EntryEngine.UI.UIStyle.EffectScale(EntryEngine.UI.UIElement)">
+        <member name="M:EntryEngine.UI.UIStyle.EffectScale(EntryEngine.UI.UIElement,System.Single)">
             <summary>按钮效果，点击时放大（使用了DrawAfterBegin和DrawBeforeEnd）</summary>
+            <param name="scale">点击下去缩放的大小，放大推荐1.2，缩小推荐0.8</param>
+        </member>
+        <member name="M:EntryEngine.UI.UIStyle.EffectScan(EntryEngine.TEXTURE,EntryEngine.UI.UIElement,System.Single,System.Single)">
+            <summary>从左往右扫光特效</summary>
+            <param name="light">扫光图片</param>
+            <param name="target">需要扫光的控件</param>
+            <param name="duration">扫光一遍需要的时间</param>
+            <param name="interval">扫光后距离下次扫光间隔的时间</param>
+        </member>
+        <member name="T:EntryEngine.UI.UIEffect">
+            <summary>UI动态特效，淡入，淡出，从各个方向移出等</summary>
+        </member>
+        <member name="T:EntryEngine.ICoroutine">
+            <summary>协程接口</summary>
+        </member>
+        <member name="T:EntryEngine.IUpdatable">
+            <summary>每帧可更新的内容</summary>
+        </member>
+        <member name="M:EntryEngine.IUpdatable.Update(System.Single)">
+            <summary>更新</summary>
+            <param name="elapsed">一帧经过的时间，单位自定义，一般为秒</param>
+        </member>
+        <member name="F:EntryEngine.UI.UIEffect.Alpha">
+            <summary>不透明度，0~1，默认为1，1为不透明</summary>
+        </member>
+        <member name="F:EntryEngine.UI.UIEffect.Rotation">
+            <summary>旋转角度</summary>
+        </member>
+        <member name="F:EntryEngine.UI.UIEffect.Offset">
+            <summary>坐标偏移，是相对于UI原始坐标的偏移</summary>
+        </member>
+        <member name="F:EntryEngine.UI.UIEffect.Scale">
+            <summary>大小缩放，默认为1</summary>
+        </member>
+        <member name="M:EntryEngine.UI.UIEffect.DoScale(System.Single,System.Single,System.Single)">
+            <summary>用seconds秒钟从origin缩放到target</summary>
+        </member>
+        <member name="M:EntryEngine.UI.UIEffect.DoFade(System.Single,System.Single,System.Single)">
+            <summary>用seconds秒钟从origin透明渐变到target</summary>
+        </member>
+        <member name="M:EntryEngine.UI.UIEffect.DoFadeIn(System.Single)">
+            <summary>用seconds秒钟从透明变为不透明</summary>
+        </member>
+        <member name="M:EntryEngine.UI.UIEffect.DoFadeOut(System.Single)">
+            <summary>用seconds秒钟从不透明变为透明</summary>
+        </member>
+        <member name="M:EntryEngine.UI.UIEffect.DoRotate(System.Single,System.Single,System.Single)">
+            <summary>用seconds秒钟从origin旋转到target</summary>
+        </member>
+        <member name="M:EntryEngine.UI.UIEffect.DoMove(EntryEngine.VECTOR2,EntryEngine.VECTOR2,System.Single)">
+            <summary>用seconds秒钟从origin匀速平移到target</summary>
+        </member>
+        <member name="M:EntryEngine.UI.UIEffect.DoMoveAuto(System.Single)">
+            <summary>自动从贴近屏幕的位置移入到当前位置</summary>
+        </member>
+        <member name="M:EntryEngine.UI.UIEffect.DoAnimation(System.Collections.Generic.IEnumerable{EntryEngine.ICoroutine})">
+            <summary>用seconds秒钟从origin缩放到target</summary>
         </member>
         <member name="F:EntryEngine.UI.UIFlowLayout.Line">
             <summary>占满一行</summary>
@@ -154,6 +211,9 @@
         <member name="M:EntryEngine.UI.UIElement.InternalDrawAfter(EntryEngine.GRAPHICS,EntryEngine.Entry)">
             <summary>绘制子控件后绘制，这里绘制的内容会遮挡子控件</summary>
         </member>
+        <member name="M:EntryEngine.UI.UIElement.InParent(System.Single@,System.Single@)">
+            <summary>根据Pivot将范围转换成在自己父容器中的位置</summary>
+        </member>
         <member name="M:EntryEngine.UI.UIElement.DefaultChildClip(EntryEngine.UI.UIElement)">
             <summary>计算子控件的区域</summary>
         </member>
@@ -170,6 +230,9 @@
         </member>
         <member name="P:EntryEngine.UI.UIElement.Handled">
             <summary>当前帧的事件是否已经被消耗掉</summary>
+        </member>
+        <member name="P:EntryEngine.UI.UIElement.Effect">
+            <summary>UI特效</summary>
         </member>
         <member name="E:EntryEngine.UI.UIElement.Enter">
             <summary>鼠标进入区域内</summary>
@@ -314,7 +377,7 @@
             <summary>场景进入舞台前的加载阶段：不执行任何流程</summary>
         </member>
         <member name="F:EntryEngine.UI.EPhase.Preparing">
-            <summary>场景进入舞台前的准备阶段：执行渲染</summary>
+            <summary>场景进入舞台前的准备阶段：执行绘制</summary>
         </member>
         <member name="F:EntryEngine.UI.EPhase.Prepared">
             <summary>准备完成阶段，会等待其它场景准备完成：执行绘制</summary>
@@ -657,6 +720,12 @@
         <member name="P:EntryEngine.Entry.Instance">
             <summary>入口的唯一实例</summary>
         </member>
+        <member name="E:EntryEngine.Entry.OnRenderBegin">
+            <summary>渲染前渲染，自行决定Begin和End，可以用于超出视口的全屏幕背景绘制</summary>
+        </member>
+        <member name="E:EntryEngine.Entry.OnDrawMouse">
+            <summary>渲染鼠标</summary>
+        </member>
         <member name="P:EntryEngine.Entry.Dialogs">
             <summary>舞台中打开的对话框场景</summary>
         </member>
@@ -797,6 +866,12 @@
         <member name="M:EntryEngine.Serialize.ByteRefReader.INNER_READER.ReadObject(System.Type)">
             <summary>由于读取数组不一样，需要先读取引用，所以封装成内部类，仅允许ReadObject操作</summary>
         </member>
+        <member name="T:EntryEngine.Serialize.ByteWriterJson">
+            <summary>仅对Class对象采用Json格式序列化，方便对象字段扩展</summary>
+        </member>
+        <member name="T:EntryEngine.Serialize.ByteReaderJson">
+            <summary>仅对Class对象采用Json格式反序列化，方便对象字段扩展</summary>
+        </member>
         <member name="F:EntryEngine.Network.LinkBinary.Heartbeat">
             <summary>
             <para>大于0. 到时间会发送心跳包，包发不出去将结束心跳</para>
@@ -804,15 +879,8 @@
             <para>小于0. 到时间(绝对值)会直接视为断线（抛出ExceptionHeartbeatStop异常）</para>
             </summary>
         </member>
-        <member name="T:EntryEngine.ICoroutine">
-            <summary>协程接口</summary>
-        </member>
-        <member name="T:EntryEngine.IUpdatable">
-            <summary>每帧可更新的内容</summary>
-        </member>
-        <member name="M:EntryEngine.IUpdatable.Update(System.Single)">
-            <summary>更新</summary>
-            <param name="elapsed">一帧经过的时间，单位自定义，一般为秒</param>
+        <member name="F:EntryEngine.Network.AgentProtocolStub.OnError">
+            <summary>收到0,null协议时回调，会返回错误码和错误信息</summary>
         </member>
         <member name="F:EntryEngine.Network.ProtocolCall.JO">
             <summary>Json Object String</summary>
@@ -826,11 +894,14 @@
         <member name="F:EntryEngine.Network.Connector.WaitResponse">
             <summary>等待服务器回应登录数据的时间，单位ms</summary>
         </member>
+        <member name="E:EntryEngine.Network.Connector.OnConnect">
+            <summary>开始连接服务器；是否断线重连</summary>
+        </member>
         <member name="E:EntryEngine.Network.Connector.OnConnectData">
             <summary>写入连接数据；是否断线重连；返回null则断开连接</summary>
         </member>
         <member name="E:EntryEngine.Network.Connector.OnConnectSuccess">
-            <summary>连接成功，通过返回的数据构建Agent；是否断线重连</summary>
+            <summary>连接成功，通过返回的数据构建Agent，之后会给Agent指定Link；是否断线重连；连接；数据</summary>
         </member>
         <member name="E:EntryEngine.Network.Connector.OnConnectFault">
             <summary>连接失败；是否断线重连，重连次数，返回是否继续重连</summary>
@@ -854,16 +925,53 @@
             <summary>一段时间内若有其他包则一起写入后发送</summary>
         </member>
         <member name="E:EntryEngine.Network.HttpRequestPost.OnSend">
-            <summary>异步</summary>
-        </member>
-        <member name="E:EntryEngine.Network.HttpRequestPost.OnSent">
-            <summary>异步</summary>
+            <summary>异步执行：请求写入流之前，返回true代表自定义将数据写入流，后面不再写入流</summary>
         </member>
         <member name="E:EntryEngine.Network.HttpRequestPost.OnReceived">
             <summary>异步</summary>
         </member>
         <member name="E:EntryEngine.Network.HttpRequestPost.OnError">
             <summary>异步</summary>
+        </member>
+        <member name="T:EntryEngine.Network.AsyncHttpRequest">
+            <summary>HTTP网络请求</summary>
+        </member>
+        <member name="T:EntryEngine.AsyncData`1">
+            <summary>协程加载数据</summary>
+        </member>
+        <member name="T:EntryEngine.Async">
+            <summary>协程基类</summary>
+        </member>
+        <member name="M:EntryEngine.Async.Run">
+            <summary>开始执行协程</summary>
+        </member>
+        <member name="M:EntryEngine.Async.Error(System.Exception)">
+            <summary>协程执行异常</summary>
+        </member>
+        <member name="M:EntryEngine.Async.Cancel">
+            <summary>协程执行取消</summary>
+        </member>
+        <member name="P:EntryEngine.Async.State">
+            <summary>当前协程执行的状态</summary>
+        </member>
+        <member name="P:EntryEngine.Async.IsEnd">
+            <summary>协程是否执行完成</summary>
+        </member>
+        <member name="P:EntryEngine.Async.Progress">
+            <summary>协程执行的进度，0~1</summary>
+        </member>
+        <member name="P:EntryEngine.Async.FaultedReason">
+            <summary>协程执行异常时的异常信息</summary>
+        </member>
+        <member name="F:EntryEngine.Network.AsyncHttpRequest.OnComplete">
+            <summary>完成时的委托，委托将在异步线程上回调</summary>
+        </member>
+        <member name="M:EntryEngine.Network.AsyncHttpRequest.Send(System.Byte[])">
+            <summary>发送请求，确保其它设置都设置好了，本方法会调用Run让协程开始</summary>
+            <param name="data">PostBody数据，null则不写入数据，不宜上传大数据</param>
+        </member>
+        <member name="P:EntryEngine.Network.AsyncHttpRequest.WebException">
+            <summary>网络异常，可能为null</summary>
         </member>
         <member name="M:EntryEngine.Network._DATABASE.MultiReadPrepare(System.Data.IDataReader,System.Type,System.Int32,System.Int32,System.Collections.Generic.List{System.Reflection.PropertyInfo}@,System.Collections.Generic.List{System.Reflection.FieldInfo}@,System.Int32[]@)">
             <summary>连续读取多个对象时，一次性把属性和字段都准备好，加速反射效率</summary>
@@ -1811,6 +1919,15 @@
             <param name="duration">封禁时长，0代表永久</param>
             <param name="address">可以是192.168</param>
         </member>
+        <member name="E:EntryEngine.Network.Proxy.OnProtocolError">
+            <summary>处理前端发来的协议数据错误时触发，返回true代表断开连接</summary>
+        </member>
+        <member name="M:EntryEngine.Network.ProxyTcp.CallbackError(EntryEngine.Network.Link,System.Int32,System.String)">
+            <summary>返回一条错误信息给AgentProtocolStub接收到并触发OnError</summary>
+        </member>
+        <member name="M:EntryEngine.Network.ProxyTcp.ProxyTcp_DefaultOnProtocolError(EntryEngine.Network.Link,System.Exception)">
+            <summary>OnProtocolError的默认处理函数，函数调用CallbackError返回异常信息</summary>
+        </member>
         <member name="F:EntryEngine.Network.ProxyHttpAsync.PermitSameIPHandlePerSecord">
             <summary>限定每秒允许同一个接口的接入数，超过则禁止该IP登录</summary>
         </member>
@@ -2153,7 +2270,7 @@
             <summary>缩小</summary>
         </member>
         <member name="P:EntryEngine.TOUCH.Scale">
-            <summary>缩放，单位为百分比</summary>
+            <summary>缩放，单位为像素</summary>
         </member>
         <member name="P:EntryEngine.TOUCH.Rotate">
             <summary>旋转，单位为角度</summary>
@@ -2319,36 +2436,6 @@
         <member name="P:EntryEngine.Content.Key">
             <summary>资源名</summary>
         </member>
-        <member name="T:EntryEngine.AsyncData`1">
-            <summary>协程加载数据</summary>
-        </member>
-        <member name="T:EntryEngine.Async">
-            <summary>协程基类</summary>
-        </member>
-        <member name="M:EntryEngine.Async.Run">
-            <summary>开始执行协程</summary>
-        </member>
-        <member name="M:EntryEngine.Async.Error(System.Exception)">
-            <summary>协程执行异常</summary>
-        </member>
-        <member name="M:EntryEngine.Async.Cancel">
-            <summary>协程执行取消</summary>
-        </member>
-        <member name="P:EntryEngine.Async.State">
-            <summary>当前协程执行的状态</summary>
-        </member>
-        <member name="P:EntryEngine.Async.IsEnd">
-            <summary>协程是否执行完成</summary>
-        </member>
-        <member name="P:EntryEngine.Async.Progress">
-            <summary>协程执行的进度，0~100</summary>
-        </member>
-        <member name="P:EntryEngine.Async.ProgressFloat">
-            <summary>协程执行的进度，0~1</summary>
-        </member>
-        <member name="P:EntryEngine.Async.FaultedReason">
-            <summary>协程执行异常时的异常信息</summary>
-        </member>
         <member name="M:EntryEngine.AsyncLoadContent.OnSetData(EntryEngine.Content@)">
             <summary>
             Queue加载的项也会重复的设置
@@ -2499,13 +2586,13 @@
         <member name="M:EntryEngine.AUDIO.Resume(EntryEngine.SOUND)">
             <summary>继续播放暂停的一个声音</summary>
         </member>
-        <member name="M:EntryEngine.AUDIO.PlayMusic(System.String)">
+        <member name="M:EntryEngine.AUDIO.PlayMusic(System.String,System.Action{EntryEngine.SOUND})">
             <summary>播放背景音乐</summary>
         </member>
-        <member name="M:EntryEngine.AUDIO.PlayMusic(System.String,EntryEngine.IAudioSource)">
+        <member name="M:EntryEngine.AUDIO.PlayMusic(System.String,EntryEngine.IAudioSource,System.Action{EntryEngine.SOUND})">
             <summary>播放背景音乐</summary>
         </member>
-        <member name="M:EntryEngine.AUDIO.PlayMusic(System.String,System.Single,System.Single)">
+        <member name="M:EntryEngine.AUDIO.PlayMusic(System.String,System.Single,System.Single,System.Action{EntryEngine.SOUND})">
             <summary>播放背景音乐</summary>
         </member>
         <member name="M:EntryEngine.AUDIO.PlayMusic(EntryEngine.SOUND,EntryEngine.IAudioSource)">
@@ -2517,13 +2604,31 @@
             <param name="volume">播放音乐的声音大小</param>
             <param name="channel">声道(-1左 ~ 1右)</param>
         </member>
-        <member name="M:EntryEngine.AUDIO.PlayVoice(System.Object,System.String)">
+        <member name="M:EntryEngine.AUDIO.ChangeMusic(System.String,System.Action{EntryEngine.SOUND})">
+            <summary>播放背景音乐</summary>
+        </member>
+        <member name="M:EntryEngine.AUDIO.ChangeMusic(System.String,EntryEngine.IAudioSource,System.Action{EntryEngine.SOUND})">
+            <summary>播放背景音乐</summary>
+        </member>
+        <member name="M:EntryEngine.AUDIO.ChangeMusic(System.String,System.Single,System.Single,System.Action{EntryEngine.SOUND})">
+            <summary>播放背景音乐</summary>
+        </member>
+        <member name="M:EntryEngine.AUDIO.ChangeMusic(EntryEngine.SOUND,EntryEngine.IAudioSource)">
+            <summary>播放背景音乐</summary>
+        </member>
+        <member name="M:EntryEngine.AUDIO.ChangeMusic(EntryEngine.SOUND,System.Single,System.Single)">
+            <summary>播放背景音乐：整个播放器仅允许播放一个的声音，二次播放会打断之前的播放，没有更换音乐时不会重新播放</summary>
+            <param name="sound">要播放的音乐</param>
+            <param name="volume">播放音乐的声音大小</param>
+            <param name="channel">声道(-1左 ~ 1右)</param>
+        </member>
+        <member name="M:EntryEngine.AUDIO.PlayVoice(System.Object,System.String,System.Action{EntryEngine.SOUND})">
             <summary>播放人声</summary>
         </member>
-        <member name="M:EntryEngine.AUDIO.PlayVoice(System.Object,System.String,EntryEngine.IAudioSource)">
+        <member name="M:EntryEngine.AUDIO.PlayVoice(System.Object,System.String,EntryEngine.IAudioSource,System.Action{EntryEngine.SOUND})">
             <summary>播放人声</summary>
         </member>
-        <member name="M:EntryEngine.AUDIO.PlayVoice(System.Object,System.String,System.Single,System.Single)">
+        <member name="M:EntryEngine.AUDIO.PlayVoice(System.Object,System.String,System.Single,System.Single,System.Action{EntryEngine.SOUND})">
             <summary>播放人声</summary>
         </member>
         <member name="M:EntryEngine.AUDIO.PlayVoice(System.Object,EntryEngine.SOUND,EntryEngine.IAudioSource)">
@@ -2533,13 +2638,13 @@
             <summary>播放人声：同一个对象仅允许播放一个的声音，不同对象可以一起播放，相同对象的二次播放会打断之前的播放</summary>
             <param name="obj">播放声音的对象</param>
         </member>
-        <member name="M:EntryEngine.AUDIO.PlaySound(System.String)">
+        <member name="M:EntryEngine.AUDIO.PlaySound(System.String,System.Action{EntryEngine.SOUND})">
             <summary>播放音效</summary>
         </member>
-        <member name="M:EntryEngine.AUDIO.PlaySound(System.String,EntryEngine.IAudioSource)">
+        <member name="M:EntryEngine.AUDIO.PlaySound(System.String,EntryEngine.IAudioSource,System.Action{EntryEngine.SOUND})">
             <summary>播放音效</summary>
         </member>
-        <member name="M:EntryEngine.AUDIO.PlaySound(System.String,System.Single,System.Single)">
+        <member name="M:EntryEngine.AUDIO.PlaySound(System.String,System.Single,System.Single,System.Action{EntryEngine.SOUND})">
             <summary>播放音效</summary>
         </member>
         <member name="M:EntryEngine.AUDIO.PlaySound(EntryEngine.SOUND,EntryEngine.IAudioSource)">
@@ -2547,6 +2652,9 @@
         </member>
         <member name="M:EntryEngine.AUDIO.PlaySound(EntryEngine.SOUND,System.Single,System.Single)">
             <summary>播放音效：音效可以多个一起播放，没有办法打断已经播放的音效</summary>
+        </member>
+        <member name="P:EntryEngine.AUDIO.BGM">
+            <summary>当前正在播放的音乐</summary>
         </member>
         <member name="P:EntryEngine.AUDIO.Volume">
             <summary>音量：0 ~ 1</summary>
@@ -2602,6 +2710,15 @@
         </member>
         <member name="T:EntryEngine.TEXTURE_DELAY">
             <summary>可延迟加载的图片</summary>
+        </member>
+        <member name="T:EntryEngine.TEXTURE_COLOR">
+            <summary>将图片颜色缓存的图片</summary>
+        </member>
+        <member name="M:EntryEngine.TEXTURE_COLOR.IsHover(System.Single,System.Single)">
+            <summary>坐标是否在图片中的有效像素内</summary>
+        </member>
+        <member name="P:EntryEngine.TEXTURE_COLOR.ColorData">
+            <summary>整张图片的像素数据</summary>
         </member>
         <member name="T:EntryEngine.PIECE">
             <summary>一张大图上面的其中一小块</summary>
@@ -2911,6 +3028,9 @@
         <member name="T:EntryEngine.FontTexture">
             <summary>静态的图片文字字体</summary>
         </member>
+        <member name="P:EntryEngine.FontTexture.SpaceWidth">
+            <summary>空格字符' '的宽度，默认为字体拥有字符集中首个字符的宽度，没有字符则是字体宽度；可以自定义这个宽度</summary>
+        </member>
         <member name="F:EntryEngine.FontTexture.Buffer.Space">
             <summary>字的间隔，默认等于W</summary>
         </member>
@@ -2953,6 +3073,9 @@
         </member>
         <member name="P:EntryEngine.SHADER.CurrentPass">
             <summary>当前使用的顶点着色器和片元着色器通道</summary>
+        </member>
+        <member name="P:EntryEngine.SHADER.IsRealBeginEnd">
+            <summary>true: 真实使用着色器时，交由SHADER进行Begin|End / false: 交由GRAPHICS进行Begin|End（SHADER.Begin|End任然会调用）</summary>
         </member>
         <member name="P:EntryEngine.SHADER.PassCount">
             <summary>顶点着色器和片元着色器通道的数量</summary>
@@ -3350,20 +3473,23 @@
             <param name="func">方法将在异步上执行，返回true代表执行完毕，请不要阻塞线程，否则等待超时将无效</param>
             <param name="timeout">等待超时时间，单位毫秒，负数时则永不超时，超时将抛出TimeoutException</param>
         </member>
-        <member name="T:EntryEngine.Network.PagedModel`1">
-            <summary>翻页数据模型</summary>
-        </member>
         <member name="T:EntryEngine.Network.InnerCascade">
             <summary>内部级联的树状关系，例如分类和二级分类，账号和邀请账号等</summary>
         </member>
         <member name="F:EntryEngine.Network.InnerCascade.Parents">
-            <summary>父类的级联数组，格式为0,1,2，越靠前计别越高</summary>
+            <summary>父类的级联数组，格式为0,1,2，越靠前级别越高</summary>
         </member>
         <member name="M:EntryEngine.Network.InnerCascade.UpdateCascadeParentID(System.Collections.Generic.IEnumerable{EntryEngine.Network.InnerCascade},System.Int32,System.Int32)">
             <summary>级联父级更换</summary>
             <param name="items">完整级联列表，包含所有级别</param>
             <param name="id">要改的目标层级</param>
             <param name="newParentID">新的父级</param>
+        </member>
+        <member name="P:EntryEngine.Network.InnerCascade.ParentsIDs">
+            <summary>父类的级联数组，越靠前级别越高</summary>
+        </member>
+        <member name="P:EntryEngine.Network.InnerCascade.Top">
+            <summary>顶级ID，若没有上级，则顶级是自己</summary>
         </member>
         <member name="F:EntryEngine.Network.InnerCascade.EModifiedFlag.None">
             <summary>没有修改</summary>
@@ -3373,6 +3499,27 @@
         </member>
         <member name="F:EntryEngine.Network.InnerCascade.EModifiedFlag.ParentID">
             <summary>修改了ParentID</summary>
+        </member>
+        <member name="T:EntryEngine.Network.PagedModel`1">
+            <summary>翻页数据模型</summary>
+        </member>
+        <member name="F:EntryEngine.Network.PagedModel`1.Count">
+            <summary>数据总条数</summary>
+        </member>
+        <member name="F:EntryEngine.Network.PagedModel`1.Page">
+            <summary>当前页数，从0开始</summary>
+        </member>
+        <member name="F:EntryEngine.Network.PagedModel`1.PageSize">
+            <summary>每页的数据条数</summary>
+        </member>
+        <member name="F:EntryEngine.Network.PagedModel`1.TotalPage">
+            <summary>总页数，从0开始</summary>
+        </member>
+        <member name="F:EntryEngine.Network.PagedModel`1.Models">
+            <summary>当前页的数据</summary>
+        </member>
+        <member name="M:EntryEngine.Network.PagedModel`1.CalcTotalPage">
+            <summary>根据数据总条数和每页数据条数自动计算总页数并返回总页数</summary>
         </member>
         <member name="F:EntryEngine.Network.EIndex.Index">
             <summary>
@@ -3864,6 +4011,9 @@
         <member name="T:EntryEngine.UI.SMask">
             <summary>弹出子场景，子场景以外的部分遮罩</summary>
         </member>
+        <member name="M:EntryEngine.UI.SMask.CantClickClose">
+            <summary>灰色蒙版不可以点击关闭</summary>
+        </member>
         <member name="T:EntryEngine.UI.SPages">
             <summary>翻页按钮场景</summary>
         </member>
@@ -3964,8 +4114,33 @@
         <member name="P:EntryEngine.ParticleEmitter.Count">
             <summary>粒子的数量</summary>
         </member>
+        <member name="M:EntryEngine.MOBILE.UniformMoveBySpeed(EntryEngine.IMobile,EntryEngine.IMobile,System.Single)">
+            <summary>from根据速度朝to匀速移动</summary>
+            <param name="speed">移动速度，单位像素/秒</param>
+        </member>
+        <member name="M:EntryEngine.MOBILE.UniformMoveByTime(EntryEngine.IMobile,EntryEngine.IMobile,System.Single)">
+            <summary>from根据时间朝to匀速移动</summary>
+            <param name="second">移动时间，单位秒，移动速度将自动计算</param>
+        </member>
+        <member name="M:EntryEngine.MOBILE.CloseToBySpeed(EntryEngine.IMobile,EntryEngine.IMobile,System.Single,System.Single)">
+            <summary>from根据速度朝to加速靠近，减速停下</summary>
+            <param name="second1">加速时间，单位秒，超过加速时间将开始减速最终停下，加速度将自动计算</param>
+            <param name="second2">移动总时间，单位秒，加速度将自动计算</param>
+        </member>
         <member name="T:EntryEngine.VECTOR2">
             <summary>二维向量</summary>
+        </member>
+        <member name="M:EntryEngine.VECTOR2.Distance(EntryEngine.VECTOR2@,EntryEngine.VECTOR2@,System.Single@)">
+            <summary>两点间的距离，数字太大时，计算精度不够可能会引发其它BUG</summary>
+        </member>
+        <member name="M:EntryEngine.VECTOR2.DistanceSquared(EntryEngine.VECTOR2@,EntryEngine.VECTOR2@,System.Single@)">
+            <summary>两点间距离的平方，开根就是两点间距离，可用于简单比较距离远近，但数字太大时，计算精度不够可能会引发其它BUG</summary>
+        </member>
+        <member name="M:EntryEngine.VECTOR2.Dot(EntryEngine.VECTOR2@,EntryEngine.VECTOR2@,System.Single@)">
+            <summary>x1 * x2 + y1 * y2</summary>
+        </member>
+        <member name="M:EntryEngine.VECTOR2.Normalize(EntryEngine.VECTOR2@,EntryEngine.VECTOR2@)">
+            <summary>将点设定在0~1的范围内，1 / sqrt(x * x + y * y)</summary>
         </member>
         <member name="M:EntryEngine.VECTOR2.Combine(EntryEngine.VECTOR2@,EntryEngine.VECTOR2@,EntryEngine.VECTOR2@)">
             <summary>力的合成</summary>
@@ -3981,26 +4156,17 @@
             <param name="force">引力大小</param>
             <param name="v3">被万有引力吸引后的运动方向和速度</param>
         </member>
-        <member name="M:EntryEngine.VECTOR2.Towards(EntryEngine.VECTOR2@,EntryEngine.VECTOR2@,System.Single,System.Single@)">
-            <summary>
-            朝向目标点
-            </summary>
-            <param name="current">当前坐标</param>
-            <param name="target">目标坐标</param>
-            <param name="angle">当前方向</param>
-            <param name="direction">朝向目标角度最近的角度（带方向）</param>
+        <member name="M:EntryEngine.VECTOR2.Lerp(EntryEngine.VECTOR2@,EntryEngine.VECTOR2@,System.Single,EntryEngine.VECTOR2@)">
+            <summary>点1到点2的线段上的一点</summary>
+            <param name="amount">线段上的百分比</param>
         </member>
         <member name="M:EntryEngine.VECTOR2.Barycentric(EntryEngine.VECTOR2@,EntryEngine.VECTOR2@,EntryEngine.VECTOR2@,System.Single,System.Single,EntryEngine.VECTOR2@)">
-            <summary>
-            质心 / 重心：三条中线的交点
-            </summary>
+            <summary>质心 / 重心：三条中线的交点</summary>
             <param name="u">value1 -> value2</param>
             <param name="v">value1 -> value3</param>
         </member>
         <member name="M:EntryEngine.VECTOR2.Barycentric(EntryEngine.VECTOR2@,EntryEngine.VECTOR2@,EntryEngine.VECTOR2@,EntryEngine.VECTOR2@,System.Single@,System.Single@)">
-            <summary>
-            质心权重 value1: w = 1 - u - v
-            </summary>
+            <summary>质心权重 value1: w = 1 - u - v</summary>
             <param name="u">value2</param>
             <param name="v">value3</param>
         </member>
@@ -4010,59 +4176,17 @@
         <member name="T:EntryEngine.MATRIX">
             <summary>三维矩阵变换</summary>
         </member>
+        <member name="M:EntryEngine.MATRIX.Transpose(EntryEngine.MATRIX@,EntryEngine.MATRIX@)">
+            <summary>转置矩阵</summary>
+        </member>
         <member name="T:EntryEngine.MATRIX2x3">
             <summary>二维矩阵变换</summary>
         </member>
         <member name="T:EntryEngine.COLOR">
             <summary>Xna3.1的颜色是BGRA</summary>
         </member>
-        <member name="M:EntryEngine.COLOR.ColorInverse(EntryEngine.COLOR)">
-            <summary>
-            颜色的反转色 255 - value
-            </summary>
-            <param name="color">要反转的颜色</param>
-            <returns>反转颜色值后的颜色</returns>
-        </member>
-        <member name="M:EntryEngine.COLOR.ColorNormal(System.Byte,System.Byte,System.Byte)">
-            <summary>
-            正常叠加模式
-            </summary>
-            <param name="value">混合色</param>
-            <param name="alpha">混合色透明度</param>
-            <param name="background">背景色</param>
-            <returns>结果色</returns>
-        </member>
-        <member name="M:EntryEngine.COLOR.ColorNormalEx(System.Byte,System.Byte,System.Byte)">
-            <summary>
-            正常模式的逆运算
-            </summary>
-            <param name="value">结果色</param>
-            <param name="alpha">混合色透明度</param>
-            <param name="background">背景色</param>
-            <returns>混合色</returns>
-        </member>
-        <member name="M:EntryEngine.COLOR.ColorScreen(System.Byte,System.Byte)">
-            <summary>
-            滤色
-            </summary>
-            <param name="value">源颜色(上层颜色)</param>
-            <param name="filter">过滤色(下层颜色)</param>
-            <returns>滤色后的值</returns>
-        </member>
-        <member name="M:EntryEngine.COLOR.ClearColor(EntryEngine.COLOR,EntryEngine.COLOR)">
-            <summary>
-            清除指定颜色
-            </summary>
-            <param name="rgb">当前颜色</param>
-            <param name="clear">要清除的颜色</param>
-            <returns>清除颜色后的颜色</returns>
-        </member>
-        <member name="M:EntryEngine.COLOR.ColorAlpha(EntryEngine.COLOR)">
-            <summary>
-            使用滤色通过颜色的RGB计算Alpha
-            </summary>
-            <param name="rgb">RGB颜色</param>
-            <returns>颜色的Alpha</returns>
+        <member name="M:EntryEngine.COLOR.ToRGBAComma">
+            <summary>R,G,B,A</summary>
         </member>
         <member name="M:EntryEngine.LINE.#ctor(System.Single,System.Single,System.Single)">
             <summary>一般式 ax + by + c = 0</summary>
@@ -4350,6 +4474,27 @@
         <member name="T:EntryEngine.Range`1">
             <summary>区间</summary>
         </member>
+        <member name="T:EntryEngine.RandomList`1">
+            <summary>随机列表，例如音乐播放器的列表，前后来回切换时音乐不会变</summary>
+        </member>
+        <member name="M:EntryEngine.RandomList`1.Previous">
+            <summary>上一首</summary>
+        </member>
+        <member name="M:EntryEngine.RandomList`1.Next">
+            <summary>上一首</summary>
+        </member>
+        <member name="P:EntryEngine.RandomList`1.List">
+            <summary>原始未随机的列表</summary>
+        </member>
+        <member name="P:EntryEngine.RandomList`1.Index">
+            <summary>当前内容在原始列表中的索引</summary>
+        </member>
+        <member name="P:EntryEngine.RandomList`1.IsLast">
+            <summary>是否是最后一首</summary>
+        </member>
+        <member name="P:EntryEngine.RandomList`1.Current">
+            <summary>当前内容</summary>
+        </member>
         <member name="T:EntryEngine.Pool`1">
             <summary>池数据结构，可以循环利用对象，减少new对象的次数</summary>
         </member>
@@ -4379,12 +4524,8 @@
         <member name="M:EntryEngine.Pool`1.RemoveAt(System.Int32)">
             <summary>从池里通过索引快速移除一个对象</summary>
         </member>
-        <member name="T:EntryEngine.PoolHeap`1">
-            <summary>
-            池堆
-            将BufferSize个对象视为一堆
-            整个池能放满PoolSize堆时溢出
-            </summary>
+        <member name="T:EntryEngine.PoolStack`1">
+            <summary>栈，只是可以不删除栈内的元素而重复使用，达到池的效果</summary>
         </member>
         <member name="T:EntryEngine.AVLTreeBase`1">
             <summary>
@@ -4514,15 +4655,18 @@
         <member name="T:EntryEngine.CLOCK">
             <summary>等待钟表协程</summary>
         </member>
+        <member name="F:EntryEngine.CLOCK.Elapsed">
+            <summary>当前已经经过的时间</summary>
+        </member>
         <member name="F:EntryEngine.CLOCK.Duration">
-            <summary>起止时间</summary>
+            <summary>起止时间，单位秒</summary>
         </member>
         <member name="F:EntryEngine.CLOCK.TickTime">
-            <summary>时钟嘀嗒（取值-n仅一次:0每次:n间隔)，单位毫秒</summary>
+            <summary>时钟嘀嗒（取值-n仅一次:0每次:n间隔)，单位秒</summary>
         </member>
         <member name="M:EntryEngine.CLOCK.Tick(System.Single)">
             <summary>经过时间</summary>
-            <param name="time">单位毫秒</param>
+            <param name="time">单位秒</param>
             <returns>是否滴答一次</returns>
         </member>
         <member name="T:EntryEngine.Timeline`1">
@@ -4611,6 +4755,79 @@
         <member name="T:EntryEngine.SingleEncoding">
             <summary>char[]与byte[]直接转换，char>255则抛出异常</summary>
         </member>
+        <member name="T:EntryEngine.IO_NET">
+            <summary>同步是文件IO，异步是网络IO</summary>
+        </member>
+        <member name="F:EntryEngine.EHotFix.正在检测最新版本号">
+            <summary>热更新流程刚开始</summary>
+        </member>
+        <member name="F:EntryEngine.EHotFix.正在获取最新版本内容">
+            <summary>已准备好NewVersionBytes</summary>
+        </member>
+        <!-- 对于成员“F:EntryEngine.EHotFix.开始更新”忽略有格式错误的 XML 注释 -->
+        <member name="F:EntryEngine.EHotFix.更新完成">
+            <summary>所有更新已经完成</summary>
+        </member>
+        <member name="T:EntryEngine._HOT_FIX">
+            <summary>程序热更新：入口 -> 下载比对版本号 -> 更新dll -> 设置ServerURL -> 打开程序 -> 程序自行热更
+            <para>若IO设置了资源加密，请将解密程序在热更新后设置</para>
+            <para>可在[EHotFix.开始更新]阶段的迭代中，实时更新Progress</para>
+            </summary>
+        </member>
+        <member name="F:EntryEngine._HOT_FIX.VERSION">
+            <summary>版本文件</summary>
+        </member>
+        <member name="F:EntryEngine._HOT_FIX.PARALLEL">
+            <summary>并行下载数</summary>
+        </member>
+        <member name="F:EntryEngine._HOT_FIX.ServerURL">
+            <summary>热更新服务器地址，例如http://127.0.0.1:88/，Unity若有热更会自动设置此值</summary>
+        </member>
+        <member name="F:EntryEngine._HOT_FIX.NewVersionBytes">
+            <summary>新版本号，热更后清空；null则自动下载VERSION文件作为此值；外部传入可以避免重复下载，更新热更新程序时用</summary>
+        </member>
+        <member name="F:EntryEngine._HOT_FIX.NewFileListBytes">
+            <summary>新文件列表，热更后清空；null则自动下载FILE_LIST文件作为此值；外部传入可以避免重复下载，更新热更新程序时用</summary>
+        </member>
+        <member name="M:EntryEngine._HOT_FIX.DoError(EntryEngine.Network.AsyncHttpRequest)">
+            <summary>返回true就中止热更新</summary>
+        </member>
+        <member name="M:EntryEngine._HOT_FIX.Update">
+            <summary>程序热更新：Unity -> 下载比对版本号 -> 更新dll -> 设置ServerURL -> 打开程序 -> 程序自行热更</summary>
+        </member>
+        <member name="E:EntryEngine._HOT_FIX.OnProcess">
+            <summary>热更新进程发生变化时触发</summary>
+        </member>
+        <member name="E:EntryEngine._HOT_FIX.OnError">
+            <summary>热更新发生异常时触发，返回true就中止热更新</summary>
+        </member>
+        <member name="E:EntryEngine._HOT_FIX.OnDownload">
+            <summary>文件下载完毕后，可以修改文件路径或下载的数据内容，之后将写入文件（此事件在同步线程上触发）</summary>
+        </member>
+        <member name="P:EntryEngine._HOT_FIX.TotalBytes">
+            <summary>需要更新的字节数(转换KB >> 10)</summary>
+        </member>
+        <member name="P:EntryEngine._HOT_FIX.DownloadBytes">
+            <summary>已经下载更新的字节数(转换KB >> 10)</summary>
+        </member>
+        <member name="T:EntryEngine._HOT_FIX.FileNew">
+            <summary>一个需要新下载或更新的文件</summary>
+        </member>
+        <member name="F:EntryEngine._HOT_FIX.FileNew.File">
+            <summary>文件路径</summary>
+        </member>
+        <member name="F:EntryEngine._HOT_FIX.FileNew.Time">
+            <summary>文件最后修改时间</summary>
+        </member>
+        <member name="F:EntryEngine._HOT_FIX.FileNew.Length">
+            <summary>文件大小，单位字节</summary>
+        </member>
+        <member name="M:EntryEngine._HOT_FIX.FileNew.ToString">
+            <summary>可以生成文件列表中一个文件的格式</summary>
+        </member>
+        <member name="P:EntryEngine._HOT_FIX.FileNew.UpdateException">
+            <summary>文件下载时的异常</summary>
+        </member>
         <member name="F:EntryEngine.Serialize.JsonReader.EJson.CURLY_OPEN">
             <summary>new object push</summary>
         </member>
@@ -4631,6 +4848,9 @@
         </member>
         <member name="M:EntryEngine.Serialize.JsonObject.ToClassCode(System.String,System.Boolean)">
             <summary>转换成类型代码，免得自己写实体类</summary>
+        </member>
+        <member name="P:EntryEngine.Serialize.JsonObject.Item(System.String)">
+            <summary>字典获取字段名，没有该字段也不会抛出异常</summary>
         </member>
     </members>
 </doc>
