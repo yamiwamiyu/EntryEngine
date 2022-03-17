@@ -4,7 +4,90 @@ using System.Linq;
 using System.Text;
 using EntryEngine;
 using EntryEngine.UI;
+using EntryEngine.Serialize;
 
+/// <summary>生成的UI代码都继承于这个类，可以默认使用类里的静态变量</summary>
+public class UIScene : EntryEngine.UI.UIScene
+{
+    /// <summary>账号登录信息保存文件</summary>
+    const string TOKEN = "#login.sav";
+
+    /// <summary>用于登录等的接口</summary>
+    internal static IServiceProxy pservice = new IServiceProxy();
+    internal static IUserProxy puser = new IUserProxy();
+    /// <summary>玩家账号信息</summary>
+    internal static T_USER User;
+
+    static UIScene()
+    {
+#if !DEBUG
+        // 正式服地址
+        Pservice.Host = "http://ip/Action/";
+#else
+        // 本地|测试服地址
+        pservice.Host = "http://127.0.0.1:888/Action/";
+#endif
+        pservice.OnError += (r, ex) =>
+        {
+            STextHint.ShowHint(ex.Message);
+            _LOG.Warning("网络异常：{0}", ex.Message);
+        };
+        pservice.OnHttpError += (code, msg) =>
+        {
+            Entry.Instance.Synchronize(() =>
+            {
+                STextHint.ShowHint(msg);
+                _LOG.Warning(msg);
+            });
+        };
+        pservice.IsAsync = false;
+
+        puser.Host = pservice.Host;
+        // 在Header中带上登录的Token信息
+        puser.OnSend = (r) => r.Request.Headers["AccessToken"] = User.Token;
+        puser.OnError = pservice.OnError;
+        puser.OnHttpError = pservice.OnHttpError;
+        puser.IsAsync = false;
+    }
+
+    /// <summary>清除用户登录信息，用于例如退出登录</summary>
+    internal static void ClearToken()
+    {
+        User.ID = 0;
+        User.Token = null;
+        SaveToken();
+    }
+    /// <summary>保存用户登录信息，用于例如登录成功</summary>
+    private static void SaveToken()
+    {
+        ByteWriter writer = new ByteWriter();
+        writer.Write(User.Token);
+        writer.Write(User.LastLoginTime);
+        _IO.WriteByte(TOKEN, writer.GetBuffer());
+    }
+    /// <summary>加载用户登录信息，用于重新打开游戏</summary>
+    internal static IEnumerable<ICoroutine> LoadToken()
+    {
+        var async = _IO.ReadAsync(TOKEN);
+        if (!async.IsEnd) yield return async;
+        if (async.IsSuccess)
+        {
+            byte[] bytes = async.Data;
+            User = new T_USER();
+            ByteReader reader = new ByteReader(bytes);
+            reader.Read(out User.Token);
+            reader.Read(out User.LastLoginTime);
+        }
+    }
+    /// <summary>登录成功的回调函数，例如pservice.LoginBySMSCode("177****9190", "1234", On登录成功)</summary>
+    internal static void On登录成功(T_USER u)
+    {
+        User = u;
+        // todo: 登录后的操作
+        //Entry.Instance.ShowMainScene<>();
+        SaveToken();
+    }
+}
 public class MAIN : UIScene
 {
     protected override IEnumerable<ICoroutine> Loading()
@@ -13,12 +96,14 @@ public class MAIN : UIScene
         Entry.GRAPHICS.GraphicsSize = new VECTOR2(900, 1600);
         //Entry.GRAPHICS.Culling = true;
 
+        foreach (var item in LoadToken()) yield return item;
+
         AsyncReadFile async;
 
-#if DEBUG
+#if !DEBUG
         // 资源解密，发布时使用了EntryBuilder BuildEncrypt的资源就需要用这两行来对资源解密
-	    //Entry.OnNewiO += (io) => _IO.SetDecrypt(io);
-        //_IO.SetDecrypt(_IO._iO);
+	    Entry.OnNewiO += (io) => _IO.SetDecrypt(io);
+        _IO.SetDecrypt(_IO._iO);
 
         // 可以加载打包大图的配置
         async = _IO.ReadAsync("piece.pcsv");

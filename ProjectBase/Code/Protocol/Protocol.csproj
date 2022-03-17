@@ -53,9 +53,9 @@
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
     <PostBuildEvent>:: 生成HTTP交互协议
-$(ProjectDir)..\..\EntryBuilder.exe BuildProtocolAgentHttp $(ProjectDir)..\Client\Client\ $(ProjectDir)..\Server\Auto\ $(TargetPath)\IService 0
-$(ProjectDir)..\..\EntryBuilder.exe BuildProtocolAgentHttp $(ProjectDir)..\Client\Client\ $(ProjectDir)..\Server\Auto\ $(TargetPath)\IUser 0
-$(ProjectDir)..\..\EntryBuilder.exe BuildProtocolAgentHttp $(ProjectDir)..\Client\Client\ $(ProjectDir)..\Server\Auto\ $(TargetPath)\ICenter 0
+$(ProjectDir)..\..\EntryBuilder.exe BuildProtocolAgentHttp $(ProjectDir)..\Client\Client\Auto\ $(ProjectDir)..\Server\Auto\ $(TargetPath)\IService 0
+$(ProjectDir)..\..\EntryBuilder.exe BuildProtocolAgentHttp $(ProjectDir)..\Client\Client\Auto\ $(ProjectDir)..\Server\Auto\ $(TargetPath)\IUser 0
+$(ProjectDir)..\..\EntryBuilder.exe BuildProtocolAgentHttp $(ProjectDir)..\Client\Client\Auto\ $(ProjectDir)..\Server\Auto\ $(TargetPath)\ICenter 0
 
 ::生成数据库
 $(ProjectDir)..\..\EntryBuilder.exe BuildDatabaseMysql $(TargetPath) Server._DB $(ProjectDir)..\Server\Auto\_DB.design.cs "" "" true</PostBuildEvent>
