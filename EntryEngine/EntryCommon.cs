@@ -1734,7 +1734,7 @@ namespace EntryEngine
             if (node == null)
                 throw new ArgumentNullException("graph node");
 
-            if (CheckAdd(node))
+            if (node.Parent != this && CheckAdd(node))
             {
                 if (node.Parent != null)
                     node.Parent.Remove(node);
@@ -1947,6 +1947,20 @@ namespace EntryEngine
                     func(parent.Childs[i]);
             for (int i = 0; i < parent.Childs.Count; i++)
                 ForRootToLeaf(parent.Childs[i], func, newNode);
+        }
+    }
+    public class DataTree<T> : Tree<DataTree<T>>
+    {
+        public T Data;
+
+        public DataTree() { }
+        public DataTree(T data) { this.Data = data; }
+
+        public DataTree<T> Add(T data)
+        {
+            var node = new DataTree<T>(data);
+            Add(node);
+            return node;
         }
     }
     //public class BTree<T> : IEnumerable<T>

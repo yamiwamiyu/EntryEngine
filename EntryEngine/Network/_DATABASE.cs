@@ -1225,9 +1225,9 @@ namespace EntryEngine.Network
         {
             /// <summary>没有修改</summary>
             None,
-            /// <summary>修改了Parents</summary>
+            /// <summary>仅修改了Parents</summary>
             Parents,
-            /// <summary>修改了ParentID</summary>
+            /// <summary>修改了ParentID和Parents</summary>
             ParentID,
         }
         [Index(EIndex.Identity)]
@@ -1259,7 +1259,9 @@ namespace EntryEngine.Network
                     return int.Parse(Parents.Substring(0, index));
             }
         }
-        public EModifiedFlag ModifiedFlag { get; internal set; }
+        /// <summary>调用UpdateCascadeParentID更新级联关系后，可以根据此标记更新数据库</summary>
+        public EModifiedFlag ModifiedFlag { get; protected set; }
+        /// <summary>设置自己的上级，修改ParentID和Parents，适用于自己没有下级或不需要考虑下级的情况</summary>
         public void SetParent(InnerCascade parent)
         {
             ParentID = parent.ID;
@@ -1268,6 +1270,58 @@ namespace EntryEngine.Network
             else
                 Parents = parent.Parents + "," + parent.ID;
         }
+        /// <summary>设置自己的上级，并更新所有下级的Parents，下级按树结构，一级一级的往下调用SetParent</summary>
+        /// <param name="childs">自己的所有下级（包括下下级）</param>
+        /// <param name="parent">新上级不能是自己的下级（包括下下级）</param>
+        public void SetParent(IEnumerable<InnerCascade> childs, InnerCascade parent)
+        {
+            this.SetParent(parent);
+
+            Dictionary<int, DataTree<InnerCascade>> dic = new Dictionary<int, DataTree<InnerCascade>>();
+            DataTree<InnerCascade> root = new DataTree<InnerCascade>(parent);
+            dic.Add(parent.ID, root);
+            dic.Add(this.ID, root.Add(this));
+            foreach (var item in childs)
+                if (item != this && item != parent)
+                    dic.Add(item.ID, new DataTree<InnerCascade>(item));
+
+            DataTree<InnerCascade> temp;
+            foreach (var item in dic.Values)
+                if (item.Data.ParentID != 0 && dic.TryGetValue(item.Data.ParentID, out temp))
+                    temp.Add(item);
+
+            root.First.ForeachParentPriority(null, i =>
+            {
+                i.Data.SetParent(i.Parent.Data);
+                i.Data.ModifiedFlag = EModifiedFlag.Parents;
+            });
+            this.ModifiedFlag = EModifiedFlag.ParentID;
+        }
+        /// <summary>设置自己的上级，适用于新的上级是自己原来的下级：childs中，child的上级改为parent，this上级改为child</summary>
+        /// <param name="parent">自己原本的上级</param>
+        /// <param name="childs">自己的所有下级（包括下下级）</param>
+        /// <param name="child">新上级必须是自己的下级（包括下下级）</param>
+        public void SetParent(InnerCascade parent, IEnumerable<InnerCascade> childs, InnerCascade child)
+        {
+            child.SetParent(childs, parent);
+            this.SetParent(childs, child);
+        }
+        /// <summary>设置自己的上级</summary>
+        /// <param name="items">新上级是自己原来的下级时，items必须包含自己原本的上级</param>
+        /// <param name="parent">新上级，可以是自己原来的下级</param>
+        public void SetParentAuto(IEnumerable<InnerCascade> items, InnerCascade parent)
+        {
+            if (parent.ParentsIDs.Any(i => i == this.ID))
+            {
+                InnerCascade oparent = items.FirstOrDefault(i => i.ID == this.ParentID);
+                if (oparent == null)
+                    throw new InvalidOperationException("新上级为自己原来的下级时，items必须包含有自己原本的上级");
+                SetParent(oparent, items, parent);
+            }
+            else
+                SetParent(items, parent);
+        }
+        /// <summary>1,2,3转换成数组</summary>
         public static int[] ToCascadeParentsArray(string parents)
         {
             if (string.IsNullOrEmpty(parents))
@@ -1280,6 +1334,7 @@ namespace EntryEngine.Network
                 array[i] = int.Parse(split[i]);
             return array;
         }
+        /// <summary>数组转换成1,2,3</summary>
         public static string ToCascadeParentsString(int[] parents)
         {
             if (parents == null || parents.Length == 0)
@@ -1298,6 +1353,7 @@ namespace EntryEngine.Network
         /// <param name="items">完整级联列表，包含所有级别</param>
         /// <param name="id">要改的目标层级</param>
         /// <param name="newParentID">新的父级</param>
+        [Obsolete("改为使用SetParent")]
         public static void UpdateCascadeParentID(IEnumerable<InnerCascade> items, int id, int newParentID)
         {
             // 当前项
