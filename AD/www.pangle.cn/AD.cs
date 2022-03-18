@@ -7,14 +7,12 @@ using EntryEngine;
 
 public class AD : ADBase
 {
-    public static string APP_ID;
     public override string Name { get { return "穿山甲(Unity)"; } }
 
     private AdNative _native;
-    protected override void _Initialize(string appID, Action<bool, string> callback)
+    protected override void _Initialize(Action<bool, string> callback)
     {
         SDK.RequestPermissionIfNecessary();
-        APP_ID = appID;
         Pangle.InitializeSDK((success, msg) =>
         {
             if (success)

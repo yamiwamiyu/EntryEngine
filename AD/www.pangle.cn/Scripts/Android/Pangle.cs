@@ -21,13 +21,13 @@ namespace ByteDance.Union
         }
         private static void initTTSdk(PangleInitializeCallBack callback)
         {
-            _LOG.Debug("初始化穿山甲安卓SDK AppID:{0}", AD.APP_ID);
+            _LOG.Debug("初始化穿山甲安卓SDK AppID:{0}", ADBase.AD.AppID);
             Debug.Log("Pangle initTTSdk " );
             AndroidJavaObject adConfigBuilder = new AndroidJavaObject("com.bytedance.sdk.openadsdk.TTAdConfig$Builder");
             Debug.Log("Pangle InitializeSDK 开始设置config");
-            adConfigBuilder.Call<AndroidJavaObject>("appId", AD.APP_ID)
+            adConfigBuilder.Call<AndroidJavaObject>("appId", ADBase.AD.AppID)
                 .Call<AndroidJavaObject>("useTextureView", true) //使用TextureView控件播放视频,默认为SurfaceView,当有SurfaceView冲突的场景，可以使用TextureView
-                .Call<AndroidJavaObject>("appName", "寻宝道")
+                .Call<AndroidJavaObject>("appName", ADBase.AD.AppName)
                 .Call<AndroidJavaObject>("allowShowNotify", true) //是否允许sdk展示通知栏提示
                 .Call<AndroidJavaObject>("debug", true) //测试阶段打开，可以通过日志排查问题，上线时去除该调用
                 .Call<AndroidJavaObject>("directDownloadNetworkType",

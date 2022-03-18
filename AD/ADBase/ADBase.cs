@@ -19,33 +19,29 @@ public enum EADType
 }
 public abstract class ADBase
 {
+    /// <summary>AutoCreateFromAvailableFactory和CreateEmpty会自动赋值的广告实例</summary>
+    public static ADBase AD;
+
     /// <summary>广告平台名字</summary>
     public abstract string Name { get; }
 
     public string AppID { get; private set; }
+    public string AppName { get; private set; }
     public bool IsInitialized { get { return !string.IsNullOrEmpty(AppID); } }
 
     /// <summary>初始化SDK</summary>
-    /// <param name="appID">广告所属AppID</param>
+    /// <param name="appID">广告所属AppID，广告平台创建应用一般都有的</param>
+    /// <param name="appName">广告所属App名字，广告平台创建应用一般都有的</param>
     /// <param name="callback">bool: 初始化成功/失败；string: 初始化失败原因</param>
-    public void Initialize(string appID, Action<bool, string> callback)
+    public void Initialize(string appID, string appName, Action<bool, string> callback)
     {
         if (string.IsNullOrEmpty(appID))
             throw new ArgumentNullException("SDK AppID 不能为空！");
-        _Initialize(appID, (success, msg) =>
-        {
-            if (success)
-            {
-                this.AppID = appID;
-                //_LOG.Info("广告平台[{0}]SDK初始化成功", Name);
-            }
-            //else
-            //    _LOG.Info("广告平台[{0}]SDK初始化失败！失败原因：{1}", Name, msg);
-            if (callback != null)
-                callback(success, msg);
-        });
+        this.AppID = appID;
+        this.AppName = appName;
+        _Initialize(callback);
     }
-    protected abstract void _Initialize(string appID, Action<bool, string> callback);
+    protected abstract void _Initialize(Action<bool, string> callback);
 
     /// <summary>展示一条广告</summary>
     /// <param name="adid">广告在平台的ID</param>
@@ -73,11 +69,10 @@ public abstract class ADBase
         float x, float y, int width, int height,
         Action<int, string> onError, Action<IDisposable> onLoad, Action onClick, Action onOver);
 
-    private static Type _AutoType;
     /// <summary>从可用的程序集中自动创建ADBase的实例，若有多个类型则返回首个检测到的类型实例</summary>
     public static ADBase AutoCreateFromAvailableFactory()
     {
-        if (_AutoType == null)
+        Type _AutoType = null;
         {
             var current = System.Reflection.Assembly.GetExecutingAssembly();
             var currentSDK = typeof(ADBase);
@@ -103,12 +98,15 @@ public abstract class ADBase
             }
         }
         if (_AutoType == null)
-            return new ADEmpty();
-        return (ADBase)Activator.CreateInstance(_AutoType);
+            AD = new ADEmpty();
+        else
+            AD = (ADBase)Activator.CreateInstance(_AutoType);
+        return AD;
     }
     public static ADBase CreateEmpty()
     {
-        return new ADEmpty();
+        AD = new ADEmpty();
+        return AD;
     }
 }
 internal class ADEmpty : ADBase
@@ -117,7 +115,7 @@ internal class ADEmpty : ADBase
     {
         get { return "广告测试"; }
     }
-    protected override void _Initialize(string appID, Action<bool, string> callback)
+    protected override void _Initialize(Action<bool, string> callback)
     {
         callback(true, "");
     }
