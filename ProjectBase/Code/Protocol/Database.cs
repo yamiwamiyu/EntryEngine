@@ -79,6 +79,7 @@ public class T_SMSCode
         "验证码已过期".Check(DateTime.Now >= sms.ExpireTime);
         sms.Code = 0;
     }
+    /// <summary>是否验证验证码，测试模式时可以不验证</summary>
     public static bool IsValid = true;
     #endregion
 }

@@ -26,6 +26,8 @@ namespace Server
 
         /// <summary>线上采用运维管理工具开启服务时，应调用此方法来将日志写入运维管理工具</summary>
         void LoggerToManager();
+        /// <summary>测试模式</summary>
+        void DebugMode();
         /// <summary>设置上传文件的资源目录</summary>
         /// <param name="localDir">写入文件的计算机本地目录</param>
         /// <param name="accessUrl">访问上传的资源的外网地址</param>
@@ -109,6 +111,11 @@ namespace Server
                 ((LoggerFile)_LOG._Logger).Base = new LoggerToShell();
             else
                 _LOG._Logger = new LoggerFile(new LoggerToShell());
+        }
+        void ICmd.DebugMode()
+        {
+            T_SMSCode.IsValid = false;
+            _LOG.Info("开启测试模式");
         }
         void ICmd.SetResourceDir(string localDir, string accessUrl)
         {
