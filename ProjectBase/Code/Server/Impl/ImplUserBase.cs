@@ -160,12 +160,16 @@ namespace Server.Impl
         /// <summary>首次从数据库加载出来T_USER对象时调用</summary>
         private void LoginFromDatabase(T user)
         {
+            this.User = user;
+
             if (UseCache)
             {
-                lock (cacheByPhone)
-                    cacheByPhone[user.Phone] = user;
-                lock (cacheByID)
-                    cacheByID[user.ID] = user;
+                if (user.Phone != 0)
+                    lock (cacheByPhone)
+                        cacheByPhone[user.Phone] = user;
+                if (user.ID != 0)
+                    lock (cacheByID)
+                        cacheByID[user.ID] = user;
                 if (!string.IsNullOrEmpty(user.Token))
                     lock (cacheByToken)
                         cacheByToken[user.Token] = user;
@@ -200,7 +204,10 @@ namespace Server.Impl
         /// <summary>通过用户名从数据库加载用户</summary>
         protected virtual T LoadFromDatabaseByAccount(string account)
         {
-            return _DB._DAO.SelectObject<T>(string.Format("SELECT * FROM `{0}` WHERE Account = @p0 OR Phone = @p0", typeof(T).Name), account);
+            long phone = 0;
+            if (account.Length == 11)
+                long.TryParse(account, out phone);
+            return _DB._DAO.SelectObject<T>(string.Format("SELECT * FROM `{0}` WHERE Account = @p0 OR (@p1 <> 0 AND Phone = @p1)", typeof(T).Name), account, phone);
         }
         /// <summary>更新Token过期时间，默认为数据库语句更新</summary>
         protected virtual void OnUpdateLastLoginTime()
@@ -233,13 +240,12 @@ namespace Server.Impl
             Save();
 
             user.MaskData();
-            this.User = user;
         }
         /// <summary>插入一个用户，返回用户ID</summary>
         protected virtual int OnInsert(T user)
         {
             return _DB._DAO.SelectValue<int>(
-string.Format(@"INSERT `{0}`(RegisterTime, Token, Account, Password, Phone, LastLoginTime) VALUES(@p0, @p1, @p2, @p3, @p4)
+string.Format(@"INSERT `{0}`(RegisterTime, Token, Account, Password, Phone, LastLoginTime) VALUES(@p0, @p1, @p2, @p3, @p4, @p5);
 SELECT LAST_INSERT_ID();", typeof(T).Name),
                          user.RegisterTime,
                          user.Token,
@@ -270,10 +276,9 @@ SELECT LAST_INSERT_ID();", typeof(T).Name),
             Save();
 
             user.MaskData();
-            this.User = user;
         }
 
-        // 根据不同加载用户
+        // 根据不同参数加载用户
         public T InitializeByID(int id)
         {
             // 缓存
@@ -281,9 +286,10 @@ SELECT LAST_INSERT_ID();", typeof(T).Name),
                 lock (cacheByID)
                     cacheByID.TryGetValue(id, out User);
             if (User == null)
-            {
                 // 从数据库加载
                 User = LoadFromDatabaseByID(id);
+            if (User != null)
+            {
                 LoginFromDatabase(User);
                 User.MaskData();
             }
@@ -296,9 +302,10 @@ SELECT LAST_INSERT_ID();", typeof(T).Name),
                 lock (cacheByPhone)
                     cacheByPhone.TryGetValue(phone, out User);
             if (User == null)
-            {
                 // 从数据库加载
                 User = LoadFromDatabaseByPhone(phone);
+            if (User != null)
+            {
                 LoginFromDatabase(User);
                 User.MaskData();
             }
@@ -311,9 +318,10 @@ SELECT LAST_INSERT_ID();", typeof(T).Name),
                 lock (cacheByToken)
                     cacheByToken.TryGetValue(token, out User);
             if (User == null)
-            {
                 // 从数据库加载
                 User = LoadFromDatabaseByToken(token);
+            if (User != null)
+            {
                 LoginFromDatabase(User);
                 User.MaskData();
             }
@@ -333,9 +341,10 @@ SELECT LAST_INSERT_ID();", typeof(T).Name),
                     lock (cacheByAccount)
                         cacheByAccount.TryGetValue(account, out User);
             if (User == null)
-            {
                 // 从数据库加载
                 User = LoadFromDatabaseByAccount(account);
+            if (User != null)
+            {
                 LoginFromDatabase(User);
                 User.MaskData();
             }

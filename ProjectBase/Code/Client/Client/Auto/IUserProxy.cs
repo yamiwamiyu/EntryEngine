@@ -113,7 +113,7 @@ class IUserProxy
     public AsyncData<string> GetUserInfo(System.Action<T_USER> callback)
     {
         var parameters = new StringBuilder();
-        return send("2/GetUserInfo", parameters.ToString(), callback);
+        return send("3/GetUserInfo", parameters.ToString(), callback);
     }
     
 }
