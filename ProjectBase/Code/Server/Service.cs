@@ -35,7 +35,9 @@ namespace Server
         /// <summary>启动服务器</summary>
         /// <param name="port">服务器端口</param>
         void Launch(ushort port);
-        
+
+        /// <summary>注册一个后台管理员账号</summary>
+        void AddAdmin(string name, string password);
     }
     partial class Service : ProxyHttpAsync, ICmd
     {
@@ -218,6 +220,26 @@ namespace Server
                     _icenter,
                 };
             return stubs;
+        }
+
+        void ICmd.AddAdmin(string name, string password)
+        {
+            "用户名不能为空".Check(string.IsNullOrEmpty(name));
+            "密码不能为空".Check(string.IsNullOrEmpty(password));
+
+            ImplICenter center = new ImplICenter();
+            center.InitializeByAccount(name);
+            "账号已存在".Check(center.User != null);
+
+            T_CENTER_USER user = new T_CENTER_USER();
+            user.Name = name;
+            user.Account = name;
+            user.Password = password;
+            if (T_SMSCode.IsTelephone(name))
+                user.Phone = long.Parse(name);
+
+            center.Register(user, ELoginWay.其它);
+            _LOG.Info("注册后台账号：{0}", name);
         }
     }
 }

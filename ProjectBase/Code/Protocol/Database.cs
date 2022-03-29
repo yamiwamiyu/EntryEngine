@@ -33,9 +33,13 @@ public class T_SMSCode
     #region 内存验证码
     const string 万能验证码 = "999666";
     public static Dictionary<string, T_SMSCode> smsCodes = new Dictionary<string, T_SMSCode>();
+    public static bool IsTelephone(string phone)
+    {
+        return !string.IsNullOrEmpty(phone) && phone.Length == 11 && System.Text.RegularExpressions.Regex.IsMatch(phone, @"^(13|14|15|16|18|19|17)\d{9}$");
+    }
     public static void CheckTelephone(string phone)
     {
-        "无效的手机号码".Check(string.IsNullOrEmpty(phone) || phone.Length != 11 || !System.Text.RegularExpressions.Regex.IsMatch(phone, @"^(13|14|15|16|18|19|17)\d{9}$"));
+        "无效的手机号码".Check(!IsTelephone(phone));
     }
     public static void CheckSMSCodeFormat(string smscode)
     {
