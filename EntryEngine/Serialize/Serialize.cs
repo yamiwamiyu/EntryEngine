@@ -1802,6 +1802,14 @@ namespace EntryEngine.Serialize
             append();
             builder.Append("}");
         }
+        public static void AppendBlockWithComma(this StringBuilder builder, Action append)
+        {
+            if (append == null)
+                throw new ArgumentNullException("append");
+            builder.AppendLine("{");
+            append();
+            builder.AppendLine("},");
+        }
         public static void AppendBlockWithEnd(this StringBuilder builder, Action append)
         {
             if (append == null)

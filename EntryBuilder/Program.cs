@@ -2315,161 +2315,166 @@ return result;"
             {
                 string name = type.Name + "Proxy";
                 if (IsModule)
-                {
-                    builder.AppendLine("const {0} = {{}};", name);
-                    builder.AppendLine("export default {0};", name);
-                }
+                    builder.AppendLine("const {0} =", name);
                 else
+                    builder.AppendLine("var {0} =", name);
+                builder.AppendBlockWithEnd(() =>
                 {
-                    builder.AppendLine("var {0} = {{}};", name);
-                }
-                builder.AppendLine("{0}.onSend = null;", name);
-                builder.AppendLine("{0}.onSendOnce = null;", name);
-                builder.AppendLine("{0}.onCallback = null;", name);
-                builder.AppendLine("{0}.onErrorMsg = null;", name);
-                builder.AppendLine("{0}.onError = null;", name);
-                builder.AppendLine("{0}.url = \"\";", name);
-                builder.AppendLine("{0}.send = function(url, str, callback)", name);
-                builder.AppendBlock(() =>
-                {
-                    builder.AppendLine("var promise = new Promise(function(resolve, reject)");
-                    builder.AppendBlock(() =>
+                    builder.AppendLine("onSend: null,");
+                    builder.AppendLine("onSendOnce: null,");
+                    builder.AppendLine("onCallback: null,");
+                    builder.AppendLine("onErrorMsg: null,");
+                    builder.AppendLine("onError: null,");
+                    builder.AppendLine("url: \"\",");
+                    builder.AppendLine("send: function(url, str, callback)");
+                    builder.AppendBlockWithComma(() =>
                     {
-                        builder.AppendLine("var req = new XMLHttpRequest();");
-                        builder.AppendLine("req.callback = callback;");
-                        builder.AppendLine("req.onreadystatechange = async function()");
+                        builder.AppendLine("var promise = new Promise(function(resolve, reject)");
                         builder.AppendBlock(() =>
                         {
-                            builder.AppendLine("if (req.readyState == 4)");
+                            builder.AppendLine("var req = new XMLHttpRequest();");
+                            builder.AppendLine("req.callback = callback;");
+                            builder.AppendLine("req.onreadystatechange = async function()");
                             builder.AppendBlock(() =>
                             {
-                                builder.AppendLine("if ({0}.onCallback) {0}.onCallback(req);", name);
-                                builder.AppendLine("if (req.status == 200)");
+                                builder.AppendLine("if (req.readyState == 4)");
                                 builder.AppendBlock(() =>
                                 {
-                                    //builder.AppendLine("var obj = req.responseText ? JSON.parse(req.responseText) : null;");
-                                    builder.AppendLine("var obj = null;");
-                                    builder.AppendLine("switch (req.responseType)");
+                                    builder.AppendLine("if ({0}.onCallback) {0}.onCallback(req);", name);
+                                    builder.AppendLine("if (req.status == 200)");
                                     builder.AppendBlock(() =>
                                     {
-                                        builder.AppendLine("case \"text\": if (req.response) obj = JSON.parse(req.responseText); break;");
-                                        builder.AppendLine("case \"blob\": ");
-                                        builder.AppendLine("if (req.response.type == \"text/plain\") await req.response.text().then((value) => obj = JSON.parse(value));");
-                                        builder.AppendLine("else obj = req.response; ");
-                                        builder.AppendLine("break;");
+                                        //builder.AppendLine("var obj = req.responseText ? JSON.parse(req.responseText) : null;");
+                                        builder.AppendLine("var obj = null;");
+                                        builder.AppendLine("switch (req.responseType)");
+                                        builder.AppendBlock(() =>
+                                        {
+                                            builder.AppendLine("case \"text\": if (req.response) obj = JSON.parse(req.responseText); break;");
+                                            builder.AppendLine("case \"blob\": ");
+                                            builder.AppendLine("if (req.response.type == \"text/plain\") await req.response.text().then((value) => obj = JSON.parse(value));");
+                                            builder.AppendLine("else obj = req.response; ");
+                                            builder.AppendLine("break;");
+                                        });
+                                        builder.AppendLine("if (obj && obj.errCode)");
+                                        builder.AppendBlock(() =>
+                                        {
+                                            builder.AppendLine("if ({0}.onErrorMsg) {{ {0}.onErrorMsg(obj); }}", name);
+                                            builder.AppendLine("else { console.log(obj); }");
+                                            builder.AppendLine("if (reject) { reject(obj); }");
+                                        });
+                                        builder.AppendLine("else");
+                                        builder.AppendBlock(() =>
+                                        {
+                                            builder.AppendLine("if (req.callback) { req.callback(obj); }");
+                                            builder.AppendLine("else { console.log(obj); }");
+                                            builder.AppendLine("if (resolve) { resolve(obj); }");
+                                        });
                                     });
-                                    builder.AppendLine("if (obj && obj.errCode)");
-                                    builder.AppendBlock(() =>
-                                    {
-                                        builder.AppendLine("if ({0}.onErrorMsg) {{ {0}.onErrorMsg(obj); }}", name);
-                                        builder.AppendLine("else { console.log(obj); }");
-                                        builder.AppendLine("if (reject) { reject(obj); }");
-                                    });
-                                    builder.AppendLine("else");
-                                    builder.AppendBlock(() =>
-                                    {
-                                        builder.AppendLine("if (req.callback) { req.callback(obj); }");
-                                        builder.AppendLine("else { console.log(obj); }");
-                                        builder.AppendLine("if (resolve) { resolve(obj); }");
-                                    });
+                                    builder.AppendLine("else if ({0}.onError) {{ {0}.onError(req); }}", name);
+                                    builder.AppendLine("else { console.error(req); }");
                                 });
-                                builder.AppendLine("else if ({0}.onError) {{ {0}.onError(req); }}", name);
-                                builder.AppendLine("else { console.error(req); }");
                             });
+                            builder.AppendLine("req.open(\"POST\", {0}.url + url, true);", name);
+                            builder.AppendLine("req.responseType = \"text\";");
+                            builder.AppendLine("if (!{0}.onSendOnce) {{ req.setRequestHeader(\"Content-Type\", \"application/x-www-form-urlencoded;charset=utf-8\"); }}", name);
+                            builder.AppendLine("if ({0}.onSend) {{ {0}.onSend(req); }}", name);
+                            builder.AppendLine("if ({0}.onSendOnce) {{ var __send = {0}.onSendOnce(req); {0}.onSendOnce = null; if (__send) {{ return; }} }}", name);
+                            builder.AppendLine("req.send(str);");
                         });
-                        builder.AppendLine("req.open(\"POST\", {0}.url + url, true);", name);
-                        builder.AppendLine("req.responseType = \"text\";");
-                        builder.AppendLine("if (!{0}.onSendOnce) {{ req.setRequestHeader(\"Content-Type\", \"application/x-www-form-urlencoded;charset=utf-8\"); }}", name);
-                        builder.AppendLine("if ({0}.onSend) {{ {0}.onSend(req); }}", name);
-                        builder.AppendLine("if ({0}.onSendOnce) {{ var __send = {0}.onSendOnce(req); {0}.onSendOnce = null; if (__send) {{ return; }} }}", name);
-                        builder.AppendLine("req.send(str);");
+                        builder.AppendLine(");");
+                        builder.AppendLine("return promise;");
                     });
-                    builder.AppendLine(");");
-                    builder.AppendLine("return promise;");
-                });
-                builder.AppendLine("// Example: {0}.download(\"download.txt\", () => {0}.Download(param1, param2));", name);
-                builder.AppendLine("{0}.download = function(filename, download)", name);
-                builder.AppendBlock(() =>
-                {
-                    builder.AppendLine("if (!download) throw new Error(\"下载文件必须指定下载函数\");");
-                    builder.AppendLine("ICenterProxy.onSendOnce = (req) =>");
-                    builder.AppendBlock(() =>
+                    builder.AppendLine("// Example: {0}.download(\"download.txt\", () => {0}.Download(param1, param2));", name);
+                    builder.AppendLine("download: function(filename, download)");
+                    builder.AppendBlockWithComma(() =>
                     {
-                        builder.AppendLine("req.responseType = \"blob\";");
-                        builder.AppendLine("var __callback = req.callback;");
-                        builder.AppendLine("req.callback = (ret) =>");
+                        builder.AppendLine("if (!download) throw new Error(\"下载文件必须指定下载函数\");");
+                        builder.AppendLine("{0}.onSendOnce = (req) =>", name);
                         builder.AppendBlock(() =>
                         {
-                            builder.AppendLine("var a = window.document.createElement(\"a\");");
-                            builder.AppendLine("a.href = URL.createObjectURL(ret);");
-                            builder.AppendLine("a.download = filename;");
-                            builder.AppendLine("a.click();");
-                            builder.AppendLine("if (__callback) __callback(ret);");
+                            builder.AppendLine("req.responseType = \"blob\";");
+                            builder.AppendLine("var __callback = req.callback;");
+                            builder.AppendLine("req.callback = (ret) =>");
+                            builder.AppendBlock(() =>
+                            {
+                                builder.AppendLine("var a = window.document.createElement(\"a\");");
+                                builder.AppendLine("a.href = URL.createObjectURL(ret);");
+                                builder.AppendLine("a.download = filename;");
+                                builder.AppendLine("a.click();");
+                                builder.AppendLine("if (__callback) __callback(ret);");
+                            });
                         });
+                        builder.AppendLine("download();");
+                        builder.AppendLine("if ({0}.onSendOnce) throw new Error(\"下载文件必须发送接口下载\");", name);
                     });
-                    builder.AppendLine("download();");
-                    builder.AppendLine("if (ICenterProxy.onSendOnce) throw new Error(\"下载文件必须发送接口下载\");");
-                });
-                // 通过代理调用接口方法
-                //WCCallProxy(builder, call, asyncCB);
-                for (int i = 0; i < call.Length; i++)
-                {
-                    MethodInfo method = call[i];
-                    ParameterInfo[] parameters = method.GetParameters();
+                    // 通过代理调用接口方法
+                    //WCCallProxy(builder, call, asyncCB);
+                    for (int i = 0; i < call.Length; i++)
+                    {
+                        MethodInfo method = call[i];
+                        ParameterInfo[] parameters = method.GetParameters();
 
-                    // 方法头
-                    bool hasAsync = asyncCB.ContainsKey(i);
-                    builder.Append("{0}.{1} = function(", name, method.Name);
-                    // 分别传每个值
-                    for (int j = 0, n = parameters.Length - 1; j <= n; j++)
-                    {
-                        if (j != 0)
-                            builder.Append(", ");
-                        var param = parameters[j];
-                        builder.Append("{0}", param.Name);
-                    }
-                    // 后端接口没有回调，这里固定一个回调函数
-                    if (!hasAsync)
-                        builder.Append(", callback");
-                    // 直接传对象
-                    //builder.Append("data, callback");
-                    builder.AppendLine(")");
-                    builder.AppendBlock(() =>
-                    {
-                        builder.AppendLine("var str = [];");
-                        string callbackName = "callback";
+                        // 方法头
+                        bool hasAsync = asyncCB.ContainsKey(i);
+                        builder.Append("{0}: function(", method.Name);
+                        // 分别传每个值
                         for (int j = 0, n = parameters.Length - 1; j <= n; j++)
                         {
+                            if (j != 0)
+                                builder.Append(", ");
                             var param = parameters[j];
-                            if (hasAsync && param.ParameterType.IsDelegate())
-                            {
-                                callbackName = param.Name;
-                                continue;
-                            }
-
-                            if (param.ParameterType == typeof(FileUpload))
-                            {
-                                builder.AppendLine("throw '尚未实现该方法';");
-                                continue;
-                            }
-
-                            builder.Append("if ({0}) ", param.Name);
-                            builder.Append("str.push(");
-                            builder.Append("\"{0}=\" + ", param.Name);
-                            if (param.ParameterType == typeof(string))
-                                builder.Append("encodeURIComponent({0})", param.Name);
-                            //else if (param.ParameterType == typeof(DateTime))
-                            //    //builder.Append("JSON.stringify({0}).replace(\"T\", \" \").replace(\"Z\", \"\")", param.Name);
-                            //    builder.Append("{0}", param.Name);
-                            else if (param.ParameterType.IsCustomType())
-                                builder.Append("encodeURIComponent(JSON.stringify({0}))", param.Name);
-                            else
-                                builder.Append("{0}", param.Name);
-                            builder.AppendLine(");");
+                            builder.Append("{0}", param.Name);
                         }
-                        builder.AppendLine("return {0}.send(\"{1}/{2}\", str.join(\"&\"), {3});", name, agent.Protocol, method.Name, callbackName);
-                    });
-                }
+                        // 后端接口没有回调，这里固定一个回调函数
+                        if (!hasAsync)
+                        {
+                            if (parameters.Length > 0)
+                                builder.Append(", ");
+                            builder.Append("callback");
+                        }
+                        // 直接传对象
+                        //builder.Append("data, callback");
+                        builder.AppendLine(")");
+                        builder.AppendBlockWithComma(() =>
+                        {
+                            builder.AppendLine("var str = [];");
+                            string callbackName = "callback";
+                            for (int j = 0, n = parameters.Length - 1; j <= n; j++)
+                            {
+                                var param = parameters[j];
+                                if (hasAsync && param.ParameterType.IsDelegate())
+                                {
+                                    callbackName = param.Name;
+                                    continue;
+                                }
+
+                                if (param.ParameterType == typeof(FileUpload))
+                                {
+                                    builder.AppendLine("throw '尚未实现该方法';");
+                                    continue;
+                                }
+
+                                builder.Append("if ({0}) ", param.Name);
+                                builder.Append("str.push(");
+                                builder.Append("\"{0}=\" + ", param.Name);
+                                if (param.ParameterType == typeof(string))
+                                    builder.Append("encodeURIComponent({0})", param.Name);
+                                //else if (param.ParameterType == typeof(DateTime))
+                                //    //builder.Append("JSON.stringify({0}).replace(\"T\", \" \").replace(\"Z\", \"\")", param.Name);
+                                //    builder.Append("{0}", param.Name);
+                                else if (param.ParameterType.IsCustomType())
+                                    builder.Append("encodeURIComponent(JSON.stringify({0}))", param.Name);
+                                else
+                                    builder.Append("{0}", param.Name);
+                                builder.AppendLine(");");
+                            }
+                            builder.AppendLine("return {0}.send(\"{1}/{2}\", str.join(\"&\"), {3});", name, agent.Protocol, method.Name, callbackName);
+                        });
+                    }
+                });
+                
+                if (IsModule)
+                    builder.AppendLine("export default {0};", name);
             }
             protected override void WCCallProxy(StringBuilder builder, MethodInfo[] call, Dictionary<int, Type> asyncCB)
             {
