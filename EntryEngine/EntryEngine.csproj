@@ -187,6 +187,7 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="Network\内存数据库模型.txt" />
+    <Content Include="Network\数据库误操作后还原.txt" />
     <Content Include="Network\网络模型.txt" />
     <Content Include="Network\项目实战技巧.txt" />
     <Content Include="Serialize\序列化说明.txt" />

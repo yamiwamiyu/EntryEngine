@@ -1,0 +1,28 @@
+数据库回复流程：误操作前的语句全部重新执行一遍来还原数据库，误操作之后的数据不执行不还原
+1. mysql语句：show variables like 'log_%';
+1.1. 确保log_bin: ON
+1.2. 记下log_bin_index所在"目录"，C:\ProgramData\MySQL\MySQL Server 8.0\Data\
+
+2. mysql语句：show master status;
+2.1. 查看当前正在使用的binlog文件，一般是***-bin.00000n
+
+3. 添加环境变量C:\Program Files\MySQL\MySQL Server 8.0\bin，等下需要用到mysqlbinlog命令
+
+4. cmd命令找到出错点
+4.1. 到1.2记下的目录，cd C:\ProgramData\MySQL\MySQL Server 8.0\Data\
+4.2. 导出误操作的SQL语句：
+语法：mysqlbinlog 2.1记下的binlog文件 --start-datetime="误操作开始时间" --start-datetime="误操作结束时间" --database=误操作的数据库名 > 输出文件
+例句：mysqlbinlog dev-server-bin.000002 --start-datetime="2022-3-29 00:00:00" --stop-datetime="2022-3-29 16:00:00" --database=ynsx_test > test.sql
+4.3. 打开输出的文件，查找误操作的语句，例如DROP COLUMN，日志如下
+# at 89441423
+#220329 14:47:34 server id 1  end_log_pos 89441565
+其中at后面是执行后面语句的开始，end_log_pos则是执行语句的结束
+还原数据时，一般是从0还原到这条错误语句的开始，即记录下at后面的数字
+
+5. cmd命令还原数据库
+语法：mysqlbinlog 2.1记下的binlog文件 --start-position=开始执行语句位置 --stop-position=结束执行语句位置 | mysql -u用户名 -p密码 -f
+例句：mysqlbinlog dev-server-bin.000002 --start-position=7865223 --stop-position=89544056 | mysql -uroot -p123456 -f
+5.1. 从头开始还原，--start-position可以不要
+5.2. --stop-position一定是4.3记录的出错语句的at位置
+5.3. 出错语句后还有正常语句的话，可以通过4.3步骤找到最后一条出错语句的end_log_pos作为--start-position
+5.4. 中间会有些语句报错，特别是主键重复，-f可以强制执行到最后，语句报错会在控制台显示
