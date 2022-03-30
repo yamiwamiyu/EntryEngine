@@ -26,6 +26,8 @@ namespace Server
             // 构建并设置你的服务
             Service service = new Service();
             service.PermitAcceptTimeout = null;
+            service.PermitSameIPLinkPerSecord = null;
+            service.PermitSameIPHandlePerSecord = null;
 
             // 注册你的服务以便让你的服务能正常运行
             // 若入口没有使用EntryLinkServer，则服务的运行需要自己调用 Proxy.Update
