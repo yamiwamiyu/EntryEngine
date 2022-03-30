@@ -212,7 +212,7 @@ namespace Server.Impl
         /// <summary>更新Token过期时间，默认为数据库语句更新</summary>
         protected virtual void OnUpdateLastLoginTime()
         {
-            SaveBuilder.AppendFormat("UPDATE `{0}` SET LastLoginTime = @p{2} WHERE ID = @p{1}", typeof(T).Name, SaveValues.Count, SaveValues.Count + 1);
+            SaveBuilder.AppendFormat("UPDATE `{0}` SET LastLoginTime = @p{2} WHERE ID = @p{1};", typeof(T).Name, SaveValues.Count, SaveValues.Count + 1);
             SaveValues.Add(User.ID);
             SaveValues.Add(User.LastLoginTime);
             //_DB._DAO.ExecuteNonQuery(string.Format("UPDATE `{0}` SET LastLoginTime = @p1 WHERE ID = @p0", typeof(T).Name), User.ID, User.LastLoginTime);
@@ -220,7 +220,7 @@ namespace Server.Impl
         /// <summary>更新Token，默认为数据库语句更新</summary>
         protected virtual void OnUpdateToken()
         {
-            SaveBuilder.AppendFormat("UPDATE `{0}` SET LastLoginTime = @p{2} WHERE ID = @p{1}", typeof(T).Name, SaveValues.Count, SaveValues.Count + 1);
+            SaveBuilder.AppendFormat("UPDATE `{0}` SET Token = @p{2} WHERE ID = @p{1};", typeof(T).Name, SaveValues.Count, SaveValues.Count + 1);
             SaveValues.Add(User.ID);
             SaveValues.Add(User.Token);
             //_DB._DAO.ExecuteNonQuery(string.Format("UPDATE `{0}` SET Token = @p1 WHERE ID = @p0", typeof(T).Name), User.ID, User.Token);
