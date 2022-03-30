@@ -65,7 +65,7 @@ namespace Server.Impl
             "密码不能为空".Check(string.IsNullOrEmpty(password));
             var impl = new ImplIUser();
             impl.InitializeByAccount(telphone);
-            "账号密码不正确".Check(impl.User == null || impl.User.IsMatchPassword(password));
+            "账号密码不正确".Check(impl.User == null || !impl.User.IsMatchPassword(password));
             impl.Login(impl.User, ELoginWay.密码);
             callback.Callback(impl.User);
         }
@@ -116,7 +116,7 @@ namespace Server.Impl
             "密码不能为空".Check(string.IsNullOrEmpty(password));
             var impl = new ImplICenter();
             impl.InitializeByAccount(name);
-            "账号密码不正确".Check(impl.User == null || impl.User.IsMatchPassword(password));
+            "账号密码不正确".Check(impl.User == null || !impl.User.IsMatchPassword(password));
             impl.Login(impl.User, ELoginWay.密码);
             callback.Callback(impl.User);
         }
