@@ -91,24 +91,24 @@ public class T_UserBase
 
     [Index(EIndex.Identity)]
     public int ID = 10000;
-    [Index]
-    public DateTime RegisterTime;
-    [Index]
-    public string Token;
-    [Index]
-    public string Account;
-    [Index]
-    public string Password;
+    /// <summary>注册日期</summary>
+    [Index]public DateTime RegisterTime;
+    /// <summary>账号登录后的凭证</summary>
+    [Index]public string Token;
+    /// <summary>账号，可用于登录</summary>
+    [Index]public string Account;
+    /// <summary>登录密码，空则不能用密码登录</summary>
+    [Index]public string Password;
     /// <summary>修改密码时不用再去翻数据库</summary>
     public string __Password { get; set; }
     /// <summary>手机号</summary>
-    [Index]
-    public long Phone;
+    [Index]public long Phone;
     public long __Phone { get; set; }
+    /// <summary>用户昵称，可修改，主要用于前端显示</summary>
+    [Index]public string Name;
     public DateTime LastLoginTime;
     /// <summary>用户Session缓存，每次请求不需要频繁刷新LastLoginTime，优化接口访问速度</summary>
-    [Ignore]
-    public DateTime LastRefreshLoginTime;
+    [Ignore]public DateTime LastRefreshLoginTime;
 
     /// <summary>Token是否过期</summary>
     public bool TokenExpired
@@ -147,19 +147,13 @@ public class T_UserBase
 [MemoryTable]
 public class T_USER : T_UserBase
 {
-    [Index]
-    public string Name;
     /// <summary>玩家进入的平台</summary>
     [Index(EIndex.Group)]
     public string Platform;
 }
 /// <summary>后台管理账号</summary>
 [MemoryTable]
-public class T_CENTER_USER : T_UserBase
-{
-    [Index]
-    public string Name;
-}
+public class T_CENTER_USER : T_UserBase { }
 
 /// <summary>操作日志</summary>
 [MemoryTable]

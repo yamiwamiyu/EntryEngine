@@ -245,14 +245,15 @@ namespace Server.Impl
         protected virtual int OnInsert(T user)
         {
             return _DB._DAO.SelectValue<int>(
-string.Format(@"INSERT `{0}`(RegisterTime, Token, Account, Password, Phone, LastLoginTime) VALUES(@p0, @p1, @p2, @p3, @p4, @p5);
+string.Format(@"INSERT `{0}`(RegisterTime, Token, Account, Password, Phone, LastLoginTime, Name) VALUES(@p0, @p1, @p2, @p3, @p4, @p5, @p6);
 SELECT LAST_INSERT_ID();", typeof(T).Name),
                          user.RegisterTime,
                          user.Token,
                          user.Account,
                          user.Password,
                          user.Phone,
-                         user.LastLoginTime);
+                         user.LastLoginTime,
+                         user.Name);
         }
         /// <summary>登录一个账号</summary>
         public virtual void Login(T user, ELoginWay way)
