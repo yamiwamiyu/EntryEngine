@@ -110,18 +110,18 @@ class IServiceProxy
     }
     
     /// <see cref="IService.SendSMSCode(string, System.Action{int})"></see>
-    public AsyncData<string> SendSMSCode(string telphone, System.Action<int> callback)
+    public AsyncData<string> SendSMSCode(string phone, System.Action<int> callback)
     {
         var parameters = new StringBuilder();
-        parameters.Append("telphone={0}", telphone);
+        parameters.Append("phone={0}", phone);
         return send("1/SendSMSCode", parameters.ToString(), callback);
     }
     
     /// <see cref="IService.LoginBySMSCode(string, string, System.Action{T_USER})"></see>
-    public AsyncData<string> LoginBySMSCode(string telphone, string code, System.Action<T_USER> callback)
+    public AsyncData<string> LoginBySMSCode(string phone, string code, System.Action<T_USER> callback)
     {
         var parameters = new StringBuilder();
-        parameters.Append("telphone={0}&", telphone);
+        parameters.Append("phone={0}&", phone);
         parameters.Append("code={0}", code);
         return send("1/LoginBySMSCode", parameters.ToString(), callback);
     }
@@ -135,19 +135,19 @@ class IServiceProxy
     }
     
     /// <see cref="IService.LoginByPassword(string, string, System.Action{T_USER})"></see>
-    public AsyncData<string> LoginByPassword(string telphone, string password, System.Action<T_USER> callback)
+    public AsyncData<string> LoginByPassword(string phone, string password, System.Action<T_USER> callback)
     {
         var parameters = new StringBuilder();
-        parameters.Append("telphone={0}&", telphone);
+        parameters.Append("phone={0}&", phone);
         parameters.Append("password={0}", password);
         return send("1/LoginByPassword", parameters.ToString(), callback);
     }
     
     /// <see cref="IService.ForgetPassword(string, string, string, System.Action{T_USER})"></see>
-    public AsyncData<string> ForgetPassword(string telphone, string code, string password, System.Action<T_USER> callback)
+    public AsyncData<string> ForgetPassword(string phone, string code, string password, System.Action<T_USER> callback)
     {
         var parameters = new StringBuilder();
-        parameters.Append("telphone={0}&", telphone);
+        parameters.Append("phone={0}&", phone);
         parameters.Append("code={0}&", code);
         parameters.Append("password={0}", password);
         return send("1/ForgetPassword", parameters.ToString(), callback);
@@ -171,10 +171,10 @@ class IServiceProxy
     }
     
     /// <see cref="IService.CenterLoginBySMSCode(string, string, System.Action{T_CENTER_USER})"></see>
-    public AsyncData<string> CenterLoginBySMSCode(string telphone, string code, System.Action<T_CENTER_USER> callback)
+    public AsyncData<string> CenterLoginBySMSCode(string phone, string code, System.Action<T_CENTER_USER> callback)
     {
         var parameters = new StringBuilder();
-        parameters.Append("telphone={0}&", telphone);
+        parameters.Append("phone={0}&", phone);
         parameters.Append("code={0}", code);
         return send("1/CenterLoginBySMSCode", parameters.ToString(), callback);
     }

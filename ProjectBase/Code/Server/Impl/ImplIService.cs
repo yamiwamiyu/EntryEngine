@@ -10,30 +10,30 @@ namespace Server.Impl
 {
     class ImplIService : _IService
     {
-        void _IService.SendSMSCode(string telphone, CBIService_SendSMSCode callback)
+        void _IService.SendSMSCode(string phone, CBIService_SendSMSCode callback)
         {
-            var send = T_SMSCode.Send(telphone);
+            var send = T_SMSCode.Send(phone);
             _DB.SendSMSCode(send);
             callback.Callback(send.ResendCountdown);
         }
 
-        void _IService.LoginBySMSCode(string telphone, string code, CBIService_LoginBySMSCode callback)
+        void _IService.LoginBySMSCode(string phone, string code, CBIService_LoginBySMSCode callback)
         {
             // 验证验证码
-            T_SMSCode.CheckTelephone(telphone);
+            T_SMSCode.CheckTelephone(phone);
             T_SMSCode.CheckSMSCodeFormat(code);
-            T_SMSCode.ValidCode(telphone, code);
+            T_SMSCode.ValidCode(phone, code);
 
             // 并行时用此接口创建角色会创建多个相同角色
-            long phone = long.Parse(telphone);
+            long phone = long.Parse(phone);
             var impl = new ImplIUser();
             impl.InitializeByPhone(phone);
             if (impl.User == null)
             {
                 T_USER newUser = new T_USER();
                 newUser.Phone = phone;
-                newUser.Account = telphone;
-                newUser.Name = telphone.Mask();
+                newUser.Account = phone;
+                newUser.Name = phone.Mask();
                 impl.Register(newUser, ELoginWay.手机号);
             }
             else
@@ -59,25 +59,25 @@ namespace Server.Impl
             impl.Login(impl.User, ELoginWay.Token);
             callback.Callback(impl.User);
         }
-        void _IService.LoginByPassword(string telphone, string password, CBIService_LoginByPassword callback)
+        void _IService.LoginByPassword(string phone, string password, CBIService_LoginByPassword callback)
         {
-            "账户名不能为空".Check(string.IsNullOrEmpty(telphone));
+            "账户名不能为空".Check(string.IsNullOrEmpty(phone));
             "密码不能为空".Check(string.IsNullOrEmpty(password));
             var impl = new ImplIUser();
-            impl.InitializeByAccount(telphone);
+            impl.InitializeByAccount(phone);
             "账号密码不正确".Check(impl.User == null || !impl.User.IsMatchPassword(password));
             impl.Login(impl.User, ELoginWay.密码);
             callback.Callback(impl.User);
         }
-        void _IService.ForgetPassword(string telphone, string code, string password, CBIService_ForgetPassword callback)
+        void _IService.ForgetPassword(string phone, string code, string password, CBIService_ForgetPassword callback)
         {
             "密码不能为空".Check(string.IsNullOrEmpty(password));
             // 验证验证码
-            T_SMSCode.CheckTelephone(telphone);
+            T_SMSCode.CheckTelephone(phone);
             T_SMSCode.CheckSMSCodeFormat(code);
-            T_SMSCode.ValidCode(telphone, code);
+            T_SMSCode.ValidCode(phone, code);
 
-            long phone = long.Parse(telphone);
+            long phone = long.Parse(phone);
             var impl = new ImplIUser();
             impl.InitializeByPhone(phone);
             "此用户不存在".Check(impl.User == null);
@@ -97,14 +97,14 @@ namespace Server.Impl
             callback.Callback(ImplIUser.ClearUserCache(id));
         }
 
-        void _IService.CenterLoginBySMSCode(string telphone, string code, CBIService_CenterLoginBySMSCode callback)
+        void _IService.CenterLoginBySMSCode(string phone, string code, CBIService_CenterLoginBySMSCode callback)
         {
             // 验证验证码
-            T_SMSCode.CheckTelephone(telphone);
+            T_SMSCode.CheckTelephone(phone);
             T_SMSCode.CheckSMSCodeFormat(code);
-            T_SMSCode.ValidCode(telphone, code);
+            T_SMSCode.ValidCode(phone, code);
             var impl = new ImplICenter();
-            long phone = long.Parse(telphone);
+            long phone = long.Parse(phone);
             impl.InitializeByPhone(phone);
             "此用户不存在".Check(impl.User == null);
             impl.Login(impl.User, ELoginWay.手机号);

@@ -9,14 +9,14 @@ using System.Text;
 using System.Net;
 interface _IService
 {
-    void SendSMSCode(string telphone, CBIService_SendSMSCode callback);
-    void LoginBySMSCode(string telphone, string code, CBIService_LoginBySMSCode callback);
+    void SendSMSCode(string phone, CBIService_SendSMSCode callback);
+    void LoginBySMSCode(string phone, string code, CBIService_LoginBySMSCode callback);
     void LoginByToken(string token, CBIService_LoginByToken callback);
-    void LoginByPassword(string telphone, string password, CBIService_LoginByPassword callback);
-    void ForgetPassword(string telphone, string code, string password, CBIService_ForgetPassword callback);
+    void LoginByPassword(string phone, string password, CBIService_LoginByPassword callback);
+    void ForgetPassword(string phone, string code, string password, CBIService_ForgetPassword callback);
     void ClearUserCache(int id, CBIService_ClearUserCache callback);
     void CenterLoginByPassword(string name, string password, CBIService_CenterLoginByPassword callback);
-    void CenterLoginBySMSCode(string telphone, string code, CBIService_CenterLoginBySMSCode callback);
+    void CenterLoginBySMSCode(string phone, string code, CBIService_CenterLoginBySMSCode callback);
     void UploadImage(EntryEngine.Network.FileUpload file, CBIService_UploadImage callback);
     void UploadFile(EntryEngine.Network.FileUpload file, CBIService_UploadFile callback);
     void WeChatPayCallback(HttpListenerContext __context);
@@ -437,13 +437,13 @@ class IServiceStub : StubHttp
         if (__GetAgent != null) { var temp = __GetAgent(); if (temp != null) agent = temp; }
         if (__ReadAgent != null) { var temp = __ReadAgent(__context); if (temp != null) agent = temp; }
         string __temp;
-        __temp = GetParam("telphone");
-        string telphone = __temp;
+        __temp = GetParam("phone");
+        string phone = __temp;
         #if DEBUG
-        _LOG.Debug("SendSMSCode telphone: {0},", telphone);
+        _LOG.Debug("SendSMSCode phone: {0},", phone);
         #endif
         var callback = new CBIService_SendSMSCode(this);
-        agent.SendSMSCode(telphone, callback);
+        agent.SendSMSCode(phone, callback);
     }
     void LoginBySMSCode(HttpListenerContext __context)
     {
@@ -451,15 +451,15 @@ class IServiceStub : StubHttp
         if (__GetAgent != null) { var temp = __GetAgent(); if (temp != null) agent = temp; }
         if (__ReadAgent != null) { var temp = __ReadAgent(__context); if (temp != null) agent = temp; }
         string __temp;
-        __temp = GetParam("telphone");
-        string telphone = __temp;
+        __temp = GetParam("phone");
+        string phone = __temp;
         __temp = GetParam("code");
         string code = __temp;
         #if DEBUG
-        _LOG.Debug("LoginBySMSCode telphone: {0}, code: {1},", telphone, code);
+        _LOG.Debug("LoginBySMSCode phone: {0}, code: {1},", phone, code);
         #endif
         var callback = new CBIService_LoginBySMSCode(this);
-        agent.LoginBySMSCode(telphone, code, callback);
+        agent.LoginBySMSCode(phone, code, callback);
     }
     void LoginByToken(HttpListenerContext __context)
     {
@@ -481,15 +481,15 @@ class IServiceStub : StubHttp
         if (__GetAgent != null) { var temp = __GetAgent(); if (temp != null) agent = temp; }
         if (__ReadAgent != null) { var temp = __ReadAgent(__context); if (temp != null) agent = temp; }
         string __temp;
-        __temp = GetParam("telphone");
-        string telphone = __temp;
+        __temp = GetParam("phone");
+        string phone = __temp;
         __temp = GetParam("password");
         string password = __temp;
         #if DEBUG
-        _LOG.Debug("LoginByPassword telphone: {0}, password: {1},", telphone, password);
+        _LOG.Debug("LoginByPassword phone: {0}, password: {1},", phone, password);
         #endif
         var callback = new CBIService_LoginByPassword(this);
-        agent.LoginByPassword(telphone, password, callback);
+        agent.LoginByPassword(phone, password, callback);
     }
     void ForgetPassword(HttpListenerContext __context)
     {
@@ -497,17 +497,17 @@ class IServiceStub : StubHttp
         if (__GetAgent != null) { var temp = __GetAgent(); if (temp != null) agent = temp; }
         if (__ReadAgent != null) { var temp = __ReadAgent(__context); if (temp != null) agent = temp; }
         string __temp;
-        __temp = GetParam("telphone");
-        string telphone = __temp;
+        __temp = GetParam("phone");
+        string phone = __temp;
         __temp = GetParam("code");
         string code = __temp;
         __temp = GetParam("password");
         string password = __temp;
         #if DEBUG
-        _LOG.Debug("ForgetPassword telphone: {0}, code: {1}, password: {2},", telphone, code, password);
+        _LOG.Debug("ForgetPassword phone: {0}, code: {1}, password: {2},", phone, code, password);
         #endif
         var callback = new CBIService_ForgetPassword(this);
-        agent.ForgetPassword(telphone, code, password, callback);
+        agent.ForgetPassword(phone, code, password, callback);
     }
     void ClearUserCache(HttpListenerContext __context)
     {
@@ -545,15 +545,15 @@ class IServiceStub : StubHttp
         if (__GetAgent != null) { var temp = __GetAgent(); if (temp != null) agent = temp; }
         if (__ReadAgent != null) { var temp = __ReadAgent(__context); if (temp != null) agent = temp; }
         string __temp;
-        __temp = GetParam("telphone");
-        string telphone = __temp;
+        __temp = GetParam("phone");
+        string phone = __temp;
         __temp = GetParam("code");
         string code = __temp;
         #if DEBUG
-        _LOG.Debug("CenterLoginBySMSCode telphone: {0}, code: {1},", telphone, code);
+        _LOG.Debug("CenterLoginBySMSCode phone: {0}, code: {1},", phone, code);
         #endif
         var callback = new CBIService_CenterLoginBySMSCode(this);
-        agent.CenterLoginBySMSCode(telphone, code, callback);
+        agent.CenterLoginBySMSCode(phone, code, callback);
     }
     void UploadImage(HttpListenerContext __context)
     {

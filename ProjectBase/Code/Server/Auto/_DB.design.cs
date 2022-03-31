@@ -13,7 +13,6 @@ namespace Server
 {
     public enum ET_USER
     {
-        Name,
         Platform,
         ID,
         RegisterTime,
@@ -21,17 +20,18 @@ namespace Server
         Account,
         Password,
         Phone,
+        Name,
         LastLoginTime,
     }
     public enum ET_CENTER_USER
     {
-        Name,
         ID,
         RegisterTime,
         Token,
         Account,
         Password,
         Phone,
+        Name,
         LastLoginTime,
     }
     public enum ET_OPLog
@@ -145,7 +145,6 @@ namespace Server
             @"
             CREATE TABLE IF NOT EXISTS `T_USER`
             (
-            `Name` TEXT,
             `Platform` TEXT,
             `ID` INT PRIMARY KEY AUTO_INCREMENT,
             `RegisterTime` DATETIME,
@@ -153,17 +152,18 @@ namespace Server
             `Account` TEXT,
             `Password` TEXT,
             `Phone` BIGINT,
+            `Name` TEXT,
             `LastLoginTime` DATETIME
             );
             CREATE TABLE IF NOT EXISTS `T_CENTER_USER`
             (
-            `Name` TEXT,
             `ID` INT PRIMARY KEY AUTO_INCREMENT,
             `RegisterTime` DATETIME,
             `Token` TEXT,
             `Account` TEXT,
             `Password` TEXT,
             `Phone` BIGINT,
+            `Name` TEXT,
             `LastLoginTime` DATETIME
             );
             CREATE TABLE IF NOT EXISTS `T_OPLog`
@@ -211,29 +211,6 @@ namespace Server
                 if (pk.IsIdentity) builder.AppendLine("ALTER TABLE `T_USER` CHANGE COLUMN `{0}` `{0}` {1};", pk.COLUMN_NAME, pk.DATA_TYPE);
                 builder.AppendLine("ALTER TABLE `T_USER` DROP PRIMARY KEY;");
                 _LOG.Debug("Drop primary key.");
-            }
-            if (__columns.TryGetValue("Name", out __value))
-            {
-                if (__value.DATA_TYPE != "text" && (__value.IsIndex || __value.IsUnique))
-                {
-                    __value.COLUMN_KEY = null;
-                    builder.AppendLine("ALTER TABLE T_USER DROP INDEX `{0}`;", __value.COLUMN_NAME);
-                    _LOG.Debug("Drop index[`{0}`].", __value.COLUMN_NAME);
-                }
-                builder.AppendLine("ALTER TABLE `T_USER` CHANGE COLUMN `Name` `Name` TEXT;");
-                if (!__value.IsIndex && !__value.IsUnique)
-                {
-                    builder.AppendLine("ALTER TABLE `T_USER` ADD INDEX(`Name`(10));");
-                    _LOG.Debug("Add index[`{0}`].", __value.COLUMN_NAME);
-                }
-                __columns.Remove(__value.COLUMN_NAME);
-            }
-            else
-            {
-                builder.AppendLine("ALTER TABLE `T_USER` ADD COLUMN `Name` TEXT;");
-                builder.AppendLine("ALTER TABLE `T_USER` ADD INDEX(`Name`(10));");
-                _LOG.Debug("Add index[`{0}`].", "Name");
-                _LOG.Debug("Add column[`{0}`].", "Name");
             }
             if (__columns.TryGetValue("Platform", out __value))
             {
@@ -376,6 +353,29 @@ namespace Server
                 _LOG.Debug("Add index[`{0}`].", "Phone");
                 _LOG.Debug("Add column[`{0}`].", "Phone");
             }
+            if (__columns.TryGetValue("Name", out __value))
+            {
+                if (__value.DATA_TYPE != "text" && (__value.IsIndex || __value.IsUnique))
+                {
+                    __value.COLUMN_KEY = null;
+                    builder.AppendLine("ALTER TABLE T_USER DROP INDEX `{0}`;", __value.COLUMN_NAME);
+                    _LOG.Debug("Drop index[`{0}`].", __value.COLUMN_NAME);
+                }
+                builder.AppendLine("ALTER TABLE `T_USER` CHANGE COLUMN `Name` `Name` TEXT;");
+                if (!__value.IsIndex && !__value.IsUnique)
+                {
+                    builder.AppendLine("ALTER TABLE `T_USER` ADD INDEX(`Name`(10));");
+                    _LOG.Debug("Add index[`{0}`].", __value.COLUMN_NAME);
+                }
+                __columns.Remove(__value.COLUMN_NAME);
+            }
+            else
+            {
+                builder.AppendLine("ALTER TABLE `T_USER` ADD COLUMN `Name` TEXT;");
+                builder.AppendLine("ALTER TABLE `T_USER` ADD INDEX(`Name`(10));");
+                _LOG.Debug("Add index[`{0}`].", "Name");
+                _LOG.Debug("Add column[`{0}`].", "Name");
+            }
             if (__columns.TryGetValue("LastLoginTime", out __value))
             {
                 builder.AppendLine("ALTER TABLE `T_USER` CHANGE COLUMN `LastLoginTime` `LastLoginTime` DATETIME;");
@@ -426,29 +426,6 @@ namespace Server
                 if (pk.IsIdentity) builder.AppendLine("ALTER TABLE `T_CENTER_USER` CHANGE COLUMN `{0}` `{0}` {1};", pk.COLUMN_NAME, pk.DATA_TYPE);
                 builder.AppendLine("ALTER TABLE `T_CENTER_USER` DROP PRIMARY KEY;");
                 _LOG.Debug("Drop primary key.");
-            }
-            if (__columns.TryGetValue("Name", out __value))
-            {
-                if (__value.DATA_TYPE != "text" && (__value.IsIndex || __value.IsUnique))
-                {
-                    __value.COLUMN_KEY = null;
-                    builder.AppendLine("ALTER TABLE T_CENTER_USER DROP INDEX `{0}`;", __value.COLUMN_NAME);
-                    _LOG.Debug("Drop index[`{0}`].", __value.COLUMN_NAME);
-                }
-                builder.AppendLine("ALTER TABLE `T_CENTER_USER` CHANGE COLUMN `Name` `Name` TEXT;");
-                if (!__value.IsIndex && !__value.IsUnique)
-                {
-                    builder.AppendLine("ALTER TABLE `T_CENTER_USER` ADD INDEX(`Name`(10));");
-                    _LOG.Debug("Add index[`{0}`].", __value.COLUMN_NAME);
-                }
-                __columns.Remove(__value.COLUMN_NAME);
-            }
-            else
-            {
-                builder.AppendLine("ALTER TABLE `T_CENTER_USER` ADD COLUMN `Name` TEXT;");
-                builder.AppendLine("ALTER TABLE `T_CENTER_USER` ADD INDEX(`Name`(10));");
-                _LOG.Debug("Add index[`{0}`].", "Name");
-                _LOG.Debug("Add column[`{0}`].", "Name");
             }
             if (__columns.TryGetValue("ID", out __value))
             {
@@ -567,6 +544,29 @@ namespace Server
                 builder.AppendLine("ALTER TABLE `T_CENTER_USER` ADD INDEX(`Phone`);");
                 _LOG.Debug("Add index[`{0}`].", "Phone");
                 _LOG.Debug("Add column[`{0}`].", "Phone");
+            }
+            if (__columns.TryGetValue("Name", out __value))
+            {
+                if (__value.DATA_TYPE != "text" && (__value.IsIndex || __value.IsUnique))
+                {
+                    __value.COLUMN_KEY = null;
+                    builder.AppendLine("ALTER TABLE T_CENTER_USER DROP INDEX `{0}`;", __value.COLUMN_NAME);
+                    _LOG.Debug("Drop index[`{0}`].", __value.COLUMN_NAME);
+                }
+                builder.AppendLine("ALTER TABLE `T_CENTER_USER` CHANGE COLUMN `Name` `Name` TEXT;");
+                if (!__value.IsIndex && !__value.IsUnique)
+                {
+                    builder.AppendLine("ALTER TABLE `T_CENTER_USER` ADD INDEX(`Name`(10));");
+                    _LOG.Debug("Add index[`{0}`].", __value.COLUMN_NAME);
+                }
+                __columns.Remove(__value.COLUMN_NAME);
+            }
+            else
+            {
+                builder.AppendLine("ALTER TABLE `T_CENTER_USER` ADD COLUMN `Name` TEXT;");
+                builder.AppendLine("ALTER TABLE `T_CENTER_USER` ADD INDEX(`Name`(10));");
+                _LOG.Debug("Add index[`{0}`].", "Name");
+                _LOG.Debug("Add column[`{0}`].", "Name");
             }
             if (__columns.TryGetValue("LastLoginTime", out __value))
             {
@@ -820,7 +820,7 @@ namespace Server
                 table = dbs[i].Tables.FirstOrDefault(t => t.TableName == "T_USER");
                 if (table != null)
                 {
-                    builder.Append("INSERT INTO {0}.{1} SELECT {1}.`Name`,{1}.`Platform`,{1}.`ID`,{1}.`RegisterTime`,{1}.`Token`,{1}.`Account`,{1}.`Password`,{1}.`Phone`,{1}.`LastLoginTime` FROM {2}.{1}", tempName, table.TableName, dbName);
+                    builder.Append("INSERT INTO {0}.{1} SELECT {1}.`Platform`,{1}.`ID`,{1}.`RegisterTime`,{1}.`Token`,{1}.`Account`,{1}.`Password`,{1}.`Phone`,{1}.`Name`,{1}.`LastLoginTime` FROM {2}.{1}", tempName, table.TableName, dbName);
                     if (!string.IsNullOrEmpty(table.Where)) builder.Append(" " + table.Where);
                     builder.AppendLine(";");
                     result = builder.ToString();
@@ -832,7 +832,7 @@ namespace Server
                 table = dbs[i].Tables.FirstOrDefault(t => t.TableName == "T_CENTER_USER");
                 if (table != null)
                 {
-                    builder.Append("INSERT INTO {0}.{1} SELECT {1}.`Name`,{1}.`ID`,{1}.`RegisterTime`,{1}.`Token`,{1}.`Account`,{1}.`Password`,{1}.`Phone`,{1}.`LastLoginTime` FROM {2}.{1}", tempName, table.TableName, dbName);
+                    builder.Append("INSERT INTO {0}.{1} SELECT {1}.`ID`,{1}.`RegisterTime`,{1}.`Token`,{1}.`Account`,{1}.`Password`,{1}.`Phone`,{1}.`Name`,{1}.`LastLoginTime` FROM {2}.{1}", tempName, table.TableName, dbName);
                     if (!string.IsNullOrEmpty(table.Where)) builder.Append(" " + table.Where);
                     builder.AppendLine(";");
                     result = builder.ToString();
@@ -1048,8 +1048,8 @@ namespace Server
         }
         public partial class _T_USER : T_USER
         {
-            public static ET_USER[] FIELD_ALL = { ET_USER.Name, ET_USER.Platform, ET_USER.ID, ET_USER.RegisterTime, ET_USER.Token, ET_USER.Account, ET_USER.Password, ET_USER.Phone, ET_USER.LastLoginTime };
-            public static ET_USER[] FIELD_UPDATE = { ET_USER.Name, ET_USER.Platform, ET_USER.RegisterTime, ET_USER.Token, ET_USER.Account, ET_USER.Password, ET_USER.Phone, ET_USER.LastLoginTime };
+            public static ET_USER[] FIELD_ALL = { ET_USER.Platform, ET_USER.ID, ET_USER.RegisterTime, ET_USER.Token, ET_USER.Account, ET_USER.Password, ET_USER.Phone, ET_USER.Name, ET_USER.LastLoginTime };
+            public static ET_USER[] FIELD_UPDATE = { ET_USER.Platform, ET_USER.RegisterTime, ET_USER.Token, ET_USER.Account, ET_USER.Password, ET_USER.Phone, ET_USER.Name, ET_USER.LastLoginTime };
             public static ET_USER[] NoNeedField(params ET_USER[] noNeed)
             {
                 if (noNeed.Length == 0) return FIELD_ALL;
@@ -1086,20 +1086,20 @@ namespace Server
             public static void GetInsertSQL(T_USER target, StringBuilder builder, List<object> values)
             {
                 int index = values.Count;
-                builder.AppendFormat("INSERT `T_USER`(`Name`, `Platform`, `RegisterTime`, `Token`, `Account`, `Password`, `Phone`, `LastLoginTime`) VALUES(");
+                builder.AppendFormat("INSERT `T_USER`(`Platform`, `RegisterTime`, `Token`, `Account`, `Password`, `Phone`, `Name`, `LastLoginTime`) VALUES(");
                 for (int i = 0, n = 7; i <= n; i++)
                 {
                     builder.AppendFormat("@p{0}", index++);
                     if (i != n) builder.Append(", ");
                 }
                 builder.AppendLine(");");
-                values.Add(target.Name);
                 values.Add(target.Platform);
                 values.Add(target.RegisterTime);
                 values.Add(target.Token);
                 values.Add(target.Account);
                 values.Add(target.Password);
                 values.Add(target.Phone);
+                values.Add(target.Name);
                 values.Add(target.LastLoginTime);
             }
             public static int Insert(T_USER target)
@@ -1130,11 +1130,6 @@ namespace Server
                 int index = values.Count;
                 bool all = fields.Length == 0 || fields == FIELD_UPDATE;
                 builder.Append("UPDATE `T_USER` SET");
-                if (all || fields.Contains(ET_USER.Name))
-                {
-                    builder.AppendFormat(" `Name` = @p{0},", index++);
-                    values.Add(target.Name);
-                }
                 if (all || fields.Contains(ET_USER.Platform))
                 {
                     builder.AppendFormat(" `Platform` = @p{0},", index++);
@@ -1164,6 +1159,11 @@ namespace Server
                 {
                     builder.AppendFormat(" `Phone` = @p{0},", index++);
                     values.Add(target.Phone);
+                }
+                if (all || fields.Contains(ET_USER.Name))
+                {
+                    builder.AppendFormat(" `Name` = @p{0},", index++);
+                    values.Add(target.Name);
                 }
                 if (all || fields.Contains(ET_USER.LastLoginTime))
                 {
@@ -1263,13 +1263,13 @@ namespace Server
             }
             public static PagedModel<T> SelectPages<T>(string __where, string selectSQL, string conditionAfterWhere, int page, int pageSize, params object[] param) where T : new()
             {
-                return _DB.SelectPages<T>(_DAO, "SELECT count(`T_USER`.`Name`) FROM `T_USER`", __where, selectSQL, conditionAfterWhere, page, pageSize, param);
+                return _DB.SelectPages<T>(_DAO, "SELECT count(`T_USER`.`Platform`) FROM `T_USER`", __where, selectSQL, conditionAfterWhere, page, pageSize, param);
             }
         }
         public partial class _T_CENTER_USER : T_CENTER_USER
         {
-            public static ET_CENTER_USER[] FIELD_ALL = { ET_CENTER_USER.Name, ET_CENTER_USER.ID, ET_CENTER_USER.RegisterTime, ET_CENTER_USER.Token, ET_CENTER_USER.Account, ET_CENTER_USER.Password, ET_CENTER_USER.Phone, ET_CENTER_USER.LastLoginTime };
-            public static ET_CENTER_USER[] FIELD_UPDATE = { ET_CENTER_USER.Name, ET_CENTER_USER.RegisterTime, ET_CENTER_USER.Token, ET_CENTER_USER.Account, ET_CENTER_USER.Password, ET_CENTER_USER.Phone, ET_CENTER_USER.LastLoginTime };
+            public static ET_CENTER_USER[] FIELD_ALL = { ET_CENTER_USER.ID, ET_CENTER_USER.RegisterTime, ET_CENTER_USER.Token, ET_CENTER_USER.Account, ET_CENTER_USER.Password, ET_CENTER_USER.Phone, ET_CENTER_USER.Name, ET_CENTER_USER.LastLoginTime };
+            public static ET_CENTER_USER[] FIELD_UPDATE = { ET_CENTER_USER.RegisterTime, ET_CENTER_USER.Token, ET_CENTER_USER.Account, ET_CENTER_USER.Password, ET_CENTER_USER.Phone, ET_CENTER_USER.Name, ET_CENTER_USER.LastLoginTime };
             public static ET_CENTER_USER[] NoNeedField(params ET_CENTER_USER[] noNeed)
             {
                 if (noNeed.Length == 0) return FIELD_ALL;
@@ -1306,19 +1306,19 @@ namespace Server
             public static void GetInsertSQL(T_CENTER_USER target, StringBuilder builder, List<object> values)
             {
                 int index = values.Count;
-                builder.AppendFormat("INSERT `T_CENTER_USER`(`Name`, `RegisterTime`, `Token`, `Account`, `Password`, `Phone`, `LastLoginTime`) VALUES(");
+                builder.AppendFormat("INSERT `T_CENTER_USER`(`RegisterTime`, `Token`, `Account`, `Password`, `Phone`, `Name`, `LastLoginTime`) VALUES(");
                 for (int i = 0, n = 6; i <= n; i++)
                 {
                     builder.AppendFormat("@p{0}", index++);
                     if (i != n) builder.Append(", ");
                 }
                 builder.AppendLine(");");
-                values.Add(target.Name);
                 values.Add(target.RegisterTime);
                 values.Add(target.Token);
                 values.Add(target.Account);
                 values.Add(target.Password);
                 values.Add(target.Phone);
+                values.Add(target.Name);
                 values.Add(target.LastLoginTime);
             }
             public static int Insert(T_CENTER_USER target)
@@ -1345,11 +1345,6 @@ namespace Server
                 int index = values.Count;
                 bool all = fields.Length == 0 || fields == FIELD_UPDATE;
                 builder.Append("UPDATE `T_CENTER_USER` SET");
-                if (all || fields.Contains(ET_CENTER_USER.Name))
-                {
-                    builder.AppendFormat(" `Name` = @p{0},", index++);
-                    values.Add(target.Name);
-                }
                 if (all || fields.Contains(ET_CENTER_USER.RegisterTime))
                 {
                     builder.AppendFormat(" `RegisterTime` = @p{0},", index++);
@@ -1374,6 +1369,11 @@ namespace Server
                 {
                     builder.AppendFormat(" `Phone` = @p{0},", index++);
                     values.Add(target.Phone);
+                }
+                if (all || fields.Contains(ET_CENTER_USER.Name))
+                {
+                    builder.AppendFormat(" `Name` = @p{0},", index++);
+                    values.Add(target.Name);
                 }
                 if (all || fields.Contains(ET_CENTER_USER.LastLoginTime))
                 {
@@ -1464,7 +1464,7 @@ namespace Server
             }
             public static PagedModel<T> SelectPages<T>(string __where, string selectSQL, string conditionAfterWhere, int page, int pageSize, params object[] param) where T : new()
             {
-                return _DB.SelectPages<T>(_DAO, "SELECT count(`T_CENTER_USER`.`Name`) FROM `T_CENTER_USER`", __where, selectSQL, conditionAfterWhere, page, pageSize, param);
+                return _DB.SelectPages<T>(_DAO, "SELECT count(`T_CENTER_USER`.`ID`) FROM `T_CENTER_USER`", __where, selectSQL, conditionAfterWhere, page, pageSize, param);
             }
         }
         public partial class _T_OPLog : T_OPLog

@@ -45,29 +45,29 @@ public class T_SMSCode
     {
         "验证码格式错误".Check((string.IsNullOrEmpty(smscode) || smscode.Length != 4) && smscode != 万能验证码);
     }
-    public static T_SMSCode Send(string telphone)
+    public static T_SMSCode Send(string phone)
     {
-        CheckTelephone(telphone);
+        CheckTelephone(phone);
 
         T_SMSCode data;
         lock (smsCodes)
-            if (smsCodes.TryGetValue(telphone, out data) && data.Code != 0 && data.ResendCountdown > 0)
+            if (smsCodes.TryGetValue(phone, out data) && data.Code != 0 && data.ResendCountdown > 0)
                 return data;
 
         bool add = data == null;
         if (add) data = new T_SMSCode();
-        data.Mobile = long.Parse(telphone);
+        data.Mobile = long.Parse(phone);
         data.CreatedTime = DateTime.Now;
         data.Code = _RANDOM.Next(1000, 10000);
 
         lock (smsCodes)
-            smsCodes[telphone] = data;
+            smsCodes[phone] = data;
 
-        _LOG.Info("{0}的验证码:{1}", telphone, data.Code);
+        _LOG.Info("{0}的验证码:{1}", phone, data.Code);
 
         return data;
     }
-    public static void ValidCode(string telphone, string code)
+    public static void ValidCode(string phone, string code)
     {
         if (!IsValid)
             return;
@@ -75,7 +75,7 @@ public class T_SMSCode
             return;
         T_SMSCode sms;
         lock (smsCodes)
-            "验证码错误".Check(!smsCodes.TryGetValue(telphone, out sms) || code != sms.Code.ToString());
+            "验证码错误".Check(!smsCodes.TryGetValue(phone, out sms) || code != sms.Code.ToString());
         "验证码已过期".Check(DateTime.Now >= sms.ExpireTime);
         sms.Code = 0;
     }
