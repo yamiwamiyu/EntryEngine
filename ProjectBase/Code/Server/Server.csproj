@@ -57,6 +57,7 @@
     <Compile Include="Impl\ImplIUser.cs" />
     <Compile Include="Impl\ImplUserBase.cs" />
     <Compile Include="Impl\ImplICenter.cs" />
+    <Compile Include="Impl\_EX.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Service.cs" />

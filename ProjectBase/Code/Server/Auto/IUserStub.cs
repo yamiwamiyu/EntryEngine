@@ -56,7 +56,7 @@ class IUserStub : StubHttp
     public IUserStub(_IUser agent)
     {
         this.__Agent = agent;
-        this.Protocol = "2";
+        this.Protocol = "3";
         AddMethod("GetUserInfo", GetUserInfo);
     }
     void GetUserInfo(HttpListenerContext __context)

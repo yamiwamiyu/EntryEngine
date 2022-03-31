@@ -1,90 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Net;
-using EntryEngine.Network;
 using System.IO;
+using System.Linq;
 using EntryEngine;
+using EntryEngine.Network;
 
-/// <summary>扩展方法</summary>
 public static class _EX
 {
-    public static void Check(this string message, bool isThrow)
-    {
-        if (isThrow)
-            throw new HttpException(400, message);
-    }
-    public static string Mask(this string str)
-    {
-        return Mask(str, 3, 4);
-    }
-    public static string Mask(this string str, int prevLen, int lastLen)
-    {
-        if (string.IsNullOrEmpty(str))
-            return str;
-        else
-        {
-            int len = prevLen + lastLen;
-            if (str.Length <= len)
-                return str;
-            StringBuilder builder = new StringBuilder();
-            builder.Append(str.Substring(0, prevLen));
-            for (int i = 0, n = str.Length - lastLen - prevLen; i < n; i++)
-                builder.Append('*');
-            builder.Append(str.Substring(str.Length - lastLen));
-            return builder.ToString();
-        }
-    }
-    public static IPAddress ToIP(this int ip)
-    {
-        return new IPAddress(BitConverter.GetBytes(ip));
-    }
-    public static int ToIP(this string ip)
-    {
-        return BitConverter.ToInt32(IPAddress.Parse(ip).GetAddressBytes(), 0);
-    }
-    public static U TryAdd<T, U>(this Dictionary<T, U> dic, T key, Action<U> setKey) where U : new()
-    {
-        U result;
-        if (!dic.TryGetValue(key, out result))
-        {
-            result = new U();
-            if (setKey != null)
-                setKey(result);
-            dic.Add(key, result);
-        }
-        return result;
-    }
-    public static void Add<T, U>(this Dictionary<T, List<U>> dic, Func<U, T> v2k, U item)
-    {
-        List<U> temp;
-        T key = v2k(item);
-        if (!dic.TryGetValue(key, out temp))
-        {
-            temp = new List<U>();
-            dic.Add(key, temp);
-        }
-        temp.Add(item);
-    }
-    public static void Add<T, U>(this Dictionary<T, List<U>> dic, Func<U, T> v2k, params U[] items)
-    {
-        Add(dic, v2k, (IEnumerable<U>)items);
-    }
-    public static void Add<T, U>(this Dictionary<T, List<U>> dic, Func<U, T> v2k, IEnumerable<U> items)
-    {
-        List<U> temp;
-        foreach (var item in items)
-        {
-            T key = v2k(item);
-            if (!dic.TryGetValue(key, out temp))
-            {
-                temp = new List<U>();
-                dic.Add(key, temp);
-            }
-            temp.Add(item);
-        }
-    }
 }
 /// <summary>上传/下载文件通用</summary>
 public static class _FILE
@@ -192,7 +114,7 @@ public static class _FILE
     /// <param name="oldFile">之前已经上传过的文件路径，若上传了新文件，此路径将变为新路径</param>
     /// <param name="upload">本次上传的图片路径，有可能没有变化</param>
     /// <param name="newFile">本次要保存的图片目标路径</param>
-    public static void SaveUploadFile(ref string oldFile, ref string upload, string newFile)
+    public static void SaveUploadFile(ref string oldFile, ref string upload, string newFile, bool isDeleteOld = true)
     {
         bool isOldEmpty = string.IsNullOrEmpty(oldFile);
         bool isNewEmpty = string.IsNullOrEmpty(upload);
@@ -202,7 +124,7 @@ public static class _FILE
             // 上传新文件 | 新旧文件不一样替换文件
             if (oldFile != upload)
             {
-                if (!isOldEmpty)
+                if (isDeleteOld && !isOldEmpty)
                 {
                     // 新旧文件不一样，删除旧文件
                     DeleteFile(oldFile);
@@ -216,7 +138,7 @@ public static class _FILE
         }
         else
         {
-            if (!isOldEmpty)
+            if (isDeleteOld && !isOldEmpty)
             {
                 // 删除旧文件
                 DeleteFile(oldFile);
@@ -225,7 +147,7 @@ public static class _FILE
             // 都为null，不做任何操作
         }
     }
-    public static void SaveUploadFile(ref string[] oldFiles, ref string[] uploads, string[] newFiles)
+    public static void SaveUploadFile(ref string[] oldFiles, ref string[] uploads, string[] newFiles, bool isDeleteOld = true)
     {
         if (oldFiles == null)
             oldFiles = new string[0];
@@ -241,9 +163,10 @@ public static class _FILE
         List<string> delete = new List<string>();
 
         // 文件已经不存在，需要删除
-        for (int i = 0; i < oldFiles.Length; i++)
-            if (!uploads.Contains(oldFiles[i]))
-                DeleteFile(oldFiles[i]);
+        if (isDeleteOld)
+            for (int i = 0; i < oldFiles.Length; i++)
+                if (!uploads.Contains(oldFiles[i]))
+                    DeleteFile(oldFiles[i]);
 
         // 新文件，需要重新上传
         for (int i = 0; i < uploads.Length; i++)
@@ -262,12 +185,12 @@ public static class _FILE
         oldFiles = newFiles;
         uploads = newFiles;
     }
-    public static void SaveUploadFile(ref string[] oldFiles, ref string[] uploads, string dir)
+    public static void SaveUploadFile(ref string[] oldFiles, ref string[] uploads, string dir, bool isDeleteOld = true)
     {
         int len = uploads == null ? 0 : uploads.Length;
         string[] newFiles = new string[len];
         for (int i = 0; i < len; i++)
             newFiles[i] = dir + uploads[i];
-        SaveUploadFile(ref oldFiles, ref uploads, newFiles);
+        SaveUploadFile(ref oldFiles, ref uploads, newFiles, isDeleteOld);
     }
 }
