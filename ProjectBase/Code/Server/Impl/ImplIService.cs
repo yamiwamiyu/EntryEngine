@@ -25,13 +25,13 @@ namespace Server.Impl
             T_SMSCode.ValidCode(phone, code);
 
             // 并行时用此接口创建角色会创建多个相同角色
-            long phone = long.Parse(phone);
+            long _phone = long.Parse(phone);
             var impl = new ImplIUser();
-            impl.InitializeByPhone(phone);
+            impl.InitializeByPhone(_phone);
             if (impl.User == null)
             {
                 T_USER newUser = new T_USER();
-                newUser.Phone = phone;
+                newUser.Phone = _phone;
                 newUser.Account = phone;
                 newUser.Name = phone.Mask();
                 impl.Register(newUser, ELoginWay.手机号);
@@ -77,9 +77,9 @@ namespace Server.Impl
             T_SMSCode.CheckSMSCodeFormat(code);
             T_SMSCode.ValidCode(phone, code);
 
-            long phone = long.Parse(phone);
+            long _phone = long.Parse(phone);
             var impl = new ImplIUser();
-            impl.InitializeByPhone(phone);
+            impl.InitializeByPhone(_phone);
             "此用户不存在".Check(impl.User == null);
             // 修改密码
             impl.User.Password = password;
@@ -104,8 +104,8 @@ namespace Server.Impl
             T_SMSCode.CheckSMSCodeFormat(code);
             T_SMSCode.ValidCode(phone, code);
             var impl = new ImplICenter();
-            long phone = long.Parse(phone);
-            impl.InitializeByPhone(phone);
+            long _phone = long.Parse(phone);
+            impl.InitializeByPhone(_phone);
             "此用户不存在".Check(impl.User == null);
             impl.Login(impl.User, ELoginWay.手机号);
             callback.Callback(impl.User);

@@ -109,6 +109,7 @@ namespace Server
         /// <param name="right">结尾是否使用'%'通配符</param>
         public static string Like(this string key, bool left = true, bool right = true)
         {
+            if (string.IsNullOrEmpty(key)) return null;
             if (left) key = "%" + key;
             if (right) key = key + "%";
             return key;
