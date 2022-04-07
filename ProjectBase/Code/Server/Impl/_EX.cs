@@ -36,6 +36,18 @@ public static class _FILE
             Directory.Delete(relativePath, true);
     }
 
+    /// <summary>在修改上传的图片时，若是完整URL则不需要修改</summary>
+    public static bool IsFullURL(this string url)
+    {
+        if (string.IsNullOrEmpty(url))
+            return false;
+
+        if (!string.IsNullOrEmpty(AccessURL))
+            return url.StartsWith(AccessURL);
+
+        // 网站和图片属于同一个源的情况下使用相对路径
+        return File.Exists(url);
+    }
     public static void ResolveImage(this string image, out string imageFull)
     {
         if (string.IsNullOrEmpty(image))
