@@ -9237,13 +9237,13 @@ return result;"
                     builder.AppendLine("db.ExecuteReader((reader) =>");
                     builder.AppendBlock(() =>
                     {
-                        builder.AppendLine("reader.Read();");
-                        builder.AppendLine("result.Count = (int)(long)reader[0];");
+                        builder.AppendLine("if (reader.Read()) result.Count = (int)(long)reader[0];");
                         builder.AppendLine("result.Models = new List<T>();");
                         builder.AppendLine("reader.NextResult();");
                         builder.AppendLine("read(reader, result.Models);");
                     });
                     builder.AppendLine(", builder.ToString(), __param);");
+                    builder.AppendLine("result.CalcTotalPage();");
                     builder.AppendLine("return result;");
                 });
                 builder.AppendLine("public static void MasterSlave(string masterConnString, string slaveConnStrings)");

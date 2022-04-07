@@ -373,13 +373,14 @@ namespace EntryEngine.Network
                 ExecuteReader((reader) =>
                 {
                     // 总数
-                    reader.Read();
-                    entry.Count = (int)(long)reader[0];
+                    if (reader.Read()) entry.Count = (int)(long)reader[0];
 
                     reader.NextResult();
                     entry.Models = new List<T>(pageSize);
                     read(reader, entry.Models);
                 }, sb.ToString(), _params);
+
+                entry.CalcTotalPage();
 
                 return entry;
             }
@@ -405,13 +406,13 @@ namespace EntryEngine.Network
                 result.PageSize = pageSize;
                 ExecuteReader((reader) =>
                 {
-                    reader.Read();
-                    result.Count = (int)(long)reader[0];
+                    if (reader.Read()) result.Count = (int)(long)reader[0];
                     result.Models = new List<T>();
                     reader.NextResult();
                     read(reader, result.Models);
                 }
                 , builder.ToString(), param);
+                result.CalcTotalPage();
                 return result;
             }
             public List<_Tuple<T1, T2>> SelectJoin<T1, T2>(string sql, int count1, params object[] _params)
