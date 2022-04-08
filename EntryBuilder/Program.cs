@@ -9914,9 +9914,10 @@ return result;"
                     continue;
                 if (item.IsClass)
                 {
+                    if (item.IsSpecialName || !item.IsVisible) continue;
                     builder.Append("export class {0}", item.Name);
                     if (item.BaseType != null && item.BaseType != typeof(object))
-                        builder.Append(" : " + item.BaseType.Name);
+                        builder.Append(" extends " + item.BaseType.Name);
                     builder.AppendLine();
                     builder.AppendBlock(() =>
                     {
