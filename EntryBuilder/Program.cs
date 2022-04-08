@@ -9932,11 +9932,11 @@ return result;"
                     var instance = Activator.CreateInstance(item);
                     builder.AppendBlock(() =>
                     {
-                        var fields = item.GetFields(BindingFlags.Instance | BindingFlags.Public);
+                        var fields = item.GetFields(BindingFlags.Public | BindingFlags.Static);
                         foreach (var field in fields)
                         {
                             object value = field.GetValue(instance);
-                            builder.AppendLine("{0} = {1},", Enum.GetName(item, value), value);
+                            builder.AppendLine("{0} = {1},", value, Convert.ChangeType(value, Enum.GetUnderlyingType(item)));
                         }
                     });
                 }
