@@ -899,6 +899,47 @@ namespace EntryBuilder
                 return "TEXT";
             }
         }
+        private static string GetTSType(Type type)
+        {
+            if (type == typeof(bool))
+                return "Boolean";
+            else if (type == typeof(sbyte)
+                || type == typeof(byte)
+                || type == typeof(short)
+                || type == typeof(ushort)
+                || type == typeof(char)
+                || type == typeof(int)
+                || type == typeof(uint)
+                || type == typeof(float)
+                || type == typeof(long)
+                || type == typeof(ulong)
+                || type == typeof(double)
+                || type == typeof(TimeSpan))
+                return "Number";
+            else if (type == typeof(DateTime))
+                return "Date";
+            else if (type == typeof(string))
+                return "String";
+            else if (type.IsArray)
+                return GetTSType(type.GetElementType()) + "[]";
+            else if (type.IsGenericType)
+            {
+                var arguments = type.GetGenericArguments();
+                var definition = type.GetGenericTypeDefinition();
+                if (definition == typeof(Dictionary<,>))
+                    return string.Format("Map<{0}, {1}>", GetTSType(arguments[0]), GetTSType(arguments[1]));
+                else if (definition == typeof(List<>)
+                    || definition == typeof(Queue<>)
+                    || definition == typeof(Stack<>))
+                    return string.Format("Array<{0}>", GetTSType(arguments[0]));
+                else
+                    throw new NotImplementedException("不支持的类型：" + type.FullName);
+            }
+            else
+            {
+                return type.Name;
+            }
+        }
         class TreeField : Tree<TreeField>
         {
             public FieldInfo Field
@@ -9861,6 +9902,46 @@ return result;"
 
             File.WriteAllText(outputCS, builder.ToString());
             Console.WriteLine("生成防优化完毕");
+        }
+        public static void BuildTypeScriptTypeFromDll(string dll, string outputTS)
+        {
+            Assembly assembly = Assembly.LoadFrom(Path.GetFullPath(dll));
+            var types = assembly.GetTypes();
+            StringBuilder builder = new StringBuilder();
+            foreach (var item in types)
+            {
+                if (item.IsStatic())
+                    continue;
+                if (item.IsClass)
+                {
+                    builder.Append("export class {0}", item.Name);
+                    if (item.BaseType != null && item.BaseType != typeof(object))
+                        builder.Append(" : " + item.BaseType.Name);
+                    builder.AppendLine();
+                    builder.AppendBlock(() =>
+                    {
+                        var fields = item.GetFields(BindingFlags.Instance | BindingFlags.Public);
+                        foreach (var field in fields)
+                            builder.AppendLine("{0}: {1}", field.Name, GetTSType(field.FieldType));
+                    });
+                }
+                else if (item.IsEnum)
+                {
+                    builder.AppendLine("export enum {0}", item.Name);
+                    var instance = Activator.CreateInstance(item);
+                    builder.AppendBlock(() =>
+                    {
+                        var fields = item.GetFields(BindingFlags.Instance | BindingFlags.Public);
+                        foreach (var field in fields)
+                        {
+                            object value = field.GetValue(instance);
+                            builder.AppendLine("{0} = {1},", Enum.GetName(item, value), value);
+                        }
+                    });
+                }
+            }
+            SaveCode(Path.ChangeExtension(outputTS, "ts"), builder.ToString());
+            Console.WriteLine("生成完毕！共生成{0}个类型", types.Length);
         }
         public static void TexLightness(string inputDirOrFile, byte vStep, string outputDir)
         {
