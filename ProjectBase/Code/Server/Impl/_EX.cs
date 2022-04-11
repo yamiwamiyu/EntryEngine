@@ -105,6 +105,9 @@ public static class _FILE
     /// <param name="targetFileName">要保存的目标路径</param>
     private static void SaveUploadFile(string uploadFile, ref string targetFileName)
     {
+        if (string.IsNullOrEmpty(Path.GetFileNameWithoutExtension(targetFileName)))
+            throw new ArgumentException("保存的文件名不能为空");
+
         // 最后要保存的文件
         if (string.IsNullOrEmpty(Path.GetExtension(targetFileName)))
         {
