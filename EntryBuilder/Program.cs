@@ -9923,7 +9923,8 @@ return result;"
                     {
                         var fields = item.GetFields(BindingFlags.Instance | BindingFlags.Public);
                         foreach (var field in fields)
-                            builder.AppendLine("{0}: {1}", field.Name, GetTSType(field.FieldType));
+                            if (field.DeclaringType == item)
+                                builder.AppendLine("{0}: {1}", field.Name, GetTSType(field.FieldType));
                     });
                 }
                 else if (item.IsEnum)
