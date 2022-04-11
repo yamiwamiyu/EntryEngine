@@ -57,6 +57,8 @@ public static class _FILE
     }
     public static void ResolveImage(this string[] image, out string[] imageFull)
     {
+        if (image == null)
+            image = new string[0];
         imageFull = new string[image.Length];
         for (int i = 0; i < image.Length; i++)
             image[i].ResolveImage(out imageFull[i]);
