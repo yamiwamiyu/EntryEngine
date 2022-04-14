@@ -1,0 +1,51 @@
+<CodeSnippet Format="1.1.0" xmlns="http://schemas.microsoft.com/VisualStudio/2005/CodeSnippet">
+  <Header>
+    <Title>vue</Title>
+    <Author>暗和自由</Author>
+    <Shortcut>vue</Shortcut>
+    <Description>VUE组件代码模板</Description>
+    <SnippetTypes>
+      <SnippetType>Expansion</SnippetType>
+      <SnippetType>SurroundsWith</SnippetType>
+    </SnippetTypes>
+  </Header>
+  <Snippet>
+    <Declarations>
+      <Literal>
+        <ID>name</ID>
+        <ToolTip>组件名</ToolTip>
+        <Default></Default>
+      </Literal>
+      <Literal>
+        <ID>lang</ID>
+        <ToolTip>CSS语言类型，使用scss需要导入sass和sass-loader</ToolTip>
+        <Default>scss</Default>
+      </Literal>
+    </Declarations>
+    <Code Language="HTML">
+<![CDATA[<template>
+    <div>$end$
+    </div>
+</template>
+    
+<script>
+    export default {
+        name: "$selected$$name$",
+        data() {
+            return {
+                
+            }
+        },
+        props: [],
+        // 计算属性，有依赖其它字段时，且其它字段没有发生变化，计算属性将不会重新计算而使用缓存
+        computed: {},
+        methods: {},
+        watch: {},
+        mounted: {},
+    }
+</script>
+    
+<style lang="$lang$" scoped>
+</style>]]></Code>
+  </Snippet>
+</CodeSnippet>
