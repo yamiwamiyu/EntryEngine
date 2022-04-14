@@ -1,0 +1,31 @@
+{
+	"Print to console": {
+        "prefix": "vue",
+        "body": [
+            "<template>",
+            "  <div>",
+            "    $0",
+            "  </div>",
+            "</template>\n",
+            "<script type=\"text/javascript\">",
+            "",
+            "export default {",
+            "  name: \"${TM_FILENAME_BASE}\",",    
+            "  data() {",
+            "    return {\n",
+            "    }",
+            "  },",
+            "  props: [ ],",
+			"  // 计算属性，有依赖其它属性时，且其它属性没有发生变化，计算属性将不会重新计算而使用缓存",
+			"  computed: { },",
+			"  methods: { },",
+			"  watch: { },",
+			"  mounted: { },",
+            "}",
+            "</script>\n",
+            "<style lang=\"stylus\" scoped>",
+            "</style>"
+        ],
+        "description": "Log output to console"
+    }
+}
