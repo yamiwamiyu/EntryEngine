@@ -6,16 +6,10 @@
     <Description>VUE组件代码模板</Description>
     <SnippetTypes>
       <SnippetType>Expansion</SnippetType>
-      <SnippetType>SurroundsWith</SnippetType>
     </SnippetTypes>
   </Header>
   <Snippet>
     <Declarations>
-      <Literal>
-        <ID>name</ID>
-        <ToolTip>组件名</ToolTip>
-        <Default></Default>
-      </Literal>
       <Literal>
         <ID>lang</ID>
         <ToolTip>CSS语言类型，使用scss需要导入sass和sass-loader</ToolTip>
@@ -30,7 +24,6 @@
     
 <script>
     export default {
-        name: "$selected$$name$",
         data() {
             return {
                 
@@ -41,7 +34,7 @@
         computed: {},
         methods: {},
         watch: {},
-        mounted: {},
+        //mounted() {},
     }
 </script>
     
