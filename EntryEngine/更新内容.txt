@@ -1,4 +1,10 @@
-﻿2022/04/07
+﻿2022/04/20
+1. Sprite, SpriteText继承ISprite接口，实现Contains方法
+
+2022/04/08
+1. 新增EntryBuilder.BuildTypeScriptTypeFromDll将C#类型生成TS类型
+
+2022/04/07
 1. 修复翻页有Group By语句时Count没有结果读取结果数报错的BUG
 
 2022/03/30

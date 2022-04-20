@@ -8355,16 +8355,29 @@ namespace EntryEngine
         Line,
         Triangle,
     }
+    public interface ISprite
+    {
+        void Draw();
+        /// <summary>坐标是否在精灵所在范围内</summary>
+        bool Contains(float x, float y);
+    }
     /// <summary>基础图片对象</summary>
-    public class Sprite : PoolItem
+    public class Sprite : PoolItem, ISprite
     {
         public TEXTURE Texture;
+        /// <summary>渲染坐标</summary>
         public VECTOR2 Position;
+        /// <summary>渲染大图片上的部分区域</summary>
         public RECT Source = GRAPHICS.NullSource;
+        /// <summary>颜色叠加</summary>
         public COLOR Color = Entry._GRAPHICS.DefaultColor;
+        /// <summary>旋转弧度</summary>
         public float Rotation;
+        /// <summary>缩放</summary>
         public VECTOR2 Scale = VECTOR2.One;
+        /// <summary>旋转锚点，0~1</summary>
         public VECTOR2 Pivot = VECTOR2.Half;
+        /// <summary>镜像翻转</summary>
         public EFlip Flip;
 
         public void Draw()
@@ -8376,9 +8389,25 @@ namespace EntryEngine
                 true, Color.R, Color.G, Color.B, Color.A, 
                 Rotation, Pivot.X, Pivot.Y, Flip);
         }
+        /// <summary>坐标是否在精灵所在范围内</summary>
+        public bool Contains(float x, float y)
+        {
+            RECT result;
+            result.Width = Source.Width == 0 ? (Texture != null ? Texture.Width : 0) : Source.Width;
+            result.Height = Source.Height == 0 ? (Texture != null ? Texture.Height : 0) : Source.Height;
+            if (result.Width == 0 || result.Height == 0)
+                return false;
+            result.X = 0;
+            result.Y = 0;
+            MATRIX2x3 transform;
+            MATRIX2x3.CreateTransform(Rotation, result.Width * Pivot.X, result.Height * Pivot.Y, Scale.X, Scale.Y, Position.X, Position.Y, out transform);
+            MATRIX2x3.Invert(ref transform, out transform);
+            VECTOR2.Transform(ref x, ref y, ref transform);
+            return result.Contains(x, y);
+        }
     }
     /// <summary>基础文字对象</summary>
-    public class SpriteText : PoolItem
+    public class SpriteText : PoolItem, ISprite
     {
         /// <summary>字体</summary>
         public FONT Font = FONT.Default;
@@ -8415,6 +8444,25 @@ namespace EntryEngine
             g.BaseDrawFont(Font, Text, size.X, size.Y, Color, Scale);
             if (Stroke != null)
                 g.End();
+        }
+        /// <summary>坐标是否在精灵所在范围内</summary>
+        public bool Contains(float x, float y)
+        {
+            RECT result = Area;
+            VECTOR2 size = Font.MeasureString(Text);
+            if (Scale != 1)
+            {
+                size.X *= Scale;
+                size.Y *= Scale;
+            }
+            if (result.Width == 0)
+                result.Width = size.X;
+            if (result.Height == 0)
+                result.Height = size.Y;
+            UI.UIElement.TextAlign(ref Area, ref size, Alignment, out size);
+            result.X = size.X;
+            result.Y = size.Y;
+            return result.Contains(x, y);
         }
     }
     /// <summary>精灵渲染参数</summary>
