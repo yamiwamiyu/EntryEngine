@@ -2036,10 +2036,10 @@ namespace EntryBuilder
                                         {
                                             builder.AppendLine("{0}.Parse(__temp);", typeCodeName);
                                         }
-                                        else if (param.ParameterType == typeof(DateTime))
-                                        {
-                                            builder.AppendLine("Utility.ToTime(long.Parse(__temp));", typeCodeName);
-                                        }
+                                        //else if (param.ParameterType == typeof(DateTime))
+                                        //{
+                                        //    builder.AppendLine("Utility.ToTime(long.Parse(__temp));", typeCodeName);
+                                        //}
                                         else if (param.ParameterType.IsEnum)
                                         {
                                             builder.AppendLine("({0}){1}.Parse(__temp);", typeCodeName, Enum.GetUnderlyingType(param.ParameterType).CodeName());
@@ -2500,9 +2500,10 @@ return result;"
                                 builder.Append("\"{0}=\" + ", param.Name);
                                 if (param.ParameterType == typeof(string))
                                     builder.Append("encodeURIComponent({0})", param.Name);
-                                //else if (param.ParameterType == typeof(DateTime))
-                                //    //builder.Append("JSON.stringify({0}).replace(\"T\", \" \").replace(\"Z\", \"\")", param.Name);
-                                //    builder.Append("{0}", param.Name);
+                                // 可能传时间戳，可能传字符串，可能传Date对象
+                                else if (param.ParameterType == typeof(DateTime))
+                                    //builder.Append("JSON.stringify({0}).replace(\"T\", \" \").replace(\"Z\", \"\")", param.Name);
+                                    builder.Append("({0}.toLocaleString ? {0}.toLocaleString() : {0})", param.Name);
                                 else if (param.ParameterType.IsCustomType())
                                     builder.Append("encodeURIComponent(JSON.stringify({0}))", param.Name);
                                 else
