@@ -288,8 +288,8 @@ namespace Server
 
         //        DefaultAopClient client = GetClient();
         //        // 支付成功后的跳转页面
-        //        client.return_url = RETURN_URL + "?orderID=" + id;
-        //        //client.return_url = RETURN_URL;
+        //        client.return_url = string.Format("{0}{1}id={2}&oid={3}&price={4}",
+        //            RETURN_URL, RETURN_URL.Contains('?') ? '&' : '?', id, out_trade_no, price);     
 
         //        var request = new AlipayTradeWapPayRequest();
         //        //var request = new AlipayTradePagePayRequest();
