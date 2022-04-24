@@ -128,12 +128,16 @@ public class T_UserBase
         //    RealName = RealName.Mask(1, 0);
         //if (IDCard != null)
         //    IDCard = IDCard.Mask();
-        __Phone = Phone;
-        if (Phone != 0)
-            Phone -= ((Phone / 10000) % 10000) * 10000;
+        MaskPhone();
         __Password = Password;
         Password = null;
         OnMaskData();
+    }
+    public void MaskPhone()
+    {
+        __Phone = Phone;
+        if (Phone != 0)
+            Phone -= ((Phone / 10000) % 10000) * 10000;
     }
     public bool IsMatchPassword(string password)
     {
