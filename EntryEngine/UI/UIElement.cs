@@ -612,13 +612,12 @@ namespace EntryEngine.UI
                 shader = alpha;
             }
 
-            //var viewclip = UI.FinalViewClip;
-            //viewclip.X = UI.PivotAlignmentX * viewclip.Width * 0.5f;
-            //viewclip.Y = UI.PivotAlignmentY * viewclip.Height * 0.5f;
-            float x = UI.X;
-            float y = UI.Y;
+            var viewclip = UI.ViewClip;
+            float x = viewclip.X + UI.PivotAlignmentX * viewclip.Width * 0.5f;
+            float y = viewclip.Y + UI.PivotAlignmentY * viewclip.Height * 0.5f;
             sb.Begin(
-                sb.FromPrevious(MATRIX2x3.CreateTransform(_MATH.D2R * Rotation, x, y, Scale, Scale, x + Offset.X, y + Offset.Y)),
+                //sb.FromPrevious(MATRIX2x3.CreateTransform(_MATH.D2R * Rotation, x, y, Scale, Scale, x + Offset.X, y + Offset.Y)),
+                MATRIX2x3.CreateTransform(_MATH.D2R * Rotation, x, y, Scale, Scale, x + Offset.X, y + Offset.Y),
                 sb.CurrentGraphics,
                 shader);
         }
