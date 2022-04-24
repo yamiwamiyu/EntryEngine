@@ -1,4 +1,7 @@
-﻿2022/04/20
+﻿2020/04/24
+1. 修复ByteReader读取枚举数组时无法将数字转换成枚举的BUG
+
+2022/04/20
 1. Sprite, SpriteText继承ISprite接口，实现Contains方法
 
 2022/04/08

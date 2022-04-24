@@ -1586,9 +1586,20 @@ namespace EntryEngine.Serialize
             else
             {
                 array = Array.CreateInstance(type, count);
-                for (int i = 0; i < count; i++)
+                if (type.IsEnum)
                 {
-                    array.SetValue(ReadObject(type), i);
+                    for (int i = 0; i < count; i++)
+                    {
+                        array.SetValue(Enum.ToObject(type, ReadObject(type)), i);
+                        //array.SetValue(Enum.Parse(type, ReadObject(type).ToString()), i);
+                    }
+                }
+                else
+                {
+                    for (int i = 0; i < count; i++)
+                    {
+                        array.SetValue(ReadObject(type), i);
+                    }
                 }
             }
         }
