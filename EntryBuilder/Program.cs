@@ -10648,7 +10648,7 @@ return result;"
 					for (int j = 0; j < frames.Length; j++)
 					{
 						Frame frame = new Frame();
-						frame.Texture = Path.Combine(anime.Directory, Path.GetFileName(frames[j]));
+						frame.Texture = ContentManager.FilePathUnify(Path.Combine(anime.Directory, Path.GetFileName(frames[j])));
 						frame.Interval = anime.Interval;
                         frame.PivotX = anime.PivotX;
                         frame.PivotY = anime.PivotY;
