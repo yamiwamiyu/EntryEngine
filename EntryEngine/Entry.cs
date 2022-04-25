@@ -5534,14 +5534,14 @@ namespace EntryEngine
                         current += sequence[i].Interval;
                         if (current >= target)
                         {
-                            currentFrame = i;
+                            CurrentFrame = i;
                             elapsedTime = sequence[i].Interval - (current - target);
                             return;
                         }
                     }
                     loop++;
                 }
-                currentFrame = sequence.FrameCount - 1;
+                CurrentFrame = sequence.FrameCount - 1;
                 elapsedTime = Frame.Interval;
             }
         }
