@@ -27,11 +27,18 @@ public static class _FILE
     }
     public static void DeleteFile(string key)
     {
-        _LOG.Debug("删除本地文件：{0}", key);
+        _LOG.Info("删除本地文件：{0}", key);
         if (File.Exists(key)) File.Delete(key);
+    }
+    public static void DeleteFile(string[] keys)
+    {
+        if (keys == null) return;
+        for (int i = 0; i < keys.Length; i++)
+            DeleteFile(keys[i]);
     }
     public static void DeleteDirectory(string relativePath)
     {
+        _LOG.Info("删除本地目录：{0}", relativePath);
         if (Directory.Exists(relativePath))
             Directory.Delete(relativePath, true);
     }
