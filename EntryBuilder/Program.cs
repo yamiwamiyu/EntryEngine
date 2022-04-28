@@ -8272,6 +8272,16 @@ return result;"
                                 });
                             builder.AppendLine("return _DAO.ExecuteNonQuery(builder.ToString(), target);");
                         });
+                        builder.AppendLine("public {3}void DeleteForeignKey_{0}_{1}({2} target, StringBuilder builder, List<object> args)", field.Table.Name, field.Field.Name, field.Field.FieldType.CodeName(), _static);
+                        builder.AppendBlock(() =>
+                        {
+                            TreeField.ForParentPriority(field, null,
+                                foreign =>
+                                {
+                                    builder.AppendLine("builder.AppendLine(\"DELETE FROM `{0}` WHERE `{1}` = @p{{0}};\", args.Count);", foreign.Table.Name, foreign.Field.Name);
+                                });
+                            builder.AppendLine("args.Add(target);");
+                        });
                         // 修改
                         builder.AppendLine("public {3}int UpdateForeignKey_{0}_{1}({2} origin, {2} target)", field.Table.Name, field.Field.Name, field.Field.FieldType.CodeName(), _static);
                         builder.AppendBlock(() =>
