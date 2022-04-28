@@ -282,7 +282,7 @@ public partial class S登陆菜单 : UIScene
                 scene.CB单选.Checked = true;
                 parent.Add(scene);
 
-                Entry.ShowDialogScene(scene);
+                Entry.ShowDialogScene(scene, EState.Break);
             }
         }
     }
