@@ -35,10 +35,10 @@
 3. 交互协议：交互协议ProtocolStubAttribute，对接口标记此特性后，由EntryBuilder.BuildProtocolAgentBinary生成TCP交互代码，由EntryBuilder.BuildProtocolAgentHttp生成HTTP和WebSocket交互代码
 
 ### svn拉取EntryEngine项目
-gitee:       svn://gitee.com/yamiwamiyu/EntryEngine
-github:      https://github.com/yamiwamiyu/EntryEngine.git
+1. gitee:       svn://gitee.com/yamiwamiyu/EntryEngine
+2. github:      https://github.com/yamiwamiyu/EntryEngine.git
 
 ### 模块 Demo 视频教程
- **https://space.bilibili.com/2832385?spm_id_from=333.788.b_765f7570696e666f.2** 
+https://space.bilibili.com/2832385?spm_id_from=333.788.b_765f7570696e666f.2
 bilibili关注暗和自由，入口引擎模块教程视频持续更新中
 QQ官方交流群 981793689
