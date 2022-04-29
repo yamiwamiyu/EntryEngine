@@ -1,2 +1,0 @@
-cd ..\..\
-EntryEditor.exe EditorParticle

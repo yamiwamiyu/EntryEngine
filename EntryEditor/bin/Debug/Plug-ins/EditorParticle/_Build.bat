@@ -1,1 +1,0 @@
-..\..\..\..\..\EntryBuilder\bin\Debug\EntryBuilder.exe BuildCSVFromExcel "" Content\ LANGUAGE.csv 12.0 ..\..\..\..\..\EditorParticle\_TABLE.auto.cs true

@@ -1,0 +1,99 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProductVersion>8.0.30703</ProductVersion>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>{45325383-F04A-4E9D-9EC1-FAC6E151E680}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>EntryEngine.DragonBone</RootNamespace>
+    <AssemblyName>DragonBone</AssemblyName>
+    <TargetFrameworkVersion>v3.5</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <DocumentationFile>bin\Debug\DragonBone.XML</DocumentationFile>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="System" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Xml.Linq" />
+    <Reference Include="System.Data.DataSetExtensions" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="DragonBones.cs" />
+    <Compile Include="src\DragonBones\animation\Animation.cs" />
+    <Compile Include="src\DragonBones\animation\AnimationState.cs" />
+    <Compile Include="src\DragonBones\animation\BaseTimelineState.cs" />
+    <Compile Include="src\DragonBones\animation\IAnimatable.cs" />
+    <Compile Include="src\DragonBones\animation\TimelineState.cs" />
+    <Compile Include="src\DragonBones\animation\WorldClock.cs" />
+    <Compile Include="src\DragonBones\armature\Armature.cs" />
+    <Compile Include="src\DragonBones\armature\Bone.cs" />
+    <Compile Include="src\DragonBones\armature\Constraint.cs" />
+    <Compile Include="src\DragonBones\armature\DeformVertices.cs" />
+    <Compile Include="src\DragonBones\armature\IArmatureProxy.cs" />
+    <Compile Include="src\DragonBones\armature\Slot.cs" />
+    <Compile Include="src\DragonBones\armature\TransformObject.cs" />
+    <Compile Include="src\DragonBones\core\BaseObject.cs" />
+    <Compile Include="src\DragonBones\core\DragonBones.cs" />
+    <Compile Include="src\DragonBones\event\EventObject.cs" />
+    <Compile Include="src\DragonBones\event\IEventDispatcher.cs" />
+    <Compile Include="src\DragonBones\factory\BaseFactory.cs" />
+    <Compile Include="src\DragonBones\geom\ColorTransform.cs" />
+    <Compile Include="src\DragonBones\geom\Matrix.cs" />
+    <Compile Include="src\DragonBones\geom\Point.cs" />
+    <Compile Include="src\DragonBones\geom\Rectangle.cs" />
+    <Compile Include="src\DragonBones\geom\Transform.cs" />
+    <Compile Include="src\DragonBones\model\AnimationConfig.cs" />
+    <Compile Include="src\DragonBones\model\AnimationData.cs" />
+    <Compile Include="src\DragonBones\model\ArmatureData.cs" />
+    <Compile Include="src\DragonBones\model\BoundingBoxData.cs" />
+    <Compile Include="src\DragonBones\model\CanvasData.cs" />
+    <Compile Include="src\DragonBones\model\ConstraintData.cs" />
+    <Compile Include="src\DragonBones\model\DisplayData.cs" />
+    <Compile Include="src\DragonBones\model\DragonBonesData.cs" />
+    <Compile Include="src\DragonBones\model\SkinData.cs" />
+    <Compile Include="src\DragonBones\model\TextureAtlasData.cs" />
+    <Compile Include="src\DragonBones\model\UserData.cs" />
+    <Compile Include="src\DragonBones\parser\DataParser.cs" />
+    <Compile Include="src\DragonBones\parser\ObjectDataParser.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\EntryEngine\EntryEngine.csproj">
+      <Project>{424D14E4-1661-42E9-A192-B1C60D4669FF}</Project>
+      <Name>EntryEngine</Name>
+    </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="src\龙骨骼底层修改.txt" />
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+       Other similar extension points exist, see Microsoft.Common.targets.
+  <Target Name="BeforeBuild">
+  </Target>
+  <Target Name="AfterBuild">
+  </Target>
+  -->
+</Project>

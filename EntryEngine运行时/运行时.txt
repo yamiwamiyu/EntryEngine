@@ -1,0 +1,21 @@
+EntryEngine运行时是指
+*基于其它框架或引擎
+*实现了EntryEngine定义的用户输入，资源加载，图像渲染，声音播放等通用接口或类型
+*的dll
+
+以至于可以
+*使用EntryEngine的开发流程
+*使基于的其它框架或引擎可以运行EntryEngine开发的内容
+*最终由使基于的其它框架或引擎来发布可运行程序
+
+运行时的好处在于统一了开发流程
+1. 开发使用EntryEngine的开发流程
+2. 代码使用EntryEngine定义的类型和API
+例如Unity3D和Cocos2D和虚幻引擎等，开发流程不一样，实现同样的功能代码也写得不一样，每种引擎可发布的平台也不一样
+使用EntryEngine+运行时的方式，可以让一套代码运行在各个引擎上，从而让各个引擎帮我们把项目发布到不同的平台上运行
+
+已有内容
+1. Cmdline：基于Windows控制台，后端运行时。使用mono也可运行在linux系统上
+2. Unity: 基于Unity3D引擎，前端运行时。可以发布到几乎任意平台
+3. WebGL: 基于JavaScript & WebGL，前端运行时。自己研发的C#转JS，运行效率并不高，可用Unity发布WebGL代替
+4. Xna: 基于Xna，前端运行时，也是EntryEngine开发流程主用运行时。基本仅用于开发，偶尔也嵌入Winform中绘图使用

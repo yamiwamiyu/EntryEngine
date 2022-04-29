@@ -1,0 +1,10 @@
+EntryEngine插件是指基于EntryEngine实现的第三方功能模块
+
+第三方功能模块基本都有基于各种开发语言，各种开发框架的SDK，例如Spine骨骼动画就有针对Monogame，Unity，Cocos等的实现。
+EntryEngine作为一个无名架构，Spine官方自然不会默认实现。
+EntryEngine想要使用Spine，就需要自己基于Spine提供的官方C#基础框架，以EntryEngine的工作方式实现对Spine生产内容的加载和使用
+
+已有内容
+1. DragonBone: 2D骨骼动画（免费），https://dragonbones.github.io/cn/index.html
+2. Spine：2D骨骼动画（付费）
+3. www.pangle.cn: 穿山甲广告

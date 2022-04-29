@@ -1,0 +1,101 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">x86</Platform>
+    <ProductVersion>8.0.30703</ProductVersion>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>{12FF1B71-52C1-4C01-8351-6221A4DB9E54}</ProjectGuid>
+    <OutputType>Exe</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>LauncherServer</RootNamespace>
+    <AssemblyName>LauncherServer</AssemblyName>
+    <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+    <TargetFrameworkProfile />
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|x86' ">
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|x86' ">
+    <PlatformTarget>x86</PlatformTarget>
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="System">
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="System.Core">
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="System.Data">
+      <Private>False</Private>
+    </Reference>
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="ILauncherServiceStub.cs" />
+    <Compile Include="IManagerCallProxy.cs" />
+    <Compile Include="IManagerStub.cs" />
+    <Compile Include="IMBSStub.cs" />
+    <Compile Include="Program.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Server.cs" />
+    <Compile Include="ServiceManager.cs" />
+    <Compile Include="ServiceLauncher.cs" />
+    <Compile Include="ServiceManagerBS.cs" />
+    <Compile Include="_C.cs" />
+    <Compile Include="_SAVE.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="_C.xlsx" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\EntryEngine运行时\Cmdline\Cmdline.csproj">
+      <Project>{516530FA-7610-4DC9-91A5-B18B05CAFFCC}</Project>
+      <Name>Cmdline</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\..\EntryEngine\EntryEngine.csproj">
+      <Project>{424D14E4-1661-42E9-A192-B1C60D4669FF}</Project>
+      <Name>EntryEngine</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\LauncherManagerProtocol\LauncherManagerProtocol.csproj">
+      <Project>{8982BEB9-D6BB-4BE3-83F1-ECC88DCF05A7}</Project>
+      <Name>LauncherManagerProtocol</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\LauncherProtocolStructure\LauncherProtocolStructure.csproj">
+      <Project>{E481E6E2-D1FE-4530-8460-4A1E1E589132}</Project>
+      <Name>LauncherProtocolStructure</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\LauncherProtocol\LauncherProtocol.csproj">
+      <Project>{16000A1F-1E4C-4C26-BEB7-29528027EE68}</Project>
+      <Name>LauncherProtocol</Name>
+    </ProjectReference>
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <PropertyGroup>
+    <PreBuildEvent>IF $(ConfigurationName) == Debug GOTO end
+
+$(ProjectDir)..\EntryBuilder\bin\Debug\EntryBuilder.exe BuildConstantTable $(ProjectDir)_C.xlsx $(TargetDir)_C.xml $(ProjectDir)_C.cs false 12.0
+
+:end</PreBuildEvent>
+  </PropertyGroup>
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+       Other similar extension points exist, see Microsoft.Common.targets.
+  <Target Name="BeforeBuild">
+  </Target>
+  <Target Name="AfterBuild">
+  </Target>
+  -->
+</Project>

@@ -1,0 +1,14 @@
+EntryEngine开发工具是EntryEngine开发流程的核心，为加速项目开发提供帮助
+
+已有内容
+1. 编辑器: EditorUI为项目UI提供可视化编辑，EditorParticle为粒子系统提供可视化编辑
+2. EntryBuilder: 命令行程序，EntryEngine开发流程核心工具，主要常用功能有
+ * 根据代码生成前后端交互协议代码 [BuildProtocolAgentBinary] [BuildProtocolAgentHttp]（代码 -> 代码
+ * 根据代码生成MySQL数据库代码 [BuildDatabaseMysql]（代码 -> 代码
+ * 根据Excel生成对应实体类型，读表代码，csv表格 [BuildCSVFromExcel] [BuildConstantTable]（Excel -> 代码，csv
+ * 裁切图片透明像素，统一图片尺寸大小 [TexCut]（图片 -> 图片
+ * 根据Excel将文件夹中的小图片合并成一张大图，并保留原本小图的图片路径 [TexPiece]（图片 -> 图片，描述文件
+ * 根据Excel将图片做成拉伸不会变形的九宫格图片 [TexPatchFromExcel]（图片 -> 描述文件
+ * 根据Excel将文件夹中的图片做成序列帧动画 [TexAnimationFromExcel]（图片 -> 描述文件
+ * 将EntryEngine开发的程序发布成基于Xna的Windows PC可运行程序 [PublishToPC]
+ * 将EntryEngine开发的程序发布到Unity项目目录中 [PublishToUnity]

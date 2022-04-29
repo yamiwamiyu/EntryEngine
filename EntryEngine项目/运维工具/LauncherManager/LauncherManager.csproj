@@ -1,0 +1,127 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">x86</Platform>
+    <ProductVersion>8.0.30703</ProductVersion>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>{630A0610-40FD-4F67-8B5C-D603A3C06BE6}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>LauncherManager</RootNamespace>
+    <AssemblyName>LauncherManager</AssemblyName>
+    <TargetFrameworkVersion>v3.5</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|x86' ">
+    <PlatformTarget>x86</PlatformTarget>
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|x86' ">
+    <PlatformTarget>x86</PlatformTarget>
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup>
+    <StartupObject />
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="System" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Data" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="IManagerProxy.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="SEntryPoint.cs" />
+    <Compile Include="SManagerLog.cs" />
+    <Compile Include="SManagerLog.design.cs" />
+    <Compile Include="S新建服务类型.cs" />
+    <Compile Include="S新建服务类型.design.cs" />
+    <Compile Include="S新建管理账号菜单.cs" />
+    <Compile Include="S新建管理账号菜单.design.cs" />
+    <Compile Include="S新开服菜单.cs" />
+    <Compile Include="S新开服菜单.design.cs" />
+    <Compile Include="S日志.cs" />
+    <Compile Include="S日志.design.cs" />
+    <Compile Include="S日志信息.cs" />
+    <Compile Include="S日志信息.design.cs" />
+    <Compile Include="S服务信息.cs" />
+    <Compile Include="S服务信息.design.cs" />
+    <Compile Include="S服务器信息.cs" />
+    <Compile Include="S服务器信息.design.cs" />
+    <Compile Include="S服务器管理.cs" />
+    <Compile Include="S服务器管理.design.cs" />
+    <Compile Include="S服务器面板.cs" />
+    <Compile Include="S服务器面板.design.cs" />
+    <Compile Include="S服务管理面板.cs" />
+    <Compile Include="S服务管理面板.design.cs" />
+    <Compile Include="S服务类型管理.cs" />
+    <Compile Include="S服务类型管理.design.cs" />
+    <Compile Include="S服务类型管理信息.cs" />
+    <Compile Include="S服务类型管理信息.design.cs" />
+    <Compile Include="S登陆平台信息.cs" />
+    <Compile Include="S登陆平台信息.design.cs" />
+    <Compile Include="S登陆菜单.cs" />
+    <Compile Include="S登陆菜单.design.cs" />
+    <Compile Include="Maintainer.cs" />
+    <Compile Include="S确认对话框.cs" />
+    <Compile Include="S确认对话框.design.cs" />
+    <Compile Include="S账号管理信息.cs" />
+    <Compile Include="S账号管理信息.design.cs" />
+    <Compile Include="S账号管理菜单.cs" />
+    <Compile Include="S账号管理菜单.design.cs" />
+    <Compile Include="_DATA.cs" />
+    <Compile Include="_SAVE.cs" />
+    <Compile Include="_TABLE.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\EntryEngine\EntryEngine.csproj">
+      <Project>{424D14E4-1661-42E9-A192-B1C60D4669FF}</Project>
+      <Name>EntryEngine</Name>
+      <Private>True</Private>
+    </ProjectReference>
+    <ProjectReference Include="..\LauncherManagerProtocol\LauncherManagerProtocol.csproj">
+      <Project>{8982BEB9-D6BB-4BE3-83F1-ECC88DCF05A7}</Project>
+      <Name>LauncherManagerProtocol</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\LauncherProtocolStructure\LauncherProtocolStructure.csproj">
+      <Project>{E481E6E2-D1FE-4530-8460-4A1E1E589132}</Project>
+      <Name>LauncherProtocolStructure</Name>
+    </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="使用说明.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Tables\Text.xlsx" />
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <PropertyGroup>
+    <PreBuildEvent>IF $(ConfigurationName) == Debug GOTO end
+
+::del $(ProjectDir)..\..\Launch\Maintainer\Content\*.csv
+::$(ProjectDir)..\EntryBuilder\bin\Debug\EntryBuilder.exe BuildCSVFromExcel $(ProjectDir)Tables\ $(TargetDir)Content\ “” 12.0 $(ProjectDir)_TABLE.cs true
+
+:end
+
+xcopy  /D /Y /E $(ProjectDir)..\EntryEditor\bin\Debug\运维工具UI\UI\*.cs $(ProjectDir)</PreBuildEvent>
+  </PropertyGroup>
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+       Other similar extension points exist, see Microsoft.Common.targets.
+  <Target Name="BeforeBuild">
+  </Target>
+  <Target Name="AfterBuild">
+  </Target>
+  -->
+</Project>
