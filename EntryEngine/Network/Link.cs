@@ -2307,6 +2307,7 @@ namespace EntryEngine.Network
         }
     }
 
+    /// <summary>标记此特性代表接口为前后端交互协议</summary>
     [AttributeUsage(AttributeTargets.Interface)]
     public class ProtocolStubAttribute : Attribute
     {

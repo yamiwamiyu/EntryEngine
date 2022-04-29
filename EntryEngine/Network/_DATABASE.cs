@@ -1492,27 +1492,22 @@ namespace EntryEngine.Network
         }
     }
 
+    /// <summary>索引类型</summary>
     public enum EIndex : byte
     {
-        /// <summary>
-        /// 索引：用于查询
-        /// </summary>
+        /// <summary>索引：用于查询</summary>
         Index,
-        /// <summary>
-        /// 主键：添加时要测重
+        /// <summary>主键：添加时要测重
         /// <para>多主键时，每个主键生成Group</para>
         /// <para>所有主键生成一个复合主键类型，由此类型生成</para>
         /// </summary>
         Primary,
-        /// <summary>
-        /// 自增：视为主键
-        /// </summary>
+        /// <summary>自增：视为主键</summary>
         Identity,
-        /// <summary>
-        /// 分组：例如同一个玩家的操作记录
-        /// </summary>
+        /// <summary>分组：例如同一个玩家的操作记录</summary>
         Group,
     }
+    /// <summary>字段将生成索引</summary>
     [AttributeUsage(AttributeTargets.Field)]
     public class IndexAttribute : Attribute
     {
@@ -1530,6 +1525,7 @@ namespace EntryEngine.Network
             this.Index = index;
         }
     }
+    /// <summary>字段引用其它表的字段作为外键</summary>
     [AttributeUsage(AttributeTargets.Field)]
     public class ForeignAttribute : Attribute
     {
@@ -1554,9 +1550,10 @@ namespace EntryEngine.Network
             this.ForeignTable = type;
         }
     }
-    /// <summary>数据库不生成标记此特性的字段</summary>
+    /// <summary>数据表不生成标记了此特性的字段</summary>
     [AttributeUsage(AttributeTargets.Field)]
     public class IgnoreAttribute : Attribute { }
+    /// <summary>数据库生成标记了此特性的数据表</summary>
     [AttributeUsage(AttributeTargets.Class | AttributeTargets.Struct)]
     public class MemoryTableAttribute : Attribute
     {

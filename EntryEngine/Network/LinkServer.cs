@@ -1403,7 +1403,7 @@ namespace EntryEngine.Network
             return !string.IsNullOrEmpty(socket);
         }
     }
-    public abstract class ServiceWebSocket : ProxyHttpAsync
+    public abstract class ProxyWebSocket : ProxyHttpAsync
     {
         protected override Link InternalAccept(HttpListenerContext context)
         {
