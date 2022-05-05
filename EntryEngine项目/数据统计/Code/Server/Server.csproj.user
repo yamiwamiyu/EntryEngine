@@ -1,0 +1,12 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x86'">
+    <StartAction>Project</StartAction>
+    <StartProgram>..\Launch\Server\Cmdline.exe</StartProgram>
+    <StartArguments>"SetDatabase Server=127.0.0.1;Port=3306;User=root;Password=123456; 数据库名 true" "Launch 888"</StartArguments>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|x86'">
+    <StartAction>Program</StartAction>
+    <StartProgram>..\Launch\Server\Cmdline.exe</StartProgram>
+  </PropertyGroup>
+</Project>

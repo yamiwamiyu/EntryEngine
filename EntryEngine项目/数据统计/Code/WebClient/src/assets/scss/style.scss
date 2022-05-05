@@ -1,0 +1,114 @@
+@charset "UTF-8";
+// 标准色
+// --------------------------------------------------
+$color-primary: #017BFF; // 用于特别强调和突出的按钮、局部装饰和强调字体
+$color-font:#4E5462; //用于字体默认颜色
+$color-title-font:#142338; //用于字体默认颜色
+$color-text: #142338; // 用于用户昵称、内页标题、内文及默认状态
+$color-subtext: #4e5462; // 用于副标题、次要文字
+$color-shadow: #E5E4E9; // 用于普通按钮描边、辅助文字信息
+$color-seperator: #F2F2F4; // 用于分割线
+$color-background: #F7F8FC; // 用于底色
+$color-popup: #ffffff; // 用于弹窗背景色
+$color-mask: rgba(0, 0, 0, 0.5); // 用于遮罩层背景色
+$color-module-background: #ffffff; // 用于底色
+$font-size-all: 14px; //默认字体大小
+// 字体颜色设置
+.font-color-success {
+    color: #67C23A;
+}
+
+.font-color-warning {
+    color: #E6A23C;
+}
+
+.font-color-danger {
+    color: #F56C6C;
+}
+
+.font-color-info {
+    color: #909399;
+}
+
+$color-dark-font:#ffffff; //用于深色背景字体默认颜色
+* {
+    font-size: $font-size-all;
+}
+
+@font-face {
+    font-family: 'iconfont';
+    /* project id 1633877 */
+    src: url('//at.alicdn.com/t/font_1633877_8pm4gvulmok.eot');
+    src: url('//at.alicdn.com/t/font_1633877_8pm4gvulmok.eot?#iefix') format('embedded-opentype'), url('//at.alicdn.com/t/font_1633877_8pm4gvulmok.woff2') format('woff2'), url('//at.alicdn.com/t/font_1633877_8pm4gvulmok.woff') format('woff'), url('//at.alicdn.com/t/font_1633877_8pm4gvulmok.ttf') format('truetype'), url('//at.alicdn.com/t/font_1633877_8pm4gvulmok.svg#iconfont') format('svg');
+}
+
+.iconfont {
+    height: 16px;
+    margin-right: 10px;
+    text-align: center;
+    -webkit-transition: all .3s;
+    transition: all .3s;
+    line-height: 16px;
+    font-family: "iconfont" !important;
+    font-size: 25px;
+    font-style: normal;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+.el-header,
+.el-footer {
+    color: $color-subtext;
+    text-align: center;
+    line-height: 60px;
+    padding: 15px;
+}
+
+.el-main {
+    min-width: 900px;
+    width: 100%;
+}
+
+
+/*
+  *表格统一样式
+  */
+
+.el-table {
+    th {
+        background-color: #fafafa;
+    }
+     :deep() .el-table__header * {
+        font-size: 12px;
+        background-color: #fafafa;
+        line-height: 30px;
+    }
+    * {
+        font-size: 12px;
+    }
+}
+
+.el-table--mini td,
+.el-table--mini th {
+    padding: 12px 0 10px 0;
+}
+
+.el-table--mini td {
+    color: #2d3a4b;
+}
+
+.el-input__inner {
+    color: #142338;
+}
+
+
+/**
+隐藏上传图片添加按钮
+*/
+
+.hide-upload {
+    color: #000;
+    /deep/ .el-upload--picture-card {
+        display: none;
+    }
+}

@@ -1,0 +1,43 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>Cmdline</name>
+    </assembly>
+    <members>
+        <member name="E:EntryEngine.Cmdline.CmdlineGate.Overheat">
+            <summary>程序Update用时超过FrameRate连续超过OverheatFrameCount时触发</summary>
+        </member>
+        <member name="E:EntryEngine.Cmdline.CmdlineGate.Loop">
+            <summary>每帧循环时触发，返回是否继续程序</summary>
+        </member>
+        <member name="E:EntryEngine.Cmdline.CmdlineGate.Error">
+            <summary>循环发生异常时触发，返回是否继续程序</summary>
+        </member>
+        <member name="E:EntryEngine.Cmdline.Launcher.ConsoleLog">
+            <summary>事件触发在异步线程上</summary>
+        </member>
+        <member name="F:EntryEngine.Cmdline.LauncherCmdline.OnLogRecord">
+            <summary>事件触发在异步线程上</summary>
+        </member>
+        <member name="T:EntryEngine.Cmdline.LogStorage">
+            <summary>LogSearch在修改时间段，查询条件微调，等级筛选时可以在原缓存上稍作修改</summary>
+        </member>
+        <member name="M:EntryEngine.Cmdline._CMDLINE.RunCmd(System.String)">
+            <summary>
+            运行命令行命令
+            </summary>
+            <param name="argument">命令</param>
+            <returns>命令输出结果</returns>
+        </member>
+        <member name="M:EntryEngine.Cmdline._CMDLINE.RunExe(System.String,System.String)">
+            <summary>
+            需要制作异步等待进程结束
+            </summary>
+        </member>
+        <member name="T:EntryEngine.Cmdline._SVN">
+            <summary>
+            <para>SVN操作都可能抛出异常</para>
+            </summary>
+        </member>
+    </members>
+</doc>
