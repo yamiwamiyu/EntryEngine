@@ -147,14 +147,6 @@ public class T_UserBase
     {
     }
 }
-/// <summary>一个用户</summary>
-[MemoryTable]
-public class T_USER : T_UserBase
-{
-    /// <summary>玩家进入的平台</summary>
-    [Index(EIndex.Group)]
-    public string Platform;
-}
 /// <summary>后台管理账号</summary>
 [MemoryTable]
 public class T_CENTER_USER : T_UserBase { }
@@ -166,7 +158,6 @@ public class T_OPLog
     [Index(EIndex.Identity)]
     public int ID;
 
-    [Foreign(typeof(T_USER), "ID")]
     [Index(EIndex.Group)]
     public int PID;
 
@@ -186,4 +177,165 @@ public class T_OPLog
     public int Statistic;
 
     public string Detail;
+}
+
+
+/// <summary>注册信息</summary>
+[MemoryTable]public class T_Register
+{
+    [Index(EIndex.Identity)]public int ID;
+    /// <summary>游戏名</summary>
+    [Index]public string GameName;
+    /// <summary>设备ID</summary>
+    [Index]public string DeviceID;
+    /// <summary>渠道号</summary>
+    [Index]public string Channel;
+    /// <summary>注册时间</summary>
+    [Index]public DateTime RegisterTime;
+}
+/// <summary>登录信息</summary>
+[MemoryTable]public class T_Login
+{
+    /// <summary>登录ID</summary>
+    [Index(EIndex.Identity)]public int ID;
+    /// <summary>注册ID</summary>
+    [Index, Foreign(typeof(T_Register), "ID")]public int RegisterID;
+    /// <summary>登录时间</summary>
+    [Index]public DateTime LoginTime;
+    /// <summary>最后在线时间</summary>
+    public DateTime LastOnlineTime;
+}
+/// <summary>事件分析信息</summary>
+[MemoryTable]public class T_Analysis
+{
+    /// <summary>注册ID</summary>
+    [Index]public int RegisterID;
+    /// <summary>事件页签</summary>
+    public string Label;
+    /// <summary>事件名称</summary>
+    public string Name;
+    /// <summary>事件排序，页签内排序</summary>
+    public int OrderID;
+    /// <summary>事件发生的次数，按人数统计时传0，按次数统计时传1</summary>
+    public int Count;
+    /// <summary>事件发生时间</summary>
+    [Index]public DateTime Time;
+}
+/// <summary>统计时间点的在线人数</summary>
+[MemoryTable]public class T_Online
+{
+    [Index(EIndex.Primary)]public DateTime Time;
+    [Index(EIndex.Primary)]public string GameName;
+    [Index(EIndex.Primary)]public string Channel;
+
+    public int Quarter0 = 0;
+    public int Quarter1 = 0;
+    public int Quarter2 = 0;
+    public int Quarter3 = 0;
+    public int Quarter4 = 0;
+    public int Quarter5 = 0;
+    public int Quarter6 = 0;
+    public int Quarter7 = 0;
+    public int Quarter8 = 0;
+    public int Quarter9 = 0;
+    public int Quarter10 = 0;
+    public int Quarter11 = 0;
+    public int Quarter12 = 0;
+    public int Quarter13 = 0;
+    public int Quarter14 = 0;
+    public int Quarter15 = 0;
+    public int Quarter16 = 0;
+    public int Quarter17 = 0;
+    public int Quarter18 = 0;
+    public int Quarter19 = 0;
+    public int Quarter20 = 0;
+    public int Quarter21 = 0;
+    public int Quarter22 = 0;
+    public int Quarter23 = 0;
+    public int Quarter24 = 0;
+    public int Quarter25 = 0;
+    public int Quarter26 = 0;
+    public int Quarter27 = 0;
+    public int Quarter28 = 0;
+    public int Quarter29 = 0;
+    public int Quarter30 = 0;
+    public int Quarter31 = 0;
+    public int Quarter32 = 0;
+    public int Quarter33 = 0;
+    public int Quarter34 = 0;
+    public int Quarter35 = 0;
+    public int Quarter36 = 0;
+    public int Quarter37 = 0;
+    public int Quarter38 = 0;
+    public int Quarter39 = 0;
+    public int Quarter40 = 0;
+    public int Quarter41 = 0;
+    public int Quarter42 = 0;
+    public int Quarter43 = 0;
+    public int Quarter44 = 0;
+    public int Quarter45 = 0;
+    public int Quarter46 = 0;
+    public int Quarter47 = 0;
+    public int Quarter48 = 0;
+    public int Quarter49 = 0;
+    public int Quarter50 = 0;
+    public int Quarter51 = 0;
+    public int Quarter52 = 0;
+    public int Quarter53 = 0;
+    public int Quarter54 = 0;
+    public int Quarter55 = 0;
+    public int Quarter56 = 0;
+    public int Quarter57 = 0;
+    public int Quarter58 = 0;
+    public int Quarter59 = 0;
+    public int Quarter60 = 0;
+    public int Quarter61 = 0;
+    public int Quarter62 = 0;
+    public int Quarter63 = 0;
+    public int Quarter64 = 0;
+    public int Quarter65 = 0;
+    public int Quarter66 = 0;
+    public int Quarter67 = 0;
+    public int Quarter68 = 0;
+    public int Quarter69 = 0;
+    public int Quarter70 = 0;
+    public int Quarter71 = 0;
+    public int Quarter72 = 0;
+    public int Quarter73 = 0;
+    public int Quarter74 = 0;
+    public int Quarter75 = 0;
+    public int Quarter76 = 0;
+    public int Quarter77 = 0;
+    public int Quarter78 = 0;
+    public int Quarter79 = 0;
+    public int Quarter80 = 0;
+    public int Quarter81 = 0;
+    public int Quarter82 = 0;
+    public int Quarter83 = 0;
+    public int Quarter84 = 0;
+    public int Quarter85 = 0;
+    public int Quarter86 = 0;
+    public int Quarter87 = 0;
+    public int Quarter88 = 0;
+    public int Quarter89 = 0;
+    public int Quarter90 = 0;
+    public int Quarter91 = 0;
+    public int Quarter92 = 0;
+    public int Quarter93 = 0;
+    public int Quarter94 = 0;
+    public int Quarter95 = 0;
+
+    /// <summary>获取时间的分区</summary>
+    /// <returns>0~95</returns>
+    public static int GetQuarter(DateTime time)
+    {
+        return (int)(time.TimeOfDay.TotalMinutes / 15);
+    }
+    /// <summary>在线人数是否需要+1</summary>
+    /// <param name="lastLoginTime">最后在线时间</param>
+    public static bool needRecord(DateTime lastLoginTime)
+    {
+        var now = DateTime.Now;
+        return lastLoginTime.Date != now.Date || GetQuarter(lastLoginTime) != GetQuarter(now);
+    }
 }

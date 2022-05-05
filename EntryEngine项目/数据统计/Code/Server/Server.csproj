@@ -57,14 +57,12 @@
     <Compile Include="Impl\ImplIUser.cs" />
     <Compile Include="Impl\ImplUserBase.cs" />
     <Compile Include="Impl\ImplICenter.cs" />
+    <Compile Include="Impl\_Cache.cs" />
     <Compile Include="Impl\_EX.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Service.cs" />
     <Compile Include="_DB.cs" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="EntryEngine服务端开发教程.docx" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Protocol\Protocol.csproj">

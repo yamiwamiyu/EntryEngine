@@ -212,11 +212,6 @@ namespace Server
 
             var _user = new ImplIUser();
             var _iuser = new IUserStub(_user);
-            _iuser.__GetAgent = () =>
-            {
-                _user.CheckToken(getContext().Request.Headers["AccessToken"]);
-                return null;
-            };
 
             var _center = new ImplICenter();
             var _icenter = new ICenterStub(_center);

@@ -30,5 +30,24 @@ namespace Server.Impl
             // 同步部分数据
             callback.Callback(User);
         }
+
+
+        void _ICenter.ChangePassword(string oldPassword, string newPassword, CBICenter_ChangePassword callback)
+        {
+            throw new NotImplementedException();
+        }
+
+        void _ICenter.GetGameName(CBICenter_GetGameName callback)
+        {
+            throw new NotImplementedException();
+        }
+        void _ICenter.GetChannel(string gameName, CBICenter_GetChannel callback)
+        {
+            throw new NotImplementedException();
+        }
+        void _ICenter.GetAnalysisGame(CBICenter_GetAnalysisGame callback)
+        {
+            throw new NotImplementedException();
+        }
     }
 }
