@@ -9,6 +9,7 @@ using System.Net;
 using EntryEngine.Serialize;
 using System.IO;
 using Server.Impl;
+using System.Diagnostics;
 
 namespace Server
 {
@@ -40,6 +41,9 @@ namespace Server
 
         /// <summary>注册一个后台管理员账号</summary>
         void AddAdmin(string name, string password);
+        /// <summary>开始缓存</summary>
+        /// <param name="startTime">缓存开始时间</param>
+        void SetCache(DateTime startTime);
     }
     partial class Service : ProxyHttpAsync, ICmd
     {
@@ -59,6 +63,11 @@ namespace Server
         protected override void OnUpdate(GameTime time)
         {
             // 每帧执行的业务逻辑
+            if (!_Cache.IsRefreshing && GameTime.Time.TickMinute)
+            {
+                // 开启轮询定时刷新缓存
+                _Cache.RefreshCache();
+            }
         }
 
         
@@ -243,6 +252,13 @@ namespace Server
 
             center.Register(user, ELoginWay.其它);
             _LOG.Info("注册后台账号：{0}", name);
+        }
+        void ICmd.SetCache(DateTime startTime)
+        {
+            _LOG.Info("缓存开始时间：{0}", startTime);
+            _Cache.ClearCache();
+            _Cache.startTime = startTime;
+            _Cache.RefreshCache();
         }
     }
 }

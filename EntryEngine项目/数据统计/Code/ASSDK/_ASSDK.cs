@@ -19,8 +19,8 @@ public static class _ASSDK
     static _ASSDK()
     {
         proxy.IsAsync = false;
-#if !DEBUG
-        proxy.Host = "http://47.99.145.87:8864/Action/";
+#if DEBUG
+        proxy.Host = "http://127.0.0.1:888/Action/";
 #else
         proxy.Host = "http://47.99.145.87:8865/Action/";
 #endif
@@ -177,7 +177,7 @@ public static class _ASSDK
         }
         return deviceID;
     }
-    public static string channel;
+    private static string channel;
     /// <summary>获取注释（渠道）</summary>
     private static string GetComment()
     {
@@ -324,12 +324,12 @@ public static class _ASSDK
     }
 
     private static List<T_Analysis> analysis = new List<T_Analysis>();
-    /// <summary>添加分析事件</summary>
-    /// <param name="label">事件页签</param>
-    /// <param name="name">事件名称</param>
-    /// <param name="orderID">事件排序</param>
-    /// <param name="canRepeat">事件能否重复</param>
-    public static void Analysis(string label, string name, int orderID, bool canRepeat)
+    /// <summary>添加分析</summary>
+    /// <param name="title">分析标题，相同标题不同值会在一起进行分析，例如升级</param>
+    /// <param name="value">分析值，相同标题不同值会在一起进行分析，例如1级，2级</param>
+    /// <param name="orderID">分析排序，传0则按照value值升序，否则按照orderID升序</param>
+    /// <param name="canRepeat">分析能否重复，重复时一般用于统计数量，不重复时一般用于统计进度</param>
+    public static void Analysis(string title, string value, int orderID = 0, bool canRepeat = false)
     {
         CheckInitialize();
         // 如果设备号为空，就不再统计行为
@@ -338,21 +338,12 @@ public static class _ASSDK
         {
             analysis.Add(new T_Analysis()
             {
-                Label = label,
-                Name = name,
+                Label = title,
+                Name = value,
                 OrderID = orderID,
                 Count = canRepeat ? 1 : 0,
             });
         }
-    }
-
-    /// <summary>添加分析事件</summary>
-    /// <param name="label">事件页签</param>
-    /// <param name="name">事件名称</param>
-    /// <param name="orderID">事件排序</param>
-    public static void Analysis(string label, string name, int orderID)
-    {
-        Analysis(label, name, orderID, false);
     }
 }
 class T_Analysis

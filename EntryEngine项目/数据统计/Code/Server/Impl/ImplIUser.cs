@@ -173,7 +173,7 @@ namespace Server.Impl
                         foreach (var item in analysis)
                         {
                             if (string.IsNullOrWhiteSpace(item.Label) || string.IsNullOrWhiteSpace(item.Name) || (item.Count != 0 && item.Count != 1)) continue;
-
+                            item.Time = DateTime.Now;
                             item.RegisterID = login.RegisterID;
                             _Cache.C_Analysis target = _Cache.C_Analysis.change(item);
                             if (target == null) continue;

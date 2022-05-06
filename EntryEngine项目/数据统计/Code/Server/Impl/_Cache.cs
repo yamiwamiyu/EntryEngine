@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using EntryEngine.Network;
 using EntryEngine;
+using System.Diagnostics;
 
 namespace Server.Impl
 {
@@ -319,7 +320,7 @@ namespace Server.Impl
             IsRefreshing = false;
         }
 
-        public static void RefreshCache(Action onComplete)
+        public static void RefreshCache()
         {
             if (IsRefreshing)
             {
@@ -332,10 +333,19 @@ namespace Server.Impl
             {
                 try
                 {
+                    
+                    Stopwatch watch = Stopwatch.StartNew();
+                    var first = LastLoginID == 0;
                     RefreshRegister();
                     RefreshLogin();
                     RefreshAnalysis();
                     RefreshOnline();
+                    if (first && LastLoginID > 0)
+                    {
+                        // 首次刷新缓存
+                        watch.Stop();
+                        _LOG.Info("首次加载缓存耗时：{0}", watch.Elapsed);
+                    }
                 }
                 catch (Exception ex)
                 {
@@ -347,8 +357,6 @@ namespace Server.Impl
                     if (!IsRefreshing)
                         ClearCache();
                     IsRefreshing = false;
-                    if (onComplete != null)
-                        onComplete();
                 }
             });
         }
