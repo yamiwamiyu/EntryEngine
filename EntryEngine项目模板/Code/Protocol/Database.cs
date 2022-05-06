@@ -10,18 +10,14 @@ using EntryEngine;
 public class T_SMSCode
 {
     /// <summary>手机号</summary>
-    [Index(EIndex.Primary)]
-    public long Mobile;
+    [Index(EIndex.Primary)]public long Mobile;
     /// <summary>验证码创建时间</summary>
     public DateTime CreatedTime;
     /// <summary>验证码</summary>
-    [Index]
-    public int Code;
+    [Index]public int Code;
 
     /// <summary>短信ID</summary>
-    [NonSerialized]
-    [Ignore]
-    public string SID;
+    [NonSerialized][Ignore]public string SID;
 
     /// <summary>过期时间</summary>
     public DateTime ExpireTime { get { return CreatedTime.AddMinutes(15); } }
@@ -89,8 +85,7 @@ public class T_UserBase
 {
     public const int TOKEN_EXPIRE_MINUTES = 60 * 24 * 7;
 
-    [Index(EIndex.Identity)]
-    public int ID = 10000;
+    [Index(EIndex.Identity)]public int ID = 10000;
     /// <summary>注册日期</summary>
     [Index]public DateTime RegisterTime;
     /// <summary>账号登录后的凭证</summary>
@@ -148,42 +143,26 @@ public class T_UserBase
     }
 }
 /// <summary>一个用户</summary>
-[MemoryTable]
-public class T_USER : T_UserBase
+[MemoryTable]public class T_USER : T_UserBase
 {
     /// <summary>玩家进入的平台</summary>
-    [Index(EIndex.Group)]
-    public string Platform;
+    [Index(EIndex.Group)]public string Platform;
 }
 /// <summary>后台管理账号</summary>
-[MemoryTable]
-public class T_CENTER_USER : T_UserBase { }
+[MemoryTable]public class T_CENTER_USER : T_UserBase { }
 
 /// <summary>操作日志</summary>
-[MemoryTable]
-public class T_OPLog
+[MemoryTable]public class T_OPLog
 {
-    [Index(EIndex.Identity)]
-    public int ID;
-
-    [Foreign(typeof(T_USER), "ID")]
-    [Index(EIndex.Group)]
-    public int PID;
-
-    [Index(EIndex.Group)]
-    public string Operation;
-
-    [Index]
-    public DateTime Time;
-
+    [Index(EIndex.Identity)]public int ID;
+    [Index(EIndex.Group)]public int PID;
+    [Index(EIndex.Group)]public string Operation;
+    [Index]public DateTime Time;
     /// <summary>例如获得道具是从哪里获得的</summary>
-    [Index(EIndex.Group)]
-    public string Way;
+    [Index(EIndex.Group)]public string Way;
     /// <summary>例如获得了什么道具</summary>
-    [Index(EIndex.Group)]
-    public int Sign;
+    [Index(EIndex.Group)]public int Sign;
     /// <summary>例如获得了多少个道具</summary>
     public int Statistic;
-
     public string Detail;
 }

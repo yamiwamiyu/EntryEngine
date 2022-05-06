@@ -278,6 +278,55 @@ SELECT LAST_INSERT_ID();", typeof(T).Name),
 
             user.MaskData();
         }
+        /// <summary>用户修改密码</summary>
+        /// <param name="opass">原密码</param>
+        /// <param name="npass">新密码</param>
+        public void UserModifyPassword(string opass, string npass)
+        {
+            "原密码错误".Check(opass != User.__Password &&
+                // 都为空可以
+                !(string.IsNullOrEmpty(User.__Password) && string.IsNullOrEmpty(opass)));
+            "新密码不能为空".Check(string.IsNullOrEmpty(npass));
+            User.Password = npass;
+            User.__Password = npass;
+            SaveBuilder.AppendFormat("UPDATE `{0}` SET Password = @p{1} WHERE ID = @p{2};", typeof(T).Name, SaveValues.Count, SaveValues.Count + 1);
+            SaveValues.Add(npass);
+            SaveValues.Add(User.ID);
+            OP("修改密码", null, 0, 0, string.Format("{0} -> {1}", opass, npass));
+            Save();
+            User.Password = null;
+        }
+        /// <summary>用户修改手机号</summary>
+        /// <param name="phone">新手机号</param>
+        /// <param name="code">验证码</param>
+        public void UserModifyPhone(string phone, string code)
+        {
+            T_SMSCode.CheckTelephone(phone);
+            T_SMSCode.CheckSMSCodeFormat(code);
+            T_SMSCode.ValidCode(phone, code);
+            "该手机号的用户已存在".Check(_DB._DAO.SelectValue<bool>(string.Format("SELECT TRUE FROM `{0}` WHERE ID <> @p0 AND Phone = @p1", typeof(T).Name), User.ID, phone));
+            int idParamIndex = SaveValues.Count;
+            SaveValues.Add(User.ID);
+            if (User.Account == User.__Phone.ToString())
+            {
+                User.Account = phone;
+                SaveBuilder.AppendFormat("UPDATE `{0}` SET `Account` = @p{2} WHERE ID = @p{1};", typeof(T).Name, idParamIndex, SaveValues.Count);
+                SaveValues.Add(phone);
+            }
+            User.Phone = long.Parse(phone);
+            SaveBuilder.AppendFormat("UPDATE `{0}` SET `Phone` = @p{2} WHERE ID = @p{1};", typeof(T).Name, idParamIndex, SaveValues.Count);
+            SaveValues.Add(phone);
+            OP("修改手机号", null, 0, 0, string.Format("{0} -> {1}", User.__Phone, phone));
+            Save();
+            User.MaskPhone();
+        }
+        /// <summary>用户退出登录</summary>
+        public void UserExitLogin()
+        {
+            User.Token = null;
+            OnUpdateToken();
+            Save();
+        }
 
         // 根据不同参数加载用户
         public T InitializeByID(int id)

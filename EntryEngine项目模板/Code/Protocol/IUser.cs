@@ -8,5 +8,16 @@ using EntryEngine.Network;
 [ProtocolStub(3, null)]
 public interface IUser
 {
-    void GetUserInfo(Action<T_USER> callback);
+    /// <summary>用户信息</summary>
+    void UserInfo(Action<T_USER> callback);
+    /// <summary>用户修改密码</summary>
+    /// <param name="opass">原密码</param>
+    /// <param name="npass">新密码</param>
+    void UserModifyPassword(string opass, string npass, Action<bool> callback);
+    /// <summary>用户修改手机号</summary>
+    /// <param name="phone">新手机号</param>
+    /// <param name="code">验证码</param>
+    void UserModifyPhone(string phone, string code, Action<bool> callback);
+    /// <summary>用户退出登录</summary>
+    void UserExitLogin(Action<bool> callback);
 }

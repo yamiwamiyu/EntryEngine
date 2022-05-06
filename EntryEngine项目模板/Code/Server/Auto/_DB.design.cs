@@ -844,18 +844,8 @@ namespace Server
                 table = dbs[i].Tables.FirstOrDefault(t => t.TableName == "T_OPLog");
                 if (table != null)
                 {
-                    bool __flag = false;
                     builder.Append("INSERT INTO {0}.{1} SELECT {1}.`ID`,{1}.`PID`,{1}.`Operation`,{1}.`Time`,{1}.`Way`,{1}.`Sign`,{1}.`Statistic`,{1}.`Detail` FROM {2}.{1}", tempName, table.TableName, dbName);
                     if (!string.IsNullOrEmpty(table.Where)) builder.Append(" " + table.Where);
-                    if (dbs[i].Tables.Any(t => t.TableName == "T_USER"))
-                    {
-                        if (!__flag)
-                        {
-                            __flag = true;
-                            builder.Append(" WHERE EXISTS ");
-                            builder.Append("(SELECT {0}.T_USER.ID FROM {0}.T_USER WHERE T_OPLog.PID = {0}.T_USER.ID)", tempName);
-                        }
-                    }
                     builder.AppendLine(";");
                     result = builder.ToString();
                     builder.Remove(0, builder.Length);
@@ -969,20 +959,6 @@ namespace Server
             }
             #endregion
         }
-        public static int DeleteForeignKey_T_USER_ID(int target)
-        {
-            StringBuilder builder = new StringBuilder();
-            builder.AppendLine("DELETE FROM `T_USER` WHERE `ID` = @p0;");
-            builder.AppendLine("DELETE FROM `T_OPLog` WHERE `PID` = @p0;");
-            return _DAO.ExecuteNonQuery(builder.ToString(), target);
-        }
-        public static int UpdateForeignKey_T_USER_ID(int origin, int target)
-        {
-            StringBuilder builder = new StringBuilder();
-            builder.AppendLine("UPDATE `T_USER` SET `ID` = @p0 WHERE `ID` = @p1;");
-            builder.AppendLine("UPDATE `T_OPLog` SET `PID` = @p0 WHERE `PID` = @p1;");
-            return _DAO.ExecuteNonQuery(builder.ToString(), target, origin);
-        }
         public static void UpdateIdentityKey_T_USER_ID(ref int start)
         {
             int min = _DAO.ExecuteScalar<int>("SELECT MIN(`ID`) FROM `T_USER`;");
@@ -1000,7 +976,6 @@ namespace Server
             }
             StringBuilder builder = new StringBuilder();
             builder.AppendLine("UPDATE `T_USER` SET `ID` = `ID` + @p0;");
-            builder.AppendLine("UPDATE `T_OPLog` SET `PID` = `PID` + @p0;");
             _DAO.ExecuteNonQuery(builder.ToString(), min);
         }
         public static void UpdateIdentityKey_T_CENTER_USER_ID(ref int start)
@@ -1040,11 +1015,6 @@ namespace Server
             StringBuilder builder = new StringBuilder();
             builder.AppendLine("UPDATE `T_OPLog` SET `ID` = `ID` + @p0;");
             _DAO.ExecuteNonQuery(builder.ToString(), min);
-        }
-        public class JoinT_OPLog
-        {
-            public T_OPLog T_OPLog;
-            public T_USER PID;
         }
         public partial class _T_USER : T_USER
         {
@@ -1808,67 +1778,6 @@ namespace Server
                 builder.Append(';');
                 if (param.Length == 0) return _DAO.SelectObjects<T_OPLog>(builder.ToString(), PID, Operation, Way, Sign);
                 else return _DAO.SelectObjects<T_OPLog>(builder.ToString(), param.Add(PID, Operation, Way, Sign));
-            }
-            public static StringBuilder GetSelectJoinSQL(ref ET_OPLog[] fT_OPLog, ref ET_USER[] fPID)
-            {
-                StringBuilder builder = new StringBuilder();
-                builder.Append("SELECT ");
-                _T_OPLog.GetSelectField("t0", builder, fT_OPLog);
-                if (fT_OPLog == null || fT_OPLog.Length == 0) fT_OPLog = FIELD_ALL;
-                if (fPID != null)
-                {
-                    builder.Append(", ");
-                    _T_USER.GetSelectField("t1", builder, fPID);
-                    if (fPID.Length == 0) fPID = _T_USER.FIELD_ALL;
-                }
-                builder.Append(" FROM `T_OPLog` as t0");
-                if (fPID != null) builder.Append(" LEFT JOIN `T_USER` as t1 ON (t0.PID = t1.ID)");
-                return builder;
-            }
-            public static void SelectJoinRead(IDataReader reader, List<JoinT_OPLog> list, ET_OPLog[] fT_OPLog, ET_USER[] fPID)
-            {
-                int offset = 0;
-                int[] indices = new int[reader.FieldCount];
-                List<PropertyInfo> _pT_OPLog;
-                List<FieldInfo> _fT_OPLog;
-                _T_OPLog.MultiReadPrepare(reader, 0, fT_OPLog.Length, out _pT_OPLog, out _fT_OPLog, ref indices);
-                offset = fT_OPLog.Length;
-                List<PropertyInfo> _pPID = null;
-                List<FieldInfo> _fPID = null;
-                if (fPID != null)
-                {
-                    _T_USER.MultiReadPrepare(reader, offset, fPID.Length, out _pPID, out _fPID, ref indices);
-                    offset += fPID.Length;
-                }
-                while (reader.Read())
-                {
-                    JoinT_OPLog join = new JoinT_OPLog();
-                    list.Add(join);
-                    join.T_OPLog = _T_OPLog.MultiRead(reader, 0, fT_OPLog.Length, _pT_OPLog, _fT_OPLog, indices);
-                    offset = fT_OPLog.Length;
-                    if (fPID != null)
-                    {
-                        join.PID = _T_USER.MultiRead(reader, offset, fPID.Length, _pPID, _fPID, indices);
-                        offset += fPID.Length;
-                    }
-                }
-            }
-            public static List<JoinT_OPLog> SelectJoin(ET_OPLog[] fT_OPLog, ET_USER[] fPID, string condition, params object[] param)
-            {
-                StringBuilder builder = GetSelectJoinSQL(ref fT_OPLog, ref fPID);
-                if (!string.IsNullOrEmpty(condition)) builder.Append(" {0}", condition);
-                builder.Append(';');
-                List<JoinT_OPLog> results = new List<JoinT_OPLog>();
-                _DAO.ExecuteReader((reader) => SelectJoinRead(reader, results, fT_OPLog, fPID), builder.ToString(), param);
-                return results;
-            }
-            public static PagedModel<JoinT_OPLog> SelectJoinPages(ET_OPLog[] fT_OPLog, ET_USER[] fPID, string __where, string conditionAfterWhere, int page, int pageSize, params object[] param)
-            {
-                StringBuilder builder = GetSelectJoinSQL(ref fT_OPLog, ref fPID);
-                StringBuilder builder2 = new StringBuilder();
-                builder2.Append("SELECT count(t0.`ID`) FROM `T_OPLog` as t0");
-                if (fPID != null) builder2.Append(" LEFT JOIN `T_USER` as t1 ON (t0.PID = t1.ID)");
-                return _DB.SelectPages<JoinT_OPLog>(_DAO, builder2.ToString(), __where, builder.ToString(), conditionAfterWhere, page, pageSize, (reader, list) => SelectJoinRead(reader, list, fT_OPLog, fPID), param);
             }
             public static PagedModel<T_OPLog> SelectPages(string __where, ET_OPLog[] fields, string conditionAfterWhere, int page, int pageSize, params object[] param)
             {

@@ -25,10 +25,25 @@ namespace Server.Impl
             }
         }
 
-        void _IUser.GetUserInfo(CBIUser_GetUserInfo callback)
+        void _IUser.UserInfo(CBIUser_UserInfo callback)
         {
             // 同步部分数据
             callback.Callback(User);
+        }
+        void _IUser.UserModifyPassword(string opass, string npass, CBIUser_UserModifyPassword callback)
+        {
+            UserModifyPassword(opass, npass);
+            callback.Callback(true);
+        }
+        void _IUser.UserModifyPhone(string phone, string code, CBIUser_UserModifyPhone callback)
+        {
+            UserModifyPhone(phone, code);
+            callback.Callback(true);
+        }
+        void _IUser.UserExitLogin(CBIUser_UserExitLogin callback)
+        {
+            UserExitLogin();
+            callback.Callback(true);
         }
     }
 }
