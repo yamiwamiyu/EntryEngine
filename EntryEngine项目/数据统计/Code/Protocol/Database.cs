@@ -148,8 +148,23 @@ public class T_UserBase
     }
 }
 /// <summary>后台管理账号</summary>
-[MemoryTable]
-public class T_CENTER_USER : T_UserBase { }
+[MemoryTable]public class T_CENTER_USER : T_UserBase
+{
+    /// <summary>账号类型</summary>
+    [Index]public EAccountType Type;
+    /// <summary>账号管理的游戏，当账号类型为1时不需要判断此字段</summary>
+    public string[] ManagerGame;
+    /// <summary>账号状态，false时为封禁</summary>
+    [Index]public bool State = true;
+    /// <summary>昵称</summary>
+    [Ignore]public string Nickname;
+}
+/// <summary>账号类型</summary>
+public enum EAccountType : byte
+{
+    平台账号 = 1,
+    普通账号 = 2
+}
 
 /// <summary>操作日志</summary>
 [MemoryTable]

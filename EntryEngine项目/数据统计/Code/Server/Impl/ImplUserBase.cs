@@ -123,7 +123,7 @@ namespace Server.Impl
             OP(op, null, sign, 0, null);
         }
 
-        public void CheckToken(string token)
+        public virtual void CheckToken(string token)
         {
             if (string.IsNullOrEmpty(token))
                 throw new HttpException(100, "没有登录!");

@@ -40,13 +40,6 @@ namespace Server
 
         /// <summary>注册一个后台管理员账号</summary>
         void AddAdmin(string name, string password);
-        /// <summary>主动查询订单支付状态</summary>
-        /// <param name="orderID">订单ID，数字ID和字符串ID都可</param>
-        //void QueryOrder(string orderID);
-        /// <summary>设置支付宝参数</summary>
-        /// <param name="notifyUrl">支付成功后支付宝回调通知给我们服务器后台的回调地址</param>
-        /// <param name="returnUrl">前端支付完成后页面跳转的地址</param>
-        void SetZFB(string notifyUrl, string returnUrl);
     }
     partial class Service : ProxyHttpAsync, ICmd
     {
@@ -244,17 +237,12 @@ namespace Server
             user.Name = name;
             user.Account = name;
             user.Password = password;
+            user.Type = EAccountType.平台账号;
             if (T_SMSCode.IsTelephone(name))
                 user.Phone = long.Parse(name);
 
             center.Register(user, ELoginWay.其它);
             _LOG.Info("注册后台账号：{0}", name);
-        }
-        void ICmd.SetZFB(string notifyUrl, string returnUrl)
-        {
-            //_LOG.Info("设置支付宝参数：\r\n回调通知：{0}\r\n跳转页面：{1}", notifyUrl, returnUrl);
-            //_DB._ZFB.NOTIFY_URL = notifyUrl;
-            //_DB._ZFB.RETURN_URL = returnUrl;
         }
     }
 }

@@ -29,7 +29,7 @@ namespace Server.Impl
             impl.Login(impl.User, ELoginWay.手机号);
             callback.Callback(impl.User);
         }
-        void _IService.CenterLoginByPassword(string name, string password, CBIService_CenterLoginByPassword callback)
+        void _IService.Login(string name, string password, CBIService_Login callback)
         {
             "账户名不能为空".Check(string.IsNullOrEmpty(name));
             "密码不能为空".Check(string.IsNullOrEmpty(password));
@@ -37,7 +37,7 @@ namespace Server.Impl
             impl.InitializeByAccount(name);
             "账号密码不正确".Check(impl.User == null || !impl.User.IsMatchPassword(password));
             impl.Login(impl.User, ELoginWay.密码);
-            callback.Callback(impl.User);
+            callback.Callback(impl.User.Token);
         }
     }
 }

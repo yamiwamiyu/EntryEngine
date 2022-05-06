@@ -7,6 +7,10 @@ using EntryEngine.Network;
 
 public static class _EX
 {
+    public static DateTime HandleEndTime(this DateTime time)
+    {
+        return time.Ticks == 0 ? DateTime.Now.AddDays(1) : time.AddDays(1);
+    }
 }
 /// <summary>上传/下载文件通用</summary>
 public static class _FILE

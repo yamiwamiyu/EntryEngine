@@ -13,6 +13,9 @@ namespace Server
 {
     public enum ET_CENTER_USER
     {
+        Type,
+        ManagerGame,
+        State,
         ID,
         RegisterTime,
         Token,
@@ -262,6 +265,9 @@ namespace Server
             @"
             CREATE TABLE IF NOT EXISTS `T_CENTER_USER`
             (
+            `Type` TINYINT UNSIGNED,
+            `ManagerGame` TEXT,
+            `State` TINYINT(1),
             `ID` INT PRIMARY KEY AUTO_INCREMENT,
             `RegisterTime` DATETIME,
             `Token` TEXT,
@@ -442,6 +448,55 @@ namespace Server
                 if (pk.IsIdentity) builder.AppendLine("ALTER TABLE `T_CENTER_USER` CHANGE COLUMN `{0}` `{0}` {1};", pk.COLUMN_NAME, pk.DATA_TYPE);
                 builder.AppendLine("ALTER TABLE `T_CENTER_USER` DROP PRIMARY KEY;");
                 _LOG.Debug("Drop primary key.");
+            }
+            if (__columns.TryGetValue("Type", out __value))
+            {
+                builder.AppendLine("ALTER TABLE `T_CENTER_USER` CHANGE COLUMN `Type` `Type` TINYINT UNSIGNED;");
+                if (!__value.IsIndex && !__value.IsUnique)
+                {
+                    builder.AppendLine("ALTER TABLE `T_CENTER_USER` ADD INDEX(`Type`);");
+                    _LOG.Debug("Add index[`{0}`].", __value.COLUMN_NAME);
+                }
+                __columns.Remove(__value.COLUMN_NAME);
+            }
+            else
+            {
+                builder.AppendLine("ALTER TABLE `T_CENTER_USER` ADD COLUMN `Type` TINYINT UNSIGNED;");
+                builder.AppendLine("ALTER TABLE `T_CENTER_USER` ADD INDEX(`Type`);");
+                _LOG.Debug("Add index[`{0}`].", "Type");
+                _LOG.Debug("Add column[`{0}`].", "Type");
+            }
+            if (__columns.TryGetValue("ManagerGame", out __value))
+            {
+                builder.AppendLine("ALTER TABLE `T_CENTER_USER` CHANGE COLUMN `ManagerGame` `ManagerGame` TEXT;");
+                if (__value.IsIndex || __value.IsUnique)
+                {
+                    builder.AppendLine("ALTER TABLE T_CENTER_USER DROP INDEX `{0}`;", __value.COLUMN_NAME);
+                    _LOG.Debug("Drop index[`{0}`].", __value.COLUMN_NAME);
+                }
+                __columns.Remove(__value.COLUMN_NAME);
+            }
+            else
+            {
+                builder.AppendLine("ALTER TABLE `T_CENTER_USER` ADD COLUMN `ManagerGame` TEXT;");
+                _LOG.Debug("Add column[`{0}`].", "ManagerGame");
+            }
+            if (__columns.TryGetValue("State", out __value))
+            {
+                builder.AppendLine("ALTER TABLE `T_CENTER_USER` CHANGE COLUMN `State` `State` TINYINT(1);");
+                if (!__value.IsIndex && !__value.IsUnique)
+                {
+                    builder.AppendLine("ALTER TABLE `T_CENTER_USER` ADD INDEX(`State`);");
+                    _LOG.Debug("Add index[`{0}`].", __value.COLUMN_NAME);
+                }
+                __columns.Remove(__value.COLUMN_NAME);
+            }
+            else
+            {
+                builder.AppendLine("ALTER TABLE `T_CENTER_USER` ADD COLUMN `State` TINYINT(1);");
+                builder.AppendLine("ALTER TABLE `T_CENTER_USER` ADD INDEX(`State`);");
+                _LOG.Debug("Add index[`{0}`].", "State");
+                _LOG.Debug("Add column[`{0}`].", "State");
             }
             if (__columns.TryGetValue("ID", out __value))
             {
@@ -2743,7 +2798,7 @@ namespace Server
                 table = dbs[i].Tables.FirstOrDefault(t => t.TableName == "T_CENTER_USER");
                 if (table != null)
                 {
-                    builder.Append("INSERT INTO {0}.{1} SELECT {1}.`ID`,{1}.`RegisterTime`,{1}.`Token`,{1}.`Account`,{1}.`Password`,{1}.`Phone`,{1}.`Name`,{1}.`LastLoginTime` FROM {2}.{1}", tempName, table.TableName, dbName);
+                    builder.Append("INSERT INTO {0}.{1} SELECT {1}.`Type`,{1}.`ManagerGame`,{1}.`State`,{1}.`ID`,{1}.`RegisterTime`,{1}.`Token`,{1}.`Account`,{1}.`Password`,{1}.`Phone`,{1}.`Name`,{1}.`LastLoginTime` FROM {2}.{1}", tempName, table.TableName, dbName);
                     if (!string.IsNullOrEmpty(table.Where)) builder.Append(" " + table.Where);
                     builder.AppendLine(";");
                     result = builder.ToString();
@@ -3059,8 +3114,45 @@ namespace Server
         }
         public partial class _T_CENTER_USER : T_CENTER_USER
         {
-            public static ET_CENTER_USER[] FIELD_ALL = { ET_CENTER_USER.ID, ET_CENTER_USER.RegisterTime, ET_CENTER_USER.Token, ET_CENTER_USER.Account, ET_CENTER_USER.Password, ET_CENTER_USER.Phone, ET_CENTER_USER.Name, ET_CENTER_USER.LastLoginTime };
-            public static ET_CENTER_USER[] FIELD_UPDATE = { ET_CENTER_USER.RegisterTime, ET_CENTER_USER.Token, ET_CENTER_USER.Account, ET_CENTER_USER.Password, ET_CENTER_USER.Phone, ET_CENTER_USER.Name, ET_CENTER_USER.LastLoginTime };
+            public new string ManagerGame
+            {
+                get { return JsonWriter.Serialize(base.ManagerGame, typeof(String[])); }
+                set { base.ManagerGame = JsonReader.Deserialize<string[]>(value); }
+            }
+            
+            public _T_CENTER_USER() { }
+            public _T_CENTER_USER(T_CENTER_USER __clone)
+            {
+                base.Type = __clone.Type;
+                base.ManagerGame = __clone.ManagerGame;
+                base.State = __clone.State;
+                base.ID = __clone.ID;
+                base.RegisterTime = __clone.RegisterTime;
+                base.Token = __clone.Token;
+                base.Account = __clone.Account;
+                base.Password = __clone.Password;
+                base.Phone = __clone.Phone;
+                base.Name = __clone.Name;
+                base.LastLoginTime = __clone.LastLoginTime;
+            }
+            T_CENTER_USER __TO()
+            {
+                T_CENTER_USER __copy = new T_CENTER_USER();
+                __copy.Type = base.Type;
+                __copy.ManagerGame = base.ManagerGame;
+                __copy.State = base.State;
+                __copy.ID = base.ID;
+                __copy.RegisterTime = base.RegisterTime;
+                __copy.Token = base.Token;
+                __copy.Account = base.Account;
+                __copy.Password = base.Password;
+                __copy.Phone = base.Phone;
+                __copy.Name = base.Name;
+                __copy.LastLoginTime = base.LastLoginTime;
+                return __copy;
+            }
+            public static ET_CENTER_USER[] FIELD_ALL = { ET_CENTER_USER.Type, ET_CENTER_USER.ManagerGame, ET_CENTER_USER.State, ET_CENTER_USER.ID, ET_CENTER_USER.RegisterTime, ET_CENTER_USER.Token, ET_CENTER_USER.Account, ET_CENTER_USER.Password, ET_CENTER_USER.Phone, ET_CENTER_USER.Name, ET_CENTER_USER.LastLoginTime };
+            public static ET_CENTER_USER[] FIELD_UPDATE = { ET_CENTER_USER.Type, ET_CENTER_USER.ManagerGame, ET_CENTER_USER.State, ET_CENTER_USER.RegisterTime, ET_CENTER_USER.Token, ET_CENTER_USER.Account, ET_CENTER_USER.Password, ET_CENTER_USER.Phone, ET_CENTER_USER.Name, ET_CENTER_USER.LastLoginTime };
             public static ET_CENTER_USER[] NoNeedField(params ET_CENTER_USER[] noNeed)
             {
                 if (noNeed.Length == 0) return FIELD_ALL;
@@ -3083,39 +3175,43 @@ namespace Server
             }
             public static T_CENTER_USER Read(IDataReader reader, int offset, int fieldCount)
             {
-                return _DATABASE.ReadObject<T_CENTER_USER>(reader, offset, fieldCount);
+                return _DATABASE.ReadObject<_T_CENTER_USER>(reader, offset, fieldCount).__TO();
             }
             public static void MultiReadPrepare(IDataReader reader, int offset, int fieldCount, out List<PropertyInfo> properties, out List<FieldInfo> fields, ref int[] indices)
             {
-                _DATABASE.MultiReadPrepare(reader, typeof(T_CENTER_USER), offset, fieldCount, out properties, out fields, ref indices);
+                _DATABASE.MultiReadPrepare(reader, typeof(_T_CENTER_USER), offset, fieldCount, out properties, out fields, ref indices);
             }
             public static T_CENTER_USER MultiRead(IDataReader reader, int offset, int fieldCount, List<PropertyInfo> properties, List<FieldInfo> fields, int[] indices)
             {
-                return _DATABASE.MultiRead<T_CENTER_USER>(reader, offset, fieldCount, properties, fields, indices)
-                ;
+                return _DATABASE.MultiRead<_T_CENTER_USER>(reader, offset, fieldCount, properties, fields, indices)
+                .__TO();
             }
             public static void GetInsertSQL(T_CENTER_USER target, StringBuilder builder, List<object> values)
             {
                 int index = values.Count;
-                builder.AppendFormat("INSERT `T_CENTER_USER`(`RegisterTime`, `Token`, `Account`, `Password`, `Phone`, `Name`, `LastLoginTime`) VALUES(");
-                for (int i = 0, n = 6; i <= n; i++)
+                _T_CENTER_USER _target = new _T_CENTER_USER(target);
+                builder.AppendFormat("INSERT `T_CENTER_USER`(`Type`, `ManagerGame`, `State`, `RegisterTime`, `Token`, `Account`, `Password`, `Phone`, `Name`, `LastLoginTime`) VALUES(");
+                for (int i = 0, n = 9; i <= n; i++)
                 {
                     builder.AppendFormat("@p{0}", index++);
                     if (i != n) builder.Append(", ");
                 }
                 builder.AppendLine(");");
-                values.Add(target.RegisterTime);
-                values.Add(target.Token);
-                values.Add(target.Account);
-                values.Add(target.Password);
-                values.Add(target.Phone);
-                values.Add(target.Name);
-                values.Add(target.LastLoginTime);
+                values.Add(_target.Type);
+                values.Add(_target.ManagerGame);
+                values.Add(_target.State);
+                values.Add(_target.RegisterTime);
+                values.Add(_target.Token);
+                values.Add(_target.Account);
+                values.Add(_target.Password);
+                values.Add(_target.Phone);
+                values.Add(_target.Name);
+                values.Add(_target.LastLoginTime);
             }
             public static int Insert(T_CENTER_USER target)
             {
                 StringBuilder builder = new StringBuilder();
-                List<object> values = new List<object>(8);
+                List<object> values = new List<object>(11);
                 GetInsertSQL(target, builder, values);
                 builder.Append("SELECT LAST_INSERT_ID();");
                 target.ID = _DAO.SelectValue<int>(builder.ToString(), values.ToArray());
@@ -3134,42 +3230,58 @@ namespace Server
             public static void GetUpdateSQL(T_CENTER_USER target, string condition, StringBuilder builder, List<object> values, params ET_CENTER_USER[] fields)
             {
                 int index = values.Count;
+                _T_CENTER_USER _target = new _T_CENTER_USER(target);
                 bool all = fields.Length == 0 || fields == FIELD_UPDATE;
                 builder.Append("UPDATE `T_CENTER_USER` SET");
+                if (all || fields.Contains(ET_CENTER_USER.Type))
+                {
+                    builder.AppendFormat(" `Type` = @p{0},", index++);
+                    values.Add(_target.Type);
+                }
+                if (all || fields.Contains(ET_CENTER_USER.ManagerGame))
+                {
+                    builder.AppendFormat(" `ManagerGame` = @p{0},", index++);
+                    values.Add(_target.ManagerGame);
+                }
+                if (all || fields.Contains(ET_CENTER_USER.State))
+                {
+                    builder.AppendFormat(" `State` = @p{0},", index++);
+                    values.Add(_target.State);
+                }
                 if (all || fields.Contains(ET_CENTER_USER.RegisterTime))
                 {
                     builder.AppendFormat(" `RegisterTime` = @p{0},", index++);
-                    values.Add(target.RegisterTime);
+                    values.Add(_target.RegisterTime);
                 }
                 if (all || fields.Contains(ET_CENTER_USER.Token))
                 {
                     builder.AppendFormat(" `Token` = @p{0},", index++);
-                    values.Add(target.Token);
+                    values.Add(_target.Token);
                 }
                 if (all || fields.Contains(ET_CENTER_USER.Account))
                 {
                     builder.AppendFormat(" `Account` = @p{0},", index++);
-                    values.Add(target.Account);
+                    values.Add(_target.Account);
                 }
                 if (all || fields.Contains(ET_CENTER_USER.Password))
                 {
                     builder.AppendFormat(" `Password` = @p{0},", index++);
-                    values.Add(target.Password);
+                    values.Add(_target.Password);
                 }
                 if (all || fields.Contains(ET_CENTER_USER.Phone))
                 {
                     builder.AppendFormat(" `Phone` = @p{0},", index++);
-                    values.Add(target.Phone);
+                    values.Add(_target.Phone);
                 }
                 if (all || fields.Contains(ET_CENTER_USER.Name))
                 {
                     builder.AppendFormat(" `Name` = @p{0},", index++);
-                    values.Add(target.Name);
+                    values.Add(_target.Name);
                 }
                 if (all || fields.Contains(ET_CENTER_USER.LastLoginTime))
                 {
                     builder.AppendFormat(" `LastLoginTime` = @p{0},", index++);
-                    values.Add(target.LastLoginTime);
+                    values.Add(_target.LastLoginTime);
                 }
                 if (index == 0) return;
                 builder[builder.Length - 1] = ' ';
@@ -3217,7 +3329,7 @@ namespace Server
             {
                 StringBuilder builder = GetSelectSQL(fields);
                 builder.Append(" WHERE `ID` = @p0;");
-                var ret = _DAO.SelectObject<T_CENTER_USER>(builder.ToString(), __ID);
+                var ret = _DAO.SelectObject<_T_CENTER_USER>(builder.ToString(), __ID).__TO();
                 if (ret != default(T_CENTER_USER))
                 {
                     ret.ID = __ID;
@@ -3229,7 +3341,7 @@ namespace Server
                 StringBuilder builder = GetSelectSQL(fields);
                 if (!string.IsNullOrEmpty(condition)) builder.Append(" {0}", condition);
                 builder.Append(';');
-                return _DAO.SelectObject<T_CENTER_USER>(builder.ToString(), param);
+                return _DAO.SelectObject<_T_CENTER_USER>(builder.ToString(), param).__TO();
             }
             public static bool Exists(int __ID)
             {
@@ -3246,16 +3358,23 @@ namespace Server
                 else builder = GetSelectSQL(fields);
                 if (!string.IsNullOrEmpty(condition)) builder.Append(" {0}", condition);
                 builder.Append(';');
-                return _DAO.SelectObjects<T_CENTER_USER>(builder.ToString(), param);
+                List<_T_CENTER_USER> __temp = _DAO.SelectObjects<_T_CENTER_USER>(builder.ToString(), param);
+                List<T_CENTER_USER> __result = new List<T_CENTER_USER>(__temp.Count);
+                __result.AddRange(__temp.Select(i => i.__TO()));
+                return __result;
+            }
+            public static PagedModel<T_CENTER_USER> ChangePageModel(PagedModel<_T_CENTER_USER> model)
+            {
+                return model.ChangeModel<T_CENTER_USER>(m => m.__TO());
             }
             public static PagedModel<T_CENTER_USER> SelectPages(string __where, ET_CENTER_USER[] fields, string conditionAfterWhere, int page, int pageSize, params object[] param)
             {
-                var ret = SelectPages<T_CENTER_USER>(__where, GetSelectSQL(fields).ToString(), conditionAfterWhere, page, pageSize, param);
-                return ret;
+                var ret = SelectPages<_T_CENTER_USER>(__where, GetSelectSQL(fields).ToString(), conditionAfterWhere, page, pageSize, param);
+                return ChangePageModel(ret);
             }
             public static PagedModel<T> SelectPages<T>(string __where, string selectSQL, string conditionAfterWhere, int page, int pageSize, params object[] param) where T : new()
             {
-                return _DB.SelectPages<T>(_DAO, "SELECT count(`T_CENTER_USER`.`ID`) FROM `T_CENTER_USER`", __where, selectSQL, conditionAfterWhere, page, pageSize, param);
+                return _DB.SelectPages<T>(_DAO, "SELECT count(`T_CENTER_USER`.`Type`) FROM `T_CENTER_USER`", __where, selectSQL, conditionAfterWhere, page, pageSize, param);
             }
         }
         public partial class _T_OPLog : T_OPLog
