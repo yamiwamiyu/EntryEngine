@@ -171,6 +171,15 @@ public static class _FILE
             // 都为null，不做任何操作
         }
     }
+    /// <summary>图片上传</summary>
+    /// <param name="upload">本次上传的图片路径</param>
+    /// <param name="newFile">本次要保存的图片目标路径</param>
+    public static void SaveUploadFile(ref string upload, string newFile)
+    {
+        // 上传新文件
+        SaveUploadFile(NATIVE_UPLOAD_PATH + upload, ref newFile);
+        upload = newFile;
+    }
     public static void SaveUploadFile(ref string[] oldFiles, ref string[] uploads, string[] newFiles, bool isDeleteOld = true)
     {
         if (oldFiles == null)
@@ -216,5 +225,16 @@ public static class _FILE
         for (int i = 0; i < len; i++)
             newFiles[i] = dir + uploads[i];
         SaveUploadFile(ref oldFiles, ref uploads, newFiles, isDeleteOld);
+    }
+    public static void SaveUploadFile(ref string[] uploads, string dir)
+    {
+        int len = uploads == null ? 0 : uploads.Length;
+        string[] newFiles = new string[len];
+        for (int i = 0; i < len; i++)
+        {
+            newFiles[i] = dir + uploads[i];
+            SaveUploadFile(NATIVE_UPLOAD_PATH + uploads[i], ref newFiles[i]);
+            uploads[i] = newFiles[i];
+        }
     }
 }
