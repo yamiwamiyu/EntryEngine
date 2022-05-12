@@ -1436,6 +1436,10 @@ namespace EntryEngine.Network
     }
 #endif
 
+    /// <summary>标记此特性代表接口内的方法可以在控制台输入执行</summary>
+    [AttributeUsage(AttributeTargets.Interface)]
+    public class CMDAttribute : Attribute { }
+
     public class LinkHttpResponseShort : LinkBinary
     {
         /// <summary>由于短连接的特性，未能由服务器主动推送出去的数据将会被缓存，超过此尺寸时，缓存将被清空，负数则允许无限增大</summary>

@@ -198,6 +198,13 @@ namespace EntryEngine
 			}
 			return -1;
 		}
+        public static List<U> Cast<T, U>(this IList<T> list, Func<T, U> ret)
+        {
+            List<U> results = new List<U>(list.Count);
+            foreach (var item in list)
+                results.Add(ret(item));
+            return results;
+        }
 		public static List<T> WhereAndRemove<T>(this IEnumerable<T> array, Func<T, bool> method, out List<T> other)
 		{
 			List<T> results = new List<T>();
@@ -444,6 +451,13 @@ namespace EntryEngine
         public static void Foreach<T>(this IEnumerable<T> array)
         {
             foreach (var item in array) { }
+        }
+        public static List<T> Foreach<T>(this List<T> list, Action<T> action)
+        {
+            foreach (var item in list)
+                if (action != null)
+                    action(item);
+            return list;
         }
 		public static void ForeachExceptLast<T>(this IEnumerable<T> array, Action<T> all, Action<T> except)
 		{

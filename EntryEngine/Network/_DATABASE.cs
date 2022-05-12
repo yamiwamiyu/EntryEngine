@@ -1451,46 +1451,6 @@ namespace EntryEngine.Network
             }
         }
     }
-#endif
-
-    /// <summary>翻页数据模型</summary>
-    public class PagedModel<T>
-    {
-        /// <summary>数据总条数</summary>
-        public int Count;
-        /// <summary>当前页数，从0开始</summary>
-        public int Page;
-        /// <summary>每页的数据条数</summary>
-        public int PageSize;
-        /// <summary>总页数，从0开始</summary>
-        public int TotalPage;
-        /// <summary>当前页的数据</summary>
-        public List<T> Models;
-
-        /// <summary>根据数据总条数和每页数据条数自动计算总页数并返回总页数</summary>
-        public int CalcTotalPage()
-        {
-            if (PageSize == 0)
-                TotalPage = 0;
-            else
-                TotalPage = (Count - 1) / PageSize;
-            return TotalPage;
-        }
-
-        public PagedModel<U> ChangeModel<U>(Func<T, U> select)
-        {
-            PagedModel<U> ret = new PagedModel<U>();
-            ret.Count = this.Count;
-            ret.Page = this.Page;
-            ret.PageSize = this.PageSize;
-            ret.TotalPage = this.TotalPage;
-            int count = Models.Count;
-            ret.Models = new List<U>(count);
-            for (int i = 0; i < Models.Count; i++)
-                ret.Models.Add(select(Models[i]));
-            return ret;
-        }
-    }
 
     /// <summary>索引类型</summary>
     public enum EIndex : byte
@@ -1564,6 +1524,53 @@ namespace EntryEngine.Network
         public MemoryTableAttribute(bool temp)
         {
             TempTable = temp;
+        }
+    }
+    /// <summary>数据库类型有特殊字段(需JSON转换)时，查询出来子类实例拷贝成父类实例时，会调用此接口方法，可以用于拷贝些Ignore的字段</summary>
+    /// <typeparam name="T">T必须是实现此接口的类型</typeparam>
+    public interface IDBCopy<T>
+    {
+        /// <summary>将自己的属性拷贝给目标</summary>
+        void DBCopyTo(T target);
+    }
+#endif
+
+    /// <summary>翻页数据模型</summary>
+    public class PagedModel<T>
+    {
+        /// <summary>数据总条数</summary>
+        public int Count;
+        /// <summary>当前页数，从0开始</summary>
+        public int Page;
+        /// <summary>每页的数据条数</summary>
+        public int PageSize;
+        /// <summary>总页数，从0开始</summary>
+        public int TotalPage;
+        /// <summary>当前页的数据</summary>
+        public List<T> Models;
+
+        /// <summary>根据数据总条数和每页数据条数自动计算总页数并返回总页数</summary>
+        public int CalcTotalPage()
+        {
+            if (PageSize == 0)
+                TotalPage = 0;
+            else
+                TotalPage = (Count - 1) / PageSize;
+            return TotalPage;
+        }
+
+        public PagedModel<U> ChangeModel<U>(Func<T, U> select)
+        {
+            PagedModel<U> ret = new PagedModel<U>();
+            ret.Count = this.Count;
+            ret.Page = this.Page;
+            ret.PageSize = this.PageSize;
+            ret.TotalPage = this.TotalPage;
+            int count = Models.Count;
+            ret.Models = new List<U>(count);
+            for (int i = 0; i < Models.Count; i++)
+                ret.Models.Add(select(Models[i]));
+            return ret;
         }
     }
 }

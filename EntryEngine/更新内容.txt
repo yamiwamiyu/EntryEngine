@@ -1,4 +1,14 @@
-﻿2020/04/28
+﻿下版本预计
+1. 运维工具服务端新增_C.xml配置默认账号和密码
+2. 运维工具大改，单个服务更新也改用SVN而非本地复制，服务和服务类型允许改名
+3. 运维工具新增LauncherManagerWeb项目，删除LauncherManagerH5
+
+2022/05/12
+1. 新增Utility.Cast和Foreach方便x.Foreach(i => i.xx).Cast(i => i.xx)方式调用
+2. 新增IDBCopy<T>
+3. 前后端JS交互接口支持返回值式声明和实现
+
+2020/04/28
 1. 测试从gitee拉取的入口引擎代码提交同步到github上
 
 2020/04/24

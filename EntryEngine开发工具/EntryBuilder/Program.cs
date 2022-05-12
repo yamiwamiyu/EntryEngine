@@ -1010,8 +1010,8 @@ namespace EntryBuilder
                 Dictionary<int, Type> asyncCB = new Dictionary<int, Type>();
                 for (int i = 0; i < call.Length; i++)
                 {
-                    if (call[i].ReturnType != typeof(void))
-                        throw new NotImplementedException("Call function can't have a return value.");
+                    //if (call[i].ReturnType != typeof(void))
+                    //    throw new NotImplementedException("Call function can't have a return value.");
                     var list = call[i].GetParameters().Where(p => p.ParameterType.Is(DELEGATE_TYPE)).ToList();
                     if (list.Count > 1)
                         throw new NotSupportedException("Delegate parameter can have only one.");
@@ -1906,14 +1906,8 @@ namespace EntryBuilder
                         builder.AppendBlock(() =>
                         {
                             builder.AppendLine("if (IsCallback) return;");
-                            // 参数
-                            //if (parameter.ParameterType.IsCustomType())
-                            //    builder.AppendLine("string __ret = JsonWriter.Serialize({0});", parameter.Name);
-                            //else if (parameter.ParameterType == typeof(string))
-                            //    builder.AppendLine("string __ret = {0};", parameter.Name);
-                            //else
-                            //    builder.AppendLine("string __ret = {0}.ToString();", parameter.Name);
                             builder.AppendLine("string __ret = JsonWriter.Serialize({0});", parameter.Name);
+                            //builder.AppendLine("string __ret = JsonWriter.Serialize({0}, typeof({1}));", parameter.Name, parameter.ParameterType.CodeName());
                             // 记录日志
                             builder.AppendLine("#if DEBUG");
                             builder.AppendLine("_LOG.Debug(\"{0} {{0}}\", __ret);", name);
@@ -2093,12 +2087,14 @@ namespace EntryBuilder
                                 builder.AppendLine("else");
                                 builder.AppendBlock(() =>
                                 {
-                                    if (method.ReturnType.IsCustomType())
-                                        builder.AppendLine("Response(__result);");
-                                    else if (method.ReturnType == typeof(string))
-                                        builder.AppendLine("Response(__result);");
-                                    else
-                                        builder.AppendLine("Response(__result.ToString());");
+                                    builder.AppendLine("string __ret = JsonWriter.Serialize(__result);");
+                                    //builder.AppendLine("string __ret = JsonWriter.Serialize({0}, typeof({1}));", parameter.Name, parameter.ParameterType.CodeName());
+                                    // 记录日志
+                                    builder.AppendLine("#if DEBUG");
+                                    builder.AppendLine("_LOG.Debug(\"{0} {{0}}\", __ret);", method.Name);
+                                    builder.AppendLine("#endif");
+                                    // 回调
+                                    builder.AppendLine("this.Response(__ret);");
                                 });
                             }
                             else
@@ -8420,6 +8416,8 @@ return result;"
                             builder.AppendLine("{0} __copy = new {0}();", table.Name);
                             foreach (var field in fields)
                                 builder.AppendLine("__copy.{0} = ___base.{0};", field.Name);
+                            if (table.Is(typeof(IDBCopy<>).MakeGenericType(table)))
+                                builder.AppendLine("((IDBCopy<{0}>)___base).DBCopyTo(__copy);", table.Name);
                             builder.AppendLine("return __copy;");
                         });
                     }
