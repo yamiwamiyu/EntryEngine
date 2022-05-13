@@ -2407,8 +2407,13 @@ return result;"
                                             builder.AppendLine("if (resolve) { resolve(obj); }");
                                         });
                                     });
-                                    builder.AppendLine("else if ({0}.onError) {{ {0}.onError(req); }}", name);
-                                    builder.AppendLine("else { console.error(req); }");
+                                    builder.AppendLine("else");
+                                    builder.AppendBlock(() =>
+                                    {
+                                        builder.AppendLine("if ({0}.onError) {{ {0}.onError(req); }}", name);
+                                        builder.AppendLine("else { console.error(req); }");
+                                        builder.AppendLine("if (reject) { reject({ \"errCode\": req.status, \"errMsg\": req.statusText, \"req\": req }); }");
+                                    });
                                 });
                             });
                             builder.AppendLine("req.open(\"POST\", {0}.url + url, true);", name);
