@@ -12,7 +12,7 @@ using Server.Impl;
 
 namespace Server
 {
-    public interface ICmd
+    [CMD]public interface ICmd
     {
         /// <summary>设置数据库</summary>
         /// <param name="dbconn">数据库连接字符串</param>

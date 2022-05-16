@@ -54,7 +54,7 @@
     <PostBuildEvent>copy $(TargetDir)\LauncherProtocolStructure.dll $(ProjectDir)..\..\..\EntryEngine开发工具\EntryBuilder\bin\Debug\
 
 ::$(ProjectDir)..\..\..\EntryEngine开发工具\EntryBuilder\bin\Debug\EntryBuilder.exe BuildProtocolAgentBinary $(ProjectDir)..\LauncherManager\ $(ProjectDir)..\LauncherServer\ $(TargetPath)\LauncherManagerProtocol.IManager false
-$(ProjectDir)..\..\..\EntryEngine开发工具\EntryBuilder\bin\Debug\EntryBuilder.exe BuildProtocolAgentHttp $(ProjectDir)..\LauncherManager\ $(ProjectDir)..\LauncherServer\ $(TargetPath)\LauncherManagerProtocol.IMBS 1
+$(ProjectDir)..\..\..\EntryEngine开发工具\EntryBuilder\bin\Debug\EntryBuilder.exe BuildProtocolAgentHttp $(ProjectDir)..\LauncherManagerWeb\src\services\ $(ProjectDir)..\LauncherServer\ $(TargetPath)\LauncherManagerProtocol.IMBS 1
 
 del $(ProjectDir)..\..\..\EntryEngine开发工具\EntryBuilder\bin\Debug\LauncherProtocolStructure.dll</PostBuildEvent>
   </PropertyGroup>

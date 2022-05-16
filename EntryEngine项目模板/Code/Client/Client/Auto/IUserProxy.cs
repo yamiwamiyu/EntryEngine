@@ -109,11 +109,36 @@ class IUserProxy
         return result;
     }
     
-    /// <see cref="IUser.GetUserInfo(System.Action{T_USER})"></see>
-    public AsyncData<string> GetUserInfo(System.Action<T_USER> callback)
+    /// <see cref="IUser.UserInfo(System.Action{T_USER})"></see>
+    public AsyncData<string> UserInfo(System.Action<T_USER> callback)
     {
         var parameters = new StringBuilder();
-        return send("3/GetUserInfo", parameters.ToString(), callback);
+        return send("3/UserInfo", parameters.ToString(), callback);
+    }
+    
+    /// <see cref="IUser.UserModifyPassword(string, string, System.Action{bool})"></see>
+    public AsyncData<string> UserModifyPassword(string opass, string npass, System.Action<bool> callback)
+    {
+        var parameters = new StringBuilder();
+        parameters.Append("opass={0}&", opass);
+        parameters.Append("npass={0}", npass);
+        return send("3/UserModifyPassword", parameters.ToString(), callback);
+    }
+    
+    /// <see cref="IUser.UserModifyPhone(string, string, System.Action{bool})"></see>
+    public AsyncData<string> UserModifyPhone(string phone, string code, System.Action<bool> callback)
+    {
+        var parameters = new StringBuilder();
+        parameters.Append("phone={0}&", phone);
+        parameters.Append("code={0}", code);
+        return send("3/UserModifyPhone", parameters.ToString(), callback);
+    }
+    
+    /// <see cref="IUser.UserExitLogin(System.Action{bool})"></see>
+    public AsyncData<string> UserExitLogin(System.Action<bool> callback)
+    {
+        var parameters = new StringBuilder();
+        return send("3/UserExitLogin", parameters.ToString(), callback);
     }
     
 }

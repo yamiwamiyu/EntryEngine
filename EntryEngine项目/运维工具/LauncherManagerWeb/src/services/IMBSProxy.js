@@ -5,7 +5,7 @@
     onCallback: null,
     onErrorMsg: null,
     onError: null,
-    url: "",
+    url: "http://127.0.0.1/",
     send: function(url, str, callback)
     {
         var promise = new Promise(function(resolve, reject)
@@ -41,8 +41,12 @@
                             if (resolve) { resolve(obj); }
                         }
                     }
-                    else if (IMBSProxy.onError) { IMBSProxy.onError(req); }
-                    else { console.error(req); }
+                    else
+                    {
+                        if (IMBSProxy.onError) { IMBSProxy.onError(req); }
+                        else { console.error(req); }
+                        if (reject) { reject({ "errCode": req.status, "errMsg": req.statusText, "req": req }); }
+                    }
                 }
             }
             req.open("POST", IMBSProxy.url + url, true);
@@ -109,19 +113,21 @@
         var str = [];
         return IMBSProxy.send("192/UpdateServer", str.join("&"), callback);
     },
-    NewService: function(serverID, serviceType, name, command, callback)
+    NewService: function(serverID, serviceType, name, exe, command, callback)
     {
         var str = [];
         if (serverID) str.push("serverID=" + serverID);
         if (serviceType) str.push("serviceType=" + encodeURIComponent(serviceType));
         if (name) str.push("name=" + encodeURIComponent(name));
+        if (exe) str.push("exe=" + encodeURIComponent(exe));
         if (command) str.push("command=" + encodeURIComponent(command));
         return IMBSProxy.send("192/NewService", str.join("&"), callback);
     },
-    SetServiceLaunchCommand: function(serviceNames, command, callback)
+    SetServiceLaunchCommand: function(serviceNames, exe, command, callback)
     {
         var str = [];
         if (serviceNames) str.push("serviceNames=" + encodeURIComponent(JSON.stringify(serviceNames)));
+        if (exe) str.push("exe=" + encodeURIComponent(exe));
         if (command) str.push("command=" + encodeURIComponent(command));
         return IMBSProxy.send("192/SetServiceLaunchCommand", str.join("&"), callback);
     },
