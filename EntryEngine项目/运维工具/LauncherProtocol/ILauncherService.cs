@@ -27,7 +27,7 @@ namespace LauncherProtocol
     [ProtocolStub(0, null)]
     public interface ILauncherService
     {
-        void PushServices(Service[] services);
+        void PushServices(List<Service> services);
         void RevisionUpdate(ServiceTypeRevision revision);
         void StatusUpdate(string name, EServiceStatus status, string time);
         void ServerStatusStatistic(ServerStatusData data);

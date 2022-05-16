@@ -32,6 +32,30 @@ namespace LauncherServer
 
     public class ServiceManagerBS : ProxyHttpService, _IMBS
     {
+        static Dictionary<string, ManagerBS> managers = new Dictionary<string, ManagerBS>();
+        /// <summary>最后一次刷新SVN服务版本的时间</summary>
+        static DateTime LastRefreshSVN;
+        /// <summary>刷新服务类型在SVN上的最新版本</summary>
+        static void RefreshSVN()
+        {
+            var watch = System.Diagnostics.Stopwatch.StartNew();
+            foreach (var item in _SAVE.ServiceTypes)
+            {
+                _SVN.UserName = item.SVNUser;
+                _SVN.Password = item.SVNPassword;
+                var log = _SVN.Log(item.SVNPath);
+                if (log != null)
+                {
+                    item.Revision = log.Revision;
+                    foreach (var s in SERVER.AllServices)
+                        if (s.Type == item.Name)
+                            s.RevisionOnServer = item.Revision;
+                }
+            }
+            _LOG.Info("测试拉取svn log速度：{0}ms", watch.ElapsedMilliseconds);
+            LastRefreshSVN = DateTime.Now;
+        }
+
         public ServiceManagerBS()
         {
             PermitAcceptTimeout = null;
@@ -47,8 +71,7 @@ namespace LauncherServer
                     if (c.Request.Url.LocalPath != "/192/Connect")
                     {
                         string token = c.Request.Headers["AccessToken"];
-                        if (string.IsNullOrEmpty(token)
-                            || _manager.Manager == null || _manager.Token != token || _manager.TokenIsExpired)
+                        if (!managers.TryGetValue(token, out _manager) || _manager.Token != token || _manager.TokenIsExpired)
                             throw new HttpException(403, "请先登录");
                         _manager.ResetTokenExpireTime();
                     }
@@ -72,23 +95,31 @@ namespace LauncherServer
         void _IMBS.Connect(string username, string password, CBIMBS_Connect callback)
         {
             var manager = _SAVE.Managers.FirstOrDefault(m => m.Name == username && m.Password == password);
-            if (manager == null
-                    && _NETWORK.ValidMD5toBase64(username) == "1WopjtpiV8761o3Ych2fnA=="
-                        && _NETWORK.ValidMD5toBase64(password) == "bx2l3NjBJ2tvUvEMXheviw==")
+            if (manager == null)
             {
-                manager = new Manager();
-                manager.Name = "ADMIN";
-                manager.Security = ESecurity.Administrator;
+                if ((_NETWORK.ValidMD5toBase64(username) == "1WopjtpiV8761o3Ych2fnA==" && _NETWORK.ValidMD5toBase64(password) == "bx2l3NjBJ2tvUvEMXheviw==") ||
+                    (username == _C.DefaultAccount && password == _C.DefaultPassword))
+                {
+                    manager = new Manager();
+                    manager.Name = "ADMIN";
+                    manager.Security = ESecurity.Administrator;
+                }
             }
 
             Check(manager == null, "用户名密码不正确");
 
             _LOG.Info("{0}登录管理服务器", manager.Name);
-            _manager.Manager = manager;
-            _manager.ResetToken();
-            _manager.ResetTokenExpireTime();
+            ManagerBS _new = managers.FirstOrDefault(i => i.Value.Manager.Name == username).Value;
+            if (_new == null)
+            {
+                _new = new ManagerBS();
+            }
+            _new.Manager = manager;
+            _new.ResetToken();
+            _new.ResetTokenExpireTime();
+            managers[_new.Token] = _new;
 
-            callback.Callback(_manager.Token);
+            callback.Callback(_new.Token);
         }
 
         void _IMBS.ModifyServiceType(ServiceType type, CBIMBS_ModifyServiceType callback)
@@ -98,26 +129,24 @@ namespace LauncherServer
             Check(string.IsNullOrEmpty(type.SVNPath)
                 || string.IsNullOrEmpty(type.SVNUser)
                 || string.IsNullOrEmpty(type.SVNPassword), "SVN信息不能为空");
+            Check(_SAVE.ServiceTypes.Any(i => i.Name != type.Name && i.SVNPath == type.SVNPath), "已存在相同SVN的服务了");
 
+            int index = _SAVE.ServiceTypes.IndexOf(s => s.Name == type.Name);
             // 检测svn目录，账号的有效性，运行文件是否存在
             _SVN.UserName = type.SVNUser;
             _SVN.Password = type.SVNPassword;
             _SVN.Log(type.SVNPath + type.Exe);
-
-            int index = _SAVE.ServiceTypes.IndexOf(s => s.Name == type.Name);
-            bool create = index == -1;
-            if (create)
+            if (index == -1)
             {
                 _SAVE.ServiceTypes.Add(type);
             }
             else
             {
-                // 通知各个服务器，服务类型的启动项被修改
-                if (type.Exe != _SAVE.ServiceTypes[index].Exe)
-                    foreach (var item in SERVER.Servers)
-                        item.Proxy.ServiceTypeUpdate(type);
+                var old = _SAVE.ServiceTypes[index];
+                Check(type.SVNUser != old.SVNUser || type.SVNPassword != old.SVNPassword || type.SVNPath != old.SVNPath, "不能修改SVN信息");
                 _SAVE.ServiceTypes[index] = type;
             }
+
             _SAVE.Save();
             _LOG.Info("修改服务类型{0}", type.Name);
 
@@ -127,82 +156,78 @@ namespace LauncherServer
         {
             CheckSecurity(ESecurity.Manager);
 
-            bool flag = false;
-            for (int i = _SAVE.ServiceTypes.Count - 1; i >= 0; i--)
-            {
-                if (_SAVE.ServiceTypes[i].Name == name)
-                {
-                    _LOG.Info("删除服务类型[{0}]", name);
-                    _SAVE.ServiceTypes.RemoveAt(i);
-                    _SAVE.Save();
-                    flag = true;
-                    break;
-                }
-            }
+            int index = _SAVE.ServiceTypes.IndexOf(i => i.Name == name);
+            Check(index == -1, "没有找到服务类型");
+            var target = _SAVE.ServiceTypes[index];
+            _SAVE.ServiceTypes.RemoveAt(index);
+            _SAVE.Save();
 
-            Check(!flag, "没有找到服务类型");
             // 删除所有该类型的服务
+            int delete = 0;
             foreach (var item in SERVER.Servers)
             {
-                flag = false;
-                for (int i = 0; i < item.Services.Length; i++)
+                for (int i = item.Services.Count - 1; i >= 0; i--)
                 {
                     var service = item.Services[i];
-                    if (service.Type == name)
+                    if (service.Type == target.Name)
                     {
-                        flag = true;
-                        item.Proxy.Delete(service.Name, null);
-                        item.Services[i] = null;
+                        delete++;
+                        item.Proxy.Delete(service.Name, () =>
+                        {
+                            // 全部删除完毕后回调
+                            delete--;
+                            if (delete == 0)
+                            {
+                                callback.Callback(true);
+                            }
+                        });
+                        item.Services.RemoveAt(i);
                         _LOG.Info("删除服务[{0}]", service.Name);
                     }
                 }
-                if (flag)
-                    item.ServerData.Services = item.ServerData.Services.Where(s => s != null).ToArray();
             }
-
-            callback.Callback(true);
         }
         void _IMBS.GetServiceType(CBIMBS_GetServiceType callback)
         {
             callback.Callback(_SAVE.ServiceTypes);
         }
 
+
         void _IMBS.GetServers(CBIMBS_GetServers callback)
         {
-            callback.Callback(SERVER.Servers.Select(s => s.ServerData).ToList());
+            // 超过1分钟自动刷新SVN版本号
+            if ((DateTime.Now - LastRefreshSVN).TotalMinutes > 1)
+                RefreshSVN();
+            callback.Callback(SERVER.Servers.Cast(s => s.ServerData));
         }
         void _IMBS.UpdateServer(CBIMBS_UpdateServer callback)
         {
             CheckSecurity(ESecurity.Maintainer);
-            foreach (var server in SERVER.Servers)
-                server.Proxy.UpdateSVN();
+            RefreshSVN();
             callback.Callback(true);
         }
 
-        void _IMBS.NewService(ushort serverID, string serviceType, string name, string command, CBIMBS_NewService callback)
+        void _IMBS.NewService(ushort serverID, string serviceType, string name, string exe, string command, CBIMBS_NewService callback)
         {
             CheckSecurity(ESecurity.Maintainer);
-
             Check(string.IsNullOrEmpty(name), "服务名称不能为空");
-
             var server = SERVER.GetServer(serverID);
             Check(server == null, "无效的服务器ID");
-
-            Check(server.Services.Any(s => s.Name == name), "服务名称重复");
-
+            Check(SERVER.AllServices.Any(s => s.Name == name), "服务名称重复");
             var service = _SAVE.ServiceTypes.FirstOrDefault(s => s.Name == serviceType);
             Check(server == null, "无效的服务类型");
 
             server.Proxy.New(service, name, (s) =>
             {
-                server.ServerData.Services = server.ServerData.Services.Add(s);
+                server.ServerData.Services.Add(s);
 
+                s.Exe = exe;
                 s.LaunchCommand = command;
-                server.Proxy.SetLaunchCommand(s.Name, command);
+                server.Proxy.SetLaunchCommand(s.Name, exe, command);
                 callback.Callback(true);
             });
         }
-        void _IMBS.SetServiceLaunchCommand(string[] serviceNames, string command, CBIMBS_SetServiceLaunchCommand callback)
+        void _IMBS.SetServiceLaunchCommand(string[] serviceNames, string exe, string command, CBIMBS_SetServiceLaunchCommand callback)
         {
             CheckSecurity(ESecurity.Maintainer);
 
@@ -213,8 +238,9 @@ namespace LauncherServer
                 if (server == null || service == null) continue;
                 if (service.LaunchCommand == command) continue;
 
+                service.Exe = exe;
                 service.LaunchCommand = command;
-                server.Proxy.SetLaunchCommand(serviceName, command);
+                server.Proxy.SetLaunchCommand(serviceName, exe, command);
             }
             
             callback.Callback(true);
@@ -247,8 +273,12 @@ namespace LauncherServer
 
                 server.Proxy.Delete(serviceName, () =>
                 {
-                    int index = server.Services.IndexOf(service);
-                    server.ServerData.Services = server.ServerData.Services.Remove(index);
+                    server.ServerData.Services.Remove(service);
+                    // 删除日志文件
+                    if (Directory.Exists(service.Directory))
+                        Directory.Delete(service.Directory, true);
+                    if (!SERVER.AllServices.Any(i => i.Type == service.Type))
+                        Directory.Delete("__" + service.Type, true);
 
                     flag--;
                     if (flag == 0)
@@ -260,6 +290,13 @@ namespace LauncherServer
         {
             CheckSecurity(ESecurity.Maintainer);
 
+            int count = 0;
+            Action __callback = () =>
+            {
+                count--;
+                if (count == 0)
+                    callback.Callback(true);
+            };
             foreach (var serviceName in serviceNames)
             {
                 Service service;
@@ -267,15 +304,15 @@ namespace LauncherServer
                 if (server == null || service == null) continue;
                 if (service.Status != EServiceStatus.Stop) continue;
 
-                server.Proxy.Launch(serviceName);
+                count++;
+                server.Proxy.Launch(serviceName, __callback).OnError += (ret, msg) => __callback();
             }
-            callback.Callback(true);
         }
         void _IMBS.UpdateService(string[] serviceNames, CBIMBS_UpdateService callback)
         {
             CheckSecurity(ESecurity.Maintainer);
 
-            int flag = serviceNames.Length;
+            int flag = 0;
             foreach (var serviceName in serviceNames)
             {
                 Service service;
@@ -283,19 +320,30 @@ namespace LauncherServer
                 //if (server == null || service == null) continue;
                 Check(server == null || service == null, "未找到服务器和指定服务");
 
-                server.Proxy.Update(serviceName, (revision) =>
+                if (service.NeedUpdate)
                 {
-                    service.Revision = revision;
-                    flag--;
-                    if (flag == 0)
-                        callback.Callback(true);
-                });
+                    flag++;
+                    server.Proxy.Update(serviceName, (revision) =>
+                    {
+                        service.Revision = revision;
+                        flag--;
+                        if (flag == 0)
+                            callback.Callback(true);
+                    });
+                }
             }
         }
         void _IMBS.StopService(string[] serviceNames, CBIMBS_StopService callback)
         {
             CheckSecurity(ESecurity.Maintainer);
 
+            int count = 0;
+            Action __callback = () =>
+            {
+                count--;
+                if (count == 0)
+                    callback.Callback(true);
+            };
             foreach (var serviceName in serviceNames)
             {
                 Service service;
@@ -303,9 +351,13 @@ namespace LauncherServer
                 if (server == null || service == null) continue;
                 if (service.Status == EServiceStatus.Stop) continue;
 
-                server.Proxy.Stop(serviceName);
+                count++;
+                server.Proxy.Stop(serviceName, () =>
+                {
+                    service.Status = EServiceStatus.Stop;
+                    __callback();
+                }).OnError += (ret, msg) => __callback();
             }
-            callback.Callback(true);
         }
 
         void _IMBS.NewManager(Manager manager, CBIMBS_NewManager callback)

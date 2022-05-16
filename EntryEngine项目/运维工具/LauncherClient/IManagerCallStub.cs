@@ -9,13 +9,13 @@ interface _IManagerCall
 {
     void New(LauncherProtocolStructure.ServiceType serviceType, string name, CBIManagerCall_New callback);
     void Delete(string name, CBIManagerCall_Delete callback);
-    void Launch(string name);
+    void Launch(string name, CBIManagerCall_Launch callback);
     void Update(string name, CBIManagerCall_Update callback);
-    void Stop(string name);
+    void Stop(string name, CBIManagerCall_Stop callback);
     void CallCommand(string name, string command);
     void UpdateSVN();
     void ServiceTypeUpdate(LauncherProtocolStructure.ServiceType type);
-    void SetLaunchCommand(string name, string command);
+    void SetLaunchCommand(string name, string exe, string command);
     void UpdateLauncher();
 }
 
@@ -104,6 +104,48 @@ class CBIManagerCall_Delete : IDisposable
         if (!IsCallback) Error(-2, "no callback");
     }
 }
+class CBIManagerCall_Launch : IDisposable
+{
+    private byte __id;
+    private Link __link;
+    internal bool IsCallback { get; private set; }
+    public CBIManagerCall_Launch(byte id, Link link)
+    {
+        this.__id = id;
+        this.__link = link;
+    }
+    public void Callback() // INDEX = 2
+    {
+        if (IsCallback) return;
+        ByteWriter __writer = new ByteWriter();
+        __writer.Write(__id);
+        __writer.Write((sbyte)0);
+        #if DEBUG
+        _LOG.Debug("CBIManagerCall_Launch Callback({0} bytes)", __writer.Position);
+        #endif
+        IManagerCallCallbackProxy.Launch_2(__link, __writer.Buffer, __writer.Position);
+        IsCallback = true;
+    }
+    public void Error(sbyte ret, string msg)
+    {
+        if (IsCallback) return;
+        ByteWriter __writer = new ByteWriter();
+        __writer.Write((byte)1);
+        __writer.Write((ushort)2);
+        __writer.Write(__id);
+        __writer.Write(ret);
+        __writer.Write(msg);
+        #if DEBUG
+        _LOG.Debug("CBIManagerCall_Launch Error({0} bytes) ret={1} msg={2}", __writer.Position, ret, msg);
+        #endif
+        __link.Write(__writer.Buffer, 0, __writer.Position);
+        IsCallback = true;
+    }
+    public void Dispose()
+    {
+        if (!IsCallback) Error(-2, "no callback");
+    }
+}
 class CBIManagerCall_Update : IDisposable
 {
     private byte __id;
@@ -147,6 +189,48 @@ class CBIManagerCall_Update : IDisposable
         if (!IsCallback) Error(-2, "no callback");
     }
 }
+class CBIManagerCall_Stop : IDisposable
+{
+    private byte __id;
+    private Link __link;
+    internal bool IsCallback { get; private set; }
+    public CBIManagerCall_Stop(byte id, Link link)
+    {
+        this.__id = id;
+        this.__link = link;
+    }
+    public void Callback() // INDEX = 4
+    {
+        if (IsCallback) return;
+        ByteWriter __writer = new ByteWriter();
+        __writer.Write(__id);
+        __writer.Write((sbyte)0);
+        #if DEBUG
+        _LOG.Debug("CBIManagerCall_Stop Callback({0} bytes)", __writer.Position);
+        #endif
+        IManagerCallCallbackProxy.Stop_4(__link, __writer.Buffer, __writer.Position);
+        IsCallback = true;
+    }
+    public void Error(sbyte ret, string msg)
+    {
+        if (IsCallback) return;
+        ByteWriter __writer = new ByteWriter();
+        __writer.Write((byte)1);
+        __writer.Write((ushort)4);
+        __writer.Write(__id);
+        __writer.Write(ret);
+        __writer.Write(msg);
+        #if DEBUG
+        _LOG.Debug("CBIManagerCall_Stop Error({0} bytes) ret={1} msg={2}", __writer.Position, ret, msg);
+        #endif
+        __link.Write(__writer.Buffer, 0, __writer.Position);
+        IsCallback = true;
+    }
+    public void Dispose()
+    {
+        if (!IsCallback) Error(-2, "no callback");
+    }
+}
 
 static class IManagerCallCallbackProxy
 {
@@ -171,6 +255,16 @@ static class IManagerCallCallbackProxy
         __writer.WriteBytes(data, 0, position);
         __link.Write(__writer.Buffer, 0, __writer.Position);
     }
+    internal static void Launch_2(Link __link, byte[] data, int position)
+    {
+        if (__link == null || !__link.IsConnected) return;
+        ByteWriter __writer = new ByteWriter();
+        if (__WriteAgent != null) __WriteAgent(__writer);
+        __writer.Write((byte)1);
+        __writer.Write("Launch");
+        __writer.WriteBytes(data, 0, position);
+        __link.Write(__writer.Buffer, 0, __writer.Position);
+    }
     internal static void Update_3(Link __link, byte[] data, int position)
     {
         if (__link == null || !__link.IsConnected) return;
@@ -178,6 +272,16 @@ static class IManagerCallCallbackProxy
         if (__WriteAgent != null) __WriteAgent(__writer);
         __writer.Write((byte)1);
         __writer.Write("Update");
+        __writer.WriteBytes(data, 0, position);
+        __link.Write(__writer.Buffer, 0, __writer.Position);
+    }
+    internal static void Stop_4(Link __link, byte[] data, int position)
+    {
+        if (__link == null || !__link.IsConnected) return;
+        ByteWriter __writer = new ByteWriter();
+        if (__WriteAgent != null) __WriteAgent(__writer);
+        __writer.Write((byte)1);
+        __writer.Write("Stop");
         __writer.WriteBytes(data, 0, position);
         __link.Write(__writer.Buffer, 0, __writer.Position);
     }
@@ -264,11 +368,22 @@ class IManagerCallStub : Stub
         if (__GetAgent != null) { var temp = __GetAgent(); if (temp != null) agent = temp; }
         if (__ReadAgent != null) { var temp = __ReadAgent(__stream); if (temp != null) agent = temp; }
         string name;
+        byte callback;
         __stream.Read(out name);
+        __stream.Read(out callback);
         #if DEBUG
-        _LOG.Debug("Launch name: {0}", name);
+        _LOG.Debug("Launch name: {0}, callback: {1}", name, "System.Action");
         #endif
-        agent.Launch(name);
+        var __callback = new CBIManagerCall_Launch(callback, Link);
+        try
+        {
+            agent.Launch(name, __callback);
+        }
+        catch (Exception ex)
+        {
+            _LOG.Error("Callback_Launch error! msg={0} stack={1}", ex.Message, ex.StackTrace);
+            if (!__callback.IsCallback) __callback.Error(-1, ex.Message);
+        }
     }
     void Update(ByteReader __stream)
     {
@@ -299,11 +414,22 @@ class IManagerCallStub : Stub
         if (__GetAgent != null) { var temp = __GetAgent(); if (temp != null) agent = temp; }
         if (__ReadAgent != null) { var temp = __ReadAgent(__stream); if (temp != null) agent = temp; }
         string name;
+        byte callback;
         __stream.Read(out name);
+        __stream.Read(out callback);
         #if DEBUG
-        _LOG.Debug("Stop name: {0}", name);
+        _LOG.Debug("Stop name: {0}, callback: {1}", name, "System.Action");
         #endif
-        agent.Stop(name);
+        var __callback = new CBIManagerCall_Stop(callback, Link);
+        try
+        {
+            agent.Stop(name, __callback);
+        }
+        catch (Exception ex)
+        {
+            _LOG.Error("Callback_Stop error! msg={0} stack={1}", ex.Message, ex.StackTrace);
+            if (!__callback.IsCallback) __callback.Error(-1, ex.Message);
+        }
     }
     void CallCommand(ByteReader __stream)
     {
@@ -347,13 +473,15 @@ class IManagerCallStub : Stub
         if (__GetAgent != null) { var temp = __GetAgent(); if (temp != null) agent = temp; }
         if (__ReadAgent != null) { var temp = __ReadAgent(__stream); if (temp != null) agent = temp; }
         string name;
+        string exe;
         string command;
         __stream.Read(out name);
+        __stream.Read(out exe);
         __stream.Read(out command);
         #if DEBUG
-        _LOG.Debug("SetLaunchCommand name: {0}, command: {1}", name, command);
+        _LOG.Debug("SetLaunchCommand name: {0}, exe: {1}, command: {2}", name, exe, command);
         #endif
-        agent.SetLaunchCommand(name, command);
+        agent.SetLaunchCommand(name, exe, command);
     }
     void UpdateLauncher(ByteReader __stream)
     {

@@ -7,7 +7,7 @@ using LauncherProtocol;
 
 interface _ILauncherService
 {
-    void PushServices(LauncherProtocolStructure.Service[] services);
+    void PushServices(System.Collections.Generic.List<LauncherProtocolStructure.Service> services);
     void RevisionUpdate(LauncherProtocolStructure.ServiceTypeRevision revision);
     void StatusUpdate(string name, LauncherProtocolStructure.EServiceStatus status, string time);
     void ServerStatusStatistic(LauncherProtocolStructure.ServerStatusData data);
@@ -49,7 +49,7 @@ class ILauncherServiceStub : Stub
         var agent = __Agent;
         if (__GetAgent != null) { var temp = __GetAgent(); if (temp != null) agent = temp; }
         if (__ReadAgent != null) { var temp = __ReadAgent(__stream); if (temp != null) agent = temp; }
-        LauncherProtocolStructure.Service[] services;
+        System.Collections.Generic.List<LauncherProtocolStructure.Service> services;
         __stream.Read(out services);
         #if DEBUG
         _LOG.Debug("PushServices services: {0}", JsonWriter.Serialize(services));

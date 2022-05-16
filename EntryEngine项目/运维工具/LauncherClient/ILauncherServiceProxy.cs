@@ -14,7 +14,7 @@ class ILauncherServiceProxy : StubClientAsync, ILauncherService
         this.Protocol = 0;
     }
     
-    public void PushServices(LauncherProtocolStructure.Service[] services)
+    public void PushServices(System.Collections.Generic.List<LauncherProtocolStructure.Service> services)
     {
         if (Link == null || !Link.IsConnected) return;
         ByteWriter __writer = new ByteWriter();

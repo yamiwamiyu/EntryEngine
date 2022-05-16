@@ -20,7 +20,7 @@ namespace LauncherClient
         private const string SAVE_DATA = "data.sav";
 
         public static List<Service> Services = new List<Service>();
-        public static List<ServiceTypeRevision> ServiceTypes = new List<ServiceTypeRevision>();
+        //public static List<ServiceTypeRevision> ServiceTypes = new List<ServiceTypeRevision>();
 
         public static void Save()
         {
@@ -39,11 +39,11 @@ namespace LauncherClient
                 {
                     item.Status = EServiceStatus.Stop;
                     item.LastStatusTime = null;
-                    item.RevisionOnServer = ServiceTypes.FirstOrDefault(s => s.Type == item.Type).Revision;
+                    //item.RevisionOnServer = ServiceTypes.FirstOrDefault(s => s.Type == item.Type).Revision;
                     _LOG.Info("Load Service [{0}] Susscess!", item.Name);
                 }
             }
-            catch (Exception ex)
+            catch
             {
             }
         }
@@ -182,9 +182,9 @@ namespace LauncherClient
                             //        Proxy, new IManagerCallStub(this)));
                             Agent = new AgentProtocolStub(Link, Proxy, new IManagerCallStub(this));
 
-                            Proxy.PushServices(_SAVE.Services.ToArray());
-                            foreach (var item in _SAVE.ServiceTypes)
-                                Proxy.RevisionUpdate(item);
+                            Proxy.PushServices(_SAVE.Services);
+                            //foreach (var item in _SAVE.ServiceTypes)
+                            //    Proxy.RevisionUpdate(item);
                             break;
                         }
                     }

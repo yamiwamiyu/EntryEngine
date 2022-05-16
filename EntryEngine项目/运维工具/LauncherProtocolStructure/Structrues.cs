@@ -5,14 +5,23 @@ using System.Text;
 
 namespace LauncherProtocolStructure
 {
+    /// <summary>服务类型，一个服务类型需要一个SVN目录</summary>
     public class ServiceType
     {
+        /// <summary>服务名字</summary>
         public string Name;
+        /// <summary>SVN的URL</summary>
         public string SVNPath;
+        /// <summary>SVN的用户名</summary>
         public string SVNUser;
+        /// <summary>SVN的密码</summary>
         public string SVNPassword;
+        /// <summary>程序的可执行文件，不需要运行的例如网页前端可以为空</summary>
         public string Exe;
+        /// <summary>程序的初始启动命令，可以写入可执行文件支持的所有命令</summary>
         public string LaunchCommand;
+        /// <summary>线上最新的版本号</summary>
+        public int Revision;
 
         public override bool Equals(object obj)
         {
@@ -33,12 +42,13 @@ namespace LauncherProtocolStructure
                 return Name.GetHashCode();
         }
     }
+    /// <summary>服务器，一台服务器可以有多个服务</summary>
     public class Server
     {
         public ushort ID;
         public string EndPoint;
         public string NickName;
-        public Service[] Services = new Service[0];
+        public List<Service> Services = new List<Service>();
 
         public string Name
         {
@@ -51,6 +61,7 @@ namespace LauncherProtocolStructure
             }
         }
     }
+    /// <summary>服务，可以是服务端，也可以是客户端，服务是一个服务类型的实例</summary>
     public class Service
     {
         /// <summary>一个平台不允许出现重名</summary>
@@ -59,11 +70,16 @@ namespace LauncherProtocolStructure
         public string Type;
         /// <summary>服务实例版本号，负数则为热更</summary>
         public int Revision;
+        /// <summary>程序的初始启动命令</summary>
         public string LaunchCommand;
+        /// <summary>程序的可执行文件</summary>
         public string Exe;
 
+        /// <summary>服务类型的SVN最新版本</summary>
         public int RevisionOnServer;
+        /// <summary>最后状态变更时间</summary>
         public string LastStatusTime;
+        /// <summary>服务运行状态</summary>
         public EServiceStatus Status;
 
         public string Directory
@@ -105,5 +121,13 @@ namespace LauncherProtocolStructure
         public uint Network;
         /// <summary>byte</summary>
         public uint Disk;
+    }
+    public static class _EX
+    {
+        public static void Check(this string message, bool isThrow)
+        {
+            if (isThrow)
+                throw new Exception(message);
+        }
     }
 }

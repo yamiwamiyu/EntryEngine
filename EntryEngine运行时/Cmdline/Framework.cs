@@ -8,6 +8,7 @@ using System.Linq;
 
 namespace EntryEngine.Cmdline
 {
+    /// <summary>进程启动器，类似于.bat文件的作用</summary>
     public class Launcher : MarshalByRefObject, IDisposable
     {
         private static string[] SEPERATOR = { "\r\n" };
@@ -230,10 +231,11 @@ namespace EntryEngine.Cmdline
             process.Dispose();
         }
     }
+    /// <summary>命令行进程启动器，可捕获控制台日志</summary>
     public class LauncherCmdline : Launcher
     {
         private JsonReader reader = new JsonReader();
-        /// <summary>事件触发在异步线程上</summary>
+        /// <summary>捕获到控制台日志对象，事件触发在异步线程上</summary>
         public Action<Record> OnLogRecord;
 
         protected StreamWriter Writer
@@ -309,6 +311,7 @@ namespace EntryEngine.Cmdline
             }
         }
     }
+    /// <summary>写日志到控制台</summary>
     public class Logger : _LOG.Logger
     {
         private ConsoleColor last;
@@ -344,6 +347,7 @@ namespace EntryEngine.Cmdline
             Console.WriteLine("[{0}] {1}", record.Time.ToString("yyyy-MM-dd HH:mm:ss"), record.ToString());
         }
     }
+    /// <summary>写Json日志到控制台，控制台可解析日志内容变回Record对象</summary>
     public class LoggerToShell : Logger
     {
         public LoggerToShell()
@@ -372,6 +376,7 @@ namespace EntryEngine.Cmdline
         {
             Write(7, content, param);
         }
+        /// <summary>写入等级255到运维工具，代表服务已经正常启动</summary>
         public void StatusRunning()
         {
             Write(255, string.Empty);
@@ -872,6 +877,7 @@ namespace EntryEngine.Cmdline
         Disk,
         Memory,
     }
+    /// <summary>计算机性能统计</summary>
     public class StatisticCounter
     {
         private static Dictionary<ECounter, string> COUNTER_TYPES = new Dictionary<ECounter, string>();

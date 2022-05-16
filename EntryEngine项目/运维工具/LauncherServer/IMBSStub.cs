@@ -16,8 +16,8 @@ interface _IMBS
     void GetServiceType(CBIMBS_GetServiceType callback);
     void GetServers(CBIMBS_GetServers callback);
     void UpdateServer(CBIMBS_UpdateServer callback);
-    void NewService(ushort serverID, string serviceType, string name, string command, CBIMBS_NewService callback);
-    void SetServiceLaunchCommand(string[] serviceNames, string command, CBIMBS_SetServiceLaunchCommand callback);
+    void NewService(ushort serverID, string serviceType, string name, string exe, string command, CBIMBS_NewService callback);
+    void SetServiceLaunchCommand(string[] serviceNames, string exe, string command, CBIMBS_SetServiceLaunchCommand callback);
     void CallCommand(string[] serviceNames, string command, CBIMBS_CallCommand callback);
     void DeleteService(string[] serviceNames, CBIMBS_DeleteService callback);
     void LaunchService(string[] serviceNames, CBIMBS_LaunchService callback);
@@ -781,13 +781,15 @@ class IMBSStub : StubHttp
         string serviceType = __temp;
         __temp = GetParam("name");
         string name = __temp;
+        __temp = GetParam("exe");
+        string exe = __temp;
         __temp = GetParam("command");
         string command = __temp;
         #if DEBUG
-        _LOG.Debug("NewService serverID: {0}, serviceType: {1}, name: {2}, command: {3},", serverID, serviceType, name, command);
+        _LOG.Debug("NewService serverID: {0}, serviceType: {1}, name: {2}, exe: {3}, command: {4},", serverID, serviceType, name, exe, command);
         #endif
         var callback = new CBIMBS_NewService(this);
-        agent.NewService(serverID, serviceType, name, command, callback);
+        agent.NewService(serverID, serviceType, name, exe, command, callback);
     }
     void SetServiceLaunchCommand(HttpListenerContext __context)
     {
@@ -797,13 +799,15 @@ class IMBSStub : StubHttp
         string __temp;
         __temp = GetParam("serviceNames");
         string[] serviceNames = string.IsNullOrEmpty(__temp) ? default(string[]) : JsonReader.Deserialize<string[]>(__temp);
+        __temp = GetParam("exe");
+        string exe = __temp;
         __temp = GetParam("command");
         string command = __temp;
         #if DEBUG
-        _LOG.Debug("SetServiceLaunchCommand serviceNames: {0}, command: {1},", JsonWriter.Serialize(serviceNames), command);
+        _LOG.Debug("SetServiceLaunchCommand serviceNames: {0}, exe: {1}, command: {2},", JsonWriter.Serialize(serviceNames), exe, command);
         #endif
         var callback = new CBIMBS_SetServiceLaunchCommand(this);
-        agent.SetServiceLaunchCommand(serviceNames, command, callback);
+        agent.SetServiceLaunchCommand(serviceNames, exe, command, callback);
     }
     void CallCommand(HttpListenerContext __context)
     {

@@ -132,11 +132,11 @@ namespace LauncherManagerProtocol
         /// <param name="serverID">要启用服务的服务器ID</param>
         /// <param name="serviceType">服务类型</param>
         /// <param name="name">启用服务的名称，例如S1，S2</param>
-        void NewService(ushort serverID, string serviceType, string name, string command, Action<bool> callback);
+        void NewService(ushort serverID, string serviceType, string name, string exe, string command, Action<bool> callback);
         /// <summary>设置服务的启动命令</summary>
         /// <param name="serviceName">一个平台服务唯一名称</param>
         /// <param name="command">命令和参数间用空格隔开，不同命令间用换行隔开</param>
-        void SetServiceLaunchCommand(string[] serviceNames, string command, Action<bool> callback);
+        void SetServiceLaunchCommand(string[] serviceNames, string exe, string command, Action<bool> callback);
         void CallCommand(string[] serviceNames, string command, Action<bool> callback);
         void DeleteService(string[] serviceNames, Action<bool> callback);
         void LaunchService(string[] serviceNames, Action<bool> callback);

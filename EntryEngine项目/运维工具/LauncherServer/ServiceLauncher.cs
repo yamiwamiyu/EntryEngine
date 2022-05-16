@@ -15,6 +15,7 @@ namespace LauncherServer
     {
         void LauncherCall(string methodNameAndParam);
     }
+    /// <summary></summary>
     partial class ServiceLauncher :
         ProxyTcp
         //ProxyHttpAsync, _ILauncherService
@@ -63,7 +64,7 @@ namespace LauncherServer
                     break;
                 }
 
-                SERVER server = SERVER.CreateServer(link, link.EndPoint.ToString(), ServiceManager.Instance);
+                SERVER server = SERVER.CreateServer(link, link.EndPoint.ToString());
                 server.ServerData.NickName = name;
 
                 ByteWriter writer = new ByteWriter();

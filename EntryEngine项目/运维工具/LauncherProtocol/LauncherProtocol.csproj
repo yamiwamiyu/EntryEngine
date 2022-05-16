@@ -52,17 +52,13 @@
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
-    <PostBuildEvent>IF NOT $(ConfigurationName) == Debug GOTO end
-
-copy $(TargetDir)\LauncherProtocolStructure.dll $(ProjectDir)..\..\..\EntryEngine开发工具\EntryBuilder\bin\Debug\
+    <PostBuildEvent>copy $(TargetDir)\LauncherProtocolStructure.dll $(ProjectDir)..\..\..\EntryEngine开发工具\EntryBuilder\bin\Debug\
 
 $(ProjectDir)..\..\..\EntryEngine开发工具\EntryBuilder\bin\Debug\EntryBuilder.exe BuildProtocolAgentBinary $(ProjectDir)..\LauncherClient\ $(ProjectDir)..\LauncherServer\ $(TargetPath)\LauncherProtocol.ILauncherService false
 
 $(ProjectDir)..\..\..\EntryEngine开发工具\EntryBuilder\bin\Debug\EntryBuilder.exe BuildProtocolAgentBinary $(ProjectDir)..\LauncherServer\ $(ProjectDir)..\LauncherClient\ $(TargetPath)\LauncherProtocol.IManagerCall false
 
-del $(ProjectDir)..\..\..\EntryEngine开发工具\EntryBuilder\bin\Debug\LauncherProtocolStructure.dll
-
-:end</PostBuildEvent>
+del $(ProjectDir)..\..\..\EntryEngine开发工具\EntryBuilder\bin\Debug\LauncherProtocolStructure.dll</PostBuildEvent>
   </PropertyGroup>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.

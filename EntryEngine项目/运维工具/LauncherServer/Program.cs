@@ -10,6 +10,18 @@ using System.Diagnostics;
 
 namespace LauncherServer
 {
+    /// <summary>
+    /// LauncherServer(启动器服务端，以下简称服务端)是一个命令行程序，开启了和
+    /// LauncherClient(启动器客户端，以下简称客户端)的TCP通信，
+    /// LauncherManager(启动器管理端，已弃用)的TCP通信，
+    /// LauncherManagerWeb(启动器管理端网页版，以下简称管理端)的HTTP通信。
+    /// 
+    /// 服务端可以
+    ///     管理服务类型(SVN的一个URL)
+    ///     管理可以接入服务端的用户账号(默认账号和密码可在_C.xml中配置)
+    /// 客户端启动时自动链接服务端，
+    /// 运维人员通过管理端进行操作，管理端可以
+    /// </summary>
     class Program
     {
         //static string TestEncryptText(string text)
@@ -37,8 +49,8 @@ namespace LauncherServer
 
             LinkTcp.MaxBuffer = ushort.MaxValue;
             // 初始化协议代理服务
-            var managerProxy = new ServiceManager();
-            managerProxy.Initialize(_C.PortManager);
+            //var managerProxy = new ServiceManager();
+            //managerProxy.Initialize(_C.PortManager);
 
             var managerBS = new ServiceManagerBS();
             managerBS.Initialize(_C.PortManagerBS);
@@ -47,7 +59,7 @@ namespace LauncherServer
             launcherProxy.Initialize(_C.PortLauncher);
 
             EntryLinkServer server = new EntryLinkServer();
-            server.AddProxy(managerProxy);
+            //server.AddProxy(managerProxy);
             server.AddProxy(launcherProxy);
             server.AddProxy(managerBS);
 

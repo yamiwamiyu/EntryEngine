@@ -157,8 +157,36 @@ namespace EntryEngine.Cmdline
     public static class _SVN
     {
         private const string EXE = "SVN.exe";
-        public static string UserName;
-        public static string Password;
+        private static string username;
+        private static string password;
+        /// <summary>SVN账号密码有修改时，调用svn命令才需要调用--username --password</summary>
+        private static bool modified;
+        /// <summary>SVN用户名</summary>
+        public static string UserName
+        {
+            get { return username; }
+            set
+            {
+                if (username != value)
+                {
+                    username = value;
+                    modified = true;
+                }
+            }
+        }
+        /// <summary>SVN密码</summary>
+        public static string Password
+        {
+            get { return password; }
+            set
+            {
+                if (password != value)
+                {
+                    password = value;
+                    modified = true;
+                }
+            }
+        }
 
         public class InfoData
         {
@@ -179,6 +207,13 @@ namespace EntryEngine.Cmdline
             public string ChangedAuthor;
             public string ChangedDate;
         }
+        public class StatusData
+        {
+            /// <summary>需要更新的文件列表，相对于文件夹的路径</summary>
+            public List<string> Updates = new List<string>();
+            /// <summary>最新的版本号</summary>
+            public int Version;
+        }
 
         private static string Run(string arg)
         {
@@ -187,7 +222,7 @@ namespace EntryEngine.Cmdline
         }
         private static string GetValidate()
         {
-            if (string.IsNullOrEmpty(UserName) || string.IsNullOrEmpty(Password))
+            if (string.IsNullOrEmpty(UserName) || string.IsNullOrEmpty(Password) || !modified)
                 return null;
             else
                 return string.Format(" --username {0} --password {1}", UserName, Password);
@@ -294,6 +329,37 @@ namespace EntryEngine.Cmdline
             int index = result.LastIndexOf("revision");
             string revision = result.Substring(index + 9);
             return int.Parse(revision.Substring(0, revision.IndexOf('.')));
+        }
+        public static StatusData Status(string path)
+        {
+            // svn status -u
+
+            /*
+        *            新建文件夹\test1.txt
+        *            新建文件夹
+        *        6   EntryBuilder.exe
+        *        6   test1.txt
+        *        6   test2.txt
+        *        6   .
+Status against revision:      9
+             */
+
+            if (path == null)
+                path = string.Empty;
+            else if(path[path.Length - 1] == '/' || path[path.Length - 1] == '\\')
+                path = path.Substring(0, path.Length - 1);
+            string result = Run(string.Format("status \"{0}\" -u", path));
+
+            StatusData ret = new StatusData();
+            string[] lines = result.Split('\n');
+            for (int i = 0, c = lines.Length - 1; i < c; i++)
+                ret.Updates.Add(lines[i]
+                    .Substring(lines[i].LastIndexOf(' ') + 1)
+                    .Substring(path.Length + 1)
+                    .TrimEnd('\r'));
+            ret.Version = int.Parse(lines[lines.Length - 1].Substring(24));
+
+            return ret;
         }
     }
 }

@@ -47,7 +47,9 @@
   <ItemGroup>
     <Compile Include="ILauncherServiceStub.cs" />
     <Compile Include="IManagerCallProxy.cs" />
-    <Compile Include="IManagerStub.cs" />
+    <Compile Include="IManagerStub.cs">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="IMBSStub.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
@@ -87,7 +89,7 @@
   <PropertyGroup>
     <PreBuildEvent>IF $(ConfigurationName) == Debug GOTO end
 
-$(ProjectDir)..\EntryBuilder\bin\Debug\EntryBuilder.exe BuildConstantTable $(ProjectDir)_C.xlsx $(TargetDir)_C.xml $(ProjectDir)_C.cs false 12.0
+$(ProjectDir)..\..\..\EntryEngine开发工具\EntryBuilder\bin\Debug\EntryBuilder.exe BuildConstantTable $(ProjectDir)_C.xlsx $(TargetDir)_C.xml $(ProjectDir)_C.cs false 12.0
 
 :end</PreBuildEvent>
   </PropertyGroup>

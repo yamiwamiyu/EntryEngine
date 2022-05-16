@@ -9,13 +9,13 @@ namespace LauncherProtocol
     {
         void New(ServiceType serviceType, string name, Action<Service> callback);
         void Delete(string name, Action callback);
-        void Launch(string name);
+        void Launch(string name, Action callback);
         void Update(string name, Action<int> callback);
-        void Stop(string name);
+        void Stop(string name, Action callback);
         void CallCommand(string name, string command);
         void UpdateSVN();
         void ServiceTypeUpdate(ServiceType type);
-        void SetLaunchCommand(string name, string command);
+        void SetLaunchCommand(string name, string exe, string command);
         void UpdateLauncher();
     }
 }

@@ -23,11 +23,11 @@ namespace LauncherServer
             get;
             private set;
         }
-        public ServiceManager Manager
-        {
-            get;
-            private set;
-        }
+        //public ServiceManager Manager
+        //{
+        //    get;
+        //    private set;
+        //}
         public IManagerCallProxy Proxy
         {
             get;
@@ -38,7 +38,7 @@ namespace LauncherServer
             get;
             private set;
         }
-        public Service[] Services
+        public List<Service> Services
         {
             get { return ServerData.Services; }
         }
@@ -69,9 +69,9 @@ namespace LauncherServer
                     return new LinkMultiple(servers.Select(s => s.Link));
             }
         }
-        public static IEnumerable<SERVER> Servers
+        public static List<SERVER> Servers
         {
-            get { return servers.Enumerable(); }
+            get { return servers; }
         }
         public static IEnumerable<LogStorage> Logs
         {
@@ -136,7 +136,7 @@ namespace LauncherServer
             service = null;
             return null;
         }
-        public static SERVER CreateServer(Link link, string ip, ServiceManager manager)
+        public static SERVER CreateServer(Link link, string ip)
         {
             SERVER server = new SERVER();
             server.ServerData = new Server();
@@ -144,7 +144,7 @@ namespace LauncherServer
             server.ServerData.EndPoint = ip;
 
             server.Link = link;
-            server.Manager = manager;
+            //server.Manager = manager;
             server.Proxy = new IManagerCallProxy();
             servers.Add(server);
 
@@ -153,7 +153,7 @@ namespace LauncherServer
 
         #endregion
 
-        void _ILauncherService.PushServices(Service[] services)
+        void _ILauncherService.PushServices(List<Service> services)
         {
             ServerData.Services = services;
         }
@@ -161,14 +161,14 @@ namespace LauncherServer
         {
             foreach (var item in Services.Where(s => s.Type == revision.Type))
                 item.RevisionOnServer = revision.Revision;
-            IManagerCallbackProxy.OnRevisionUpdate(Manager.Link, ID, revision);
+            //IManagerCallbackProxy.OnRevisionUpdate(Manager.Link, ID, revision);
         }
         void _ILauncherService.StatusUpdate(string name, EServiceStatus status, string time)
         {
             var service = Services.FirstOrDefault(s => s.Name == name);
             service.Status = status;
             service.LastStatusTime = time;
-            IManagerCallbackProxy.OnStatusUpdate(Manager.Link, name, status, time);
+            //IManagerCallbackProxy.OnStatusUpdate(Manager.Link, name, status, time);
 
             LogStorage log;
             switch (status)
@@ -215,7 +215,7 @@ namespace LauncherServer
         }
         void _ILauncherService.LogServer(string name, Record record)
         {
-            IManagerCallbackProxy.OnLog(Manager.Link, name, record);
+            //IManagerCallbackProxy.OnLog(Manager.Link, name, record);
         }
     }
 }

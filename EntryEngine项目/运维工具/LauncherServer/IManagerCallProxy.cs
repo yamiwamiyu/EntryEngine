@@ -14,7 +14,9 @@ class IManagerCallProxy : StubClientAsync
         this.Protocol = 1;
         AddMethod("New", New_0);
         AddMethod("Delete", Delete_1);
+        AddMethod("Launch", Launch_2);
         AddMethod("Update", Update_3);
+        AddMethod("Stop", Stop_4);
     }
     
     public StubClientAsync.AsyncWaitCallback New(LauncherProtocolStructure.ServiceType serviceType, string name, System.Action<LauncherProtocolStructure.Service> callback)
@@ -52,18 +54,22 @@ class IManagerCallProxy : StubClientAsync
         Link.Write(__writer.Buffer, 0, __writer.Position);
         return __async;
     }
-    public void Launch(string name)
+    public StubClientAsync.AsyncWaitCallback Launch(string name, System.Action callback)
     {
-        if (Link == null || !Link.IsConnected) return;
+        if (Link == null || !Link.IsConnected) return null;
         ByteWriter __writer = new ByteWriter();
         if (__WriteAgent != null) __WriteAgent(__writer);
         __writer.Write((byte)1);
         __writer.Write("Launch");
         __writer.Write(name);
+        var __async = Push(callback);
+        if (__async == null) return null;
+        __writer.Write(__async.ID);
         #if DEBUG
-        _LOG.Debug("Launch({0} bytes) name: {1}", __writer.Position, name);
+        _LOG.Debug("Launch({0} bytes) name: {1}, callback: {2}", __writer.Position, name, "System.Action");
         #endif
         Link.Write(__writer.Buffer, 0, __writer.Position);
+        return __async;
     }
     public StubClientAsync.AsyncWaitCallback Update(string name, System.Action<int> callback)
     {
@@ -82,18 +88,22 @@ class IManagerCallProxy : StubClientAsync
         Link.Write(__writer.Buffer, 0, __writer.Position);
         return __async;
     }
-    public void Stop(string name)
+    public StubClientAsync.AsyncWaitCallback Stop(string name, System.Action callback)
     {
-        if (Link == null || !Link.IsConnected) return;
+        if (Link == null || !Link.IsConnected) return null;
         ByteWriter __writer = new ByteWriter();
         if (__WriteAgent != null) __WriteAgent(__writer);
         __writer.Write((byte)1);
         __writer.Write("Stop");
         __writer.Write(name);
+        var __async = Push(callback);
+        if (__async == null) return null;
+        __writer.Write(__async.ID);
         #if DEBUG
-        _LOG.Debug("Stop({0} bytes) name: {1}", __writer.Position, name);
+        _LOG.Debug("Stop({0} bytes) name: {1}, callback: {2}", __writer.Position, name, "System.Action");
         #endif
         Link.Write(__writer.Buffer, 0, __writer.Position);
+        return __async;
     }
     public void CallCommand(string name, string command)
     {
@@ -134,7 +144,7 @@ class IManagerCallProxy : StubClientAsync
         #endif
         Link.Write(__writer.Buffer, 0, __writer.Position);
     }
-    public void SetLaunchCommand(string name, string command)
+    public void SetLaunchCommand(string name, string exe, string command)
     {
         if (Link == null || !Link.IsConnected) return;
         ByteWriter __writer = new ByteWriter();
@@ -142,9 +152,10 @@ class IManagerCallProxy : StubClientAsync
         __writer.Write((byte)1);
         __writer.Write("SetLaunchCommand");
         __writer.Write(name);
+        __writer.Write(exe);
         __writer.Write(command);
         #if DEBUG
-        _LOG.Debug("SetLaunchCommand({0} bytes) name: {1}, command: {2}", __writer.Position, name, command);
+        _LOG.Debug("SetLaunchCommand({0} bytes) name: {1}, exe: {2}, command: {3}", __writer.Position, name, exe, command);
         #endif
         Link.Write(__writer.Buffer, 0, __writer.Position);
     }
@@ -209,6 +220,29 @@ class IManagerCallProxy : StubClientAsync
             Error(__callback, 1, __ret, __msg);
         }
     }
+    void Launch_2(ByteReader __stream)
+    {
+        byte __id;
+        sbyte __ret;
+        __stream.Read(out __id);
+        __stream.Read(out __ret);
+        var __callback = Pop(__id);
+        if (__ret == 0)
+        {
+            #if DEBUG
+            _LOG.Debug("Launch");
+            #endif
+            var __invoke = (System.Action)__callback.Function;
+            if (__invoke != null) __invoke();
+        }
+        else
+        {
+            string __msg;
+            __stream.Read(out __msg);
+            _LOG.Error("Launch_2 error! id={0} ret={1} msg={2}", __id, __ret, __msg);
+            Error(__callback, 2, __ret, __msg);
+        }
+    }
     void Update_3(ByteReader __stream)
     {
         byte __id;
@@ -232,6 +266,29 @@ class IManagerCallProxy : StubClientAsync
             __stream.Read(out __msg);
             _LOG.Error("Update_3 error! id={0} ret={1} msg={2}", __id, __ret, __msg);
             Error(__callback, 3, __ret, __msg);
+        }
+    }
+    void Stop_4(ByteReader __stream)
+    {
+        byte __id;
+        sbyte __ret;
+        __stream.Read(out __id);
+        __stream.Read(out __ret);
+        var __callback = Pop(__id);
+        if (__ret == 0)
+        {
+            #if DEBUG
+            _LOG.Debug("Stop");
+            #endif
+            var __invoke = (System.Action)__callback.Function;
+            if (__invoke != null) __invoke();
+        }
+        else
+        {
+            string __msg;
+            __stream.Read(out __msg);
+            _LOG.Error("Stop_4 error! id={0} ret={1} msg={2}", __id, __ret, __msg);
+            Error(__callback, 4, __ret, __msg);
         }
     }
 }

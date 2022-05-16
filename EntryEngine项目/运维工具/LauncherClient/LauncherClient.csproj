@@ -72,7 +72,7 @@
   <PropertyGroup>
     <PreBuildEvent>IF $(ConfigurationName) == Debug GOTO end
 
-$(ProjectDir)..\EntryBuilder\bin\Debug\EntryBuilder.exe BuildConstantTable $(ProjectDir)_C.xlsx $(TargetDir)_C.xml $(ProjectDir)_C.cs false 12.0
+$(ProjectDir)..\..\..\EntryEngine开发工具\EntryBuilder\bin\Debug\EntryBuilder.exe BuildConstantTable $(ProjectDir)_C.xlsx $(TargetDir)_C.xml $(ProjectDir)_C.cs false 12.0
 
 :end</PreBuildEvent>
   </PropertyGroup>

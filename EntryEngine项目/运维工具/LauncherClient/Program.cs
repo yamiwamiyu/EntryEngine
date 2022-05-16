@@ -8,13 +8,6 @@ namespace LauncherClient
     {
         static void Main(string[] args)
         {
-            //LauncherCmdline launcher = new LauncherCmdline();
-            //launcher.Name = "S1";
-            //launcher.Launch(@"Test\Test.exe", null, @"Test\",
-            //    "a\r\nb\r\nc");
-
-            //Console.ReadKey();
-
             AppDomain.CurrentDomain.UnhandledException += new UnhandledExceptionEventHandler(CurrentDomain_UnhandledException);
             using (CmdlineGate main = new CmdlineGate())
             {
