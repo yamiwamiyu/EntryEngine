@@ -79,7 +79,6 @@
     <Content Include="src\views\serviceLog.vue" />
     <Content Include="src\views\services.vue" />
     <Content Include="vue.config.js" />
-    <Content Include="Vue学习日志.txt" />
   </ItemGroup>
   <Import Project="$(VSToolsPath)\Node.js Tools\Microsoft.NodejsToolsV2.targets" />
   <ProjectExtensions>
