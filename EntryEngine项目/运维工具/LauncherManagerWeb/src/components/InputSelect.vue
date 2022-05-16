@@ -140,6 +140,7 @@ export default {
     select(index) {
       this.setInputSelectHeight();
       this.showList = false;
+
       this.bindValue = this.bindKey
         ? this.list[index][this.bindKey].toString()
         : this.list[index];
@@ -147,6 +148,8 @@ export default {
         ? this.list[index][this.listKey]
         : this.list[index];
       this.isSelect = true;
+
+      this.$emit("onselect", this.bindKey ? this.bindValue : this.inputValue);
     },
     setInputSelectHeight() {
       this.$nextTick().then(() => {

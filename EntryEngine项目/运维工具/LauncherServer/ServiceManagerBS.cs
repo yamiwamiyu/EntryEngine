@@ -186,6 +186,7 @@ namespace LauncherServer
                     }
                 }
             }
+            callback.Callback(true);
         }
         void _IMBS.GetServiceType(CBIMBS_GetServiceType callback)
         {
@@ -215,7 +216,14 @@ namespace LauncherServer
             Check(server == null, "无效的服务器ID");
             Check(SERVER.AllServices.Any(s => s.Name == name), "服务名称重复");
             var service = _SAVE.ServiceTypes.FirstOrDefault(s => s.Name == serviceType);
-            Check(server == null, "无效的服务类型");
+            Check(service == null, "无效的服务类型");
+            // 检测svn目录，账号的有效性，运行文件是否存在
+            if (!string.IsNullOrEmpty(exe))
+            {
+                _SVN.UserName = service.SVNUser;
+                _SVN.Password = service.SVNPassword;
+                _SVN.Log(service.SVNPath + exe);
+            }
 
             server.Proxy.New(service, name, (s) =>
             {

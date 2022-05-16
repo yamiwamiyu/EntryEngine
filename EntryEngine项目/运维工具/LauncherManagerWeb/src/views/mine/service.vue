@@ -163,7 +163,7 @@ export default {
     dialogClose(action) {
       if (action == "confirm") {
         let data = this.$refs.from.getValues();
-        return new Promise(resolve => {
+        return new Promise((resolve) => {
           this.$IMBSProxy.ModifyServiceType(data,
             (res) => {
               if (res) {
@@ -173,8 +173,8 @@ export default {
                 this.$refs.table.clearChoose();
                 this.reInit();
               }
-            })
-        }).then(() => resolve(true)).catch(() => resolve(false))
+            }).then(() => resolve(true)).catch(() => resolve(false))
+        })
       }
       return true;
     },

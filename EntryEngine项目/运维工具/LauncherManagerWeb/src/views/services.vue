@@ -59,6 +59,7 @@
           :inputType="1"
           :list="serverTypeList"
           listKey="Name"
+          @onselect="chooseServiceType"
         ></input-select>
         <van-field
           v-model="from.Exe"
@@ -374,6 +375,19 @@ export default {
       }
     },
     // 添加 ---------------------------------------
+    chooseServiceType(value) {
+      let current;
+      for (const item of this.serverTypeList) {
+        if (item.Name == value) {
+          current = item;
+          break;
+        }
+      }
+      if (current) {
+        this.from.Exe = current.Exe;
+        this.from.LaunchCommand = current.LaunchCommand;
+      }
+    },
     dialogClose(action) {
       if (action == "confirm") {
         return new Promise((resolve) => {
