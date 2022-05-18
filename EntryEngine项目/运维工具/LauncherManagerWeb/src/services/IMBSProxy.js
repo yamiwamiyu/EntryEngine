@@ -5,7 +5,7 @@
     onCallback: null,
     onErrorMsg: null,
     onError: null,
-    url: "http://127.0.0.1/",
+    url: "http://127.0.0.1:33257/",
     send: function(url, str, callback)
     {
         var promise = new Promise(function(resolve, reject)
@@ -130,6 +130,12 @@
         if (exe) str.push("exe=" + encodeURIComponent(exe));
         if (command) str.push("command=" + encodeURIComponent(command));
         return IMBSProxy.send("192/SetServiceLaunchCommand", str.join("&"), callback);
+    },
+    GetCommands: function(serviceName, callback)
+    {
+        var str = [];
+        if (serviceName) str.push("serviceName=" + encodeURIComponent(serviceName));
+        return IMBSProxy.send("192/GetCommands", str.join("&"), callback);
     },
     CallCommand: function(serviceNames, command, callback)
     {

@@ -17,6 +17,7 @@ class IManagerCallProxy : StubClientAsync
         AddMethod("Launch", Launch_2);
         AddMethod("Update", Update_3);
         AddMethod("Stop", Stop_4);
+        AddMethod("GetCommands", GetCommands_5);
     }
     
     public StubClientAsync.AsyncWaitCallback New(LauncherProtocolStructure.ServiceType serviceType, string name, System.Action<LauncherProtocolStructure.Service> callback)
@@ -101,6 +102,23 @@ class IManagerCallProxy : StubClientAsync
         __writer.Write(__async.ID);
         #if DEBUG
         _LOG.Debug("Stop({0} bytes) name: {1}, callback: {2}", __writer.Position, name, "System.Action");
+        #endif
+        Link.Write(__writer.Buffer, 0, __writer.Position);
+        return __async;
+    }
+    public StubClientAsync.AsyncWaitCallback GetCommands(string name, System.Action<System.Collections.Generic.List<string>> callback)
+    {
+        if (Link == null || !Link.IsConnected) return null;
+        ByteWriter __writer = new ByteWriter();
+        if (__WriteAgent != null) __WriteAgent(__writer);
+        __writer.Write((byte)1);
+        __writer.Write("GetCommands");
+        __writer.Write(name);
+        var __async = Push(callback);
+        if (__async == null) return null;
+        __writer.Write(__async.ID);
+        #if DEBUG
+        _LOG.Debug("GetCommands({0} bytes) name: {1}, callback: {2}", __writer.Position, name, "System.Action<System.Collections.Generic.List<string>>");
         #endif
         Link.Write(__writer.Buffer, 0, __writer.Position);
         return __async;
@@ -289,6 +307,31 @@ class IManagerCallProxy : StubClientAsync
             __stream.Read(out __msg);
             _LOG.Error("Stop_4 error! id={0} ret={1} msg={2}", __id, __ret, __msg);
             Error(__callback, 4, __ret, __msg);
+        }
+    }
+    void GetCommands_5(ByteReader __stream)
+    {
+        byte __id;
+        sbyte __ret;
+        __stream.Read(out __id);
+        __stream.Read(out __ret);
+        var __callback = Pop(__id);
+        if (__ret == 0)
+        {
+            System.Collections.Generic.List<string> obj;
+            __stream.Read(out obj);
+            #if DEBUG
+            _LOG.Debug("GetCommands obj: {0}", JsonWriter.Serialize(obj));
+            #endif
+            var __invoke = (System.Action<System.Collections.Generic.List<string>>)__callback.Function;
+            if (__invoke != null) __invoke(obj);
+        }
+        else
+        {
+            string __msg;
+            __stream.Read(out __msg);
+            _LOG.Error("GetCommands_5 error! id={0} ret={1} msg={2}", __id, __ret, __msg);
+            Error(__callback, 5, __ret, __msg);
         }
     }
 }

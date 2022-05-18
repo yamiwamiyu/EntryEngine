@@ -82,6 +82,9 @@ namespace LauncherProtocolStructure
         /// <summary>服务运行状态</summary>
         public EServiceStatus Status;
 
+        /// <summary>打了[CMD]标记的接口命令(方法名 参数名)，由LoggerToShell.StatusRunning自动获取调用该方法的程序集</summary>
+        public List<string> Commands { get; set; }
+
         public string Directory
         {
             get { return string.Format("__{0}/{1}/", Type, Name); }

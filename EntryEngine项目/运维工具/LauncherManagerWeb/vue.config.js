@@ -24,3 +24,7 @@ module.exports = defineConfig({
     }
   },
 })
+
+// npm -v 8.0.0
+// node -v v16.13.0
+// vue -V @vue-cli 5.0.4

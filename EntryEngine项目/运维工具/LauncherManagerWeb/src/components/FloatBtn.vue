@@ -60,7 +60,7 @@ export default {
     },
     showList() {
       let result = [];
-      let min = this.list.length;
+      let min = this.list ? this.list.length : 0;
       if (!this.showMore && this.showNum < min)
         min = this.showNum;
       for (let i = 0; i < min; i++)

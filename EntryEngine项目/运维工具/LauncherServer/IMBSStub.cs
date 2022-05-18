@@ -18,6 +18,7 @@ interface _IMBS
     void UpdateServer(CBIMBS_UpdateServer callback);
     void NewService(ushort serverID, string serviceType, string name, string exe, string command, CBIMBS_NewService callback);
     void SetServiceLaunchCommand(string[] serviceNames, string exe, string command, CBIMBS_SetServiceLaunchCommand callback);
+    void GetCommands(string serviceName, CBIMBS_GetCommands callback);
     void CallCommand(string[] serviceNames, string command, CBIMBS_CallCommand callback);
     void DeleteService(string[] serviceNames, CBIMBS_DeleteService callback);
     void LaunchService(string[] serviceNames, CBIMBS_LaunchService callback);
@@ -309,6 +310,41 @@ public class CBIMBS_SetServiceLaunchCommand : IDisposable
         if (!IsCallback) Error(-2, "no callback");
     }
 }
+public class CBIMBS_GetCommands : IDisposable
+{
+    internal HttpListenerContext __context { get; private set; }
+    internal StubHttp __link { get; private set; }
+    internal bool IsCallback { get; private set; }
+    public CBIMBS_GetCommands(StubHttp link)
+    {
+        this.__link = link;
+        this.__context = link.Context;
+    }
+    public void Callback(System.Collections.Generic.List<string> obj) // INDEX = 8
+    {
+        if (IsCallback) return;
+        string __ret = JsonWriter.Serialize(obj);
+        #if DEBUG
+        _LOG.Debug("CBIMBS_GetCommands {0}", __ret);
+        #endif
+        __link.Response(__context, __ret);
+        IsCallback = true;
+    }
+    public void Error(int ret, string msg)
+    {
+        if (IsCallback) return;
+        string __ret = JsonWriter.Serialize(new HttpError(ret, msg));
+        #if DEBUG
+        _LOG.Debug("CBIMBS_GetCommands Error ret={0} msg={1}", ret, msg);
+        #endif
+        __link.Response(__context, __ret);
+        IsCallback = true;
+    }
+    public void Dispose()
+    {
+        if (!IsCallback) Error(-2, "no callback");
+    }
+}
 public class CBIMBS_CallCommand : IDisposable
 {
     internal HttpListenerContext __context { get; private set; }
@@ -319,7 +355,7 @@ public class CBIMBS_CallCommand : IDisposable
         this.__link = link;
         this.__context = link.Context;
     }
-    public void Callback(bool obj) // INDEX = 8
+    public void Callback(bool obj) // INDEX = 9
     {
         if (IsCallback) return;
         string __ret = JsonWriter.Serialize(obj);
@@ -354,7 +390,7 @@ public class CBIMBS_DeleteService : IDisposable
         this.__link = link;
         this.__context = link.Context;
     }
-    public void Callback(bool obj) // INDEX = 9
+    public void Callback(bool obj) // INDEX = 10
     {
         if (IsCallback) return;
         string __ret = JsonWriter.Serialize(obj);
@@ -389,7 +425,7 @@ public class CBIMBS_LaunchService : IDisposable
         this.__link = link;
         this.__context = link.Context;
     }
-    public void Callback(bool obj) // INDEX = 10
+    public void Callback(bool obj) // INDEX = 11
     {
         if (IsCallback) return;
         string __ret = JsonWriter.Serialize(obj);
@@ -424,7 +460,7 @@ public class CBIMBS_UpdateService : IDisposable
         this.__link = link;
         this.__context = link.Context;
     }
-    public void Callback(bool obj) // INDEX = 11
+    public void Callback(bool obj) // INDEX = 12
     {
         if (IsCallback) return;
         string __ret = JsonWriter.Serialize(obj);
@@ -459,7 +495,7 @@ public class CBIMBS_StopService : IDisposable
         this.__link = link;
         this.__context = link.Context;
     }
-    public void Callback(bool obj) // INDEX = 12
+    public void Callback(bool obj) // INDEX = 13
     {
         if (IsCallback) return;
         string __ret = JsonWriter.Serialize(obj);
@@ -494,7 +530,7 @@ public class CBIMBS_NewManager : IDisposable
         this.__link = link;
         this.__context = link.Context;
     }
-    public void Callback(bool obj) // INDEX = 13
+    public void Callback(bool obj) // INDEX = 14
     {
         if (IsCallback) return;
         string __ret = JsonWriter.Serialize(obj);
@@ -529,7 +565,7 @@ public class CBIMBS_DeleteManager : IDisposable
         this.__link = link;
         this.__context = link.Context;
     }
-    public void Callback(bool obj) // INDEX = 14
+    public void Callback(bool obj) // INDEX = 15
     {
         if (IsCallback) return;
         string __ret = JsonWriter.Serialize(obj);
@@ -564,7 +600,7 @@ public class CBIMBS_GetManagers : IDisposable
         this.__link = link;
         this.__context = link.Context;
     }
-    public void Callback(System.Collections.Generic.List<LauncherManagerProtocol.Manager> obj) // INDEX = 15
+    public void Callback(System.Collections.Generic.List<LauncherManagerProtocol.Manager> obj) // INDEX = 16
     {
         if (IsCallback) return;
         string __ret = JsonWriter.Serialize(obj);
@@ -599,7 +635,7 @@ public class CBIMBS_GetLog : IDisposable
         this.__link = link;
         this.__context = link.Context;
     }
-    public void Callback(EntryEngine.Network.PagedModel<LauncherManagerProtocol.LogRecord> obj) // INDEX = 16
+    public void Callback(EntryEngine.Network.PagedModel<LauncherManagerProtocol.LogRecord> obj) // INDEX = 17
     {
         if (IsCallback) return;
         string __ret = JsonWriter.Serialize(obj);
@@ -634,7 +670,7 @@ public class CBIMBS_GroupLog : IDisposable
         this.__link = link;
         this.__context = link.Context;
     }
-    public void Callback(EntryEngine.Network.PagedModel<LauncherManagerProtocol.LogRecord> obj) // INDEX = 17
+    public void Callback(EntryEngine.Network.PagedModel<LauncherManagerProtocol.LogRecord> obj) // INDEX = 18
     {
         if (IsCallback) return;
         string __ret = JsonWriter.Serialize(obj);
@@ -678,6 +714,7 @@ class IMBSStub : StubHttp
         AddMethod("UpdateServer", UpdateServer);
         AddMethod("NewService", NewService);
         AddMethod("SetServiceLaunchCommand", SetServiceLaunchCommand);
+        AddMethod("GetCommands", GetCommands);
         AddMethod("CallCommand", CallCommand);
         AddMethod("DeleteService", DeleteService);
         AddMethod("LaunchService", LaunchService);
@@ -808,6 +845,20 @@ class IMBSStub : StubHttp
         #endif
         var callback = new CBIMBS_SetServiceLaunchCommand(this);
         agent.SetServiceLaunchCommand(serviceNames, exe, command, callback);
+    }
+    void GetCommands(HttpListenerContext __context)
+    {
+        var agent = __Agent;
+        if (__GetAgent != null) { var temp = __GetAgent(); if (temp != null) agent = temp; }
+        if (__ReadAgent != null) { var temp = __ReadAgent(__context); if (temp != null) agent = temp; }
+        string __temp;
+        __temp = GetParam("serviceName");
+        string serviceName = __temp;
+        #if DEBUG
+        _LOG.Debug("GetCommands serviceName: {0},", serviceName);
+        #endif
+        var callback = new CBIMBS_GetCommands(this);
+        agent.GetCommands(serviceName, callback);
     }
     void CallCommand(HttpListenerContext __context)
     {

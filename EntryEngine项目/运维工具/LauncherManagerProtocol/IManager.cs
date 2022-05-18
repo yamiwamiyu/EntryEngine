@@ -137,6 +137,7 @@ namespace LauncherManagerProtocol
         /// <param name="serviceName">一个平台服务唯一名称</param>
         /// <param name="command">命令和参数间用空格隔开，不同命令间用换行隔开</param>
         void SetServiceLaunchCommand(string[] serviceNames, string exe, string command, Action<bool> callback);
+        void GetCommands(string serviceName, Action<List<string>> callback);
         void CallCommand(string[] serviceNames, string command, Action<bool> callback);
         void DeleteService(string[] serviceNames, Action<bool> callback);
         void LaunchService(string[] serviceNames, Action<bool> callback);

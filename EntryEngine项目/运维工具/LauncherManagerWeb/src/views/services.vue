@@ -206,7 +206,7 @@ export default {
                 color: "red",
               },
               1: {
-                name: "启动中",
+                name: "启动",
                 color: "orange",
               },
               2: {
@@ -252,11 +252,13 @@ export default {
             .verifyChoose()
             .then(() => {
               this.$IMBSProxy.UpdateService(this.chooseList, (res) => {
-                if (res) {
-                  this.$Toast("更新成功");
-                  // this.$refs.table.clearChoose();
-                  this.getServers(false);
-                }
+                this.$Toast("更新成功");
+                // this.$refs.table.clearChoose();
+                this.getServers(false);
+                setTimeout(() => this.getServers(false), 500)
+                setTimeout(() => this.getServers(false), 1000)
+                setTimeout(() => this.getServers(false), 2000)
+                setTimeout(() => this.getServers(false), 3000)
               });
             })
             .catch(() => {});
@@ -410,7 +412,8 @@ export default {
     // 修改 --------------------------------
     changeClose(action) {
       if (action == "confirm") {
-        return this.$IMBSProxy.SetServiceLaunchCommand(
+        return new Promise((resolve) => {
+        this.$IMBSProxy.SetServiceLaunchCommand(
           this.chooseList,
           this.changeFrom.Exe,
           this.changeFrom.LaunchCommand,
@@ -418,11 +421,12 @@ export default {
             if (res) {
               this.$Toast("操作成功");
               this.changeShow = false;
-              this.getServers(true);
+              this.getServers(false);
               // this.$refs.table.clearChoose();
             }
           }
-        );
+          ).then(() => resolve(true)).catch(() => resolve(false));
+        })
       }
       return true;
     },

@@ -194,7 +194,14 @@ namespace LauncherClient
                             }
                         }
                         else if (record.Level == 255)
+                        {
                             SetStatus(service, EServiceStatus.Running);
+                        }
+                        else if (record.Level == 254)
+                        {
+                            if (!string.IsNullOrEmpty(record.Content))
+                                service.Commands = JsonReader.Deserialize<List<string>>(record.Content);
+                        }
                         else
                             Proxy.LogServer(service.Name, record);
                     }
@@ -265,6 +272,42 @@ namespace LauncherClient
             SetStatus(service, EServiceStatus.Stop);
             _LOG.Info("关闭服务：[{0}]", name);
             callback.Callback();
+        }
+        void _IManagerCall.GetCommands(string name, CBIManagerCall_GetCommands callback)
+        {
+            var service = _SAVE.Services.FirstOrDefault(s => s.Name == name);
+
+            if (string.IsNullOrEmpty(service.Exe) || service.Commands == null)
+                callback.Callback(new List<string>());
+            else
+                callback.Callback(service.Commands);
+            //{
+            //    List<string> results = new List<string>();
+            //    try
+            //    {
+            //        var assembly = System.Reflection.Assembly.Load(service.Directory + service.Exe);
+            //        _LOG.Info("Load Assembly: {0}", assembly.FullName);
+            //        foreach (var method in
+            //            assembly.GetExportedTypes()
+            //            .Where(i => i.GetCustomAttributes(typeof(CMDAttribute), true).Length > 0)
+            //            .SelectMany(i => i.GetMethods()))
+            //        {
+            //            StringBuilder builder = new StringBuilder();
+            //            builder.Append(method.Name);
+            //            foreach (var param in method.GetParameters())
+            //            {
+            //                builder.Append(' ');
+            //                builder.Append(param.Name);
+            //            }
+            //            results.Add(builder.ToString());
+            //        }
+            //    }
+            //    catch (Exception ex)
+            //    {
+            //        _LOG.Error(ex, "读取[CMD]命令错误");
+            //    }
+            //    callback.Callback(results);
+            //}
         }
         void _IManagerCall.CallCommand(string name, string command)
         {

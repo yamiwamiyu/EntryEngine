@@ -1,6 +1,7 @@
 ﻿using System;
 using EntryEngine.Network;
 using LauncherProtocolStructure;
+using System.Collections.Generic;
 
 namespace LauncherProtocol
 {
@@ -12,6 +13,7 @@ namespace LauncherProtocol
         void Launch(string name, Action callback);
         void Update(string name, Action<int> callback);
         void Stop(string name, Action callback);
+        void GetCommands(string name, Action<List<string>> callback);
         void CallCommand(string name, string command);
         void UpdateSVN();
         void ServiceTypeUpdate(ServiceType type);

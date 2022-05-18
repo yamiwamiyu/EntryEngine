@@ -5,6 +5,7 @@ using System.IO;
 using EntryEngine.Serialize;
 using EntryEngine.Network;
 using System.Linq;
+using System.Text;
 
 namespace EntryEngine.Cmdline
 {
@@ -357,7 +358,9 @@ namespace EntryEngine.Cmdline
             Colors.Add(5, ConsoleColor.White);
             Colors.Add(6, ConsoleColor.DarkYellow);
             Colors.Add(7, ConsoleColor.Red);
+            Colors.Add(254, ConsoleColor.Green);
             Colors.Add(255, ConsoleColor.Green);
+            CMD();
         }
 
         public void Debug2M(string content, params object[] param)
@@ -380,6 +383,40 @@ namespace EntryEngine.Cmdline
         public void StatusRunning()
         {
             Write(255, string.Empty);
+        }
+        /// <summary>写入等级254到运维工具，代表命令行接口方法</summary>
+        /// <param name="types">实现了[CMD]的接口类型，不传则程序集自动读取</param>
+        public void CMD(params Type[] types)
+        {
+            List<string> results = new List<string>();
+            try
+            {
+                IEnumerable<Type> targets = types;
+                if (types.Length == 0)
+                {
+                    var assembly = System.Reflection.Assembly.GetEntryAssembly();
+                    targets = assembly.GetTypes();
+                }
+                foreach (var method in
+                    targets
+                    .Where(i => i.GetCustomAttributes(typeof(CMDAttribute), true).Length > 0)
+                    .SelectMany(i => i.GetMethods()))
+                {
+                    StringBuilder builder = new StringBuilder();
+                    builder.Append(method.Name);
+                    foreach (var param in method.GetParameters())
+                    {
+                        builder.Append(' ');
+                        builder.Append(param.Name);
+                    }
+                    results.Add(builder.ToString());
+                }
+                Write(254, JsonWriter.Serialize(results));
+            }
+            catch (Exception ex)
+            {
+                _LOG.Error(ex, "读取[CMD]命令错误");
+            }
         }
         protected override void InternalLog(Record record)
         {

@@ -244,7 +244,7 @@ namespace LauncherServer
                 Service service;
                 SERVER server = SERVER.GetServer(serviceName, out service);
                 if (server == null || service == null) continue;
-                if (service.LaunchCommand == command) continue;
+                //if (service.LaunchCommand == command) continue;
 
                 service.Exe = exe;
                 service.LaunchCommand = command;
@@ -252,6 +252,13 @@ namespace LauncherServer
             }
             
             callback.Callback(true);
+        }
+        void _IMBS.GetCommands(string serviceName, CBIMBS_GetCommands callback)
+        {
+            CheckSecurity(ESecurity.Maintainer);
+            Service service;
+            SERVER server = SERVER.GetServer(serviceName, out service);
+            server.Proxy.GetCommands(serviceName, ret => callback.Callback(ret));
         }
         void _IMBS.CallCommand(string[] serviceNames, string command, CBIMBS_CallCommand callback)
         {
@@ -328,6 +335,7 @@ namespace LauncherServer
                 //if (server == null || service == null) continue;
                 Check(server == null || service == null, "未找到服务器和指定服务");
 
+                Console.WriteLine("服务[{0}]版本号：{1} / {2}，需要更新{3}", service.Name, service.Revision, service.RevisionOnServer, service.NeedUpdate);
                 if (service.NeedUpdate)
                 {
                     flag++;
@@ -340,6 +348,9 @@ namespace LauncherServer
                     });
                 }
             }
+
+            if (flag == 0)
+                callback.Callback(false);
         }
         void _IMBS.StopService(string[] serviceNames, CBIMBS_StopService callback)
         {

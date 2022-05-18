@@ -12,6 +12,7 @@ interface _IManagerCall
     void Launch(string name, CBIManagerCall_Launch callback);
     void Update(string name, CBIManagerCall_Update callback);
     void Stop(string name, CBIManagerCall_Stop callback);
+    void GetCommands(string name, CBIManagerCall_GetCommands callback);
     void CallCommand(string name, string command);
     void UpdateSVN();
     void ServiceTypeUpdate(LauncherProtocolStructure.ServiceType type);
@@ -231,6 +232,49 @@ class CBIManagerCall_Stop : IDisposable
         if (!IsCallback) Error(-2, "no callback");
     }
 }
+class CBIManagerCall_GetCommands : IDisposable
+{
+    private byte __id;
+    private Link __link;
+    internal bool IsCallback { get; private set; }
+    public CBIManagerCall_GetCommands(byte id, Link link)
+    {
+        this.__id = id;
+        this.__link = link;
+    }
+    public void Callback(System.Collections.Generic.List<string> obj) // INDEX = 5
+    {
+        if (IsCallback) return;
+        ByteWriter __writer = new ByteWriter();
+        __writer.Write(__id);
+        __writer.Write((sbyte)0);
+        __writer.Write(obj);
+        #if DEBUG
+        _LOG.Debug("CBIManagerCall_GetCommands Callback({0} bytes) obj: {1}", __writer.Position, JsonWriter.Serialize(obj));
+        #endif
+        IManagerCallCallbackProxy.GetCommands_5(__link, __writer.Buffer, __writer.Position);
+        IsCallback = true;
+    }
+    public void Error(sbyte ret, string msg)
+    {
+        if (IsCallback) return;
+        ByteWriter __writer = new ByteWriter();
+        __writer.Write((byte)1);
+        __writer.Write((ushort)5);
+        __writer.Write(__id);
+        __writer.Write(ret);
+        __writer.Write(msg);
+        #if DEBUG
+        _LOG.Debug("CBIManagerCall_GetCommands Error({0} bytes) ret={1} msg={2}", __writer.Position, ret, msg);
+        #endif
+        __link.Write(__writer.Buffer, 0, __writer.Position);
+        IsCallback = true;
+    }
+    public void Dispose()
+    {
+        if (!IsCallback) Error(-2, "no callback");
+    }
+}
 
 static class IManagerCallCallbackProxy
 {
@@ -285,6 +329,16 @@ static class IManagerCallCallbackProxy
         __writer.WriteBytes(data, 0, position);
         __link.Write(__writer.Buffer, 0, __writer.Position);
     }
+    internal static void GetCommands_5(Link __link, byte[] data, int position)
+    {
+        if (__link == null || !__link.IsConnected) return;
+        ByteWriter __writer = new ByteWriter();
+        if (__WriteAgent != null) __WriteAgent(__writer);
+        __writer.Write((byte)1);
+        __writer.Write("GetCommands");
+        __writer.WriteBytes(data, 0, position);
+        __link.Write(__writer.Buffer, 0, __writer.Position);
+    }
 }
 
 class IManagerCallStub : Stub
@@ -300,6 +354,7 @@ class IManagerCallStub : Stub
         AddMethod("Launch", Launch);
         AddMethod("Update", Update);
         AddMethod("Stop", Stop);
+        AddMethod("GetCommands", GetCommands);
         AddMethod("CallCommand", CallCommand);
         AddMethod("UpdateSVN", UpdateSVN);
         AddMethod("ServiceTypeUpdate", ServiceTypeUpdate);
@@ -428,6 +483,29 @@ class IManagerCallStub : Stub
         catch (Exception ex)
         {
             _LOG.Error("Callback_Stop error! msg={0} stack={1}", ex.Message, ex.StackTrace);
+            if (!__callback.IsCallback) __callback.Error(-1, ex.Message);
+        }
+    }
+    void GetCommands(ByteReader __stream)
+    {
+        var agent = __Agent;
+        if (__GetAgent != null) { var temp = __GetAgent(); if (temp != null) agent = temp; }
+        if (__ReadAgent != null) { var temp = __ReadAgent(__stream); if (temp != null) agent = temp; }
+        string name;
+        byte callback;
+        __stream.Read(out name);
+        __stream.Read(out callback);
+        #if DEBUG
+        _LOG.Debug("GetCommands name: {0}, callback: {1}", name, "System.Action<System.Collections.Generic.List<string>>");
+        #endif
+        var __callback = new CBIManagerCall_GetCommands(callback, Link);
+        try
+        {
+            agent.GetCommands(name, __callback);
+        }
+        catch (Exception ex)
+        {
+            _LOG.Error("Callback_GetCommands error! msg={0} stack={1}", ex.Message, ex.StackTrace);
             if (!__callback.IsCallback) __callback.Error(-1, ex.Message);
         }
     }

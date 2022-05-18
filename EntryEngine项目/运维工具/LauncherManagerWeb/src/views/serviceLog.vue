@@ -1,7 +1,7 @@
 <template>
   <div class="container">
     <van-nav-bar
-      title="日志"
+      :title="'日志(' + serviceName + ')'"
       left-arrow
       @click-left="$router.go(-1)"
       style="width: 100%"
@@ -87,7 +87,7 @@
 
     <!-- 筛选菜单 -->
     <van-popup
-      v-model="filter"
+      v-model:show="filter"
       position="right"
       style="height: 100%; width: 80%"
     >
@@ -307,7 +307,6 @@ export default {
             this.list[key].Record.ContentMore = false;
           }
         }
-        console.log("response---->");
         this.pageCount = (((res.Count - 1) / res.PageSize) | 0) + 1;
       };
 
@@ -375,10 +374,11 @@ export default {
     },
   },
   mounted() {
-    console.log("logSearch-->", this.$store.state.logSearch);
     this.from = this.$store.state.logSearch;
+    console.log("logSearch", this.from)
     this.getLog();
     this.$nextTick().then(() => {
+      console.log("this.$refs", this.$refs)
       this.$refs.detailBlock.addEventListener(
         "touchmove",
         (e) => e.stopPropagation(),

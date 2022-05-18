@@ -40,6 +40,8 @@ postcss-pxtorem
 1. 在vue.config.js中配置css属性
 module.exports = defineConfig({
     transpileDependencies: true,
+	// 发布时不生成.map文件
+	productionSourceMap: false,
 
     css: {
         loaderOptions: {

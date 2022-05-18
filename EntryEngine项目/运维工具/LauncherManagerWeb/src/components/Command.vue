@@ -1,11 +1,21 @@
 <template>
-  <van-dialog
-    v-model="commandShow"
+  <van-dialog width="15rem"
+    v-model:show="commandShow"
     title="命令"
     :before-close="commandClose"
     show-cancel-button
   >
-    <van-form
+    <template #title>
+      <span v-if="commands.length == 0">命令</span>
+      <select ref="select" v-if="commands.length > 0" @change="selectCommand">
+        <option class="optitle">选择命令</option>
+        <option class="op" v-for="(item, index) in commands" :value="item">{{item}}</option>
+      </select>
+      <!--<van-dropdown-menu v-if="commands.length > 0" active-color="#1989fa">
+        <van-dropdown-item ref="dd" id="scmd" title="选择命令" @change="selectCommand" :options="getCommandsList()" />
+      </van-dropdown-menu>-->
+    </template>
+    <van-form label-width="4rem"
       @submit="onSubmitCommand"
       ref="commandFrom"
       validate-trigger="onSubmit"
@@ -40,6 +50,7 @@ export default {
       commandFrom: {
         LaunchCommand: "",
       },
+      commands: [],
     };
   },
   computed: {},
@@ -47,39 +58,70 @@ export default {
     show: function (val) {
       this.commandShow = val;
       this.commandFrom.LaunchCommand = "";
+      if (val) {
+        this.getCommands()
+      }
     },
   },
   methods: {
     commandClose(action, done) {
       if (action == "confirm") {
-        this.$refs.commandFrom.submit();
-        done(false);
+        return new Promise((resolve) => {
+          this.$IMBSProxy.CallCommand(
+            this.chooseList,
+            this.commandFrom.LaunchCommand,
+            (res) => {
+              if (res) {
+                this.$Toast("操作成功");
+                this.$emit("submit");
+                this.$emit("close");
+              }
+            }
+          ).then(() => resolve(true)).catch(() => resolve(false))
+        })
       } else {
-        done();
         this.$emit("close");
       }
+      return true;
     },
-    onSubmitCommand() {
-      console.log("onSubmitCommand===》", this.commandFrom);
-      this.$IMBSProxy.CallCommand(
-        this.chooseList,
-        this.commandFrom.LaunchCommand,
-        (res) => {
-          if (res) {
-            this.$Toast("操作成功");
-            this.$emit("submit");
-            this.$emit("close");
-          }
-        }
-      );
+
+    getCommands() {
+      this.$IMBSProxy.GetCommands(this.chooseList[0], ret => this.commands = ret);
     },
+
+    getCommandsList() {
+      console.log("getCommandsList", this.$refs.dd)
+      return this.commands;
+    },
+
+    selectCommand() {
+      const select = this.$refs.select;
+      console.log("selectCommand", select.options[select.selectedIndex])
+      if (select.selectedIndex > 0) {
+        this.commandFrom.LaunchCommand += select.options[select.selectedIndex].value + "\r\n";
+        select.selectedIndex = 0;
+      }
+    }
   },
-  mounted() {},
+  mounted() { },
 };
 </script>
 
 <style scoped lang='scss'>
 .container {
   display: flex;
+
+  select {
+    /*text-align: center;*/
+
+    .optitle {
+      text-align: center;
+      color: red,
+    }
+
+    .op {
+
+    }
+  }
 }
 </style>
