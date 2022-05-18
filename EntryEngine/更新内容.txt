@@ -1,4 +1,4 @@
-﻿下版本预计
+﻿2022/05/18
 1. 运维工具服务端新增_C.xml配置默认账号和密码
 2. 运维工具大改，单个服务更新也改用SVN而非本地复制
 3. 运维工具新增LauncherManagerWeb项目，删除LauncherManagerH5
