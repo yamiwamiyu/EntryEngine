@@ -27,7 +27,10 @@ export default {
   },
     methods: {
       isSelected(item) {
-        return location.pathname == item.url ? "selected" : "unselected";
+        let flag = location.hash == '#' + item.url;
+        if (!flag)
+          flag = location.pathname == item.url;
+        return flag ? "selected" : "unselected";
       }
     }
 };
