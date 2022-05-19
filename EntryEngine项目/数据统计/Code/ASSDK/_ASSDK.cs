@@ -20,10 +20,14 @@ public static class _ASSDK
     {
         proxy.IsAsync = false;
 #if DEBUG
-        proxy.Host = "http://127.0.0.1:888/Action/";
+        proxy.Host = "http://127.0.0.1:888/ASSDK/";
 #else
-        proxy.Host = "http://47.99.145.87:8865/Action/";
+        proxy.Host = "http://8.134.82.110:32999/ASSDK/";
 #endif
+        proxy.OnError += (request, ex) =>
+        {
+            _LOG.Error(ex, "ASSDK请求错误");
+        };
     }
 
 #if !DEBUG

@@ -13,7 +13,7 @@ using System.Diagnostics;
 
 namespace Server
 {
-    public interface ICmd
+    [CMD]public interface ICmd
     {
         /// <summary>设置数据库</summary>
         /// <param name="dbconn">数据库连接字符串</param>
@@ -147,9 +147,9 @@ namespace Server
         {
             string prefix;
             if (port == 80)
-                prefix = string.Format("http://*/Action/");
+                prefix = string.Format("http://*/ASSDK/");
             else
-                prefix = string.Format("http://*:{0}/Action/", port);
+                prefix = string.Format("http://*:{0}/ASSDK/", port);
 
             _LOG.Info("Lauching \"{0}\"", prefix);
 
