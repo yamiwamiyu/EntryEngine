@@ -15,9 +15,15 @@ namespace PCRun
             new EntryEngine.HTML5.HTML5Gate().Run(gate_OnInitialized);
         }
 #else
+        //[System.Runtime.InteropServices.DllImport("User32.dll", EntryPoint = "ShowWindow")]
+        //private static extern bool ShowWindow(IntPtr hWnd, int value);
+
         [STAThread]
         static void Main(string[] args)
         {
+            // 隐藏控制台窗口，仅显示XNA窗体
+            //ShowWindow(System.Diagnostics.Process.GetCurrentProcess().MainWindowHandle, 0);
+
             // 可修改DEBUG自定义需要使用STA线程的程序
 #if DEBUG
             if (Thread.CurrentThread.GetApartmentState() != ApartmentState.STA)
