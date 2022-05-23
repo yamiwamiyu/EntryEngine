@@ -4458,7 +4458,7 @@ return result;"
         }
         private class TexFont
         {
-            [ASummary("多个文字组成的大图，每个文字要求不重叠")]
+            [ASummary("多个文字组成的大图，每个文字要求不重叠；可以是一个文件夹，字符做文件名可以不填文字内容，需要是png文件")]
             public string 文字图片;
             [ASummary("输出字体的路径，不填则和文字图片路径一致")]
             public string 输出路径;
@@ -10748,145 +10748,190 @@ return result;"
             string suffix = new PipelineFontStatic().FileType;
             foreach (var item in fonts)
             {
-                using (Bitmap map = (Bitmap)Image.FromFile(item.文字图片))
+                List<List<Bitmap>> lines = new List<List<Bitmap>>();
+                if (Directory.Exists(item.文字图片))
                 {
-                    _LOG.Info("拆分大图：{0}", item.文字图片);
-                    // 大图裁切成小图
-                    var lines = SplitText(map, item.文字间隔);
-                    int count1 = lines.Sum(l => l.Count);
-                    int count2 = item.文字内容.Replace("\n", "").Replace("\r", "").Length;
-                    if (count1 != count2)
+                    _LOG.Info("文件夹多图组成字体：{0}", item.文字图片);
+                    // 如果是文件夹，则视为一个一个的单字
+                    string directory = null;
+                    List<Bitmap> temp = null;
+                    StringBuilder builder = null;
+                    // 文字内容为空，则将图片文件的名字作为文字内容
+                    if (string.IsNullOrEmpty(item.文字内容))
+                        builder = new StringBuilder();
+                    foreach (var file in GetFiles(item.文字图片, SearchOption.AllDirectories, IMAGE_FORMAT))
                     {
-                        _LOG.Warning("\"{0}\" 未能生成字体，图像和内容文字数量不符！图像文字：{1} 内容文字：{2}", item.文字图片, count1, count2);
-                        int tempIndex = 0;
-                        foreach (var line in lines)
-                            foreach (var m in line)
-                                SavePng(m, "#未能生成字体", tempIndex++ + ".png", true);
-                        continue;
-                    }
-                    // 逐行统一尺寸
-                    // 高度每行统一
-                    int _height = 0;
-                    foreach (var m in lines.SelectMany(l => l))
-                        if (m.Height > _height)
-                            _height = m.Height;
-                    foreach (var line in lines)
-                    {
-                        // 统一尺寸
-                        int _width = 0;
-                        foreach (var m in line)
+                        // 不同的文件夹视为一行
+                        if (Path.GetDirectoryName(file) != directory)
                         {
-                            if (m.Width > 255 || m.Height > 255)
-                                throw new ArgumentException("单字图片尺寸不能超过255x255");
-                            if (m.Width > _width)
-                                _width = m.Width;
+                            directory = Path.GetDirectoryName(file);
+                            temp = new List<Bitmap>();
+                            lines.Add(temp);
                         }
-                        // 等宽则本行统一宽度
-                        if (item.等宽字体)
-                        {
-                            for (int i = 0; i < line.Count; i++)
-                            {
-                                if (line[i].Width == _width && line[i].Height == _height)
-                                    continue;
-                                using (line[i])
-                                {
-                                    // 横向居中绘制到等宽图片上
-                                    Bitmap normalize = new Bitmap(_width, _height);
-                                    ImageDraw(normalize, g =>
-                                    {
-                                        g.DrawImage(line[i],
-                                            new RectangleF((_width - line[i].Width) * 0.5f, 
-                                                (_height - line[i].Height) * 0.5f,
-                                                line[i].Width, line[i].Height));
-                                    });
-                                    //SavePng(normalize, "testoutput",  lines.IndexOf(line) + "_" + i + ".png", false);
-                                    line[i] = normalize;
-                                }
-                            }
-                        }
+                        temp.Add((Bitmap)Image.FromFile(file));
+                        if (builder != null)
+                            builder.Append(Path.GetFileNameWithoutExtension(file));
                     }
-                    var splits = lines.SelectMany(l => l).ToList();
-                    // 输出图片和配置文件
-                    int lineheight = splits.Max(s => s.Height);
-                    ByteWriter writer = new ByteWriter();
-                    writer.Write(lineheight / 1.5f);
-                    writer.Write((float)lineheight);
-                    // 最终要输出的文字图片，去除重复的文字
-                    Dictionary<char, Bitmap> text = new Dictionary<char, Bitmap>();
-                    // 图片的索引
-                    int tindex = -1;
-                    foreach (var c in item.文字内容)
+                    if (builder != null)
                     {
-                        if (c == '\n' || c == '\r') continue;
-                        tindex++;
-                        if (text.ContainsKey(c)) continue;
-                        text.Add(c, splits[tindex]);
+                        item.文字内容 = builder.ToString();
+                        _LOG.Info("自动采用文字图片文件名作为字符");
                     }
-                    writer.Write(text.Count);
-                    Size size = new Size();
-                    int width = 0;
-                    int height = 0;
-                    foreach (var c in text)
+                    if (string.IsNullOrEmpty(item.输出路径))
                     {
-                        if (c.Value.Height > height)
-                            height = c.Value.Height;
-                        if (width + c.Value.Width > 2048)
-                        {
-                            if (width > size.Width)
-                                size.Width = width;
-                            size.Height += height;
-                            width = 0;
-                            height = 0;
-                        }
-                        else
-                            width += c.Value.Width;
+                        item.输出路径 = item.文字图片;
+                        if (item.输出路径.EndsWith("/") || item.输出路径.EndsWith("\\"))
+                            item.输出路径 = item.输出路径.Substring(0, item.输出路径.Length - 1);
                     }
-                    if (width > size.Width)
-                        size.Width = width;
-                    if (height > 0)
-                        size.Height += height;
-                    _LOG.Info("重组大图：{0} 宽：{1} 高：{2}", item.文字图片, size.Width, size.Height);
-                    // 小图组合成大图
-                    using (Bitmap result = new Bitmap(size.Width, size.Height))
-                    {
-                        using (Graphics graphics = Graphics.FromImage(result))
-                        {
-                            width = 0;
-                            height = 0;
-                            ushort y = 0;
-                            foreach (var c in text)
-                            {
-                                if (width + c.Value.Width > 2048)
-                                {
-                                    y = (ushort)(y + height);
-                                    width = 0;
-                                    height = 0;
-                                }
-
-                                graphics.DrawImage(c.Value, new Point(width, y));
-                                writer.Write(c.Key);
-                                writer.Write((byte)0);
-                                writer.Write((ushort)width);
-                                writer.Write(y);
-                                writer.Write((byte)c.Value.Width);
-                                writer.Write((byte)c.Value.Height);
-
-                                width += c.Value.Width;
-                                if (c.Value.Height > height)
-                                    height = c.Value.Height;
-                            }
-                            string output = item.输出路径;
-                            if (string.IsNullOrEmpty(output))
-                                // 目录
-                                output = item.文字图片;
-                            else if (output.EndsWith("/") || output.EndsWith("\\"))
-                                output += Path.GetFileName(item.文字图片);
-                            File.WriteAllBytes(Path.ChangeExtension(output, suffix), writer.GetBuffer());
-                            result.Save(string.Format("{0}_0.png", output.WithoutExtention()), ImageFormat.Png);
-                        }
-                    }
-                    _LOG.Info("生成字体{0}", item.文字图片);
                 }
+                else
+                {
+                    using (Bitmap map = (Bitmap)Image.FromFile(item.文字图片))
+                    {
+                        _LOG.Info("拆分大图：{0}", item.文字图片);
+                        // 大图裁切成小图
+                        lines = SplitText(map, item.文字间隔);
+                    }
+                }
+
+                int count1 = lines.Sum(l => l.Count);
+                int count2 = item.文字内容.Replace("\n", "").Replace("\r", "").Length;
+                if (count1 != count2)
+                {
+                    _LOG.Warning("\"{0}\" 未能生成字体，图像和内容文字数量不符！图像文字：{1} 内容文字：{2}", item.文字图片, count1, count2);
+                    int tempIndex = 0;
+                    foreach (var line in lines)
+                        foreach (var m in line)
+                            SavePng(m, "#未能生成字体", tempIndex++ + ".png", true);
+                    continue;
+                }
+                // 逐行统一尺寸
+                // 高度每行统一
+                int _height = 0;
+                foreach (var m in lines.SelectMany(l => l))
+                    if (m.Height > _height)
+                        _height = m.Height;
+                foreach (var line in lines)
+                {
+                    // 统一尺寸
+                    int _width = 0;
+                    foreach (var m in line)
+                    {
+                        if (m.Width > 255 || m.Height > 255)
+                            throw new ArgumentException("单字图片尺寸不能超过255x255");
+                        if (m.Width > _width)
+                            _width = m.Width;
+                    }
+                    // 等宽则本行统一宽度
+                    if (item.等宽字体)
+                    {
+                        _LOG.Info("重组宽度：{0} 高度：{1}", _width, _height);
+                        for (int i = 0; i < line.Count; i++)
+                        {
+                            if (line[i].Width == _width && line[i].Height == _height)
+                                continue;
+                            using (line[i])
+                            {
+                                // 横向居中绘制到等宽图片上
+                                Bitmap normalize = new Bitmap(_width, _height);
+                                ImageDraw(normalize, g =>
+                                {
+                                    g.DrawImage(line[i],
+                                        new RectangleF((_width - line[i].Width) * 0.5f,
+                                            (_height - line[i].Height) * 0.5f,
+                                            line[i].Width, line[i].Height));
+                                });
+                                //SavePng(normalize, "testoutput",  lines.IndexOf(line) + "_" + i + ".png", false);
+                                line[i] = normalize;
+                            }
+                        }
+                    }
+                }
+                var splits = lines.SelectMany(l => l).ToList();
+                // 输出图片和配置文件
+                int lineheight = splits.Max(s => s.Height);
+                ByteWriter writer = new ByteWriter();
+                writer.Write(lineheight / 1.5f);
+                writer.Write((float)lineheight);
+                // 最终要输出的文字图片，去除重复的文字
+                Dictionary<char, Bitmap> text = new Dictionary<char, Bitmap>();
+                // 图片的索引
+                int tindex = -1;
+                foreach (var c in item.文字内容)
+                {
+                    if (c == '\n' || c == '\r') continue;
+                    tindex++;
+                    if (text.ContainsKey(c)) continue;
+                    text.Add(c, splits[tindex]);
+                }
+                writer.Write(text.Count);
+                Size size = new Size();
+                int width = 0;
+                int height = 0;
+                foreach (var c in text)
+                {
+                    if (c.Value.Height > height)
+                        height = c.Value.Height;
+                    if (width + c.Value.Width > 2048)
+                    {
+                        if (width > size.Width)
+                            size.Width = width;
+                        size.Height += height;
+                        width = 0;
+                        height = 0;
+                    }
+                    else
+                        width += c.Value.Width;
+                }
+                if (width > size.Width)
+                    size.Width = width;
+                if (height > 0)
+                    size.Height += height;
+                _LOG.Info("重组大图：{0} 宽：{1} 高：{2}", item.文字图片, size.Width, size.Height);
+                // 小图组合成大图
+                using (Bitmap result = new Bitmap(size.Width, size.Height))
+                {
+                    using (Graphics graphics = Graphics.FromImage(result))
+                    {
+                        graphics.PageUnit = GraphicsUnit.Pixel;
+                        width = 0;
+                        height = 0;
+                        ushort y = 0;
+                        foreach (var c in text)
+                        {
+                            if (width + c.Value.Width > 2048)
+                            {
+                                y = (ushort)(y + height);
+                                width = 0;
+                                height = 0;
+                            }
+
+                            graphics.DrawImage(c.Value, 
+                                new Rectangle(width, y, c.Value.Width, c.Value.Height), 
+                                0, 0, c.Value.Width, c.Value.Height, 
+                                GraphicsUnit.Pixel);
+                            writer.Write(c.Key);
+                            writer.Write((byte)0);
+                            writer.Write((ushort)width);
+                            writer.Write(y);
+                            writer.Write((byte)c.Value.Width);
+                            writer.Write((byte)c.Value.Height);
+
+                            width += c.Value.Width;
+                            if (c.Value.Height > height)
+                                height = c.Value.Height;
+                        }
+                        string output = item.输出路径;
+                        if (string.IsNullOrEmpty(output))
+                            // 目录
+                            output = item.文字图片;
+                        else if (output.EndsWith("/") || output.EndsWith("\\"))
+                            output += Path.GetFileName(item.文字图片);
+                        File.WriteAllBytes(Path.ChangeExtension(output, suffix), writer.GetBuffer());
+                        result.Save(string.Format("{0}_0.png", output.WithoutExtention()), ImageFormat.Png);
+                    }
+                }
+                _LOG.Info("生成字体{0}", item.文字图片);
             }
         }
         public static void TexFontFromText(string inputTextOrEmptyForAllChar, string fontName, byte fontSize, byte fontStyle, string outputFileName)
