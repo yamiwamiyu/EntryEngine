@@ -1,0 +1,32 @@
+﻿TypeName,Name,Type,Explain
+,,,
+,,,
+"EntryEngine.PBByTime, EntryEngine",9,1,50
+"EntryEngine.PSSkip, EntryEngine",75,2,91
+"EntryEngine.PSLifecycle, EntryEngine",10,2,51
+"EntryEngine.PSTex, EntryEngine",11,2,52
+"EntryEngine.PSTexClone, EntryEngine",12,2,53
+"EntryEngine.PSPosPoint, EntryEngine",13,2,54
+"EntryEngine.PSPosRectangle, EntryEngine",14,2,55
+"EntryEngine.PSPosCircle, EntryEngine",15,2,56
+"EntryEngine.PSPosAbsolute, EntryEngine",71,2,72
+"EntryEngine.PSSpeed, EntryEngine",16,2,57
+"EntryEngine.PSScale, EntryEngine",17,2,58
+"EntryEngine.PSRotation, EntryEngine",18,2,59
+"EntryEngine.PSColor, EntryEngine",69,2,73
+"EntryEngine.PSRandomChild, EntryEngine",76,3,92
+"EntryEngine.PSProbability, EntryEngine",77,3,93
+"EntryEngine.PSAnd, EntryEngine",78,3,94
+"EntryEngine.PSOr, EntryEngine",79,3,95
+"EntryEngine.PSInArea, EntryEngine",80,3,96
+"EntryEngine.PSInCircle, EntryEngine",81,3,97
+"EntryEngine.PSSpeedCheck, EntryEngine",82,3,98
+"EntryEngine.PSTimer, EntryEngine",83,3,110
+"EntryEngine.PSDie, EntryEngine",84,0,100
+"EntryEngine.PSLifeAdd, EntryEngine",85,0,101
+"EntryEngine.PSSpeedAdd, EntryEngine",86,0,102
+"EntryEngine.PSDirectionAdd, EntryEngine",87,0,103
+"EntryEngine.PSRotateAdd, EntryEngine",116,0,104
+"EntryEngine.PSRotationForward, EntryEngine",89,0,105
+"EntryEngine.PSColorAdd, EntryEngine",114,0,115
+"EntryEngine.PSWind, EntryEngine",117,0,118
