@@ -2985,11 +2985,40 @@ namespace EntryEngine
 		}
         public bool Intersects(RECT value)
         {
-            return value.X < this.X + this.Width && this.X < value.X + value.Width && value.Y < this.Y + this.Height && this.Y < value.Y + value.Height;
+            //return value.X < this.X + this.Width && this.X < value.X + value.Width && value.Y < this.Y + this.Height && this.Y < value.Y + value.Height;
+            return Intersects(ref value);
         }
         public bool Intersects(ref RECT value)
         {
-            return value.X < this.X + this.Width && this.X < value.X + value.Width && value.Y < this.Y + this.Height && this.Y < value.Y + value.Height;
+            
+            float num1 = this.X + this.Width;
+            float num2 = value.X + value.Width;
+            float num3 = this.Y + this.Height;
+            float num4 = value.Y + value.Height;
+            bool bool1 = value.X < num1;
+            bool bool2 = this.X < num2;
+            bool bool3 = value.Y < num3;
+            bool bool4 = this.Y < num4;
+            /* hack: 以下测试代码会导致bool4为false的情况下bool5返回true
+             * RECT rect1 = new RECT()
+            {
+                X = -4900,
+                Y = 350,
+                Width = 150,
+                Height = 100,
+            };
+            RECT rect2 = new RECT()
+            {
+                X = -4916.54248f,
+                Y = 168.000015f,
+                Width = 60,
+                Height = 182,
+            };
+            bool s = rect1.Intersects(ref rect2);
+             */
+            //bool bool5 = value.X < this.X + this.Width && this.X < value.X + value.Width && value.Y < this.Y + this.Height && this.Y < value.Y + value.Height;
+            //return bool5;
+            return bool1 && bool2 && bool3 && bool4;
         }
         public bool Equals(RECT other)
         {
