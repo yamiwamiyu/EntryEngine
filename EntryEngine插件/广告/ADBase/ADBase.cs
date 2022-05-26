@@ -29,7 +29,7 @@ public abstract class ADBase
     public string AppName { get; private set; }
     public bool IsInitialized { get { return !string.IsNullOrEmpty(AppID); } }
 
-    /// <summary>初始化SDK</summary>
+    /// <summary>初始化SDK，若初始化失败ADBase.AD将置为空广告对象</summary>
     /// <param name="appID">广告所属AppID，广告平台创建应用一般都有的</param>
     /// <param name="appName">广告所属App名字，广告平台创建应用一般都有的</param>
     /// <param name="callback">bool: 初始化成功/失败；string: 初始化失败原因</param>
@@ -39,10 +39,29 @@ public abstract class ADBase
             throw new ArgumentNullException("SDK AppID 不能为空！");
         this.AppID = appID;
         this.AppName = appName;
-        _Initialize(callback);
+        try
+        {
+            _Initialize((ret, msg) =>
+            {
+                if (!ret && AD == this)
+                    AD = CreateEmpty();
+                if (callback != null)
+                    callback(ret, msg);
+            });
+        }
+        catch (Exception ex)
+        {
+            if (AD == this)
+                AD = CreateEmpty();
+            throw ex;
+        }
     }
     protected abstract void _Initialize(Action<bool, string> callback);
 
+    /// <summary>预加载一条广告</summary>
+    /// <param name="adid">广告在平台的ID</param>
+    /// <param name="type">广告类型</param>
+    public abstract void LoadAD(string adid, EADType type);
     /// <summary>展示一条广告</summary>
     /// <param name="adid">广告在平台的ID</param>
     /// <param name="type">广告类型</param>
@@ -50,24 +69,15 @@ public abstract class ADBase
     /// <param name="y">广告显示位置，单位屏幕像素</param>
     /// <param name="width">广告宽度，单位屏幕像素</param>
     /// <param name="height">广告高度，单位屏幕像素</param>
-    /// <param name="onError">广告显示错误时回调错误码和错误信息</param>
-    /// <param name="onLoad">广告显示成功时回调广告对象</param>
-    /// <param name="onClick">广告被点击时回调</param>
-    /// <param name="onOver">广告看完时回调，一般用于看完有奖励的广告</param>
+    /// <param name="onReward">广告看完时回调，一般用于看完有奖励的广告</param>
     /// <returns>广告对象</returns>
-    public void ShowAD(string adid, EADType type,
+    public abstract void ShowAD(string adid, EADType type,
         float x, float y, int width, int height,
-        Action<int, string> onError, Action<IDisposable> onLoad, Action onClick, Action onOver)
-    {
-        _ShowAD(adid, type, x, y, width, height, onError, onLoad, onClick, onOver);
-    }
+        Action onReward);
     public void ShowAD(string adid)
     {
-        _ShowAD(adid, EADType.Unknown, 0, 0, 0, 0, null, null, null, null);
+        ShowAD(adid, EADType.Unknown, 0, 0, 0, 0, null);
     }
-    protected abstract void _ShowAD(string adid, EADType type,
-        float x, float y, int width, int height,
-        Action<int, string> onError, Action<IDisposable> onLoad, Action onClick, Action onOver);
 
     /// <summary>从可用的程序集中自动创建ADBase的实例，若有多个类型则返回首个检测到的类型实例</summary>
     public static ADBase AutoCreateFromAvailableFactory()
@@ -115,14 +125,15 @@ internal class ADEmpty : ADBase
     {
         get { return "广告测试"; }
     }
+    public override void LoadAD(string adid, EADType type)
+    {
+    }
     protected override void _Initialize(Action<bool, string> callback)
     {
         callback(true, "");
     }
-    protected override void _ShowAD(string adid, EADType type, float x, float y, int width, int height, Action<int, string> onError, Action<IDisposable> onLoad, Action onClick, Action onOver)
+    public override void ShowAD(string adid, EADType type, float x, float y, int width, int height, Action onOver)
     {
-        if (onLoad != null)
-            onLoad(null);
         if (onOver != null)
             onOver();
     }

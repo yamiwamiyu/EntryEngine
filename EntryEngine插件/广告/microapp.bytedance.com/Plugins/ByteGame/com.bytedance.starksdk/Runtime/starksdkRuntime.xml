@@ -1,0 +1,3773 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>starksdkRuntime</name>
+    </assembly>
+    <members>
+        <member name="T:StarkSDKSpace.HostEnum">
+            <summary>
+            宿主枚举
+            </summary>
+        </member>
+        <member name="T:StarkSDKSpace.LaunchFromEnum">
+            <summary>
+            入口枚举
+            </summary>
+        </member>
+        <member name="T:StarkSDKSpace.SCRuntime">
+            <summary>
+            SC的运行环境
+            </summary>
+        </member>
+        <member name="T:StarkSDKSpace.VersionType">
+            <summary>
+            Apk的版本环境
+            </summary>
+        </member>
+        <member name="T:StarkSDKSpace.ContainerEnv">
+            <summary>
+            保存宿主环境变量
+            </summary>
+        </member>
+        <member name="M:StarkSDKSpace.ContainerEnv.GetQueryFromScheme">
+            <summary>
+            获取query字段，即小程序的启动参数，可能为空，使用时需判空
+            </summary>
+        </member>
+        <member name="M:StarkSDKSpace.ContainerEnv.GetLaunchOptionsSync">
+            <summary>
+            获取小程序启动时的参数，里面的参数可能为空，使用时需判空
+            </summary>
+        </member>
+        <member name="M:StarkSDKSpace.ContainerEnv.CanLoadMiniApkThisUCVersion">
+            <summary>
+            1.判断下载穿山甲小包开关是否开放
+            加入数据字段判断，防止低版本走入穿山甲
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:StarkSDKSpace.ContainerEnv.CanIUsePangleThisUCVersion">
+            <summary>
+            1.判断当前版本Container是否支持穿山甲
+            2.判断穿山甲功能是否开放
+            防止低版本走入穿山甲
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="T:StarkSDKSpace.IStarkAPI">
+            <summary>
+            接入头条抖音能力的接口，在非宿主环境下，会对一些回调进行模拟
+            如果调用的函数在宿主版本不被支持，则会抛出异常
+            </summary>
+        </member>
+        <member name="P:StarkSDKSpace.IStarkAPI.SDKVersion">
+            <summary>
+            SDK版本号
+            </summary>
+        </member>
+        <member name="P:StarkSDKSpace.IStarkAPI.GameVersion">
+            <summary>
+            游戏版本号，通过该接口替换Application.version获得正确的版本号信息
+            </summary>
+        </member>
+        <member name="P:StarkSDKSpace.IStarkAPI.GamePublishVersion">
+            <summary>
+            游戏发布版本号，发布版本时发布工具中指定的版本号
+            </summary>
+        </member>
+        <member name="M:StarkSDKSpace.IStarkAPI.SetContainerInitCallback(StarkSDKSpace.OnStarkContainerInitCallback)">
+            <summary>
+            设置Container初始化成功的回调。获取宿主及入口信息
+            需要在调用其他api之前调用
+            非Container下不会有此回调
+            version : 1.0.0
+            </summary>
+            <param name="callback">初始化完成的回调.</param>
+        </member>
+        <member name="M:StarkSDKSpace.IStarkAPI.GetStarkGameRecorder">
+            <summary>
+            获取录屏相关接口
+            </summary>
+            <returns>StarkGameRecorder</returns>
+        </member>
+        <member name="M:StarkSDKSpace.IStarkAPI.GetStarkAdManager">
+            <summary>
+            广告相关接口
+            </summary>
+            <returns>StarkAdManager</returns>
+        </member>
+        <member name="M:StarkSDKSpace.IStarkAPI.GetStarkLog">
+            <summary>
+            控制sdk中的Log级别
+            </summary>
+        </member>
+        <member name="M:StarkSDKSpace.IStarkAPI.GetAccountManager">
+            <summary>
+            账号模块
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:StarkSDKSpace.IStarkAPI.GetStarkContainerVersion">
+            <summary>
+            获取container sdk 版本号 like "1.0.0"
+            </summary>
+        </member>
+        <member name="M:StarkSDKSpace.IStarkAPI.FollowDouYinUserProfile(System.Action,System.Action{System.Int32,System.String},System.Boolean)">
+            <summary>
+            关注抖音号
+            需要在开发者平台-设置中绑定抖音号
+            </summary>
+            <param name="followCallback">完成打开抖音号的回调。涉及用户信息，无法获取用户是否关注了抖音号的状态</param>
+            <param name="errCallback">打开抖音号失败的回调。errCode:
+            <param name="showToastTipsIfFailed"> 当关注抖音号失败，是否显示Toast弹窗提示，默认显示 </param>
+            CODE_ERROR = -1
+            CODE_NOT_SUPPORT = -2
+            CODE_NOT_LOGIN = -3
+            CODE_NO_ACTIVITY = -4
+            CODE_UID_ERROR = -5
+            </param>
+        </member>
+        <member name="M:StarkSDKSpace.IStarkAPI.CreateShortcut(System.Action{System.Boolean},System.Boolean)">
+            <summary>
+            创建快捷方式
+            </summary>
+            <param name="csCallback"> 创建快捷方式回调，参数为是否成功，true表示成功，false表示失败 </param>
+            <param name="showToastTipsIfFailed"> 当创建失败，是否显示Toast弹窗提示，默认显示 </param>
+        </member>
+        <member name="M:StarkSDKSpace.IStarkAPI.IsShortcutExist(System.Action{System.Boolean})">
+            <summary>
+            快捷方式是否已经创建
+            </summary>
+            <param name="isExistCallback"> 是否存在的回调，参数表示是否已创建，true表示已创建，false表示未创建 </param>
+        </member>
+        <member name="M:StarkSDKSpace.IStarkAPI.Vibrate(System.Int64[],System.Int32)">
+            <summary>
+            可以配置震动周期的手机震动接口，单位ms
+            </summary>
+            <param name="pattern"> 震动周期 like long[] pattern = {0, 100, 1000, 300}; 传入null则取消震动  </param>
+            <param name="repeat"> 重复次数，为-1则不重复  </param>
+        </member>
+        <member name="M:StarkSDKSpace.IStarkAPI.GetStarkShare">
+            <summary>
+            获取分享相关接口
+            </summary>
+        </member>
+        <member name="M:StarkSDKSpace.IStarkAPI.IsFollowDouyin(System.Action{System.Boolean})">
+            <summary>
+            是否已关注抖音号
+            </summary>
+            <param name="callback"> 是否关注的回调，参数表示是否已关注，true表示已关注，false表示未关注 </param>
+        </member>
+        <member name="M:StarkSDKSpace.IStarkAPI.HasBoundDouyin(System.Action{System.Boolean})">
+            <summary>
+            是否在小程序开发者后台绑定了抖音号
+            </summary>
+            <param name="callback"> 是否绑定的回调，参数表示是否已绑定，true表示已绑定，false表示未绑定 </param>
+        </member>
+        <member name="M:StarkSDKSpace.IStarkAPI.GetStarkFavorite">
+            <summary>
+            获取收藏引导接口
+            </summary>
+        </member>
+        <member name="M:StarkSDKSpace.IStarkAPI.RegisterCommandEvent(System.Action{System.String,System.Collections.Generic.IList{System.String}})">
+            <summary>
+            接入sdk的debugpanel面板，注册一些debug命令的回调函数
+            </summary>
+        </member>
+        <member name="M:StarkSDKSpace.IStarkAPI.GetStarkPayService">
+            <summary>
+            支付服务接口
+            </summary>
+        </member>
+        <member name="M:StarkSDKSpace.IStarkAPI.ReportAnalytics``1(System.String,System.Collections.Generic.Dictionary{System.String,``0})">
+            <summary>
+            自定义分析数据上报接口，调用后，会将数据上报到小程序开发者平台，开发者可以在小程序开发者平台中查看上报数据。使用前，需要在小程序管理后台事件中新建事件，配置好事件名与字段。
+            可参考文档 https://microapp.bytedance.com/docs/zh-CN/mini-app/data/advanced-analysis/events
+            </summary>
+            <param name="eventName"> 事件名 </param>
+            <param name="param"> 上报的数据，默认为null key	: 配置中的字段名.  value(number|string|boolean) : 上报的数据</param>
+        </member>
+        <member name="M:StarkSDKSpace.IStarkAPI.Save``1(``0,System.String)">
+            <summary>
+            保存游戏数据接口，所有游戏数据保存上限50M
+            </summary>
+            <param name="saveName"> 数据名 </param>
+            <param name="serializableObject"> 可序列化的数据(存档类需标记为Serializable)[见以下的例子]</param>
+            <returns>保存成功返回true，否则返回false</returns>
+            <example>
+            <code>
+            [Serializable]
+            class SaveData
+            {
+               public int IntValue = 99;
+               private float FloatValue = 1.0f;
+               public string StrValue = "My String";
+               public Dictionary&lt;String,bool&gt; map;
+               public List&lt;String&gt; listStr;
+            }
+            SaveData sd = new SaveData();
+            sd.xx = yyy;
+            bool ret = StarkSDK.API.Save&lt;SaveData&gt;(sd);
+            </code>
+            </example>
+        </member>
+        <member name="M:StarkSDKSpace.IStarkAPI.LoadSaving``1(System.String)">
+             <summary>
+             加载游戏数据接口，返回数据类型需为Serializable
+             </summary>
+             <param name="saveName"> 数据名 </param>
+            
+             <example>
+             SaveData loaded = StarkSDK.API.LoadSaving&lt;SaveData&gt;();
+             </example>
+        </member>
+        <member name="M:StarkSDKSpace.IStarkAPI.DeleteSaving``1(System.String)">
+            <summary>
+            删除游戏数据接口
+            </summary>
+            <param name="saveName"> 数据名 </param>
+            
+            <example>
+            StarkSDK.API.DeleteSaving&lt;SaveData&gt;();
+            </example>
+        </member>
+        <member name="M:StarkSDKSpace.IStarkAPI.ClearAllSavings">
+            <summary>
+            删除所有游戏数据
+            </summary>
+        </member>
+        <member name="M:StarkSDKSpace.IStarkAPI.GetSavingDiskSize">
+            <summary>
+            获取游戏数据磁盘总大小
+            </summary>
+            <param name="saveName"> 数据名 </param>
+        </member>
+        <member name="M:StarkSDKSpace.IStarkAPI.GetNavigateGameModule">
+            <summary>
+            获取游戏跳转模块
+            </summary>
+        </member>
+        <member name="M:StarkSDKSpace.IStarkAPI.OnTitleBarClose(System.Func{System.Single,System.Collections.IEnumerator})">
+            <summary>
+             <para>注册游戏点击关闭按钮后的回调</para>
+             <para>游戏将在CountDown时间(默认为5s)后强制结束，在此期间可以执行自己的业务逻辑</para>
+             </summary>
+             <param name="ienumeratorBeforeClose">业务逻辑，IEnumerator的方法名; IEnumerator方法会传入countdown（float），如果countdown结束，则强制关闭游戏</param>
+             <example>
+             <para>使用案例</para>
+             <code>
+            IEnumerator OnGameClose(float secondsCloseCountdown)
+            {
+                PrintText("TitleBarCapsuleClose:  seconds download" + secondsCloseCountdown);
+                yield return new WaitForSeconds(secondsCloseCountdown/2);    //模拟业务延时，比如countdown给了5s，我们在2.5s内完成业务逻辑
+                PrintTextAppended("TitleBarCapsuleClose yield over");
+                //Game will close here
+            }
+            
+            StarkSDK.API.OnTitleBarClose(OnGameClose)；//将方法名作为参数传入该接口
+            </code>
+            </example>
+        </member>
+        <member name="M:StarkSDKSpace.IStarkAPI.GetStarkVideoManager">
+            <summary>
+            获取视频播放接口
+            </summary>
+            <returns>StarkVideoManager</returns>
+        </member>
+        <member name="P:StarkSDKSpace.StarkMiniApk.MiniApkAdManager.IsCurrentCanUseAdAPI">
+            <summary>
+            CanUseAdAPI 的当前状态, 注意是一个缓存状态。 如果是在调用广告API前，则必须要用 `CanUseAPI()` 判断.
+            </summary>
+        </member>
+        <member name="M:StarkSDKSpace.StarkMiniApk.MiniApkAdManager.CanInstall">
+            <summary>
+            当前环境是否可安装'穿山甲小包'，例如目前仅限 host: douyin 平台
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:StarkSDKSpace.StarkMiniApk.MiniApkAdManager.CanUseAdAPI(System.Boolean,System.Boolean)">
+            <summary>
+            判断 '穿山甲' UnionAd 广告API 是否可用, 并刷新 `IsCurrentCanUseAdAPI` 状态.
+            </summary>
+            <param name="checkHost"></param>
+            <param name="checkThisUser"></param>
+            <returns></returns>
+        </member>
+        <member name="M:StarkSDKSpace.StarkMiniApk.MiniApkAdManager.ShowRewardVideoAd(System.Action{System.Boolean},System.Action{System.Int32,System.String})">
+            <summary>
+            请求播放激励视频广告，关闭、或出错时回调
+            <br/> `onClose`回调参数：是否看完广告（可以给奖励）  
+            <br/> ```(bool isComplete) => {}```
+            <br/> `onError`回调参数：错误码, 错误消息  
+            <br/> ```(int errorCode, string errorMsg) => {}```
+            </summary>
+            <param name="onClose">关闭的回调</param>
+            <param name="onError">失败的回调</param>
+        </member>
+        <member name="M:StarkSDKSpace.StarkMiniApk.MiniApkAdManager.InstallApp(System.Action{System.Boolean},System.Action{System.Boolean})">
+            <summary>
+            安装'穿山甲小包'App，完成后回调。  
+            <br/> `onInstalled` 回调参数：是否已安装 
+            <br/> ```(bool installed) => {}```
+            </summary>
+            <param name="onInstalled"></param>
+        </member>
+        <member name="M:StarkSDKSpace.StarkMiniApk.MiniApkAdManager.IsInstalled">
+            <summary>
+            判断是否'穿山甲小包'已安装
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:StarkSDKSpace.StarkMiniApk.MiniApkAdManager.IsLaunchFromMiniApk(System.Boolean)">
+            <summary>
+            判断是否从'穿山甲小包'拉起游戏。 可用于判断是否给"添加桌面"按钮奖励。
+            </summary>
+            <param name="includeInstalledLatest"></param>
+            <returns></returns>
+        </member>
+        <member name="M:StarkSDKSpace.StarkMiniApk.MiniApkAdManager.IsVersionMatch">
+            <summary>
+            判断已经安装的'穿山甲小包'和游戏版本号是否匹配
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:StarkSDKSpace.StarkMiniApk.MiniApkAdManager.NeedInstallApk">
+            <summary>
+            判断需不需要安装新版本，一下两种情况返回true:
+            1.本地没有安装apk
+            2.StarkSDK.MiniApk.CheckInstalledUseVersion 打开 且本地安装apk和服务器不一致
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:StarkSDKSpace.StarkMiniApk.MiniApkAdManager.GetVersion">
+            <summary>
+            获取已经安装的'穿山甲小包'版本号
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:StarkSDKSpace.StarkMiniApk.MiniApkAdManager.ReportInstallApk(System.Boolean)">
+            <summary>
+            上报用户安装引导包的事件
+            </summary>
+            <param name="installed"></param>
+        </member>
+        <member name="M:StarkSDKSpace.StarkMiniApk.MiniApkAdManager.UseForThisUser">
+            <summary>
+            【用于AB测试】判断是否对此用户可用。
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="T:StarkSDKSpace.StarkMiniApk.MiniApkApi.AdResult">
+            <summary>
+            播放广告结果
+            </summary>
+        </member>
+        <member name="F:StarkSDKSpace.StarkMiniApk.MiniApkApi.AdResult.code">
+            <summary>
+            错误代码，0 为成功
+            </summary>
+        </member>
+        <member name="F:StarkSDKSpace.StarkMiniApk.MiniApkApi.AdResult.message">
+            <summary>
+            错误信息
+            </summary>
+        </member>
+        <member name="F:StarkSDKSpace.StarkMiniApk.MiniApkApi.AdResult.complete">
+            <summary>
+            广告是否播放完成
+            </summary>
+        </member>
+        <member name="T:StarkSDKSpace.StarkMiniApk.MiniApkApi.PackageInfo">
+            <summary>
+            Android APK 包信息
+            </summary>
+        </member>
+        <member name="M:StarkSDKSpace.StarkMiniApk.MiniApkApi.InitPackageName(System.String)">
+            <summary>
+            初始化pkgname
+            </summary>
+            <param name="pkgName"></param>
+        </member>
+        <member name="M:StarkSDKSpace.StarkMiniApk.MiniApkApi.Install">
+            <summary>
+            安装诱导包
+            </summary>
+            <returns>是否安装成功</returns>
+        </member>
+        <member name="M:StarkSDKSpace.StarkMiniApk.MiniApkApi.IsInstalled">
+            <summary>
+            是否已安装诱导包
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:StarkSDKSpace.StarkMiniApk.MiniApkApi.GetPackageInfo">
+            <summary>
+            获取已安装的apk包信息
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:StarkSDKSpace.StarkMiniApk.MiniApkApi.ShowVideoAd">
+            <summary>
+            播放广告
+            </summary>
+            <returns>是否成功播放完广告</returns>
+        </member>
+        <!-- 对于成员“M:StarkSDKSpace.StarkMiniApk.MiniApkApi.MiniApkCurrentVersionNotLessThan(System.Int32,System.Int32)”忽略有格式错误的 XML 注释 -->
+        <member name="M:StarkSDKSpace.StarkMiniApk.MiniApkApi.InstallApk(System.String)">
+            <summary>
+            拉起安装apk
+            </summary>
+            <param name="apkPath"></param>
+            <returns></returns>
+        </member>
+        <member name="T:StarkSDKSpace.StarkMiniApk.ReactiveListener">
+            <summary>
+            等待重新切回到游戏
+            </summary>
+        </member>
+        <member name="M:StarkSDKSpace.StarkMiniApk.ReactiveListener.WaitReactive">
+            <summary>
+            等待重新切回到游戏
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="T:StarkSDKSpace.StarkMiniApk.MiniApkloader">
+            <summary>
+            用于Apk的加载：
+            1.若本地已经存在则直接使用。不做版本控制
+            2.若本地不存在则根据游戏版本去服务器下载
+            3.防止重复下载apk
+            </summary>
+        </member>
+        <member name="M:StarkSDKSpace.StarkMiniApk.MiniApkloader.CheckLocalApkOrDownloader">
+            <summary>
+            检查本地apk，若本地没有则直接从网上拉取最新的；
+            只要本地存在就不再拉取最新的，全量更新由微端自己完成
+            </summary>
+        </member>
+        <member name="M:StarkSDKSpace.StarkMiniApk.MiniApkloader.DownloadApk(System.String,System.String)">
+            <summary>
+            下载Apk
+            </summary>
+            <param name="uri">链接</param>
+            <param name="savePath">存储路径</param>
+            <returns></returns>
+        </member>
+        <member name="M:StarkSDKSpace.StarkMiniApk.MiniApkloader.DownloadVersion(System.String)">
+            <summary>
+            获取最新游戏版本
+            </summary>
+            <param name="appid"></param>
+            <returns></returns>
+        </member>
+        <member name="M:StarkSDKSpace.StarkMiniApk.MiniApkloader.DownloadLink(System.String,System.String)">
+            <summary>
+            获取下载链接
+            </summary>
+            <param name="appid">游戏id</param>
+            <param name="version">版本号</param>
+            <returns></returns>
+        </member>
+        <member name="M:StarkSDKSpace.StarkMiniApk.MiniApkloader.DelecteDir(System.String)">
+            <summary>
+            删除文件夹
+            </summary>
+            <param name="srcPath"></param>
+        </member>
+        <member name="M:StarkSDKSpace.StarkMiniApk.MiniApkloader.ApkExist(System.String,System.String@)">
+            <summary>
+            本地文件是否已经存在
+            </summary>
+            <param name="srcPath"></param>
+            <param name="version"></param>
+            <returns></returns>
+        </member>
+        <member name="M:StarkSDKSpace.StarkMiniApk.MiniApkloader.ReportDownloadResult(System.String,System.String)">
+            <summary>
+            添加上报apk下载成功与否的事件
+            </summary>
+            <param name="result_type">是否成功</param>
+            <param name="trigger_by">错误原因</param>
+        </member>
+        <member name="T:StarkSDKSpace.StarkMiniApk.GetLinkWebResponseBody">
+            <summary>
+            下载链接
+            </summary>
+        </member>
+        <member name="M:StarkSDKSpace.StarkAPIMock.#ctor">
+            <summary>
+            创建mock模块
+            </summary>
+        </member>
+        <member name="M:StarkSDKSpace.StarkAPIMock.GetStarkGameRecorder">
+            <summary>
+            获取游戏记录的Mock
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:StarkSDKSpace.StarkAPIMock.GetStarkAdManager">
+            <summary>
+            获取广告的Mock
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:StarkSDKSpace.StarkAPIMock.GetStarkShare">
+            <summary>
+            获取分享的Mock
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:StarkSDKSpace.StarkAPIMock.GetStarkFavorite">
+            <summary>
+            收藏模块的Mock
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:StarkSDKSpace.StarkAPIMock.GetAccountManager">
+            <summary>
+            获取账号模块的Mock
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="F:StarkSDKSpace.StarkBridge.s_SupportMethed">
+            <summary>
+            记录已判断支持的函数
+            </summary>
+        </member>
+        <member name="F:StarkSDKSpace.StarkBridge.s_NotSupportMethed">
+            <summary>
+            记录已判断不被支持的函数
+            </summary>
+        </member>
+        <member name="M:StarkSDKSpace.StarkBridge.IsBridgeAvailable">
+            <summary>
+            Check if UNBridge android sdk is available
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:StarkSDKSpace.StarkBridge.ValidateNativeMethod(StarkSDKSpace.StarkNativeMethod)">
+            <summary>
+            Validate the native method before calling it
+            非Container环境下，都返回 true
+            </summary>
+            <param name="nativeMethod"></param>
+        </member>
+        <member name="M:StarkSDKSpace.StarkBridge.Call(StarkSDKSpace.StarkNativeMethod)">
+            <summary>
+            Replacement for UNbridge.Call
+            </summary>
+            <param name="nativeMethod">native method object to be called</param>
+        </member>
+        <member name="M:StarkSDKSpace.StarkBridge.Call(StarkSDKSpace.StarkNativeMethod,UNBridgeLib.BridgeCallBack)">
+            <summary>
+            Replacement for UNBridge.Call with callback
+            </summary>
+            <param name="nativeMethod">native method object to be called</param>
+            <param name="callback">callback object passed in</param>
+        </member>
+        <member name="M:StarkSDKSpace.StarkBridge.CallDontUseLoom(System.String,UNBridgeLib.LitJson.JsonData)">
+            <summary>
+            不使用Loom调用一个Android方法
+            </summary>
+            <param name="target">目标接口</param>
+            <param name="param">参数数据</param>
+        </member>
+        <member name="M:StarkSDKSpace.StarkBridge.CallNativeDontUseLoom(System.Int32,System.String,UNBridgeLib.LitJson.JsonData,System.String)">
+            <summary>
+            同步Call通讯接口
+            </summary>
+            <param name="type">消息类型0-call消息，1-listen消息,2-unlisten消息，3-event消息</param>
+            <param name="target">目标接口</param>
+            <param name="param">参数</param>
+            <param name="callbackId"></param>
+        </member>
+        <member name="M:StarkSDKSpace.StarkBridge.CallWithDefaultCallback(StarkSDKSpace.StarkNativeMethod)">
+            <summary>
+            Replacement for UNBridge.Call with callback
+            </summary>
+            <param name="nativeMethod">native method object to be called</param>
+            <param name="callback">callback object passed in</param>
+        </member>
+        <member name="M:StarkSDKSpace.StarkBridge.Call(StarkSDKSpace.StarkNativeMethod,UNBridgeLib.BridgeCallBack,System.Int64)">
+            <summary>
+            Replacement for UNBridge.Call with callback with timeout
+            </summary>
+            <param name="nativeMethod">native method object to be called</param>
+            <param name="callback">callback object passed in</param>
+            <param name="timeout">callback timeout</param>
+        </member>
+        <member name="M:StarkSDKSpace.StarkBridge.CallSync``1(StarkSDKSpace.StarkNativeMethod)">
+             <summary>
+             Replacemenet for UNBridge.CallSync, return primitive values;
+             This API only support basic types: int, long, float, double, bool, string;
+             Default(T) will return if return type not supported!
+            
+             Define Android code as following:
+             
+             @UNBridgeMethod(sync = true)
+             public long testLong() { return 21474836470L; }
+             
+             </summary>
+             <typeparam name="T">Only valide for basic types: int, long, float, double, bool, string</typeparam>
+             <param name="nativeMethod">Native method object</param>
+             <returns>return value </returns>
+        </member>
+        <!-- 对于成员“M:StarkSDKSpace.StarkBridge.CallSyncList``1(StarkSDKSpace.StarkNativeMethod)”忽略有格式错误的 XML 注释 -->
+        <!-- 对于成员“M:StarkSDKSpace.StarkBridge.CallSyncMap``1(StarkSDKSpace.StarkNativeMethod)”忽略有格式错误的 XML 注释 -->
+        <member name="M:StarkSDKSpace.StarkBridge.RegisterAPI(System.String,UNBridgeLib.OnCallBridgeAPI)">
+            <summary>
+            Convenient method to register c# API for Android
+            </summary>
+            <param name="mehodID"></param>
+            <param name="method"></param>
+        </member>
+        <member name="T:StarkSDKSpace.SCFollowAwemeEvent">
+            <summary>
+            关注抖音的回调
+            data 内容 :
+            {
+            "errCode" : 0,  成功时为0
+            “errMsg” : "",  errCode不为0时，描述错误原因
+            “hasFollowed” : true?false 关注抖音号结果
+            }
+            errCode：
+            CODE_ERROR = -1
+            CODE_NOT_SUPPORT = -2
+            CODE_NOT_LOGIN = -3
+            CODE_NO_ACTIVITY = -4
+            CODE_UID_ERROR = -5
+            </summary>
+            <param name="followCallback"> 关注回调，参数为是否关注 </param>
+            <param name="errorCallback"> 错误回调，参数为错误码 和 错误描述 </param>
+        </member>
+        <member name="T:StarkSDKSpace.SCCreateShortcutEvent">
+            <summary>
+            创建快捷方式回调
+            data 内容 :
+            {
+            "errCode" : 0,  成功时为0
+            “errMsg” : "",  errCode不为0时，描述错误原因
+            }
+            errCode：
+            1 : 取消
+            </summary>
+            <param name="csCallback"> 创建回调，参数为是否成功 </param>
+        </member>
+        <member name="M:StarkSDKSpace.StarkLog.CanLog(StarkSDKSpace.StarkLog.LogType)">
+            <summary>
+            是否可以使用
+            </summary>
+            <param name="type"></param>
+            <returns></returns>
+        </member>
+        <member name="T:StarkSDKSpace.StarkLog.StarkPrintFile">
+            <summary>
+            打印到文件
+            </summary>
+        </member>
+        <member name="M:StarkSDKSpace.StarkLog.StarkPrintFile.BeginRecord">
+            <summary>
+            初始化打印文件的变量
+            </summary>
+        </member>
+        <member name="M:StarkSDKSpace.StarkLog.StarkPrintFile.EndRecord">
+            <summary>
+            结束打印
+            </summary>
+        </member>
+        <member name="M:StarkSDKSpace.StarkLog.StarkPrintFile.GetFullPath">
+            <summary>
+            文件名称
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:StarkSDKSpace.StarkLog.StarkPrintFile.NeedLogStackTrace(UnityEngine.LogType)">
+            <summary>
+            是否需要打印栈信息
+            </summary>
+            <param name="type"></param>
+            <returns></returns>
+        </member>
+        <member name="P:StarkSDKSpace.StarkSDK.EnableStarkSDKDebugToast">
+            <summary>
+            是否显示调试Toast提示。当调用StarkSDK相关接口后，获得函数执行状态（主要是失败状态）的反馈。
+            设置为true则在调用StarkSDK相关接口后，会自动弹出Toast提示。默认不显示。【建议只在调试状态下开启】
+            </summary>
+        </member>
+        <member name="M:StarkSDKSpace.StarkSDK.Init">
+            <summary>
+            Stark_UnitySDK初始化函数
+            </summary>
+            <returns>error code :
+            0 , 无错误
+            1, stark unity sdk 版本不支持
+            2，unity engine 版本不被支持</returns>
+        </member>
+        <member name="M:StarkSDKSpace.StarkSDK.StarkSDKRunInErrorEnvironment">
+            <summary>
+            StarkSDK运行再错误的环境中
+            </summary>
+        </member>
+        <member name="M:StarkSDKSpace.StarkSDK.ConvertHostIdEnum(System.Int32)">
+            <summary>
+            Hostid 转换
+            对应关系 https://bytedance.feishu.cn/sheets/shtcn959RKBOao1tFJAwEBTI1lf
+            </summary>
+            <returns>HostEnum</returns>
+        </member>
+        <member name="M:StarkSDKSpace.StarkSDK.ConvertSCRuntime(System.String)">
+            <summary>
+            从Java层传输来的数据和C#层的UC运行环境之间的转换
+            </summary>
+            <param name="ucRuntime"></param>
+            <returns></returns>
+        </member>
+        <member name="M:StarkSDKSpace.StarkSDK.ConvertVersionType(System.String)">
+            <summary>
+            从Java层传输来的数据和C#层版本类型枚举做转换
+            </summary>
+            <param name="versionType"></param>
+            <returns></returns>
+        </member>
+        <member name="M:StarkSDKSpace.StarkSDK.InvokeLaunchGameCallback(System.String,System.String)">
+            <summary>
+            当游戏第一次启动以及被其他游戏拉起，或者再次拉起时调用外部摄入的回调方法，并立即写入文件
+            </summary>
+            <param name="appId"></param>
+            <param name="extraData"></param>
+        </member>
+        <member name="M:StarkSDKSpace.StarkSDK.OnStarkContainerEvent.UnPackNavigateInfo(System.String)">
+            <summary>
+            将Json解析成互跳信息对象
+            </summary>
+            <param name="jsonStr"></param>
+            <returns></returns>
+        </member>
+        <member name="T:StarkSDKSpace.StarkSDKComponent">
+            <summary>
+            The android bridge of the Container SDK.
+            </summary>
+        </member>
+        <member name="M:StarkSDKSpace.StarkSDKComponent.CheckAndSetMaxUnityCache">
+            <summary>
+            Make sure the UnityCache folder disk occupation is under the limit
+            Will be checked consquently since the Addressable or the developer might overwrite it.
+            </summary>
+        </member>
+        <member name="T:StarkSDKSpace.SingletonBase`1">
+            <summary>
+            单例抽象类
+            </summary>
+            <typeparam name="T"></typeparam>
+        </member>
+        <member name="T:StarkSDKSpace.PeformanceInfo">
+            <summary>
+            性能数组实体
+            </summary>
+        </member>
+        <member name="M:StarkSDKSpace.StarkUtils.IsSCRuntime">
+            <summary>
+            判断是否运行在UC环境
+            </summary>
+        </member>
+        <member name="M:StarkSDKSpace.StarkUtils.StaticsReport``1(System.String,System.Collections.Generic.Dictionary{System.String,``0})">
+            <summary>
+            埋点上报到app_log
+            TODO : 分离 StarkInnelAPI
+            </summary>
+        </member>
+        <member name="M:StarkSDKSpace.StarkUtils.StaticsReport(System.String,UNBridgeLib.LitJson.JsonData)">
+            <summary>
+            埋点上报到app_log
+            TODO : 分离 StarkInnelAPI
+            </summary>
+        </member>
+        <member name="M:StarkSDKSpace.StarkUtils.GetSCConfigCenterValueByKey``1(System.String,``0)">
+            <summary>
+            读取Java侧UnityContainerConfigCenter中的配置字段,目前返回的泛型数据只支持基本类型
+            bool
+            double
+            float
+            Int32
+            Int64
+            string
+            </summary>
+            <typeparam name="T">配置字段的类型</typeparam>
+            <param name="key">配置字段的key</param>
+            <param name="defaultValue">当该配置字段不存在时返回该值</param>
+            <returns></returns>
+        </member>
+        <member name="M:StarkSDKSpace.StarkUtils.StaticsReportPerformance``1(System.String,System.Collections.Generic.Dictionary{System.String,``0})">
+            <summary>
+            只埋点上报性能信息，由于性能信息一部分来自Java所以单独列出一个方法
+            </summary>
+        </member>
+        <member name="M:StarkSDKSpace.StarkUtils.CollectCPUInfo">
+            <summary>
+            告知Java侧这时候可以手机CPU信息了
+            </summary>
+        </member>
+        <member name="M:StarkSDKSpace.StarkUtils.PerformanceReport(System.Int32)">
+            <summary>
+            新的上报游戏性能信息的接口
+            </summary>
+            <param name="currnetFPS"></param>
+        </member>
+        <member name="M:StarkSDKSpace.StarkUtils.RegisterCustomOnCommandEvent(System.Action{System.String,System.Collections.Generic.IList{System.String}})">
+            <summary>
+            Custo onCommand method register
+            </summary>
+            <param name="onCommand"></param>
+        </member>
+        <member name="M:StarkSDKSpace.StarkUtils.RegisterDefaultOnCommandEvent">
+            <summary>
+            Default onCommand register
+            </summary>
+            <param name="onCommand"></param>
+        </member>
+        <member name="M:StarkSDKSpace.StarkUtils.OnCommandCallback(UNBridgeLib.LitJson.JsonData)">
+            <summary>
+            callback from onCommand panel
+            </summary>
+            <param name="data"></param>
+        </member>
+        <member name="M:StarkSDKSpace.StarkUtils.OnCommand(System.String,System.Collections.Generic.IList{System.String})">
+            <summary>
+            Default onCommand
+            </summary>
+            <param name="cmd"></param>
+        </member>
+        <member name="M:StarkSDKSpace.StarkUtils.GetAndroidMemoryInfo(StarkSDKSpace.PeformanceInfo@)">
+            <summary>
+            获取到当前的性能数据
+            </summary>
+            <param name="info"></param>
+        </member>
+        <member name="M:StarkSDKSpace.StarkUtils.UpdateLastReportInfo(StarkSDKSpace.PeformanceInfo@)">
+            <summary>
+            更新需要上报的数据
+            </summary>
+            <param name="info">当前统计到的最新的数据</param>
+        </member>
+        <member name="M:StarkSDKSpace.StarkUtils.GetAvgMemoryInfo(StarkSDKSpace.PeformanceInfo@)">
+            <summary>
+            计算平均表现
+            </summary>
+            <param name="avg">结果值</param>
+        </member>
+        <member name="M:StarkSDKSpace.StarkUtils.GetUserdateDir">
+            <summary>
+            获取用户存档空间
+            </summary>
+        </member>
+        <member name="M:StarkSDKSpace.StarkUtils.CurrentVersionGreaterOrEqual(System.Int32,System.Int32)">
+            <summary>
+            判断当前SC版本是否大于等于给定的版本
+            </summary>
+            <param name="major">主版本号</param>
+            <param name="middle">中间版本号</param>
+            <returns></returns>
+        </member>
+        <member name="P:StarkSDKSpace.StarkVersions.GameVersion">
+            <summary>
+            游戏版本号是从AndroidManifest.xml解析出来
+            </summary>
+        </member>
+        <member name="P:StarkSDKSpace.StarkVersions.GamePublishVersion">
+            <summary>
+            游戏发布版本号，发布版本时发布工具中指定的版本号
+            </summary>
+        </member>
+        <member name="P:StarkSDKSpace.StarkVersions.UnitySDKVersion">
+            <summary>
+            根据CI填写
+            </summary>
+        </member>
+        <member name="T:StarkSDKSpace.StarkVersions.AndroidSDKVersion">
+            <summary>
+            Container的Version
+            </summary>
+        </member>
+        <member name="T:StarkSDKSpace.MiniApkImpl">
+            <summary>
+            小包功能的实现类具体功能可查看<see cref="T:StarkSDKSpace.IMiniApkAPI"/>
+            </summary>
+        </member>
+        <!-- 对于成员“T:StarkSDKSpace.StarkAccountImpl”忽略有格式错误的 XML 注释 -->
+        <member name="M:StarkSDKSpace.StarkAccountImpl.Login(StarkSDKSpace.StarkAccount.OnLoginSuccessCallback,StarkSDKSpace.StarkAccount.OnLoginFailedCallback,System.Boolean)">
+            <summary>
+            登录
+            </summary>
+            <param name="successCallback"></param>
+            <param name="failedCallback"></param>
+            <param name="forceLogin"></param>
+        </member>
+        <member name="M:StarkSDKSpace.StarkAccountImpl.CheckSession(StarkSDKSpace.StarkAccount.OnCheckSessionSuccessCallback,StarkSDKSpace.StarkAccount.OnCheckSessionFailedCallback)">
+            <summary>
+            检查当前session是否有效
+            </summary>
+            <param name="successCallback"></param>
+            <param name="failedCallback"></param>
+        </member>
+        <member name="M:StarkSDKSpace.StarkAccountImpl.GetScUserInfo(StarkSDKSpace.StarkAccount.OnGetScUserInfoSuccessCallback,StarkSDKSpace.StarkAccount.OnGetScUserInfoFailedCallback)">
+            <summary>
+            获取当前的用户信息
+            </summary>
+            <param name="successCallback"></param>
+            <param name="failedCallback"></param>
+        </member>
+        <member name="M:StarkSDKSpace.StarkAccountImpl.GetUserInfoAuth(StarkSDKSpace.StarkAccount.OnGetUserInfoAuthSuccess,StarkSDKSpace.StarkAccount.OnGetUserInfoAuthFail)">
+            <summary>
+            判断用户是否已经授权给当前游戏读取个人信息
+            该API会调用宿主的代码，如果调用宿主代码成功则会调用onGetUserInfoAuth，并返回是否已经授权
+            如果调用宿主代码失败则会调用onGetUserInfoAuthFail
+            </summary>
+        </member>
+        <member name="M:StarkSDKSpace.StarkAccountImpl.OpenSettingsPanel(StarkSDKSpace.StarkAccount.OnGetUserInfoAuthSuccess,StarkSDKSpace.StarkAccount.OnGetUserInfoAuthFail)">
+            <summary>
+            主动打开获取用户信息的授权界面
+            该API会调用宿主的代码，如果调用宿主代码成功则会调用onGetUserInfoAuth，并返回最新的授权状态
+            如果调用宿主代码失败则会调用onGetUserInfoAuthFail
+            </summary>
+        </member>
+        <member name="T:StarkSDKSpace.StarkAdManagerImpl">
+            <summary>
+            广告管理模块，请求，播放激励视屏广告
+            其他类型广告待实现
+            </summary>
+        </member>
+        <member name="M:StarkSDKSpace.StarkAdManagerImpl.SetVideoAdCallBack(StarkSDKSpace.StarkAdManager.VideoAdCallback)">
+            <summary>
+            设置激励视频广告的回调。获取完整的回调信息，一般处理都可以通过ShowVideoAd完成，评估必要性
+            </summary>
+            <param name="VideoAdCallback">已播放时长.</param>
+        </member>
+        <member name="F:StarkSDKSpace.StarkAdManagerImpl.m_VideoAdState">
+            <summary>
+            video ad state.  
+            Usually only state of `VideoAdState.Loaded` means it is properly loaded.  
+            </summary>
+        </member>
+        <member name="F:StarkSDKSpace.StarkAdManagerImpl.m_VideoAdErrorCanBeAutoRetry">
+            <summary>
+            根据广告错误判断是否需要retry
+            </summary>
+        </member>
+        <member name="F:StarkSDKSpace.StarkAdManagerImpl.m_IsReady">
+            <summary>
+            广告是否加载完成
+            </summary>
+        </member>
+        <member name="M:StarkSDKSpace.StarkAdManagerImpl.InitVideoAd(System.String)">
+            <summary>
+            初始化
+            </summary>
+        </member>
+        <member name="M:StarkSDKSpace.StarkAdManagerImpl.StartLoadVideoAd">
+            <summary>
+            请求加载激励视频广告
+            </summary>
+        </member>
+        <member name="M:StarkSDKSpace.StarkAdManagerImpl.LoadVideoAdAsync">
+            <summary>
+            加载广告，并在某些错误情况下进行有限次重试
+            </summary>
+        </member>
+        <member name="M:StarkSDKSpace.StarkAdManagerImpl.LoadAndShowEcVideo">
+            <summary>
+            异步请求并显示广告
+            </summary>
+        </member>
+        <member name="M:StarkSDKSpace.StarkAdManagerImpl.MiniApkAdEnable(System.String)">
+            <summary>
+            判断当前是否是穿山甲小包的环境,若是则返回真正的adid
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="F:StarkSDKSpace.StarkGameRecorderImpl.VideoClipState.NONE">
+            <summary>
+            未进行视频裁剪
+            </summary>
+        </member>
+        <member name="F:StarkSDKSpace.StarkGameRecorderImpl.VideoClipState.CLIPPING">
+            <summary>
+            视频裁剪中
+            </summary>
+        </member>
+        <member name="F:StarkSDKSpace.StarkGameRecorderImpl.VideoClipState.CLIP_SUCCESS">
+            <summary>
+            视频裁剪完成
+            </summary>
+        </member>
+        <member name="F:StarkSDKSpace.StarkGameRecorderImpl.VideoClipState.CLIP_FAILED">
+            <summary>
+            视频裁剪失败
+            </summary>
+        </member>
+        <!-- 对于成员“F:StarkSDKSpace.StarkGameRecorderImpl.m_MaxRecordTimeSec”忽略有格式错误的 XML 注释 -->
+        <member name="F:StarkSDKSpace.StarkGameRecorderImpl.m_OnRecordStartCallback">
+            <summary>
+            开始录屏回调
+            </summary>
+        </member>
+        <member name="F:StarkSDKSpace.StarkGameRecorderImpl.m_OnRecordCompleteCallback">
+            <summary>
+            录屏完成回调
+            </summary>
+        </member>
+        <member name="F:StarkSDKSpace.StarkGameRecorderImpl.m_OnRecordErrorCallback">
+            <summary>
+            录屏失败回调
+            </summary>
+        </member>
+        <member name="F:StarkSDKSpace.StarkGameRecorderImpl.m_OnRecordTimeoutCallback">
+            <summary>
+            录屏超时回调
+            </summary>
+        </member>
+        <member name="F:StarkSDKSpace.StarkGameRecorderImpl.m_ClipVideoSuccessCallback">
+            <summary>
+            视频裁剪成功回调
+            </summary>
+        </member>
+        <member name="F:StarkSDKSpace.StarkGameRecorderImpl.m_ClipVideoFailedCallback">
+            <summary>
+            视频裁剪失败回调
+            </summary>
+        </member>
+        <member name="F:StarkSDKSpace.StarkGameRecorderImpl.m_OnShareVideoSuccessCallback">
+            <summary>
+            视频分享成功回调
+            </summary>
+        </member>
+        <member name="F:StarkSDKSpace.StarkGameRecorderImpl.m_OnShareVideoFailedCallback">
+            <summary>
+            视频分享失败回调
+            </summary>
+        </member>
+        <member name="F:StarkSDKSpace.StarkGameRecorderImpl.m_OnShareVideoCancelledCallback">
+            <summary>
+            视频分享取消回调
+            </summary>
+        </member>
+        <member name="F:StarkSDKSpace.StarkGameRecorderImpl.m_RecordState">
+            <summary>
+            视频录制状态
+            </summary>
+        </member>
+        <member name="F:StarkSDKSpace.StarkGameRecorderImpl.m_VideoClipState">
+            <summary>
+            视频裁剪状态
+            </summary>
+        </member>
+        <member name="F:StarkSDKSpace.StarkGameRecorderImpl.m_VideoShareState">
+            <summary>
+            视频分享状态
+            </summary>
+        </member>
+        <member name="F:StarkSDKSpace.StarkGameRecorderImpl.m_VideoPath">
+            <summary>
+            录制完成后的视频路径
+            </summary>
+        </member>
+        <member name="F:StarkSDKSpace.StarkGameRecorderImpl.m_ClipVideoPath">
+            <summary>
+            裁剪后的视频路径
+            </summary>
+        </member>
+        <member name="F:StarkSDKSpace.StarkGameRecorderImpl.m_DefaultBgmPath">
+            <summary>
+            自助配乐
+            </summary>
+        </member>
+        <member name="F:StarkSDKSpace.StarkGameRecorderImpl.m_EnabledStatus">
+            <summary>
+            录屏开启状态，-1未知，0未开启，1开启。
+            </summary>
+        </member>
+        <member name="M:StarkSDKSpace.StarkGameRecorderImpl.SetEnabled(System.Boolean)">
+            <summary>
+            设置录屏是否开启
+            </summary>
+            <param name="enabled"></param>
+        </member>
+        <member name="M:StarkSDKSpace.StarkGameRecorderImpl.GetEnabled">
+            <summary>
+            获取录屏开启状态
+            </summary>
+            <returns>返回true则表示录屏开启，返回false为录屏关闭</returns>
+        </member>
+        <member name="M:StarkSDKSpace.StarkGameRecorderImpl.StartRecord(System.Boolean,System.Int32,StarkSDKSpace.StarkGameRecorder.OnRecordStartCallback,StarkSDKSpace.StarkGameRecorder.OnRecordErrorCallback,StarkSDKSpace.StarkGameRecorder.OnRecordCompleteCallback)">
+            <summary>
+            开始录屏
+            <param name="isRecordAudio">是否录制声音，默认为录制声音</param>
+            <param name="maxRecordTimeSec">最大录制时长，单位 s。小于等于 0 则无限制。默认为10分钟</param>
+            <param name="startCallback">视频录制开始回调</param>
+            <param name="errorCallback">视频录制失败回调</param>
+            <param name="timeoutCallback">录屏超时回调</param>
+            </summary>
+            <returns>函数调用状态，调用成功返回true，否则返回false</returns>
+        </member>
+        <!-- 对于成员“M:StarkSDKSpace.StarkGameRecorderImpl.StopRecord(StarkSDKSpace.StarkGameRecorder.OnRecordCompleteCallback,StarkSDKSpace.StarkGameRecorder.OnRecordErrorCallback,System.Collections.Generic.List{StarkSDKSpace.StarkGameRecorder.TimeRange},System.Boolean)”忽略有格式错误的 XML 注释 -->
+        <member name="M:StarkSDKSpace.StarkGameRecorderImpl.GetRecordDuration">
+            <summary>
+            获取录屏时长
+            </summary>
+            <returns>返回录屏时长，单位 ms</returns>
+        </member>
+        <member name="M:StarkSDKSpace.StarkGameRecorderImpl.ClipVideo(System.String,StarkSDKSpace.StarkGameRecorderImpl.OnClipVideoSuccessCallback,StarkSDKSpace.StarkGameRecorderImpl.OnClipVideoFailedCallback,System.Collections.Generic.List{StarkSDKSpace.StarkGameRecorder.TimeRange},System.Boolean)">
+            <summary>
+            视频裁剪
+            </summary>
+            <param name="successCallback"></param>
+            <param name="failedCallback"></param>
+            <param name="clipRanges">需要裁剪的时间片段，允许为null或空列表，如果列表为null或空，
+                                     则默认使用RecordClip调用记录的时间片段，会对重合的时间进行合并，然后进行视频裁剪。
+                                     如果不为空，则按传入的裁剪片段进行视频裁剪，时间片段重叠不会进行合并。主要用于乱序拼接。</param>
+            <returns>函数调用状态，调用成功返回true，否则返回false</returns>
+        </member>
+        <member name="M:StarkSDKSpace.StarkGameRecorderImpl.ShareVideo(StarkSDKSpace.StarkGameRecorder.OnShareVideoSuccessCallback,StarkSDKSpace.StarkGameRecorder.OnShareVideoFailedCallback,StarkSDKSpace.StarkGameRecorder.OnShareVideoCancelledCallback)">
+            <summary>
+            分享视频
+            </summary>
+        </member>
+        <member name="M:StarkSDKSpace.StarkGameRecorderImpl.GetVideoRecordState">
+            <summary>
+            获取录屏状态
+            </summary>
+            <returns>VideoRecordState</returns>
+        </member>
+        <member name="M:StarkSDKSpace.StarkGameRecorderImpl.GetVideoShareState">
+            <summary>
+            获取视频分享状态
+            </summary>
+            <returns>VideoShareState</returns>
+        </member>
+        <member name="M:StarkSDKSpace.StarkNavigateGameImpl.#cctor">
+            <summary>
+            构造函数
+            </summary>
+        </member>
+        <member name="M:StarkSDKSpace.StarkNavigateGameImpl.ShowRecommendVideo(StarkSDKSpace.StarkNavigateGame.OnNavigateGameReturn,StarkSDKSpace.StarkNavigateGame.OnNavigateGameFail,StarkSDKSpace.StarkNavigateGame.OnVideoClose,System.String)">
+            <summary>
+            显示视频
+            </summary>
+            <param name="onNavigateGameReturn"></param>
+            <param name="onNavigateGameFail"></param>
+        </member>
+        <member name="M:StarkSDKSpace.StarkNavigateGameImpl.GetLastNavigateMsg(StarkSDKSpace.StarkNavigateGame.OnNavigateGameReturn)">
+            <summary>
+            获取上一次的拉起信息
+            </summary>
+            <param name="onNavigateGameReturn"></param>
+        </member>
+        <member name="M:StarkSDKSpace.StarkNavigateGameImpl.IsNavigateFromOtherGame(System.String@,System.String@)">
+            <summary>
+            判断自己本身是否被其他游戏拉起
+            </summary>
+            <param name="appId"></param>
+            <param name="extraData"></param>
+            <returns></returns>
+        </member>
+        <member name="M:StarkSDKSpace.StarkNavigateGameImpl.Init">
+            <summary>
+            初始化
+            </summary>
+        </member>
+        <member name="M:StarkSDKSpace.StarkNavigateGameImpl.NavigateToGame(StarkSDKSpace.NavigateGameInfo,StarkSDKSpace.StarkNavigateGame.OnNavigateGameReturn,System.String)">
+            <summary>
+            跳转至某个游戏
+            </summary>
+            <param name="appId"></param>
+            <param name="onNavigateGameReturn"></param>
+            <returns></returns>
+        </member>
+        <member name="M:StarkSDKSpace.StarkNavigateGameImpl.SaveNavigateMsg">
+            <summary>
+            保存导航信息
+            </summary>
+        </member>
+        <member name="M:StarkSDKSpace.StarkNavigateGameImpl.InvokeNavigateGameReturnEvent(System.String,System.Int32,System.String)">
+            <summary>
+            调用从互调返回时的回调函数
+            </summary>
+            <param name="appId">游戏id</param>
+            <param name="time">游玩时间</param>
+            <param name="data">额外数据</param>
+        </member>
+        <member name="M:StarkSDKSpace.StarkNavigateGameImpl.GetRecommendNavigateItems">
+            <summary>
+            从服务器拉取互跳信息
+            </summary>
+        </member>
+        <member name="M:StarkSDKSpace.StarkNavigateGameImpl.SetNavigateGameInfo(System.String,System.Collections.Generic.Dictionary{System.String,System.String},System.String,System.String,System.String,System.String,StarkSDKSpace.NavigateGameType)">
+            <summary>
+            保存一个互跳信息
+            </summary>
+            <param name="appid">游戏id</param>
+            <param name="query">自定义的query值</param>
+            <param name="extraData">额外数据</param>
+            <param name="url">视频链接</param>
+            <param name="navigateGameType">这条互跳信息的来源</param>
+        </member>
+        <member name="M:StarkSDKSpace.StarkNavigateGameImpl.SetNavigateMsg(System.String)">
+            <summary>
+            保存自定义信息，用于传递给上一个拉起自己的游戏
+            </summary>
+            <param name="cpCustomizeMsg"></param>
+        </member>
+        <member name="M:StarkSDKSpace.StarkNavigateGameImpl.SetOnLaunchFromOtherGameCallback(StarkSDKSpace.StarkNavigateGame.OnLaunchFromOtherGame)">
+            <summary>
+            监听自己本身是否被其他游戏拉起
+            </summary>
+            <param name="onLaunchFromOtherGame"></param>
+        </member>
+        <member name="T:StarkSDKSpace.DicExtension">
+            <summary>
+            Dic的扩展方法
+            </summary>
+        </member>
+        <member name="T:StarkSDKSpace.OnGameResumeEvent">
+            <summary>
+            当游戏Activity#OnResume的方法被调用时调用该C#方法
+            </summary>
+        </member>
+        <!-- 对于成员“T:StarkSDKSpace.StarkShareImpl”忽略有格式错误的 XML 注释 -->
+        <member name="F:StarkSDKSpace.ErrorCode.ErrOk">
+            <summary>
+            OK
+            </summary>
+        </member>
+        <member name="F:StarkSDKSpace.ErrorCode.ErrGameRecorderNotEnabled">
+            <summary>
+            禁止录屏
+            </summary>
+        </member>
+        <member name="F:StarkSDKSpace.ErrorCode.ErrGameRecorderNotInit">
+            <summary>
+            录屏SDK未初始化
+            </summary>
+        </member>
+        <member name="F:StarkSDKSpace.ErrorCode.ErrVideoFileNotExists">
+            <summary>
+            视频文件不存在
+            </summary>
+        </member>
+        <member name="F:StarkSDKSpace.ErrorCode.ErrStartRecordError">
+            <summary>
+            开始录屏错误
+            </summary>
+        </member>
+        <member name="F:StarkSDKSpace.ErrorCode.ErrClipVideoFailed">
+            <summary>
+            视频裁剪失败
+            </summary>
+        </member>
+        <member name="F:StarkSDKSpace.ErrorCode.ErrShareVideoFail">
+            <summary>
+            视频分享失败
+            </summary>
+        </member>
+        <member name="F:StarkSDKSpace.ErrorCode.ErrShareVideoCancel">
+            <summary>
+            视频分享取消
+            </summary>
+        </member>
+        <member name="F:StarkSDKSpace.ErrorCode.ErrVideoFile">
+            <summary>
+            视频文件异常
+            </summary>
+        </member>
+        <member name="F:StarkSDKSpace.ErrorCode.ErrAdModuleNotInit">
+            <summary>
+            广告模块未初始化
+            </summary>
+        </member>
+        <member name="F:StarkSDKSpace.ErrorCode.ErrEmptyAdId">
+            <summary>
+            广告ID为空
+            </summary>
+        </member>
+        <member name="F:StarkSDKSpace.ErrorCode.ErrAdModule">
+            <summary>
+            广告模块异常
+            </summary>
+        </member>
+        <member name="F:StarkSDKSpace.ErrorCode.ErrLoadAdFailed">
+            <summary>
+            广告加载失败
+            </summary>
+        </member>
+        <member name="T:StarkSDKSpace.MiniApkEnv">
+            <summary>
+            外部存入的游戏的数据，需要启动时摄入，后续会删除，这些数据从服务器拉起
+            </summary>
+        </member>
+        <member name="F:StarkSDKSpace.MiniApkEnv.ChechVersion">
+            <summary>
+            检查最新版本或者安装时是否进行版本比对
+            会影响<see cref="M:StarkSDKSpace.IMiniApkAPI.CheckNeededInstallNewApk(System.Action{System.Boolean})"/>接口的返回值
+                    若ChechVersion为false 则只要安装该接口就会返回false不再需要安装，不进行版本匹配验证
+                    若ChechVersion为true 则不仅检查是否安装还和服务器进行版本比对，未安装版本不匹配都会返回true
+            会影响<see cref="T:StarkSDKSpace.StarkMiniApk.MiniApkloader"/>
+                    若ChechVersion为false 则只会判断本地是否已经存在apk
+                    若ChechVersion为true 每次去服务器请求最新版本 
+            </summary>
+        </member>
+        <member name="F:StarkSDKSpace.MiniApkEnv.GameAppId">
+            <summary>
+            游戏id
+            </summary>
+        </member>
+        <member name="F:StarkSDKSpace.MiniApkEnv.MiniApkPkgName">
+            <summary>
+            引导包名称
+            </summary>
+        </member>
+        <member name="T:StarkSDKSpace.IMiniApkAPI">
+            <summary>
+            小包提供的功能
+            </summary>
+        </member>
+        <member name="M:StarkSDKSpace.IMiniApkAPI.InitMiniApk(StarkSDKSpace.MiniApkEnv,System.Action{System.Boolean})">
+            <summary>
+            初始化小包拉起穿山甲广告需要的信息，该方法为异步方法需要等待StarkSDK初始化结束
+            填入的必须是通过打包云服务打出的小包的参数
+            后期会被废除所有参数全部传入
+            <param name="miniApkEnv">小包参数</param>
+            <param name="initCallback">初始化的结果</param>
+            </summary>
+        </member>
+        <member name="M:StarkSDKSpace.IMiniApkAPI.CheckNeededInstallNewApk(System.Action{System.Boolean})">
+            <summary>
+            判断需不需要安装新版本，一下两种情况返回true，此为异步调用，结果会有延迟:
+            1.引导包环境下-本地没有安装apk
+            2.引导包环境下-CheckVersion 打开 且本地安装apk和服务器不一致
+            </summary>
+            <param name="callback">是否需要安装小包</param>
+        </member>
+        <member name="M:StarkSDKSpace.IMiniApkAPI.InternalInitMiniApk">
+            <summary>
+            初始化miniapk运行环境的真正函数，优先级比InitMiniApk要高
+            </summary>
+        </member>
+        <member name="M:StarkSDKSpace.IMiniApkAPI.NotifyMiniApkGameQuit">
+            <summary>
+            通知小包游戏退出
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:StarkSDKSpace.IMiniApkAPI.NotifyMiniApkGameLaunch">
+            <summary>
+            通知小包游戏启动
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:StarkSDKSpace.IMiniApkAPI.IsNeedCheckVersion">
+            <summary>
+            在判断是否安装时是否考虑版本号,兼容线上已经安装小包无法重新安装的问题
+            </summary>
+        </member>
+        <member name="T:StarkSDKSpace.IMiniApkBridge">
+            <summary>
+            StarkSDK和MiniApk通讯的Bridge
+            </summary>
+        </member>
+        <member name="T:StarkSDKSpace.IMiniApkBridge.OnResultCallback">
+            <summary>
+            异步调用远程引导包方法的返回
+            </summary>
+            <param name="result">回调结果</param>
+        </member>
+        <member name="M:StarkSDKSpace.IMiniApkBridge.Call(System.String,UNBridgeLib.LitJson.JsonData,System.String,StarkSDKSpace.IMiniApkBridge.OnResultCallback)">
+            <summary>
+            异步调用远程引导包的方法
+            </summary>
+            <param name="funcName">方法名称</param>
+            <param name="param">方法参数，可以为null</param>
+            <param name="defaultReturnValue">某些原因导致的调用失败时返回的默认值</param>
+            <param name="onResultCallback">调用结束后的回调</param>     
+        </member>
+        <member name="T:StarkSDKSpace.LoginState">
+            <summary>
+            当前的登录状态
+            </summary>
+        </member>
+        <member name="T:StarkSDKSpace.ScUserInfo">
+            <summary>
+            登录后获取登录的用户信息
+            </summary>
+        </member>
+        <member name="T:StarkSDKSpace.StarkAccount">
+            <summary>
+            Stark账号系统
+            </summary>
+        </member>
+        <member name="T:StarkSDKSpace.StarkAccount.OnLoginSuccessCallback">
+            <summary>
+            登录成功
+            </summary>
+            <param name="code">临时登录凭证, 有效期 3 分钟。可以通过在服务器端调用 登录凭证校验接口 换取 openid 和 session_key 等信息。</param>
+            <param name="anonymousCode">用于标识当前设备, 无论登录与否都会返回, 有效期 3 分钟</param>
+            <param name="isLogin">判断在当前 APP(头条、抖音等)是否处于登录状态</param>
+        </member>
+        <member name="T:StarkSDKSpace.StarkAccount.OnLoginFailedCallback">
+            <summary>
+            登录失败
+            <param name="errMsg">错误消息</param>
+            </summary>
+        </member>
+        <member name="T:StarkSDKSpace.StarkAccount.OnCheckSessionFailedCallback">
+            <summary>
+            检查Session接口调用失败的回调函数
+            </summary>
+            <param name="errMsg">错误原因</param>
+        </member>
+        <member name="T:StarkSDKSpace.StarkAccount.OnCheckSessionSuccessCallback">
+            <summary>
+            接口调用成功的回调函数
+            </summary>
+        </member>
+        <member name="T:StarkSDKSpace.StarkAccount.OnGetScUserInfoFailedCallback">
+            <summary>
+            获取用户信息失败的回调
+            </summary>
+            <param name="errMsg">失败信息</param>
+        </member>
+        <member name="T:StarkSDKSpace.StarkAccount.OnGetScUserInfoSuccessCallback">
+            <summary>
+            获取用户信息成功的回调
+            </summary>
+            <param name="scUserInfo">目标用户信息</param>
+        </member>
+        <member name="T:StarkSDKSpace.StarkAccount.OnGetUserInfoAuthSuccess">
+            <summary>
+            判断当前用户是否已经授权给游戏读取自身的信息
+            </summary>
+            <param name="auth">是否授权</param>
+        </member>
+        <member name="T:StarkSDKSpace.StarkAccount.OnGetUserInfoAuthFail">
+            <summary>
+            调用接口判断当前用户是否已经授权时失败或者发生内部错误
+            </summary>
+            <param name="errMsg"></param>
+        </member>
+        <member name="M:StarkSDKSpace.StarkAccount.Login(StarkSDKSpace.StarkAccount.OnLoginSuccessCallback,StarkSDKSpace.StarkAccount.OnLoginFailedCallback,System.Boolean)">
+            <summary>
+            登录-获取临时登录凭证
+            强制登录默认为true，即若当前未登录宿主，则会调起宿主的登录窗口, 如果用户点击取消则会调用 fail
+            如果当前登录宿主，则直接返回success，获取到 code 和 anonymousCode
+            若强制登录为false，当前登录了宿主则会返回success，可以获取到获取到 code 和 anonymousCode
+            当前未登录宿主，则只有 anonymousCode
+            code 可以换取 openid, openid 是用户的唯一标识
+            anonymousCode 可以换取 anonymous_openid, 同一台手机 anonymous_openid 是相同的
+            </summary>
+            <param name="forceLogin">未登录时, 是否强制调起登录框</param>
+            <param name="successCallback">登录成功的回调</param>
+            <param name="failedCallback">登陆失败的回调</param>
+            <param name=""></param>
+        </member>
+        <member name="M:StarkSDKSpace.StarkAccount.CheckSession(StarkSDKSpace.StarkAccount.OnCheckSessionSuccessCallback,StarkSDKSpace.StarkAccount.OnCheckSessionFailedCallback)">
+            <summary>
+            检查用户当前的 session 状态是否有效
+            只有成功调用 login 才会生成 session，checkSession 才会进入 success 回调，当用户退出登录会清除 session
+            session_key 会随着login接口的调用被刷新。可以通过checkSession方法验证当前 session 是否有效，从而避免频繁登录。
+            目前实际测试若使用匿名登录（forceLogin = false），则checkSession会一直返回 fail
+            只有登录了宿主（forceLogin = true），checkSession才会返回success，下次不用login checkSession也可以返回true
+            </summary>
+            <param name="successCallback">验证有效的回调</param>
+            <param name="failedCallback">验证无效或者验证失败的回调</param>
+        </member>
+        <member name="M:StarkSDKSpace.StarkAccount.GetScUserInfo(StarkSDKSpace.StarkAccount.OnGetScUserInfoSuccessCallback,StarkSDKSpace.StarkAccount.OnGetScUserInfoFailedCallback)">
+            <summary>
+            获取已登录用户的基本信息或特殊信息
+            若匿名登录后 userinfo里面字段全部为默认值
+            登录了宿主后可以获取账号数据，下次不用login GetScUserInfo也可以返回正确数据
+            </summary>
+            <param name="successCallback">验证有效的回调</param>
+            <param name="failedCallback">验证无效或者验证失败的回调</param>
+        </member>
+        <member name="M:StarkSDKSpace.StarkAccount.GetUserInfoAuth(StarkSDKSpace.StarkAccount.OnGetUserInfoAuthSuccess,StarkSDKSpace.StarkAccount.OnGetUserInfoAuthFail)">
+            <summary>
+            判断用户是否已经授权给当前游戏读取个人信息
+            该API会调用宿主的代码，如果调用宿主代码成功则会调用onGetUserInfoAuth，并返回是否已经授权
+            如果调用宿主代码失败则会调用onGetUserInfoAuthFail
+            </summary>
+            <param name="onGetUserInfoAuth">调用宿主代码成功，并返回是否已经授权读取用户信息</param>
+            <param name="onGetUserInfoAuthFail">调用宿主代码时发生错误</param>
+        </member>
+        <member name="M:StarkSDKSpace.StarkAccount.OpenSettingsPanel(StarkSDKSpace.StarkAccount.OnGetUserInfoAuthSuccess,StarkSDKSpace.StarkAccount.OnGetUserInfoAuthFail)">
+            <summary>
+            主动打开获取用户信息的授权界面，在Setting界面关闭后返回最新的授权状态，该方法没有超时时间
+            该API会调用宿主的代码，如果调用宿主代码成功则会调用onGetUserInfoAuth，并返回最新的授权状态
+            如果调用宿主代码失败则会调用onGetUserInfoAuthFail
+            </summary>
+        </member>
+        <member name="T:StarkSDKSpace.StarkAdManager">
+            <summary>
+            广告管理模块
+            支持激励视屏，banner 和 插屏广告。
+            开通指南：https://microapp.bytedance.com/docs/zh-CN/mini-app/develop/functional-plug-in/advertising-component-access-guide/flow-main-open-process/
+            </summary>
+        </member>
+        <member name="P:StarkSDKSpace.StarkAdManager.IsShowLoadAdToast">
+            <summary>
+            是否显示广告加载提示，默认显示
+            </summary>
+        </member>
+        <member name="M:StarkSDKSpace.StarkAdManager.ShowVideoAdWithId(System.String,System.Action{System.Boolean},System.Action{System.Int32,System.String},StarkSDKSpace.StarkAdManager.VideoAdCallback)">
+            <summary>
+            展示激励视频广告，在广告未加载时会发起异步请求，弱网情况下会进行重试。失败会调用errCallback
+            激励视频广告只支持一个实例，申请多个激励视频广告位是无效的
+            简单回调设置，激励视频完成和错误的回调函数
+            与 SetVideoAdCallBack 不冲突，在结束时都会被调用到，会同时收到close和complete
+            错误码由sdk传出，原因参考
+            https://bytedance.feishu.cn/docs/doccn1lAbZzMOqI5ueq1gCyPdcg#
+            https://microapp.bytedance.com/docs/zh-CN/mini-game/develop/open-capacity/ads/ads-error-code-description/
+            https://microapp.bytedance.com/docs/zh-CN/mini-app/develop/api/open-interface/ads/tt-create-interstitial-ad
+            1004 可能是由于广告请求被限制了次数，需要跟广告投放沟通
+            如果需要更详细的回调信息，可使用 SetVideoAdCallBack
+            </summary>
+            <param name="videoAdid">广告aid.</param>
+            <param name="closeCallback">视频广告关闭回调，参数含义 IsComplete,表明广告是否播放完成.</param>
+            <param name="errCallback">视频广告错误回调，参数含义 errCode, errMsg 表明错误码和错误描述.</param>
+            <param name="adCallback">视频广告详细过程回调，一般可以不关注.</param>
+        </member>
+        <member name="M:StarkSDKSpace.StarkAdManager.CreateBannerAd(System.String,StarkSDKSpace.StarkAdManager.BannerStyle,System.Int32,System.Action{System.Int32,System.String},System.Action,System.Action{System.Int32,System.Int32})">
+            <summary>
+            创建Banner广告，返回 BannerAd 实例。支持多实例，可以在一个页面下展示多个。也可以分页面展示
+            竖屏情况下，Banner广告接受的宽度范围是 0.8*屏幕宽度，1.0*屏幕宽度。
+            横屏情况下，Banner广告接受的最小宽度是 128，最大宽度是 208。
+            开发者可以在这之间自由指定广告宽度。广告组件会自动等比例缩放素材。
+            创建Banner示例后，会主动调用show来进行展示
+            错误码由sdk传出，原因参考
+            https://microapp.bytedance.com/docs/zh-CN/mini-game/develop/open-capacity/ads/ads-error-code-description/
+            </summary>
+            <param name="bannerAdId">	banner广告位的adid </param>
+            <param name="style"> 样式："style":{"top":0, "left":0, "width":320}} width 在竖屏下会被限制在 [0.8*ScreenWidth,1.0*ScreenWidth]，横屏下会被限制在[128, 208]</param>
+            <param name="adIntervals">	广告自动刷新的间隔时间，单位为秒，参数值必须大于等于 30（该参数不传入时 Banner 广告不会自动刷新）.</param>
+            <param name="errCallback"> 广告错误回调，参数表明错误码和错误描述.</param>
+            <param name="loadedCallback"> 广告加载回调.</param>
+            <param name="resizeCallback"> 广告样式改变回调，第一个参数是width.第二个参数是height.</param>
+        </member>
+        <member name="M:StarkSDKSpace.StarkAdManager.CreateInterstitialAd(System.String,System.Action{System.Int32,System.String},System.Action,System.Action)">
+            <summary>
+            创建并播放插屏广告，在广告模块启动15s内不允许展示插屏广告，在任何地方调用API.GetStarkAdManager，就会启动广告模块
+            两个插屏广告展示间隔不能少于30s
+            插屏广告支持多实例。简单回调设置，插屏广告完成和错误的回调函数
+            插屏广告实例只支持展示一次，出现加载错误，或 展示成功，点击关闭按钮或视频广告外的其他地方，广告实例都会自动销毁。下一次需再次创建。
+            提供接口可以手动销毁
+            错误码由sdk传出，原因参考
+            https://microapp.bytedance.com/docs/zh-CN/mini-game/develop/open-capacity/ads/tt-create-interstitial-ad
+            </summary>
+            <param name="interstitialAdId">	插屏广告位的adid </param>
+            <param name="bAutoShow"> 是否自动展示 </param>
+            <param name="errCallback">广告视频错误回调，参数含义 errCode, errMsg 表明错误码和错误描述.</param>
+            <param name="closeCallback">广告视频关闭回调.</param>
+            <param name="loadedCallback">广告加载回调.</param>
+        </member>
+        <member name="T:StarkSDKSpace.StarkAdManager.BannerAd">
+            ---------------------------------------------------------------------
+            <summary>
+            BannerAd 对象
+            </summary>
+        </member>
+        <member name="M:StarkSDKSpace.StarkAdManager.BannerAd.Show">
+            <summary>
+            显示。如果加载出错，会调用CreateBannerAd的参数 errCallback
+            </summary>
+        </member>
+        <member name="M:StarkSDKSpace.StarkAdManager.BannerAd.Hide">
+            <summary>
+            隐藏
+            </summary>
+        </member>
+        <member name="M:StarkSDKSpace.StarkAdManager.BannerAd.Destory">
+            <summary>
+            销毁
+            </summary>
+        </member>
+        <member name="M:StarkSDKSpace.StarkAdManager.BannerAd.ReSize(StarkSDKSpace.StarkAdManager.BannerStyle)">
+            <summary>
+            改变样式
+            成功后会调用CreateBannerAd的参数 resizeCallback
+            横屏下可以更改位置和宽度，竖屏下只能更改位置。
+            </summary>
+        </member>
+        <member name="M:StarkSDKSpace.StarkAdManager.BannerAd.IsInvalid">
+            <summary>
+            是否有效，bannerad在load出错的情况下，如果adInterval为-1，则无法再进行刷新。此时认为已失效，需要destory再重新创建
+            </summary>
+        </member>
+        <member name="T:StarkSDKSpace.StarkAdManager.InterstitialAd">
+            <summary>
+            InterstitialAd 对象
+            </summary>
+        </member>
+        <member name="M:StarkSDKSpace.StarkAdManager.InterstitialAd.Load">
+            <summary>
+            加载
+            </summary>
+        </member>
+        <member name="M:StarkSDKSpace.StarkAdManager.InterstitialAd.Show">
+            <summary>
+            显示
+            </summary>
+        </member>
+        <member name="M:StarkSDKSpace.StarkAdManager.InterstitialAd.IsLoaded">
+            <summary>
+            是否已加载
+            </summary>
+        </member>
+        <member name="M:StarkSDKSpace.StarkAdManager.InterstitialAd.Destory">
+            <summary>
+            销毁
+            </summary>
+        </member>
+        <member name="T:StarkSDKSpace.StarkAdManager.BannerStyle">
+            <summary>
+            Banner样式
+            </summary>
+        </member>
+        <member name="F:StarkSDKSpace.StarkAdManager.BannerStyle.left">
+            <summary>
+            广告位区域左上角横坐标
+            </summary>
+        </member>
+        <member name="F:StarkSDKSpace.StarkAdManager.BannerStyle.top">
+            <summary>
+            广告位区域左上角纵坐标
+            </summary>
+        </member>
+        <member name="F:StarkSDKSpace.StarkAdManager.BannerStyle.width">
+            <summary>
+            广告位区域宽度
+            </summary>
+        </member>
+        <member name="P:StarkSDKSpace.StarkAdManager.BannerStyle.height">
+            <summary>
+            广告位区域高度，受广告内容影响自主变化, 无法由外部指定
+            </summary>
+        </member>
+        <member name="T:StarkSDKSpace.StarkAdManager.VideoAdCallback">
+            <summary>
+            广告的回调函数
+            </summary>        
+        </member>
+        <member name="M:StarkSDKSpace.StarkAdManager.VideoAdCallback.OnVideoLoaded">
+            <summary>
+            广告加载成功
+            </summary>
+        </member>
+        <member name="M:StarkSDKSpace.StarkAdManager.VideoAdCallback.OnVideoShow">
+            <summary>
+            广告开始播放
+            </summary>
+        </member>
+        <member name="M:StarkSDKSpace.StarkAdManager.VideoAdCallback.OnError(System.Int32,System.String)">
+            <summary>
+            广告失败，错误码同 ShowVideoAd
+            </summary>
+        </member>
+        <member name="M:StarkSDKSpace.StarkAdManager.VideoAdCallback.OnVideoClose(System.Int32,System.Int32,System.Int32)">
+            <summary>
+            广告关闭回调
+            </summary>
+            <param name="watchedTime">已播放时长.</param>
+            <param name="effectiveTime">有效播放时长(超过此时长可以授予激励).</param>
+            <param name="duration">视频总时长.</param>
+        </member>
+        <member name="M:StarkSDKSpace.StarkAdManager.SetVideoAdCallBack(StarkSDKSpace.StarkAdManager.VideoAdCallback)">
+            <summary>
+            设置激励视频广告的回调。获取完整的回调信息，一般处理都可以通过ShowVideoAdWithId完成，需要时使用
+            </summary>
+            <param name="VideoAdCallback">激励视频广告的回调.</param>
+        </member>
+        <member name="F:StarkSDKSpace.StarkAdManager.s_IsShowLoadAdToast">
+            <summary>
+            是否显示广告加载进度弹窗
+            </summary>
+        </member>
+        <!-- 对于成员“F:StarkSDKSpace.StarkFavorite.Style.TopBar”忽略有格式错误的 XML 注释 -->
+        <!-- 对于成员“F:StarkSDKSpace.StarkFavorite.Style.BottomBar”忽略有格式错误的 XML 注释 -->
+        <!-- 对于成员“F:StarkSDKSpace.StarkFavorite.Style.Tip”忽略有格式错误的 XML 注释 -->
+        <member name="M:StarkSDKSpace.StarkFavorite.Collect(System.Action{System.Boolean})">
+            <summary>
+            游戏收藏
+            </summary>
+            <param name="callback"> 收藏回调，true表示成功，false表示失败 </param>
+        </member>
+        <member name="M:StarkSDKSpace.StarkFavorite.CancelCollection(System.Action{System.Boolean})">
+            <summary>
+            取消游戏收藏
+            </summary>
+            <param name="callback"> 取消收藏回调，true表示成功，false表示失败 </param>
+        </member>
+        <member name="M:StarkSDKSpace.StarkFavorite.IsCollected">
+            <summary>
+            游戏是否已收藏
+            </summary>
+            <returns>是否已收藏，true表示已收藏，false表示未收藏</returns>
+        </member>
+        <member name="M:StarkSDKSpace.StarkFavorite.ShowFavoriteGuide(StarkSDKSpace.StarkFavorite.Style,System.String)">
+            <summary>
+            收藏引导
+            <param name="style">弹窗类型，默认为底部弹窗</param>
+            <param name="content">弹窗文案，仅style为 Tip 时可修改，最多显示 12 个字符。</param>
+            </summary>
+        </member>
+        <member name="T:StarkSDKSpace.StarkGameRecorder">
+            <summary>
+            游戏内录屏模块
+            </summary>
+        </member>
+        <member name="P:StarkSDKSpace.StarkGameRecorder.IsShowShareVideoToast">
+            <summary>
+            是否显示视频分享Toast UI提示，默认显示
+            </summary>
+        </member>
+        <member name="T:StarkSDKSpace.StarkGameRecorder.OnRecordStartCallback">
+            <summary>
+            开始录屏
+            </summary>
+        </member>
+        <member name="T:StarkSDKSpace.StarkGameRecorder.OnRecordErrorCallback">
+            <summary>
+            录屏错误
+            <param name="errCode">错误码</param>
+            <param name="errMsg">错误消息</param>
+            </summary>
+        </member>
+        <member name="T:StarkSDKSpace.StarkGameRecorder.OnRecordCompleteCallback">
+            <summary>
+            录屏完成
+            <param name="videoPath">实际视频路径</param>
+            </summary>
+        </member>
+        <member name="T:StarkSDKSpace.StarkGameRecorder.OnShareVideoSuccessCallback">
+            <summary>
+            视频分享成功
+            </summary>
+        </member>
+        <member name="T:StarkSDKSpace.StarkGameRecorder.OnShareVideoFailedCallback">
+            <summary>
+            视频分享失败
+            <param name="errMsg">错误消息</param>
+            </summary>
+        </member>
+        <member name="T:StarkSDKSpace.StarkGameRecorder.OnShareVideoCancelledCallback">
+            <summary>
+            视频分享取消
+            </summary>
+        </member>
+        <member name="F:StarkSDKSpace.StarkGameRecorder.m_IsShowShareVideoToastMessage">
+            <summary>
+            是否显示视频分享Loading界面
+            </summary>
+        </member>
+        <member name="T:StarkSDKSpace.StarkGameRecorder.TimeRange">
+            <summary>
+            时间片段（用于视频裁剪）
+            </summary>
+        </member>
+        <member name="F:StarkSDKSpace.StarkGameRecorder.TimeRange.start">
+            <summary>
+            开始时间，单位ms
+            </summary>
+        </member>
+        <member name="F:StarkSDKSpace.StarkGameRecorder.TimeRange.end">
+            <summary>
+            结束时间，单位ms
+            </summary>
+        </member>
+        <member name="T:StarkSDKSpace.StarkGameRecorder.VideoRecordState">
+            <summary>
+            录屏状态枚举
+            </summary>
+        </member>
+        <member name="F:StarkSDKSpace.StarkGameRecorder.VideoRecordState.RECORD_STARTING">
+            <summary>
+            录制开始中
+            </summary>
+        </member>
+        <member name="F:StarkSDKSpace.StarkGameRecorder.VideoRecordState.RECORD_STARTED">
+            <summary>
+            录制已开始
+            </summary>
+        </member>
+        <member name="F:StarkSDKSpace.StarkGameRecorder.VideoRecordState.RECORD_PAUSING">
+            <summary>
+            录制暂停中
+            </summary>
+        </member>
+        <member name="F:StarkSDKSpace.StarkGameRecorder.VideoRecordState.RECORD_PAUSED">
+            <summary>
+            录制已暂停
+            </summary>
+        </member>
+        <member name="F:StarkSDKSpace.StarkGameRecorder.VideoRecordState.RECORD_STOPING">
+            <summary>
+            录制停止中
+            </summary>
+        </member>
+        <member name="F:StarkSDKSpace.StarkGameRecorder.VideoRecordState.RECORD_STOPED">
+            <summary>
+            录制已停止
+            </summary>
+        </member>
+        <member name="F:StarkSDKSpace.StarkGameRecorder.VideoRecordState.RECORD_COMPLETED">
+            <summary>
+            录制结束
+            </summary>
+        </member>
+        <member name="F:StarkSDKSpace.StarkGameRecorder.VideoRecordState.RECORD_ERROR">
+            <summary>
+            录制错误
+            </summary>
+        </member>
+        <member name="F:StarkSDKSpace.StarkGameRecorder.VideoRecordState.RECORD_VIDEO_TOO_SHORT">
+            <summary>
+            录制的视频时长太短
+            </summary>
+        </member>
+        <member name="T:StarkSDKSpace.StarkGameRecorder.VideoShareState">
+            <summary>
+            视频分享状态枚举
+            </summary>
+        </member>
+        <member name="F:StarkSDKSpace.StarkGameRecorder.VideoShareState.NONE">
+            <summary>
+            未进行视频分享
+            </summary>
+        </member>
+        <member name="F:StarkSDKSpace.StarkGameRecorder.VideoShareState.SHARING">
+            <summary>
+            视频分享中
+            </summary>
+        </member>
+        <member name="F:StarkSDKSpace.StarkGameRecorder.VideoShareState.WAITING_CALLBACK">
+            <summary>
+            等待分享器回调
+            </summary>
+        </member>
+        <member name="F:StarkSDKSpace.StarkGameRecorder.VideoShareState.SHARE_SUCCESS">
+            <summary>
+            视频分享成功
+            </summary>
+        </member>
+        <member name="F:StarkSDKSpace.StarkGameRecorder.VideoShareState.SHARE_FAILED">
+            <summary>
+            视频分享失败
+            </summary>
+        </member>
+        <member name="F:StarkSDKSpace.StarkGameRecorder.VideoShareState.SHARE_CANCELLED">
+            <summary>
+            视频分享取消
+            </summary>
+        </member>
+        <member name="M:StarkSDKSpace.StarkGameRecorder.SetEnabled(System.Boolean)">
+            <summary>
+            设置录屏是否开启
+            </summary>
+            <param name="enabled">开启设置为true，禁止设置为false</param>
+        </member>
+        <member name="M:StarkSDKSpace.StarkGameRecorder.GetEnabled">
+            <summary>
+            获取录屏开启状态
+            </summary>
+            <returns>返回true则表示录屏开启，返回false为录屏关闭</returns>
+        </member>
+        <member name="M:StarkSDKSpace.StarkGameRecorder.StartRecord(System.Boolean,System.Int32,StarkSDKSpace.StarkGameRecorder.OnRecordStartCallback,StarkSDKSpace.StarkGameRecorder.OnRecordErrorCallback,StarkSDKSpace.StarkGameRecorder.OnRecordCompleteCallback)">
+            <summary>
+            开始录屏
+            <param name="isRecordAudio">是否录制声音，默认为录制声音</param>
+            <param name="maxRecordTimeSec">最大录制时长，单位 s。小于等于 0 则无限制。默认为10分钟</param>
+            <param name="startCallback">视频录制开始回调</param>
+            <param name="errorCallback">视频录制失败回调</param>
+            </summary>
+            <returns>函数调用状态，调用成功返回true，否则返回false</returns>
+        </member>
+        <member name="M:StarkSDKSpace.StarkGameRecorder.StopRecord(StarkSDKSpace.StarkGameRecorder.OnRecordCompleteCallback,StarkSDKSpace.StarkGameRecorder.OnRecordErrorCallback,System.Collections.Generic.List{StarkSDKSpace.StarkGameRecorder.TimeRange},System.Boolean)">
+            <summary>
+            停止录屏
+            <param name="completeCallback">视频录制完成回调</param>
+            <param name="errorCallback">视频录制失败回调</param>
+            <param name="clipRanges">停止后需要对视频进行裁剪的时间片段，如果为null或空列表，则不对视频进行裁剪</param>
+            <param name="autoMerge">是否对视频裁剪片段进行自动合并。
+                                    合并规则: 
+                                        如果有两段重叠的时间片段，并且重叠部分小于等于1秒，则对这两段进行合并为一段
+                                        若autoMerge为true，比如时间片段为{[1000, 5000], [4000, 7000]}，会被合并为{[1000, 7000]}。
+                                        若autoMerge为false，将按原始传入的时间片段进行裁剪，是否有重叠，由调用方保证。主要用于自定义裁剪。 </param>
+            </summary>
+            <returns>函数调用状态，调用成功返回true，否则返回false</returns>
+        </member>
+        <member name="M:StarkSDKSpace.StarkGameRecorder.GetRecordDuration">
+            <summary>
+            获取录屏时长
+            </summary>
+            <returns>返回录屏时长，单位 ms</returns>
+        </member>
+        <member name="M:StarkSDKSpace.StarkGameRecorder.GetVideoRecordState">
+            <summary>
+            获取视频录制状态
+            </summary>
+            <returns>VideoRecordState</returns>
+        </member>
+        <member name="M:StarkSDKSpace.StarkGameRecorder.SetDefaultBgm(System.String)">
+            <summary>
+            给录屏分享设置默认的配乐,若链接不符合要求则不生效 参考文档:https://bytedance.feishu.cn/docs/doccnlj9zMlqSbD0S0FEMonoJZd
+            </summary>
+            <param name="defaultBgm"> 抖音PGC音乐的短链。形如 "https://v.douyin.com/JmcxWo8/" </param>
+        </member>
+        <member name="M:StarkSDKSpace.StarkGameRecorder.GetVideoShareState">
+            <summary>
+            获取视频分享状态
+            </summary>
+            <returns>VideoClipState</returns>
+        </member>
+        <member name="M:StarkSDKSpace.StarkGameRecorder.ShareVideo(StarkSDKSpace.StarkGameRecorder.OnShareVideoSuccessCallback,StarkSDKSpace.StarkGameRecorder.OnShareVideoFailedCallback,StarkSDKSpace.StarkGameRecorder.OnShareVideoCancelledCallback)">
+            <summary>
+            分享视频。分享的视频文件是调用StopVideo后生成的文件。
+            注意：视频分享需要录制至少3s的视频，低于3s的视频将会分享失败。
+            </summary>
+            <param name="successCallback">分享成功回调</param>
+            <param name="failedCallback">分享失败回调</param>
+            <param name="cancelledCallback">分享取消回调</param>
+            <returns>函数调用状态，调用成功返回true，否则返回false</returns>
+        </member>
+        <member name="M:StarkSDKSpace.StarkGameRecorder.ShareVideoWithTitleTopics(StarkSDKSpace.StarkGameRecorder.OnShareVideoSuccessCallback,StarkSDKSpace.StarkGameRecorder.OnShareVideoFailedCallback,StarkSDKSpace.StarkGameRecorder.OnShareVideoCancelledCallback,System.String,System.Collections.Generic.List{System.String})">
+            <summary>
+            带标题和话题的分享视频。分享的视频文件是调用StopVideo后生成的文件。
+            注意：视频分享需要录制至少3s的视频，低于3s的视频将会分享失败。
+            </summary>
+            <param name="successCallback">分享成功回调</param>
+            <param name="failedCallback">分享失败回调</param>
+            <param name="cancelledCallback">分享取消回调</param>
+            <param name="title">分享视频的标题，如不需要设置标题，可以传null或空字符串</param>
+            <param name="topics">分享视频的话题，如不需要设置话题，可以传null或空列表</param>
+            <returns>函数调用状态，调用成功返回true，否则返回false</returns>
+        </member>
+        <member name="M:StarkSDKSpace.StarkGameRecorder.ShareVideoWithJson(StarkSDKSpace.StarkGameRecorder.OnShareVideoSuccessCallback,StarkSDKSpace.StarkGameRecorder.OnShareVideoFailedCallback,StarkSDKSpace.StarkGameRecorder.OnShareVideoCancelledCallback,UNBridgeLib.LitJson.JsonData)">
+            <summary>
+            带Json数据格式的分享视频。分享的视频文件是调用StopVideo后生成的文件。
+            注意：视频分享需要录制至少3s的视频，低于3s的视频将会分享失败。
+            </summary>
+            <param name="successCallback">分享成功回调</param>
+            <param name="failedCallback">分享失败回调</param>
+            <param name="cancelledCallback">分享取消回调</param>
+            <param name="shareJson">视频分享的其它一些字段信息
+                                    (除videoPath、channel字段的其它字段信息，如分享话题、标题、描述等)。
+                                     参考：https://microapp.bytedance.com/docs/zh-CN/mini-game/develop/api/retweet/tt-share-app-message/
+                                     </param>
+            <returns>函数调用状态，调用成功返回true，否则返回false</returns>
+        </member>
+        <member name="T:StarkSDKSpace.NavigateMsg">
+            <summary>
+            游戏跳转返回的跳转信息
+            用处：
+            1.A->B A游戏跳转到B游戏，再从B游戏返回到A时，若A游戏没有被杀死则实时收到该信息
+            2.A->B A游戏跳转到B游戏，再从B游戏返回到A时，若A游戏被杀死则下次A启动时再获取该信息
+            </summary>
+        </member>
+        <member name="T:StarkSDKSpace.StarkNavigateGame">
+            <summary>
+            提供游戏互跳功能的模块
+            本地配置互跳信息的方法：
+            在Resources文件加下添加game.json
+            内容如下：
+              [{
+              "navigate_app_id": "互跳游戏1的appid",
+              },
+              {
+              "navigate_app_id": "互跳游戏2的appid",
+              }]
+            </summary>
+        </member>
+        <member name="T:StarkSDKSpace.StarkNavigateGame.OnNavigateGameReturn">
+            <summary>
+            当从跳转的目标游戏返回时且自身进程存在没有被玩家杀死则自动调用该方法
+            A跳转B，B玩完返回A时，若A依旧存活则会自动调用该方法
+            若A被用户杀死则下一次启动A时可以通过<see cref="M:StarkSDKSpace.StarkNavigateGame.GetLastNavigateMsg(StarkSDKSpace.StarkNavigateGame.OnNavigateGameReturn)"/>方法获取上次的拉起信息
+            两种情况互斥，A依旧存活时，下次启动A就会获取不到信息；A被杀死，一定获取不到该回调，下次启动时会获取到拉起信息
+            </summary>
+            <param name="appId">跳转的目标appid</param>
+            <param name="time">游玩时间</param>
+        </member>
+        <member name="T:StarkSDKSpace.StarkNavigateGame.OnNavigateGameFail">
+            <summary>
+            跳转游戏时失败时调用这个回调
+            </summary>
+        </member>
+        <member name="T:StarkSDKSpace.StarkNavigateGame.OnVideoClose">
+            <summary>
+            当播放的视频被关闭时调用改接口
+            </summary>
+        </member>
+        <member name="M:StarkSDKSpace.StarkNavigateGame.ShowRecommendVideo(StarkSDKSpace.StarkNavigateGame.OnNavigateGameReturn,StarkSDKSpace.StarkNavigateGame.OnNavigateGameFail,StarkSDKSpace.StarkNavigateGame.OnVideoClose,System.String)">
+            <summary>
+            显示一个游戏视频，当点击视频时跳转到对应游戏,只能在宿主抖音和头条下使用
+            抖音极速版和头条极速版不支持,
+            可通过<see cref="!:StarkSDK.s_ContainerEnv.m_HostEnum"/>获取当前的宿主类型。
+            互跳的条目信息可有两个来源，网络动态拉取找对应QA同学配置，本地配置方法见类
+            StarkNavigateGame的注释。
+            </summary>
+            <param name="onNavigateGameReturn">跳转返回时调用该方法</param>
+            <param name="onNavigateGameFail">跳转失败时调用该方法，如没有获取到跳转信息</param>
+            <param name="onClose">视频界面关闭时的回调</param>
+            <param name="navigateExtraParam">跳转到对应游戏时传递的自定义参数</param>
+        </member>
+        <member name="M:StarkSDKSpace.StarkNavigateGame.NavigateToTargetGame(System.Int32,StarkSDKSpace.StarkNavigateGame.OnNavigateGameReturn,StarkSDKSpace.StarkNavigateGame.OnNavigateGameFail,System.String)">
+            <summary>
+            直接跳转至目标索引号所代表的游戏
+            互跳的条目信息可有两个来源，网络动态拉取找对应QA同学配置，本地配置方法见类
+            StarkNavigateGame的注释。
+            </summary>
+            <param name="slotIndex">在服务器配置的游戏索引号，从0开始</param>
+            <param name="onNavigateGameReturn">跳转返回时调用该方法</param>
+            <param name="onNavigateGameFail">跳转失败时调用该方法，如没有获取到跳转信息</param>
+            <param name="navigateExtraParam">跳转到对应游戏时传递的自定义参数</param>
+        </member>
+        <member name="M:StarkSDKSpace.StarkNavigateGame.GetLastNavigateMsg(StarkSDKSpace.StarkNavigateGame.OnNavigateGameReturn)">
+            <summary>
+            拉起方读取被拉起方传递的信息，只有A拉起B后，A被杀死无法从B获取通知时该接口才会有数据
+            该接口涉及到读文件、Native方法调用，比较耗时，不可频繁调用！ 
+            </summary>
+            <param name="appId"></param>
+            <param name="gameTime"></param>
+            <param name="cpCustomizeMsg"></param>
+            <returns>是否查找到跳转信息</returns>
+        </member>
+        <member name="M:StarkSDKSpace.StarkNavigateGame.IsNavigateFromOtherGame(System.String@,System.String@)">
+            <summary>
+            判断当前游戏是否被另一个游戏拉起
+            </summary>
+            <param name="appId">该游戏被该appid对应的游戏拉起，若不是被拉起的appid为""</param>
+            <param name="navigateExtraParam">获取从拉起方传递来的自定义数据，若不是被拉起的navigateExtraParam为""</param>
+            <returns>true:当前游戏是被其他游戏拉起的，false:当前游戏不是由其他游戏拉起的</returns>
+        </member>
+        <member name="M:StarkSDKSpace.StarkNavigateGame.Init">
+            <summary>
+            初始化，从服务器获取导航信息
+            </summary>
+        </member>
+        <!-- 对于成员“M:StarkSDKSpace.StarkNavigateGame.NavigateToGame(StarkSDKSpace.NavigateGameInfo,StarkSDKSpace.StarkNavigateGame.OnNavigateGameReturn,System.String)”忽略有格式错误的 XML 注释 -->
+        <member name="M:StarkSDKSpace.StarkNavigateGame.SaveNavigateMsg">
+            <summary>
+            不开放给用户StarkSDK实现的调用SCPlugin的存储文件的方法
+            </summary>
+        </member>
+        <member name="T:StarkSDKSpace.StarkNavigateGame.OnLaunchFromOtherGame">
+            <summary>
+            当该游戏由其他游戏拉起时，设置的回调
+            </summary>
+            <param name="appId">被哪个游戏拉起</param>
+            <param name="extraData">被拉起游戏设置的额外信息</param>
+        </member>
+        <member name="M:StarkSDKSpace.StarkNavigateGame.SetNavigateGameInfo(System.String,System.Collections.Generic.Dictionary{System.String,System.String},System.String,System.String,System.String,System.String,StarkSDKSpace.NavigateGameType)">
+            <summary>
+            CP自己设置的在本游戏中推荐的游戏
+            </summary>
+            <param name="appid">目标appid</param>
+            <param name="query">设置的query值</param>
+            <param name="extraData">自定义的额外信息</param>
+            <param name="url">视频的url链接</param>
+        </member>
+        <member name="M:StarkSDKSpace.StarkNavigateGame.SetNavigateMsg(System.String)">
+            <summary>
+            被拉起方的游戏设置传递给拉起方的信息，拉起方可以读取设置的该信息
+            游戏A拉起了游戏B:
+            A若拉起B后在后台被杀死则通过<see cref="M:StarkSDKSpace.StarkNavigateGame.GetLastNavigateMsg(StarkSDKSpace.StarkNavigateGame.OnNavigateGameReturn)"/>接口可以获取到设置的信息
+            A若拉起B后依旧在后台则通过<see cref="M:StarkSDKSpace.StarkNavigateGame.NavigateToGame(StarkSDKSpace.NavigateGameInfo,StarkSDKSpace.StarkNavigateGame.OnNavigateGameReturn,System.String)"/>设置的接口通知设置的信息
+            该接口涉及到写文件、Native方法调用，比较耗时，不可频繁调用！
+            </summary>
+            <param name="cpCustomizeMsg"></param>
+        </member>
+        <member name="M:StarkSDKSpace.StarkNavigateGame.SetOnLaunchFromOtherGameCallback(StarkSDKSpace.StarkNavigateGame.OnLaunchFromOtherGame)">
+            <summary>
+            设置从其他游戏拉起的事件监听，从其他游戏拉起时会调用该回调
+            一定要早于StarkSDK的初始化
+            </summary>
+            <param name="onNavigateGameReturn">特定游戏的id</param> 
+        </member>
+        <member name="T:StarkSDKSpace.StarkLocalNavigateList">
+            <summary>
+            供Java侧调用，获取保存到Unity本地的互跳信息
+            </summary>
+        </member>
+        <member name="F:StarkSDKSpace.StarkPayService.ERR_CODE_NOT_IN_UC_ENV">
+            <summary>
+            非uc环境下运行
+            </summary>
+        </member>
+        <member name="F:StarkSDKSpace.StarkPayService.ERR_CODE_PAY_NOT_SUPPORT">
+            <summary>
+            当前uc环境不支持支付功能
+            </summary>
+        </member>
+        <member name="F:StarkSDKSpace.StarkPayService.ERR_CODE_PAY_UNFINISHED">
+            <summary>
+            前一个支付未完成
+            </summary>
+        </member>
+        <member name="F:StarkSDKSpace.StarkPayService.ERR_CODE_INVALID_ORDER_INFO">
+            <summary>
+            orderInfo参数无效
+            </summary>
+        </member>
+        <member name="F:StarkSDKSpace.StarkPayService.ERR_CODE_PAY_FAILED">
+            <summary>
+            支付失败
+            </summary>
+        </member>
+        <member name="F:StarkSDKSpace.StarkPayService.ERR_CODE_WX_LAUNCH_FAILED">
+            <summary>
+            拉起微信支付失败
+            </summary>
+        </member>
+        <member name="F:StarkSDKSpace.StarkPayService.ERR_CODE_WX_NOT_INSTALLED">
+            <summary>
+            微信未安装
+            </summary>
+        </member>
+        <member name="T:StarkSDKSpace.StarkPayService.GetOrderStatusHandler">
+            <summary>
+            查询订单状态处理函数
+            </summary>
+            <param name="orderNo">订单号（从orderInfo中读取的order_info值）</param>
+            <param name="tradeTime">交易时间（从orderInfo中读取的trade_time值）</param>
+            <returns>PayStatus 订单支付状态</returns>
+        </member>
+        <member name="T:StarkSDKSpace.StarkPayService.PayStatus">
+            <summary>
+            支付状态
+            </summary>
+        </member>
+        <member name="F:StarkSDKSpace.StarkPayService.PayStatus.PaySuccess">
+            <summary>
+            支付成功
+            </summary>
+        </member>
+        <member name="F:StarkSDKSpace.StarkPayService.PayStatus.PayTimeout">
+            <summary>
+            支付超时
+            </summary>
+        </member>
+        <member name="F:StarkSDKSpace.StarkPayService.PayStatus.PayFailed">
+            <summary>
+            支付失败
+            </summary>
+        </member>
+        <member name="F:StarkSDKSpace.StarkPayService.PayStatus.PayClosed">
+            <summary>
+            支付关闭
+            </summary>
+        </member>
+        <member name="F:StarkSDKSpace.StarkPayService.PayStatus.PayCancel">
+            <summary>
+            支付取消
+            </summary>
+        </member>
+        <member name="F:StarkSDKSpace.StarkPayService.PayStatus.PayUnknown">
+            <summary>
+            订单状态未知/未支付
+            </summary>
+        </member>
+        <member name="T:StarkSDKSpace.StarkPayService.PayServiceType">
+            <summary>
+            拉起支付服务类型
+            </summary>
+        </member>
+        <member name="F:StarkSDKSpace.StarkPayService.PayServiceType.Checkout">
+            <summary>
+            小程序收银台，从收银台选择支付渠道
+            </summary>
+        </member>
+        <member name="F:StarkSDKSpace.StarkPayService.PayServiceType.Wechat">
+            <summary>
+            调用微信 API 支付，不拉起小程序收银台
+            </summary>
+        </member>
+        <member name="F:StarkSDKSpace.StarkPayService.PayServiceType.Alipay">
+            <summary>
+            调用支付宝 API 支付，不拉起小程序收银台
+            </summary>
+        </member>
+        <member name="T:StarkSDKSpace.StarkPayService.PayChannel">
+            <summary>
+            支付渠道
+            </summary>
+        </member>
+        <member name="F:StarkSDKSpace.StarkPayService.PayChannel.Wechat">
+            <summary>
+            使用微信支付
+            </summary>
+        </member>
+        <member name="F:StarkSDKSpace.StarkPayService.PayChannel.Alipay">
+            <summary>
+            使用支付宝支付
+            </summary>
+        </member>
+        <member name="M:StarkSDKSpace.StarkPayService.Pay(System.String,StarkSDKSpace.StarkPayService.PayServiceType,StarkSDKSpace.StarkPayService.PayChannel,StarkSDKSpace.StarkPayService.GetOrderStatusHandler,System.Action{StarkSDKSpace.StarkPayService.PayStatus},System.Action{System.Int32,System.String})">
+            <summary>
+            支付接口
+            参考文档：https://microapp.bytedance.com/docs/zh-CN/mini-app/develop/api/open-interface/payment/tt-pay/
+            </summary>
+            <param name="orderInfo">json字符串。调起小程序支付收银台的签名订单信息。
+                                    生成方式参考文档：https://microapp.bytedance.com/docs/zh-CN/mini-app/develop/api/open-interface/payment/mini-app-pay-plugin-reference/server-sign/</param>
+            <param name="serviceType">拉起支付服务类型 (小程序收银台、微信、支付宝)</param>
+            <param name="defaultPayChannel">默认勾选的支付方式（支付宝或微信），仅在 serviceType 值为 Checkout 时有效。
+                                            注意：这个设置会依赖服务器端下发用户上次使用过的支付方式作为默认支付方式，所以这个设置可能不会生效。</param>
+            <param name="orderStatusHandler">(orderNo, tradeTime) => { return PayStatus; } 查询订单支付状态函数实现，仅在 serviceType 值为 Checkout 时需要实现。
+                                             如果 serviceType 值为 Checkout ，需要由业务方实现 orderStatusHandler 接口，根据订单号从业务后台查询支付状态并返回支付状态结果，主要用于通知前端界面展示。
+                                             注意：orderStatusHandler 这个回调函数会在底层轮循调用。如果查询不到支付结果状态，可以返回PayUnknown状态。</param>
+            <param name="payCallback">支付回调 (payStatus) => {}</param>
+            <param name="errCallback">当有错误发生时回调 (errCode, errMsg) => {} </param>
+        </member>
+        <member name="M:StarkSDKSpace.StarkPayService.PayModuleInit">
+            <summary>
+            初始化支付接口，减少支付时卡顿时间
+            </summary>
+        </member>
+        <!-- 对于成员“T:StarkSDKSpace.StarkShare”忽略有格式错误的 XML 注释 -->
+        <member name="T:StarkSDKSpace.StarkShare.OnShareSuccessCallback">
+            <summary>
+            分享成功
+            </summary>
+        </member>
+        <member name="T:StarkSDKSpace.StarkShare.OnShareFailedCallback">
+            <summary>
+            分享失败
+            <param name="errMsg">错误消息</param>
+            </summary>
+        </member>
+        <member name="T:StarkSDKSpace.StarkShare.OnShareCancelledCallback">
+            <summary>
+            分享取消
+            </summary>
+        </member>
+        <member name="M:StarkSDKSpace.StarkShare.ShareAppMessage(StarkSDKSpace.StarkShare.OnShareSuccessCallback,StarkSDKSpace.StarkShare.OnShareFailedCallback,StarkSDKSpace.StarkShare.OnShareCancelledCallback,UNBridgeLib.LitJson.JsonData)">
+            <summary>
+            通用分享
+            </summary>
+            <param name="successCallback">分享成功回调</param>
+            <param name="failedCallback">分享失败回调</param>
+            <param name="cancelledCallback">分享取消回调</param>
+            <param name="shareJson">可填的字段信息参考：https://microapp.bytedance.com/docs/zh-CN/mini-game/develop/api/retweet/tt-share-app-message/ </param>
+        </member>
+        <member name="T:StarkSDKSpace.StarkVideoCallback.OnStarkVideoDelegate">
+            <summary>
+            视频播放回调接口
+            </summary>
+            <param name="position">视频在列表中的位置（第一个位置从0开始）</param>
+        </member>
+        <member name="P:StarkSDKSpace.StarkVideoCallback.OnVideoClickedCallback">
+            <summary>
+            视频点击回调
+            </summary>
+        </member>
+        <member name="P:StarkSDKSpace.StarkVideoCallback.OnTextClickedCallback">
+            <summary>
+            文本点击回调
+            </summary>
+        </member>
+        <member name="P:StarkSDKSpace.StarkVideoCallback.OnVideoPageChanged">
+            <summary>
+            播放的视频页发生变化
+            </summary>
+        </member>
+        <member name="P:StarkSDKSpace.StarkVideoCallback.OnVideoPlayCompleted">
+            <summary>
+            视频播放结束
+            </summary>
+        </member>
+        <member name="P:StarkSDKSpace.StarkVideoCallback.OnVideoPlayError">
+            <summary>
+            视频播放失败
+            </summary>
+        </member>
+        <member name="P:StarkSDKSpace.StarkVideoCallback.OnWindowDismiss">
+            <summary>
+            视频界面关闭回调
+            </summary>
+        </member>
+        <member name="T:StarkSDKSpace.StarkVideoManager">
+            <summary>
+            视频播放模块
+            </summary>
+        </member>
+        <member name="P:StarkSDKSpace.StarkVideoManager.StarkVideo.VideoUrl">
+            <summary>
+            抖音短视频分享链接
+            </summary>
+        </member>
+        <member name="P:StarkSDKSpace.StarkVideoManager.StarkVideo.VideoText">
+            <summary>
+            用于显示的文本
+            </summary>
+        </member>
+        <member name="P:StarkSDKSpace.StarkVideoManager.StarkVideo.TextColor">
+            <summary>
+            文本颜色，默认为白色
+            </summary>
+        </member>
+        <member name="M:StarkSDKSpace.StarkVideoManager.PlayDouyinVideos(System.Collections.Generic.List{StarkSDKSpace.StarkVideoManager.StarkVideo},StarkSDKSpace.StarkVideoCallback,System.Int32,System.Int32,System.Int32,System.Int32,System.Int32)">
+            <summary>
+            抖音视频播放
+            </summary>
+            <param name="videos">视频列表（如果之前有播放过视频，下次调用时可以传 null 或空列表）</param>
+            <param name="callback">视频播放回调，具体参见 StarkVideoCallback 定义</param>
+            <param name="showCloseButtonDelayTimeMs">视频播放窗口的关闭按钮延迟显示时间，单位毫秒，小于等于0则表示立即显示。</param>
+            <param name="x">窗口横坐标位置（相对于屏幕左上角）</param>
+            <param name="y">窗口纵坐标位置（相对于屏幕左上角）</param>
+            <param name="windowWidth">视频播放窗口宽度，小于等于0则占满屏幕宽度</param>
+            <param name="windowHeight">视频播放窗口高度，小于等于0则占满屏幕高度</param>
+            <example>
+            <code>
+                List&lt;StarkVideoManager.StarkVideo&gt; videos = new List&lt;StarkVideoManager.StarkVideo&gt;();
+                videos.Add(new StarkVideoManager.StarkVideo("https://v.douyin.com/JppLfuu/", "This is the first video"));
+                StarkVideoCallback callback = new StarkVideoCallback();
+                callback.OnVideoClickedCallback = index =>
+                {
+                    Debug.Log("video clicked, index: " + index);
+                };
+                callback.OnTextClickedCallback = index =>
+                {
+                    Debug.Log("text clicked, index: " + index);
+                };
+                callback.OnVideoPageChanged = index =>
+                {
+                    Debug.Log("video page selected, index: " + index);
+                    if (index + 1 == StarkSDK.API.GetStarkVideoManager().GetVideoCount())
+                    {
+                        var video = new StarkVideoManager.StarkVideo
+                        {
+                            VideoUrl = "https://v.douyin.com/Jpgo15A/",
+                            VideoText = "This is a new video",
+                            TextColor = 0xff00ff00,
+                        };
+                        StarkSDK.API.GetStarkVideoManager().AddVideo(video);
+                        // if you want add multiple videos, you can call 'StarkSDK.API.GetStarkVideoManager().AddVideos' to add a video list
+                    }
+                };
+                callback.OnVideoPlayCompleted = index =>
+                {
+                    Debug.Log("video play completed, index: " + index);
+                };
+                callback.OnVideoPlayError = index =>
+                {
+                    Debug.Log("video play error, index: " + index);
+                };
+            </code>
+            </example>
+        </member>
+        <member name="M:StarkSDKSpace.StarkVideoManager.Close">
+            <summary>
+            关闭窗口
+            </summary>
+        </member>
+        <member name="M:StarkSDKSpace.StarkVideoManager.AddVideo(StarkSDKSpace.StarkVideoManager.StarkVideo)">
+            <summary>
+            添加视频到播放列表末尾
+            </summary>
+            <param name="video">视频信息</param>
+        </member>
+        <member name="M:StarkSDKSpace.StarkVideoManager.AddVideos(System.Collections.Generic.List{StarkSDKSpace.StarkVideoManager.StarkVideo})">
+            <summary>
+            添加多个视频到播放列表末尾
+            </summary>
+            <param name="videos">视频列表信息</param>
+        </member>
+        <member name="M:StarkSDKSpace.StarkVideoManager.GetVideoCount">
+            <summary>
+            获取当前列表中的视频数量
+            </summary>
+            <returns>视频数量</returns>
+        </member>
+        <member name="M:StarkSDKSpace.StarkVideoManager.Start">
+            <summary>
+            开始播放当前页展示的视频
+            </summary>
+        </member>
+        <member name="M:StarkSDKSpace.StarkVideoManager.Pause">
+            <summary>
+            暂停当前正在播放的视频
+            </summary>
+        </member>
+        <member name="M:StarkSDKSpace.StarkVideoManager.IsPlaying">
+            <summary>
+            视频是否正在播放
+            </summary>
+            <returns>正在播放返回 true ，否则返回 false </returns>
+        </member>
+        <member name="T:StarkSDKSpace.AccountMockModule">
+            <summary>
+            广告模块的mock层
+            </summary>
+        </member>
+        <member name="M:StarkSDKSpace.AccountMockModule.Login(StarkSDKSpace.StarkAccount.OnLoginSuccessCallback,StarkSDKSpace.StarkAccount.OnLoginFailedCallback,System.Boolean)">
+            <summary>
+            登录的mock方法
+            </summary>
+            <param name="forceLogin"></param>
+            <param name="successCallback"></param>
+            <param name="failedCallback"></param>
+        </member>
+        <member name="M:StarkSDKSpace.AccountMockModule.CheckSession(StarkSDKSpace.StarkAccount.OnCheckSessionSuccessCallback,StarkSDKSpace.StarkAccount.OnCheckSessionFailedCallback)">
+            <summary>
+            检查session是否有效的mock方法
+            </summary>
+            <param name="successCallback"></param>
+            <param name="failedCallback"></param>
+        </member>
+        <member name="M:StarkSDKSpace.AccountMockModule.GetScUserInfo(StarkSDKSpace.StarkAccount.OnGetScUserInfoSuccessCallback,StarkSDKSpace.StarkAccount.OnGetScUserInfoFailedCallback)">
+            <summary>
+            获取用户信息的mock方法
+            </summary>
+            <param name="successCallback"></param>
+            <param name="failedCallback"></param>
+        </member>
+        <member name="M:StarkSDKSpace.AccountMockModule.GetUserInfoAuth(StarkSDKSpace.StarkAccount.OnGetUserInfoAuthSuccess,StarkSDKSpace.StarkAccount.OnGetUserInfoAuthFail)">
+            <summary>
+            获取用户授权状态
+            </summary>
+            <param name="onGetUserInfoAuth"></param>
+            <param name="onGetUserInfoAuthFail"></param>
+        </member>
+        <member name="M:StarkSDKSpace.AccountMockModule.OpenSettingsPanel(StarkSDKSpace.StarkAccount.OnGetUserInfoAuthSuccess,StarkSDKSpace.StarkAccount.OnGetUserInfoAuthFail)">
+            <summary>
+            主动打开授权界面，然后获取最新的授权状态
+            </summary>
+            <param name="onGetUserInfoAuth"></param>
+            <param name="onGetUserInfoAuthFail"></param>
+        </member>
+        <member name="T:StarkSDKSpace.StarkBannerAdMock">
+            <summary>
+            Banner广告的Mock模块
+            </summary>
+        </member>
+        <member name="T:StarkSDKSpace.StarkInterstitialAdMock">
+            <summary>
+            插屏广告的Mock模块
+            </summary>
+        </member>
+        <member name="T:StarkSDKSpace.AdMockMoudle">
+            <summary>
+            广告模块的mock层
+            </summary>
+        </member>
+        <member name="T:StarkSDKSpace.FavoriteMockMoudle">
+            <summary>
+            收藏模块的Mock层
+            </summary>
+        </member>
+        <member name="T:StarkSDKSpace.GameRecorderMockMoudle">
+            <summary>
+            录屏模块的mock层
+            </summary>
+        </member>
+        <member name="T:StarkSDKSpace.PayMockService">
+            <summary>
+            Banner广告的Mock模块
+            </summary>
+        </member>
+        <member name="T:StarkSDKSpace.ShareMockMoudle">
+            <summary>
+            分享模块的mock层
+            </summary>
+        </member>
+        <member name="T:StarkSDKSpace.BGGameApi.OnLoginSuccessCallback">
+            <summary>
+            登录成功回调
+            </summary>
+            <param name="isRelogin">是否是断线重连，true表示断线重连，false表示正常登录</param>
+        </member>
+        <member name="T:StarkSDKSpace.BGGameApi.OnLoginFailedCallback">
+            <summary>
+            登录失败回调
+            </summary>
+            <param name="errCode">客户端错误码</param>
+            <param name="errMsg">客户端错误消息</param>
+        </member>
+        <member name="T:StarkSDKSpace.BGGameApi.OnDisconnectCallback">
+            <summary>
+            连接断开回调
+            </summary>
+        </member>
+        <member name="T:StarkSDKSpace.BGGameApi.OnQueueNotifyCallback">
+            <summary>
+            排队队列更新回调
+            </summary>
+            <param name="pos">排队当前位置</param>
+            <param name="waitTimeSec">排队需要等待的时间，单位 s </param>
+        </member>
+        <member name="T:StarkSDKSpace.BGGameApi.OnMessageEventCallback">
+            <summary>
+            业务消息事件回调
+            </summary>
+            <param name="data">服务器端返回的数据</param>
+        </member>
+        <member name="T:StarkSDKSpace.BGGameApi.OnLoginEventCallback">
+            <summary>
+            登录事件回调
+            </summary>
+            <param name="resumeMode">是否是断线重连，1表示是断线重连，0表示是正常登录</param>
+            <param name="loginResult">登录结果，0表示登录成功，失败则为客户端错误码</param>
+            <param name="serverResult">服务器端结果，0表示成功，失败则为服务器返回的错误码</param>
+            注意：serverResult不为0，则loginResult一定不为0；loginResult为0，serverResult一定为0；loginResult不为0，serverResult可能为0
+        </member>
+        <member name="F:StarkSDKSpace.BGGameApi.s_OnLoginSuccessCallback">
+            <summary>
+            登录成功回调
+            </summary>
+        </member>
+        <member name="F:StarkSDKSpace.BGGameApi.s_OnLoginFailedCallback">
+            <summary>
+            登录失败回调
+            </summary>
+        </member>
+        <member name="F:StarkSDKSpace.BGGameApi.s_OnDisconnectCallback">
+            <summary>
+            断开连接回调
+            </summary>
+        </member>
+        <member name="F:StarkSDKSpace.BGGameApi.s_OnQueueNotifyCallback">
+            <summary>
+            排队队列更新回调
+            </summary>
+        </member>
+        <member name="F:StarkSDKSpace.BGGameApi.s_OnMessageEventCallback">
+            <summary>
+            业务消息事件回调
+            </summary>
+        </member>
+        <member name="M:StarkSDKSpace.BGGameApi.SetOnLoginCallback(StarkSDKSpace.BGGameApi.OnLoginSuccessCallback,StarkSDKSpace.BGGameApi.OnLoginFailedCallback)">
+            <summary>
+            设置登录回调
+            </summary>
+            <param name="successCallback">登录成功回调</param>
+            <param name="loginFailedCallback">登录失败回调</param>
+        </member>
+        <member name="M:StarkSDKSpace.BGGameApi.CreateContext(System.String,System.String,System.String,System.Int32,System.Int32)">
+            <summary>
+            创建一个上下文环境，用于初始化相关信息
+            </summary>
+            <param name="code">Code ID</param>
+            <param name="anonymousCode">Code ID</param>
+            <param name="host">服务器主机地址</param>
+            <param name="port">服务器端口号</param>
+            <param name="connectTimeoutSec">与服务器连接超时时间</param>
+            <returns>返回错误码状态，0表示成功，非0表示失败。可以通过调用 GetErrorString 函数获取错误信息。或者直接调用 GetLastErrorString 获取错误信息。</returns>
+        </member>
+        <member name="M:StarkSDKSpace.BGGameApi.DestroyContext">
+            <summary>
+            销毁上下文环境，清理数据
+            </summary>
+        </member>
+        <member name="M:StarkSDKSpace.BGGameApi.StartConnect">
+            <summary>
+            开始与服务器端建立连接（包括登录流程）
+            需要调用SetOnLoginEventCallback，监听登录状态
+            </summary>
+            <returns>返回错误码状态，0表示成功，非0表示失败。可以通过调用 GetErrorString 函数获取错误信息。或者直接调用 GetLastErrorString 获取错误信息。</returns>
+        </member>
+        <member name="M:StarkSDKSpace.BGGameApi.StopConnect">
+            <summary>
+            停止与服务器端的连接
+            </summary>
+        </member>
+        <member name="M:StarkSDKSpace.BGGameApi.IsStopped">
+            <summary>
+            与服务器端连接是否已停止
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:StarkSDKSpace.BGGameApi.Update">
+            <summary>
+            更新内部逻辑状态
+            !!!Note: 需要定期不断调用该函数（比如每隔100ms调用一次）
+            </summary>
+        </member>
+        <member name="M:StarkSDKSpace.BGGameApi.SendMessage(System.String)">
+            <summary>
+            向服务器端发送业务消息
+            通过调用 SetOnMessageEventCallback 函数监听服务器端的业务消息回调
+            </summary>
+            <param name="msg"></param>
+            <returns>返回错误码状态，0表示成功，非0表示失败。可以通过调用 GetErrorString 函数获取错误信息。或者直接调用 GetLastErrorString 获取错误信息。</returns>
+        </member>
+        <member name="M:StarkSDKSpace.BGGameApi.GetErrorString(System.Int32)">
+            <summary>
+            根据错误码获取错误信息
+            </summary>
+            <param name="errorCode"></param>
+            <returns>返回错误信息文本</returns>
+        </member>
+        <member name="M:StarkSDKSpace.BGGameApi.GetLastErrorString">
+            <summary>
+            获取最后一次错误的信息
+            </summary>
+            <returns>返回错误信息文本</returns>
+        </member>
+        <member name="T:StarkSDKSpace.BGGameApi.OnBGGameMessageEventCallback">
+            <summary>
+            业务消息事件回调
+            </summary>
+            <param name="ptr">底层C接口的数据指针</param>
+            <param name="length">数据长度</param>
+        </member>
+        <member name="T:StarkSDKSpace.StarkRPC">
+            <summary>
+            网络调用的封装
+            </summary>
+        </member>
+        <member name="T:StarkSDKSpace.StarkRPC.OnRPCSuccess">
+            <summary>
+            RPC调用成功时的回调，返回结果
+            </summary>
+            <param name="result">返回的结果</param>
+        </member>
+        <member name="T:StarkSDKSpace.StarkRPC.OnRPCFail">
+            <summary>
+            RPC调用失败时的回调，返回错误码
+            </summary>
+            <param name="errorCode">错误码</param>
+        </member>
+        <member name="M:StarkSDKSpace.StarkRPC.Post_NoAuth(System.String,System.String,System.String,StarkSDKSpace.StarkRPC.OnRPCSuccess,StarkSDKSpace.StarkRPC.OnRPCFail)">
+            <summary>
+            非鉴权的Post方法进行一次RPC
+            </summary>
+            <param name="host">域名</param>
+            <param name="service">服务</param>
+            <param name="data">数据</param>
+            <param name="onRPCSuccess">成功回调</param>
+            <param name="onRPCFail">失败回调</param>
+        </member>
+        <!-- 对于成员“T:StarkSDKSpace.AndroidUIManager”忽略有格式错误的 XML 注释 -->
+        <member name="M:StarkSDKSpace.AndroidUIManager.ShowToast(System.String)">
+            <summary>
+            Android Toast提示
+            类似于直接调用Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+            </summary>
+            <param name="message">提示信息</param>
+        </member>
+        <member name="M:StarkSDKSpace.AndroidUIManager.ShowToastLong(System.String)">
+            <summary>
+            Android Toast提示
+            类似于直接调用Toast.makeText(context, message, Toast.LENGTH_LONG).show()
+            </summary>
+            <param name="message">提示信息</param>
+        </member>
+        <member name="M:StarkSDKSpace.AndroidUIManager.ShowDialogPopup(System.String,System.String,System.String,System.String,System.Boolean,System.Action,System.Action)">
+            <summary>
+            Android 弹出式对话框
+            </summary>
+            <param name="title">标题</param>
+            <param name="message">内容</param>
+            <param name="positiveBtnText">确认按钮文本</param>
+            <param name="negativeBtnText">取消按钮文本</param>
+            <param name="cancelable">对话框是否取消（点击空白区域关闭界面）</param>
+            <param name="onPositiveClickCallback">点击确认按钮回调</param>
+            <param name="onNegativeClickCallback">点击取消按钮回调</param>
+        </member>
+        <member name="M:StarkSDKSpace.AndroidUIManager.ShowProgressPopup(System.String,System.Boolean,System.Action)">
+            <summary>
+            Android 进度加载弹窗
+            </summary>
+            <param name="message">提示信息</param>
+            <param name="cancelable">Loading弹窗是否取消（点击空白区域关闭界面）</param>
+            <param name="onDismissCallback">Loading弹窗关闭回调</param>
+        </member>
+        <member name="M:StarkSDKSpace.AndroidUIManager.HideProgressPopup">
+            <summary>
+            隐藏进度加载弹窗
+            </summary>
+        </member>
+        <member name="M:StarkSDKSpace.AndroidUIManager.SyncHideProgressPopup">
+            <summary>
+            以同步的隐藏一个弹框
+            </summary>
+        </member>
+        <member name="T:StarkSDKSpace.MockSetting">
+            <summary>
+            Mock设置类
+            </summary>
+        </member>
+        <member name="F:StarkSDKSpace.MockSetting.s_MockMoudle">
+            <summary>
+            用于记录开放了哪些模块
+            </summary>
+        </member>
+        <member name="P:StarkSDKSpace.MockSetting.MuteStarkMock">
+            <summary>
+            是否屏蔽Mock的弹窗
+            </summary>
+        </member>
+        <member name="M:StarkSDKSpace.MockSetting.GetMockMoudle">
+            <summary>
+            获取当前设置的每个模块是否开放
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:StarkSDKSpace.MockSetting.OpenAllMockModule">
+            <summary>
+            打开所有的Mock模块，默认关闭所有模块
+            </summary>
+        </member>
+        <member name="M:StarkSDKSpace.MockSetting.CloseAllMockModule">
+            <summary>
+            关闭所有的Mock模块，默认关闭所有模块
+            </summary>
+        </member>
+        <member name="M:StarkSDKSpace.MockSetting.SwithMockModule(StarkSDKSpace.MockModule,System.Boolean,System.Object)">
+            <summary>
+            分模块设置各个功能模块对应的Mock UI开放和关闭，默认关闭所有模块
+            extraData 大部分模块默认填null即可，目前已知的应用场景如下：
+            module == MockModule.Host,enable == true,则extraData为<see cref="T:StarkSDKSpace.ContainerEnv"/>的变量，模拟当前在何处启动等
+            </summary>
+            <param name="module">目标功能模块</param>
+            <param name="enable">是否开放</param>
+            <param name="extraData">额外数据</param>
+        </member>
+        <member name="M:StarkSDKSpace.MockSetting.HasFlag(StarkSDKSpace.MockModule)">
+            <summary>
+            判断一个功能模块的Mock层是否已经打开
+            </summary>
+            <param name="module">目标模块</param>
+            <returns>Mock层是否打开</returns>
+        </member>
+        <member name="T:StarkSDKSpace.MockUIUtil">
+            <summary>
+            使用GUI绘制出Mock层的工具类
+            </summary>
+        </member>
+        <member name="M:StarkSDKSpace.MockUIUtil.Init">
+            <summary>
+            初始化
+            </summary>
+        </member>
+        <member name="M:StarkSDKSpace.MockUIUtil.Show(System.Collections.Generic.Dictionary{System.String,System.Action},StarkSDKSpace.MockModule)">
+            <summary>
+            键值对显示mock选项
+            </summary>
+            <param name="pairs">要显示的内容</param>
+            <param name="targetModule">当前显示的目标模块</param>
+        </member>
+        <member name="M:StarkSDKSpace.MockUIUtil.GetScreenDp">
+            <summary>
+            获取屏幕密度，和屏幕的英寸长度dpi = a*a+b*b然后开平方再除以 屏幕英寸。
+            dp ＝ px * (dpi / 160)
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:StarkSDKSpace.NavigateUIUtil.CreateNavigateTips(System.Action)">
+            <summary>
+            创建一个UI用于显示提示
+            </summary>
+            <param name="action"></param>
+        </member>
+        <member name="T:StarkSDKSpace.StarkSingletonBehaviour`1">
+            <summary>
+            通用Unity单例
+            </summary>
+            <typeparam name="T"></typeparam>
+        </member>
+        <member name="T:StarkSDKSpace.TimeUtils">
+            <summary>
+            时间工具类
+            </summary>
+        </member>
+        <member name="M:StarkSDKSpace.TimeUtils.GetCurrentTimeMs">
+            <summary>
+            获取当前时间，单位ms
+            </summary>
+        </member>
+        <!-- 对于成员“T:StarkSDKSpace.VideoClipUtils”忽略有格式错误的 XML 注释 -->
+        <member name="M:StarkSDKSpace.VideoClipUtils.CreateClipTimeRange(System.Int32,System.Int32)">
+            <summary>
+            创建用于视频裁剪的时间片段 (需要在开始录屏后调用)
+            以调用时的录屏时刻为基准，指定前 x 毫秒，后 y 毫秒为将要裁剪的片段，可以多次调用，记录不同时刻。
+            在结束录屏时，可以调用 ClipVideo 接口剪辑并合成记录的片段。
+            </summary>
+            <param name="beforeNowMs">记录那一刻前的毫秒数</param>
+            <param name="afterNowInMillis">记录那一刻后的毫秒数</param>
+            <returns>StarkGameRecorder.TimeRange</returns>
+        </member>
+        <member name="T:bytedance.rec.ByteAudioRec">
+            <summary>
+            Unity声音录制
+            </summary>
+        </member>
+        <member name="T:bytedance.rec.ByteREC">
+            <summary>
+            Unity层使用的接口
+            </summary>
+        </member>
+        <member name="M:bytedance.rec.ByteREC.StartRecord">
+            <summary>
+            开始录屏
+            </summary>
+        </member>
+        <member name="M:bytedance.rec.ByteREC.StopRecord">
+            <summary>
+            停止录屏
+            </summary>
+        </member>
+        <member name="M:bytedance.rec.ByteREC.EnableVoice">
+            <summary>
+            开启录制游戏声音
+            </summary>
+        </member>
+        <member name="M:bytedance.rec.ByteREC.DisableVoice">
+            <summary>
+            关闭录制游戏声音
+            </summary>
+        </member>
+        <member name="M:bytedance.rec.ByteREC.SetResolution(System.Int32)">
+            <summary>
+            设置录制分辨率
+            </summary>
+        </member>
+        <member name="T:bytedance.rec.ByteRECAudioMgr">
+            <summary>
+            Unity层使用的接口
+            </summary>
+        </member>
+        <member name="M:bytedance.rec.ByteRECAudioMgr.CheckUnityEditorListeners">
+            检查是否有多个ActiveAndEnable AudioListener
+        </member>
+        <member name="T:bytedance.rec.ByteRECAudioSample">
+            <summary>
+            Unity声音录制接口
+            </summary>
+        </member>
+        <member name="P:bytedance.rec.ByteRecImpl.SamplingIntervalMs">
+            <summary>
+            声音采样间隔，单位毫秒
+            </summary>
+        </member>
+        <member name="P:bytedance.rec.ByteRecImpl.NeedConvertToByteArray">
+            <summary>
+            是否需要将PCM从float数组转为byte数组
+            </summary>
+        </member>
+        <member name="P:bytedance.rec.ByteRecImpl.Recording">
+            <summary>
+            是否在录制中
+            </summary>
+        </member>
+        <member name="M:bytedance.rec.ByteRecImpl.NativeStopRecord">
+            <summary>
+            提供给Java端通过UnityPlayer.UnitySendMessage("ByteREC","NativeStopRecord","");来停止录屏
+            </summary>
+        </member>
+        <member name="M:bytedance.rec.ByteRecImpl.NativeStartRecord">
+            <summary>
+            提供给Java端通过UnityPlayer.UnitySendMessage("ByteREC","NativeStartRecord","");来启动录屏
+            </summary>
+        </member>
+        <member name="M:bytedance.rec.ByteRecImpl.StartRecord(System.String)">
+            <summary>
+            提供给Java端通过UnityPlayer.UnitySendMessage("ByteREC","StartRecord","");来触发录制
+            </summary>
+            <param name="msg"></param>
+        </member>
+        <member name="M:bytedance.rec.ByteRecImpl.NativeRecordVoice(System.String)">
+            <summary>
+            提供给Java端通过UnityPlayer.UnitySendMessage("ByteREC","NativeRecordVoice","");来设置是否录音
+            </summary>
+            <param name="msg"></param>
+        </member>
+        <member name="M:bytedance.rec.ByteRecImpl.NativeSetUnityConvertPCM(System.String)">
+            <summary>
+            设置是否在Unity测转换PCM
+            </summary>
+            <param name="value"></param>
+        </member>
+        <member name="T:bytedance.rec.ByteRECJNI">
+            <summary>
+            Unity层使用的接口
+            </summary>
+        </member>
+        <member name="F:bytedance.rec.ByteRECJNI.VERSION">
+            <summary>
+            Unity版本号，每对外升级一次，自增1，详情见
+            </summary>
+        </member>
+        <member name="M:bytedance.rec.ByteRECJNI.UnityRenderEventPtr">
+            <summary>
+            UnityRenderEvent的回调的指针，可以通过
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:bytedance.rec.ByteRECJNI.RecordBitmap(System.Int32,System.Int32,System.Byte[],System.Int32)">
+            <summary>
+            录制图片
+            </summary>
+            <param name="width"></param>
+            <param name="height"></param>
+            <param name="data"></param>
+            <param name="size"></param>
+        </member>
+        <member name="M:bytedance.rec.ByteRECJNI.RecordTexture(System.Int32)">
+            <summary>
+            录制纹理
+            </summary>
+            <param name="textureId"></param>
+        </member>
+        <member name="M:bytedance.rec.ByteRECJNI.SendApplicationPauseStatus(System.Boolean,System.Int64)">
+            <summary>
+            传递Unity前后台切换消息
+            </summary>
+            <param name="json"></param>
+        </member>
+        <member name="M:bytedance.rec.ByteRECJNI.RecordVoice(System.Int32,System.Single[],System.Int32)">
+            <summary>
+            录音,传递PCM的float数组
+            </summary>
+            <param name="channel"></param>
+            <param name="pcm"></param>
+            <param name="length"></param>
+        </member>
+        <member name="M:bytedance.rec.ByteRECJNI.RecordVoiceByte(System.Int32,System.Byte[],System.Int32)">
+            <summary>
+            录音，传递PCM的byte数组
+            </summary>
+            <param name="channels"></param>
+            <param name="pcm"></param>
+            <param name="length"></param>
+        </member>
+        <member name="M:bytedance.rec.ByteRECJNI.RecordVoiceConfig(System.String)">
+            <summary>
+            传递录音的配置参数，JSON格式
+            </summary>
+            <param name="json"></param>
+        </member>
+        <member name="M:bytedance.rec.ByteRECJNI.JNIDeAttachCurrentThread">
+            <summary>
+            通知JNI DeAttach 当前线程，不然会引起crash
+            </summary>
+        </member>
+        <member name="M:bytedance.rec.ByteRECJNI.SendAudioTypeToNative(System.Int32)">
+            <summary>
+            设置使用的音频引擎类型：0-unity，1-wwise plugin, 2-wwise mix
+            </summary>
+        </member>
+        <member name="M:bytedance.rec.ByteRECJNI.StartRecord(System.String)">
+            <summary>
+            开始录屏
+            </summary>
+        </member>
+        <member name="M:bytedance.rec.ByteRECJNI.StopRecord">
+            <summary>
+            停止录屏
+            </summary>
+        </member>
+        <member name="M:bytedance.rec.ByteRECJNI.EnableVoice">
+            <summary>
+            开启录制游戏声音
+            </summary>
+        </member>
+        <member name="M:bytedance.rec.ByteRECJNI.DisableVoice">
+            <summary>
+            关闭录制游戏声音
+            </summary>
+        </member>
+        <member name="T:bytedance.rec.ByteUnityAudioSample">
+            <summary>
+            Unity声音录制
+            </summary>
+        </member>
+        <member name="M:bytedance.rec.ByteUnityAudioSample.PutArrayToList(System.Single[],System.Collections.Generic.List{System.Single})">
+            将数组添加到List里。
+        </member>
+        <member name="T:UNBridgeLib.AndroidUtils">
+            <summary>
+            处理Android通讯的工具类
+            </summary>
+        </member>
+        <member name="M:UNBridgeLib.AndroidUtils.Init">
+            <summary>
+            确保在主线程执行初始化。
+            </summary>
+        </member>
+        <member name="M:UNBridgeLib.AndroidUtils.SendEventNative(System.String,UNBridgeLib.LitJson.JsonData)">
+            <summary>
+            发送消息到Native
+            </summary>
+            <param name="target"></param>
+            <param name="data"></param>
+        </member>
+        <member name="M:UNBridgeLib.AndroidUtils.CallNative(System.Int32,System.String,UNBridgeLib.LitJson.JsonData,System.String)">
+            <summary>
+             异步Call通讯
+             </summary>
+            <param name="type">消息类型0-call消息，1-listen消息,2-unlisten消息，3-event消息</param>
+            <param name="target">目标接口</param>
+            <param name="param">参数</param>
+            
+            
+        </member>
+        <member name="M:UNBridgeLib.AndroidUtils.MixCall(System.String,UNBridgeLib.LitJson.JsonData,System.String)">
+            <summary>
+            混合Call通讯，调用直接返回一段String的数据，同时会有回调。
+            </summary>
+            <param name="target">目标API接口</param>
+            <param name="param">参数</param>
+            <param name="callbackId">回调ID</param>
+            <returns></returns>
+        </member>
+        <member name="M:UNBridgeLib.AndroidUtils.CallNative(System.String)">
+            <summary>
+            异步Call通讯
+            </summary>
+            <param name="msg"></param>
+        </member>
+        <member name="M:UNBridgeLib.AndroidUtils.CallNativeSync(System.Int32,System.String,UNBridgeLib.LitJson.JsonData)">
+             <summary>
+             同步Call通讯
+             </summary>
+            <param name="type">消息类型0-call消息，1-listen消息,2-unlisten消息，3-event消息</param>
+            <param name="target">目标接口</param>
+            <param name="param">参数</param>
+            
+        </member>
+        <member name="M:UNBridgeLib.AndroidUtils.CallNativeSync(System.String)">
+            <summary>
+            同步Call通讯
+            </summary>
+            <param name="msg"></param>
+            <returns></returns>
+        </member>
+        <member name="M:UNBridgeLib.AndroidUtils.HasNativeAPI(System.String)">
+            <summary>
+            查询Native层是否支持某个API
+            </summary>
+            <param name="apiName">接口名</param>
+            <returns></returns>
+        </member>
+        <member name="T:UNBridgeLib.BridgeAPI">
+            <summary>
+            BridgeAPI的包装类
+            </summary>
+        </member>
+        <member name="T:UNBridgeLib.OnCallBridgeAPI">
+            <summary>
+            BridgeAPI的委托
+            </summary>
+            <param name="context"></param>
+            <param name="para"></param>
+        </member>
+        <member name="T:UNBridgeLib.BridgeCallBack">
+            <summary>
+            回调接口
+            </summary>
+        </member>
+        <member name="P:UNBridgeLib.BridgeCallBack.AddTime">
+            <summary>
+            回调被添加的事件,ns
+            </summary>
+        </member>
+        <member name="P:UNBridgeLib.BridgeCallBack.TimeoutTime">
+            <summary>
+            默认Call超时,默认使用通用的超时，10秒
+            </summary>
+        </member>
+        <member name="T:UNBridgeLib.OnSuccessDelegate">
+            <summary>
+            回调成功
+            </summary>
+            <param name="data"></param>
+        </member>
+        <member name="T:UNBridgeLib.OnFailedDelegate">
+            <summary>
+            回调失败
+            </summary>
+            <param name="code">失败码</param>
+            <param name="failMsg">失败原因</param>
+        </member>
+        <member name="T:UNBridgeLib.OnTimeoutDelegate">
+            <summary>
+            超时
+            </summary>
+        </member>
+        <member name="T:UNBridgeLib.BridgeCore">
+            <summary>
+            UBridge的内部实现
+            </summary>
+        </member>
+        <member name="F:UNBridgeLib.BridgeCore.TIMEOUT_TIME">
+            <summary>
+            超时时间
+            </summary>
+        </member>
+        <member name="F:UNBridgeLib.BridgeCore.SUCCESS">
+            <summary>
+            成功
+            </summary>
+        </member>
+        <member name="F:UNBridgeLib.BridgeCore.ERROR_UNSUPPORT">
+            <summary>
+            接口未支持
+            </summary>
+        </member>
+        <member name="F:UNBridgeLib.BridgeCore.ERROR_NOT_SUPPORT_SYNC">
+            <summary>
+            接口不支持异步调用
+            </summary>
+        </member>
+        <member name="F:UNBridgeLib.BridgeCore.ERROR_LACK_PARAM">
+            <summary>
+            缺少参数
+            </summary>
+        </member>
+        <member name="F:UNBridgeLib.BridgeCore.ERROR_NOT_SUPPORT_ASYN">
+            <summary>
+            接口不支持同步调用
+            </summary>
+        </member>
+        <member name="F:UNBridgeLib.BridgeCore.CallbackMap">
+            <summary>
+            以callback_id为key维护回调。
+            </summary>
+        </member>
+        <member name="F:UNBridgeLib.BridgeCore.EventMap">
+            <summary>
+            以接口名为key，维护回调
+            </summary>
+        </member>
+        <member name="F:UNBridgeLib.BridgeCore.ApiMap">
+            <summary>
+             Unity侧以接口的形式实现的API,比委托优先
+            </summary>
+        </member>
+        <member name="F:UNBridgeLib.BridgeCore.BridgeDelegateMap">
+            <summary>
+            Unity侧以委托的形式实现的API
+            </summary>
+        </member>
+        <member name="F:UNBridgeLib.BridgeCore.LocalEventList">
+            <summary>
+            本地注册的事件列表
+            </summary>
+        </member>
+        <member name="F:UNBridgeLib.BridgeCore.RemoteEventList">
+            <summary>
+            Native端注册的事件列表
+            </summary>
+        </member>
+        <member name="F:UNBridgeLib.BridgeCore.Timer">
+            <summary>
+            超时定时器
+            </summary>
+        </member>
+        <member name="F:UNBridgeLib.BridgeCore.IsTimerStarted">
+            <summary>
+            定时器是否已经启动，避免重复启动；
+            </summary>
+        </member>
+        <member name="F:UNBridgeLib.BridgeCore.MaxTimeoutTime">
+            <summary>
+            超时时间，默认10秒
+            </summary>
+        </member>
+        <member name="M:UNBridgeLib.BridgeCore.StartTimer">
+            <summary>
+            启动超时定时器
+            </summary>
+        </member>
+        <member name="M:UNBridgeLib.BridgeCore.StopTimer">
+            <summary>
+            停止超时定时器
+            </summary>
+        </member>
+        <member name="M:UNBridgeLib.BridgeCore.setCallBackTimeout(System.Int64)">
+            <summary>
+            重新设置Call的超时时间
+            </summary>
+            <param name="time">单位ms</param>
+        </member>
+        <member name="M:UNBridgeLib.BridgeCore.RegisterAPI(System.String,UNBridgeLib.IBridgeAPI)">
+            <summary>
+            Unity注册接口形式的API接口
+            </summary>
+            <param name="name">接口名</param>
+            <param name="api">接口实现</param>
+        </member>
+        <member name="M:UNBridgeLib.BridgeCore.RegisterAPI(System.String,UNBridgeLib.BridgeAPI)">
+            <summary>
+            Unity注册委托形式的API
+            </summary>
+            <param name="name">接口名</param>
+            <param name="api">接口实现</param>
+        </member>
+        <member name="M:UNBridgeLib.BridgeCore.RegisterEvent(System.String)">
+            <summary>
+            Unity注册事件
+            </summary>
+            <param name="target"></param>
+        </member>
+        <member name="M:UNBridgeLib.BridgeCore.SendEvent(System.String,UNBridgeLib.LitJson.JsonData)">
+            <summary>
+             Unity发送事件消息
+            </summary>
+            <param name="target">目标事件</param>
+            <param name="data">数据</param>
+        </member>
+        <member name="M:UNBridgeLib.BridgeCore.Call(System.String,UNBridgeLib.LitJson.JsonData,UNBridgeLib.BridgeCallBack)">
+            <summary>
+            异步调用native的方法
+            </summary>
+            <param name="target">目标接口</param>
+            <param name="param">参数数据</param>
+            <param name="callBack">回调</param>
+            
+        </member>
+        <member name="M:UNBridgeLib.BridgeCore.Call(System.String,UNBridgeLib.LitJson.JsonData,UNBridgeLib.BridgeCallBack,System.Int64)">
+            <summary>
+            异步调用native的方法
+            </summary>
+            <param name="target">目标接口</param>
+            <param name="param">参数数据</param>
+            <param name="callBack">回调</param>
+            
+        </member>
+        <member name="M:UNBridgeLib.BridgeCore.Listen(System.String,System.Boolean,UNBridgeLib.BridgeCallBack)">
+            <summary>
+            监听事件
+            </summary>
+            <param name="target">目标接口</param>
+            <param name="overOld">新的监听是否覆盖旧的</param>
+            <param name="callBack">回调</param> 
+            
+        </member>
+        <member name="M:UNBridgeLib.BridgeCore.UnListen(System.String)">
+            <summary>
+            关闭监听事件
+            </summary>
+            
+            <param name="target">目标接口</param>
+            
+        </member>
+        <member name="M:UNBridgeLib.BridgeCore.HandleMsgFromNative(System.String)">
+            <summary>
+            处理Native调用过来的消息
+            </summary>
+            <param name="json">消息数据，JSON格式</param>
+        </member>
+        <member name="M:UNBridgeLib.BridgeCore.HandleNativeCall(UNBridgeLib.BridgeMsg)">
+            <summary>
+            处理Native的调用消息。
+            </summary>
+            <param name="msg"></param>
+        </member>
+        <member name="M:UNBridgeLib.BridgeCore.HandleNativeCallBack(UNBridgeLib.BridgeMsg)">
+            <summary>
+            处理Unity调用Native回来的回包。
+            </summary>
+            <param name="msg"></param>
+        </member>
+        <member name="T:UNBridgeLib.BridgeMsg">
+            <summary>
+            消息的封装
+            </summary>
+        </member>
+        <member name="P:UNBridgeLib.BridgeMsg.Id">
+            <summary>
+            消息ID
+            </summary>
+        </member>
+        <member name="P:UNBridgeLib.BridgeMsg.Type">
+            <summary>
+            消息类型，消息类型0-call消息，1-listen消息,2-unListen消息，3-event消息
+            </summary>
+        </member>
+        <member name="P:UNBridgeLib.BridgeMsg.CallbackId">
+            <summary>
+            回调，唯一
+            </summary>
+        </member>
+        <member name="P:UNBridgeLib.BridgeMsg.Code">
+            <summary>
+            错误码
+            </summary>
+        </member>
+        <member name="P:UNBridgeLib.BridgeMsg.Source">
+            <summary>
+            消息来源
+            </summary>
+        </member>
+        <member name="P:UNBridgeLib.BridgeMsg.Target">
+            <summary>
+            目标接口或者事件
+            </summary>
+        </member>
+        <member name="P:UNBridgeLib.BridgeMsg.FailMsg">
+            <summary>
+            错误消息
+            </summary>
+        </member>
+        <member name="P:UNBridgeLib.BridgeMsg.Data">
+            <summary>
+            数据
+            </summary>
+        </member>
+        <member name="P:UNBridgeLib.BridgeMsg.Param">
+            <summary>
+            参数
+            </summary>
+        </member>
+        <member name="P:UNBridgeLib.BridgeMsg.UnitySdkVer">
+            <summary>
+            Unity侧的SDK版本号
+            </summary>
+        </member>
+        <member name="P:UNBridgeLib.BridgeMsg.NativeSdkVer">
+            <summary>
+            Native侧的SDK版本号
+            </summary>
+        </member>
+        <member name="T:UNBridgeLib.BridgeVersion">
+            <summary>
+            SDK的版本信息
+            </summary>
+        </member>
+        <member name="F:UNBridgeLib.BridgeVersion.VERSION_CODE">
+            <summary>
+            SDK版本号
+            </summary>
+        </member>
+        <member name="T:UNBridgeLib.DataUtils">
+            <summary>
+             从JsonData中安全的读取数据的帮助类
+            </summary>
+        </member>
+        <member name="M:UNBridgeLib.DataUtils.GetInt(UNBridgeLib.LitJson.JsonData,System.String)">
+            <summary>
+            读取int
+            </summary>
+            <param name="data"></param>
+            <param name="key"></param>
+            <returns></returns>
+        </member>
+        <member name="M:UNBridgeLib.DataUtils.GetString(UNBridgeLib.LitJson.JsonData,System.String)">
+            <summary>
+            读取string
+            </summary>
+            <param name="data"></param>
+            <param name="key"></param>
+            <returns></returns>
+        </member>
+        <member name="M:UNBridgeLib.DataUtils.GetData(UNBridgeLib.LitJson.JsonData,System.String)">
+            <summary>
+            读取JsonData
+            </summary>
+            <param name="data"></param>
+            <param name="key"></param>
+            <returns></returns>
+        </member>
+        <member name="M:UNBridgeLib.DataUtils.GetObject(UNBridgeLib.LitJson.JsonData,System.String)">
+            <summary>
+            读取Object
+            </summary>
+            <param name="map"></param>
+            <param name="key"></param>
+            <returns></returns>
+        </member>
+        <member name="T:UNBridgeLib.IBridgeAPI">
+            <summary>
+            Bridge接口
+            </summary>
+        </member>
+        <member name="T:UNBridgeLib.IosUtils">
+            <summary>
+            iOS的通信接口
+            </summary>
+        </member>
+        <member name="M:UNBridgeLib.IosUtils.Init">
+            <summary>
+            确保在主线程执行初始化。
+            </summary>
+        </member>
+        <member name="M:UNBridgeLib.IosUtils.SendEventNative(System.String,UNBridgeLib.LitJson.JsonData)">
+            <summary>
+            发送消息到Native
+            </summary>
+            <param name="target"></param>
+            <param name="data"></param>
+        </member>
+        <member name="M:UNBridgeLib.IosUtils.CallNative(System.Int32,System.String,UNBridgeLib.LitJson.JsonData,System.String)">
+            <summary>
+             异步Call通讯
+             </summary>
+            <param name="type">消息类型0-call消息，1-listen消息,2-unlisten消息，3-event消息</param>
+            <param name="target">目标接口</param>
+            <param name="param">参数</param>
+            
+            
+        </member>
+        <member name="M:UNBridgeLib.IosUtils.CallNative(System.String)">
+            <summary>
+            异步Call通讯，确保调用在主线程执行
+            </summary>
+            <param name="msg"></param>
+        </member>
+        <member name="M:UNBridgeLib.IosUtils.CallNativeSync(System.Int32,System.String,UNBridgeLib.LitJson.JsonData)">
+             <summary>
+             同步Call通讯
+             </summary>
+            <param name="type">消息类型0-call消息，1-listen消息,2-unlisten消息，3-event消息</param>
+            <param name="target">目标接口</param>
+            <param name="param">参数</param>
+            
+        </member>
+        <member name="M:UNBridgeLib.IosUtils.CallNativeSync(System.String)">
+            <summary>
+            同步Call通讯
+            </summary>
+            <param name="msg"></param>
+            <returns></returns>
+        </member>
+        <member name="M:UNBridgeLib.IosUtils.MixCall(System.String,UNBridgeLib.LitJson.JsonData,System.String)">
+            <summary>
+            混合Call通讯，调用直接返回一段String的数据，同时会有回调。
+            </summary>
+            <param name="target">目标API接口</param>
+            <param name="param">参数</param>
+            <param name="callbackId">回调ID</param>
+            <returns></returns>
+        </member>
+        <member name="M:UNBridgeLib.IosUtils.HasNativeAPI(System.String)">
+            <summary>
+            查询Native层是否支持某个API
+            </summary>
+            <param name="apiName">接口名</param>
+            <returns></returns>
+        </member>
+        <member name="T:UNBridgeLib.LogUtils">
+            <summary>
+            日志辅助类
+            </summary>
+        </member>
+        <member name="T:UNBridgeLib.Loom">
+            <summary>
+            线程调度
+            </summary>
+        </member>
+        <member name="T:UNBridgeLib.MsgUtils">
+            <summary>
+            处理消息
+            </summary>
+        </member>
+        <member name="M:UNBridgeLib.MsgUtils.PacketSuccessBackMsg(UNBridgeLib.BridgeMsg,UNBridgeLib.LitJson.JsonData)">
+            <summary>
+            打包成功的回包
+            </summary>
+            <param name="msg">请求的消息</param>
+            <param name="data">回包的数据</param>
+            <returns></returns>
+        </member>
+        <member name="M:UNBridgeLib.MsgUtils.PacketFailedMsg(UNBridgeLib.BridgeMsg,System.Int32,System.String)">
+            <summary>
+            打包失败的回包
+            </summary>
+            <param name="msg">请求的消息</param>
+            <param name="code">错误码</param>
+            <param name="failMsg">错误信息</param>
+            <returns></returns>
+        </member>
+        <member name="M:UNBridgeLib.MsgUtils.PacketCallMsg(System.Int32,System.String,UNBridgeLib.LitJson.JsonData,System.String)">
+            <summary>
+            打包异步Call消息
+            </summary>
+            <param name="type">消息类型0-call消息，1-listen消息,2-unListen消息，3-event消息</param>
+            <param name="target">目标接口</param>
+            <param name="param">参数</param>
+            <param name="callbackId">回调的id</param>
+            <returns></returns>
+        </member>
+        <member name="M:UNBridgeLib.MsgUtils.PacketCallSyncMsg(System.Int32,System.String,UNBridgeLib.LitJson.JsonData)">
+            <summary>
+            打包同步Call消息
+            </summary>
+            <param name="type">消息类型0-call消息，1-listen消息,2-unListen消息，3-event消息</param>
+            <param name="target">目标接口</param>
+            <param name="param">参数</param>
+            <returns></returns>
+        </member>
+        <member name="M:UNBridgeLib.MsgUtils.PacketEventMsg(System.String,UNBridgeLib.LitJson.JsonData)">
+            <summary>
+            打包事件的消息
+            </summary>
+            <param name="target">目标事件</param>
+            <param name="data">数据</param>
+            <returns></returns>
+        </member>
+        <member name="M:UNBridgeLib.MsgUtils.ParseMsg(System.String)">
+            <summary>
+            解析消息
+            </summary>
+            <param name="json">JSON格式的消息</param>
+            <returns></returns>
+        </member>
+        <member name="M:UNBridgeLib.MsgUtils.ParseResult(System.String)">
+            <summary>
+            同步调用的结果转换
+            </summary>
+            <param name="json">JSON字符串</param>
+            <returns></returns>
+        </member>
+        <member name="T:UNBridgeLib.UNBridgeContext">
+            <summary>
+            Bridge的上下文
+            </summary>
+        </member>
+        <member name="M:UNBridgeLib.UNBridgeContext.CallBackResult(UNBridgeLib.LitJson.JsonData)">
+            <summary>
+            回调成功
+            </summary>
+            <param name="data">数据</param>
+        </member>
+        <member name="M:UNBridgeLib.UNBridgeContext.CallBackFailed(System.Int32,System.String)">
+            <summary>
+            回调失败
+            </summary>
+            <param name="code">错误码</param>
+            <param name="failMsg">错误信息</param>
+        </member>
+        <member name="T:UNBridgeLib.WebGlUtils">
+            <summary>
+            webgl的通讯接口
+            </summary>
+        </member>
+        <member name="M:UNBridgeLib.WebGlUtils.Init">
+            <summary>
+            确保在主线程执行初始化。
+            </summary>
+        </member>
+        <member name="M:UNBridgeLib.WebGlUtils.SendEventNative(System.String,UNBridgeLib.LitJson.JsonData)">
+            <summary>
+            发送消息到Native
+            </summary>
+            <param name="target"></param>
+            <param name="data"></param>
+        </member>
+        <member name="M:UNBridgeLib.WebGlUtils.CallNative(System.Int32,System.String,UNBridgeLib.LitJson.JsonData,System.String)">
+            <summary>
+             异步Call通讯
+             </summary>
+            <param name="type">消息类型0-call消息，1-listen消息,2-unlisten消息，3-event消息</param>
+            <param name="target">目标接口</param>
+            <param name="param">参数</param>
+            
+            
+        </member>
+        <member name="M:UNBridgeLib.WebGlUtils.CallNative(System.String)">
+            <summary>
+            异步Call通讯，确保调用在主线程执行
+            </summary>
+            <param name="msg"></param>
+        </member>
+        <member name="M:UNBridgeLib.WebGlUtils.CallNativeSync(System.Int32,System.String,UNBridgeLib.LitJson.JsonData)">
+             <summary>
+             同步Call通讯
+             </summary>
+            <param name="type">消息类型0-call消息，1-listen消息,2-unlisten消息，3-event消息</param>
+            <param name="target">目标接口</param>
+            <param name="param">参数</param>
+            
+        </member>
+        <member name="M:UNBridgeLib.WebGlUtils.CallNativeSync(System.String)">
+            <summary>
+            同步Call通讯
+            </summary>
+            <param name="msg"></param>
+            <returns></returns>
+        </member>
+        <member name="M:UNBridgeLib.WebGlUtils.NativeHasAPI(System.String)">
+            <summary>
+            查询h5是否支持某个接口
+            </summary>
+            <param name="apiName"></param>
+            <returns></returns>
+        </member>
+        <member name="M:UNBridgeLib.WebGlUtils.MixCall(System.String,UNBridgeLib.LitJson.JsonData,System.String)">
+            <summary>
+            混合Call通讯，确保调用在主线程执行
+            </summary>
+            <param name="target">目标API接口</param>
+            <param name="param">参数</param>
+            <param name="callbackId">回调ID</param>
+        </member>
+        <member name="M:UNBridgeLib.LitJson.JsonData.ContainsKey(System.String)">
+            <summary>
+            Determines whether the json contains an element that has the specified key.
+            </summary>
+            <param name="key">The key to locate in the json.</param>
+            <returns>true if the json contains an element that has the specified key; otherwise, false.</returns>
+        </member>
+        <member name="M:StringExt.UnicodeToUtf8(System.String)">
+            <summary>
+            Unicode转utf8编码
+            </summary>
+            <param name="s"></param>
+            <returns></returns>
+        </member>
+        <member name="T:UNBridge">
+            <summary>
+            封装了和Native通讯的接口。
+            </summary>
+        </member>
+        <member name="M:UNBridge.InitBridge">
+            <summary>
+            初始化Bridge
+            </summary>
+        </member>
+        <member name="M:UNBridge.setCallBackTimeout(System.Int64)">
+            <summary>
+            重新设置Call的超时时间，单位毫秒
+            </summary>
+            <param name="time">单位ms</param>
+        </member>
+        <member name="M:UNBridge.RegisterAPI(System.String,UNBridgeLib.IBridgeAPI)">
+            <summary>
+            Unity注册API,以接口的形式
+            </summary>
+            <param name="name">接口名</param>
+            <param name="api">接口的实现</param>
+        </member>
+        <member name="M:UNBridge.RegisterAPI(System.String,UNBridgeLib.BridgeAPI)">
+            <summary>
+            Unity注册API，以委托的形式提供
+            </summary>
+            <param name="name"></param>
+            <param name="api"></param>
+        </member>
+        <member name="M:UNBridge.RegisterEvent(System.String)">
+            <summary>
+            Unity注册事件
+            </summary>
+            <param name="target"></param>
+        </member>
+        <member name="M:UNBridge.SendEvent(System.String,UNBridgeLib.LitJson.JsonData)">
+            <summary>
+             Unity发送事件消息
+            </summary>
+            <param name="target"></param>
+            <param name="data"></param>
+        </member>
+        <member name="M:UNBridge.Call(System.String)">
+            <summary>
+            异步调用native的方法，不需要回调和参数
+            </summary>
+            <param name="target">目标接口</param>
+            
+        </member>
+        <member name="M:UNBridge.Call(System.String,UNBridgeLib.LitJson.JsonData)">
+            <summary>
+            异步调用native的方法，不需要回调
+            </summary>
+            <param name="target">目标接口</param>
+            <param name="param">参数数据</param> 
+            
+        </member>
+        <member name="M:UNBridge.Call(System.String,UNBridgeLib.LitJson.JsonData,UNBridgeLib.BridgeCallBack)">
+            <summary>
+            异步调用native的方法
+            </summary>
+            <param name="target">目标接口</param>
+            <param name="param">参数数据</param>
+            <param name="callback">回调</param>
+            
+        </member>
+        <member name="M:UNBridge.Call(System.String,UNBridgeLib.LitJson.JsonData,UNBridgeLib.BridgeCallBack,System.Int64)">
+            <summary>
+            异步调用native的方法
+            </summary>
+            <param name="target">目标接口</param>
+            <param name="param">参数数据</param>
+            <param name="callback">回调</param>
+            <param name="timeout">超时，默认10秒，单位毫秒</param>
+            
+        </member>
+        <member name="M:UNBridge.MixCall(System.String)">
+            <summary>
+            混合Call，函数可以带回一段string数据
+            </summary>
+            <param name="target">目标API</param>
+            <returns></returns>
+        </member>
+        <member name="M:UNBridge.MixCall(System.String,UNBridgeLib.LitJson.JsonData)">
+            <summary>
+            混合Call，函数可以带回一段string数据
+            </summary>
+            <param name="target">目标API</param>
+            <param name="param">参数</param>
+            <returns></returns>
+        </member>
+        <member name="M:UNBridge.MixCall(System.String,UNBridgeLib.LitJson.JsonData,UNBridgeLib.BridgeCallBack)">
+            <summary>
+            混合Call，函数可以带回一段string数据，同时有回调
+            </summary>
+            <param name="target">目标API</param>
+            <param name="param">参数</param>
+            <param name="callback"></param>
+            <returns></returns>
+        </member>
+        <member name="M:UNBridge.MixCall(System.String,UNBridgeLib.LitJson.JsonData,UNBridgeLib.BridgeCallBack,System.Int64)">
+            <summary>
+            混合Call，函数可以带回一段string数据，同时有回调
+            </summary>
+            <param name="target">目标API</param>
+            <param name="param">参数</param>
+            <param name="callback">回调</param>
+            <param name="timeout">超时时间</param>
+            <returns></returns>
+        </member>
+        <member name="M:UNBridge.CallSync(System.String,UNBridgeLib.LitJson.JsonData)">
+            <summary>
+            同步调用native的方法
+            </summary>
+            <param name="target">目标接口</param>
+            <param name="param">参数数据</param> 
+            
+        </member>
+        <member name="M:UNBridge.Listen(System.String,UNBridgeLib.BridgeCallBack)">
+            <summary>
+            监听事件
+            </summary>
+            <param name="target">目标接口</param>
+            <param name="callBack">回调</param> 
+            
+        </member>
+        <member name="M:UNBridge.Listen(System.String,System.Boolean,UNBridgeLib.BridgeCallBack)">
+            <summary>
+            监听事件
+            </summary>
+            <param name="target">目标接口</param>
+            <param name="overOld">新的监听是否覆盖旧的</param>
+            <param name="callBack">回调</param> 
+            
+        </member>
+        <member name="M:UNBridge.UnListen(System.String)">
+            <summary>
+            关闭监听事件
+            </summary>
+            
+            <param name="target">目标接口</param>
+            
+        </member>
+        <member name="M:UNBridge.HasNativeAPI(System.String)">
+            <summary>
+            查询Native层是否支持某个API
+            </summary>
+            <param name="apiName"></param>
+            <returns></returns>
+        </member>
+        <member name="M:UNBridge.HandleMsgFromNative(System.String)">
+            <summary>
+            处理Native调用过来的消息，通讯接口
+            </summary>
+            <param name="msg">消息数据，JSON格式</param>
+        </member>
+    </members>
+</doc>

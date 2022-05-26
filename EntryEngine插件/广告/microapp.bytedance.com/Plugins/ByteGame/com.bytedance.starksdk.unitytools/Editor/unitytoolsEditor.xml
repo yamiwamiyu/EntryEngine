@@ -1,0 +1,95 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>unitytoolsEditor</name>
+    </assembly>
+    <members>
+        <member name="M:StarkSDKTool.API.BuildMananger.Build(System.Boolean,System.Boolean,System.String,System.String,StarkSDKTool.AppHost,StarkSDKTool.CompressMethod,StarkSDKTool.RuntimeEnv,StarkSDKTool.AndroidArchitecture,StarkSDKTool.MiniSdkVersions,StarkSDKTool.ScriptingBackend)">
+            <summary>
+            
+            </summary>
+            <param name="isDevBuild">是否为Dev版</param>
+            <param name="stripEngineCode"></param>
+            <param name="apkFileNameBase">Apk文件名</param>
+            <param name="appId">游戏Appid</param>
+            <param name="appHost">宿主</param>
+            <param name="compressMethod">压缩方法</param>
+            <param name="runtimeEnv">运行环境</param>
+            <param name="architecture"></param>
+            <param name="miniApkVersion"></param>
+            <param name="scriptingBackend"></param>
+            <returns></returns>
+        </member>
+        <member name="M:StarkSDKTool.API.PublishMananger.Publish(System.String,System.String,System.String,System.String,System.String,System.Action{System.Single},System.Action,System.Boolean)">
+            <summary>
+            发布游戏
+            </summary>
+            <param name="version">游戏版本号</param>
+            <param name="uid">小程序平台Uid</param>
+            <param name="appid">游戏Appid</param>
+            <param name="filePath">游戏APK</param>
+            <param name="intro">发布描述</param>
+            <param name="onUploadProgress">上传进度变化时的回调函数(参数为上传进度的百分比)</param>
+            <param name="onUploadFinished">上传完成时的回调函数(无参)</param>
+            <returns></returns>
+        </member>
+        <member name="M:StarkSDKTool.API.PublishMananger.QueryPublishState(System.String,System.String)">
+            <summary>
+            查询发布状态
+            </summary>
+            <param name="uid">小程序平台Uid</param>
+            <param name="appId">游戏Appid</param>
+            <returns></returns>
+        </member>
+        <member name="M:StarkSDKTool.API.PublishMananger.MakeQRCode(System.String,System.String,System.String)">
+            <summary>
+            生成二维码
+            </summary>
+            <param name="uid">小程序平台Uid</param>
+            <param name="appId">游戏Appid</param>
+            <param name="versionType">可选latest和current</param>
+            <returns></returns>
+        </member>
+        <member name="M:StarkSDKTool.API.PublishMananger.RequestVersion(System.String,System.String,System.String)">
+            <summary>
+            请求版本号
+            </summary>
+            <param name="uid">小程序平台Uid</param>
+            <param name="appId">游戏Appid</param> 
+            <param name="versionType">可选latest和current</param>
+            <returns></returns>
+        </member>
+        <member name="M:StarkSDKTool.HttpUtils.Get(System.String,System.Collections.Generic.Dictionary{System.String,System.Object},System.String@,System.String@)">
+            <summary>
+            发送Get请求
+            </summary>
+            <param name="url">地址</param>
+            <param name="reqParams">请求参数定义</param>
+            <returns></returns>
+        </member>
+        <member name="M:StarkSDKTool.ShellUtils.RunCmd(System.String,System.String,System.Diagnostics.DataReceivedEventHandler,System.Diagnostics.DataReceivedEventHandler,System.String,System.Single,System.Single)">
+            <summary>
+            运行一个命令 使用 arguments
+            </summary>
+            <param name="cmd"></param>
+            <param name="arguments"></param>
+            <param name="useUI">如果是true，最后会给一个弹框提示运行结果。</param>
+            <param name="stderrLogType"></param>
+            <param name="waitElapseLimit">限制运行等待时间，单位: 秒，传入 0 则不限制</param>
+            <param name="waitHangNoOutputLimit">限制卡顿无任何输出的等待时间，单位: 秒，传入 0 则不限制</param>
+            <returns></returns>
+        </member>
+        <member name="M:StarkSDKTool.ShellUtils.KillRunningCmd(System.Boolean)">
+            <summary>
+            Kill the running cmd, giving a popup dialog if use prompt UI
+            </summary>
+            <param name="promptUI">if true, giving a popup dialog to choose confirmation</param>
+            <returns>kill confirmed</returns>
+        </member>
+        <member name="T:StarkSDKTool.StarkTools">
+            <summary>
+            工具集
+            </summary>
+        </member>
+    </members>
+</doc>

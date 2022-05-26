@@ -10,7 +10,6 @@ namespace ByteDance.Union
 #if !UNITY_EDITOR && UNITY_ANDROID
     using System;
     using UnityEngine;
-using EntryEngine;
 using System.Reflection;
     /// <summary>
     /// The splash Ad.

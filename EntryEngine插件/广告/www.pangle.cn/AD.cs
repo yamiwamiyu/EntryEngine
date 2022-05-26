@@ -3,13 +3,15 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using ByteDance.Union;
-using EntryEngine;
 
 public class AD : ADBase
 {
     public override string Name { get { return "穿山甲(Unity)"; } }
 
     private AdNative _native;
+    public override void LoadAD(string adid, EADType type)
+    {
+    }
     protected override void _Initialize(Action<bool, string> callback)
     {
         SDK.RequestPermissionIfNecessary();
@@ -23,9 +25,8 @@ public class AD : ADBase
                 callback(success, msg);
         });
     }
-    protected override void _ShowAD(string adid, EADType type, float x, float y, int width, int height, Action<int, string> onError, Action<IDisposable> onLoad, Action onClick, Action onOver)
+    public override void ShowAD(string adid, EADType type, float x, float y, int width, int height, Action onOver)
     {
-        _LOG.Debug("初始化穿山甲安卓SDK ADID:{0} width:{1} height:{2} Type:{3}", adid, width, height, ChangeADType(type));
         AdSlot slot = new AdSlot.Builder()
             .SetCodeId(adid)
             //.SetNativeAdType(ChangeADType(type))
@@ -40,9 +41,6 @@ public class AD : ADBase
             case EADType.Banner:
                 _native.LoadExpressBannerAd(slot, new ExpressAdListener()
                 {
-                    onError = onError,
-                    onLoad = onLoad,
-                    onClick = onClick,
                     onOver = onOver,
                     x = x,
                     y = y,
@@ -63,9 +61,6 @@ public class AD : ADBase
                 // 新插屏广告
                 _native.LoadFullScreenVideoAd(slot, new FullScreenVideoAdListener()
                 {
-                    onError = onError,
-                    onLoad = onLoad,
-                    onClick = onClick,
                     onOver = onOver,
                     x = x,
                     y = y,
@@ -74,9 +69,6 @@ public class AD : ADBase
             case EADType.Splash:
                 _native.LoadExpressSplashAd(slot, new SplashAdListener()
                 {
-                    onError = onError,
-                    onLoad = onLoad,
-                    onClick = onClick,
                     onOver = onOver,
                     x = x,
                     y = y,
@@ -95,9 +87,6 @@ public class AD : ADBase
                 // 奖励广告
                 _native.LoadRewardVideoAd(slot, new RewardVideoAdListener()
                 {
-                    onError = onError,
-                    onLoad = onLoad,
-                    onClick = onClick,
                     onOver = onOver,
                     x = x,
                     y = y,
@@ -189,13 +178,11 @@ public class AD : ADBase
         }
         public void OnAdClose(ExpressAd ad)
         {
-            _LOG.Debug("OnAdClose");
             if (onOver != null)
                 onOver();
         }
         public void onAdRemoved(ExpressAd ad)
         {
-            _LOG.Debug("onAdRemoved");
         }
     }
     class BannerAdListener : AdListenerBase, IBannerAdListener
@@ -224,7 +211,6 @@ public class AD : ADBase
             ad.SetAdInteractionListener(this);
             if (ad.GetInteractionType() == 4)
             {
-                _LOG.Debug("download type ");
                 ad.SetDownloadListener(new AppDownloadListener(this));
             }
             if (onLoad != null)
@@ -234,19 +220,15 @@ public class AD : ADBase
 
         public void OnAdClicked()
         {
-            _LOG.Debug("开屏广告OnAdClicked");
         }
         public void OnAdShow()
         {
-            _LOG.Debug("开屏广告OnAdShow");
         }
         public void OnAdDismiss()
         {
-            _LOG.Debug("开屏广告OnAdDismiss");
         }
         public void onAdRemoved()
         {
-            _LOG.Debug("开屏广告onAdRemoved");
         }
     }
     class SplashAdListener : AdListenerBase, ISplashAdListener
@@ -297,31 +279,25 @@ public class AD : ADBase
 
         void IFullScreenVideoAdInteractionListener.OnAdShow()
         {
-            _LOG.Debug("OnAdShow");
         }
         void IFullScreenVideoAdInteractionListener.OnAdVideoBarClick()
         {
-            _LOG.Debug("OnAdVideoBarClick");
             if (onClick != null)
                 onClick();
         }
         void IFullScreenVideoAdInteractionListener.OnAdClose()
         {
-            _LOG.Debug("OnAdClose");
         }
         void IFullScreenVideoAdInteractionListener.OnVideoComplete()
         {
-            _LOG.Debug("OnVideoComplete");
             if (onOver != null)
                 onOver();
         }
         void IFullScreenVideoAdInteractionListener.OnSkippedVideo()
         {
-            _LOG.Debug("OnSkippedVideo");
         }
         void IFullScreenVideoAdInteractionListener.OnVideoError()
         {
-            _LOG.Debug("OnVideoError");
         }
     }
     class RewardVideoAdListener : AdListenerBase, IRewardVideoAdListener, IRewardAdInteractionListener
@@ -333,7 +309,6 @@ public class AD : ADBase
         }
         public void OnRewardVideoAdLoad(RewardVideoAd ad)
         {
-            _LOG.Debug("OnRewardVideoAdLoad");
             if (onLoad != null)
                 onLoad(new AdDisposible(ad));
             ad.SetRewardAdInteractionListener(this);
@@ -356,7 +331,6 @@ public class AD : ADBase
         }
         void IRewardAdInteractionListener.OnAdClose()
         {
-            _LOG.Debug("OnAdClose");
         }
         void IRewardAdInteractionListener.OnVideoComplete()
         {
@@ -369,7 +343,6 @@ public class AD : ADBase
         }
         void IRewardAdInteractionListener.OnRewardVerify(bool rewardVerify, int rewardAmount, string rewardName)
         {
-            _LOG.Debug("OnRewardVerify rewardVerify:{0} rewardAmount:{1} rewardName:{2}", rewardVerify, rewardAmount, rewardName);
             if (onOver != null)
                 onOver();
         }

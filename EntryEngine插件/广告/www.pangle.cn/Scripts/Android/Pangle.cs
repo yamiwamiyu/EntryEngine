@@ -2,7 +2,6 @@ namespace ByteDance.Union
 {
 #if !UNITY_EDITOR && UNITY_ANDROID
     using UnityEngine;
-    using EntryEngine;
     public class Pangle : PangleBase
     {
         internal static int NETWORK_STATE_MOBILE = 1;
@@ -21,7 +20,6 @@ namespace ByteDance.Union
         }
         private static void initTTSdk(PangleInitializeCallBack callback)
         {
-            _LOG.Debug("初始化穿山甲安卓SDK AppID:{0}", ADBase.AD.AppID);
             Debug.Log("Pangle initTTSdk " );
             AndroidJavaObject adConfigBuilder = new AndroidJavaObject("com.bytedance.sdk.openadsdk.TTAdConfig$Builder");
             Debug.Log("Pangle InitializeSDK 开始设置config");

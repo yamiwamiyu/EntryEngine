@@ -11,7 +11,6 @@ namespace ByteDance.Union
     using System;
     using System.Collections.Generic;
     using UnityEngine;
-    using EntryEngine;
 
     /// <summary>
     /// The advertisement native object for android.

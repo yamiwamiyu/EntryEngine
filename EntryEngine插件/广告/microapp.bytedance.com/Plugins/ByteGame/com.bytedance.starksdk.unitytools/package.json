@@ -1,0 +1,16 @@
+{
+    "displayName": "Stark SDK - Unity Tools",
+    "name": "com.bytedance.starksdk.unitytools",
+    "version": "2.5.0",
+        "description": "StarkSDK Plugin",
+    "keywords": [],
+    "category": "Libraries",
+    "links": [
+        {
+            "label": "View Document",
+            "url": "https://bytedance.feishu.cn/docs/doccnGEsOm0yquys4iAgtVi7nKh#"
+        }
+    ],
+        "unitySinceBuild": "*",
+    "unityUntilBuild": "*"
+}
