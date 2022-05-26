@@ -138,10 +138,8 @@
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
-    <PostBuildEvent>::xcopy /Y /S $(TargetDir)*.dll $(ProjectDir)..\..\WWC\UIEditor\
-::xcopy /Y /S $(TargetDir)*.pdb $(ProjectDir)..\..\WWC\UIEditor\
-::copy $(TargetPath) $(ProjectDir)..\..\WWC\UIEditor\
-::copy $(TargetDir)EEPlug-in.dll $(ProjectDir)..\..\WWC\CodeCommon\WWCMapEditor</PostBuildEvent>
+    <PostBuildEvent>
+    </PostBuildEvent>
   </PropertyGroup>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
