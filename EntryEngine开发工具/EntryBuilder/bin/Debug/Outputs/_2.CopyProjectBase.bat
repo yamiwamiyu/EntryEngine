@@ -1,2 +1,2 @@
 cd ..\..\..\..\..\
-CopyProjectBase.bat
+xcopy /D /Y /E EntryEngineÏîÄ¿Ä£°å ..\ACG-gitee
