@@ -1,2 +1,2 @@
-WriteCommentToAPK "æ¯åŒ….apk" ""
+WriteCommentToAPK "Ä¸°ü.apk" ""
 pause
