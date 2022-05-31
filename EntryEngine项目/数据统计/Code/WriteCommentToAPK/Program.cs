@@ -323,8 +323,9 @@ namespace WriteCommentToAPK
                 Console.WriteLine("母包有修改，重新打包所有当前文件夹内已有的子包");
                 foreach (var item in Directory.GetFiles(Environment.CurrentDirectory, "*.apk", SearchOption.AllDirectories))
                 {
-                    if (package == item)
+                    if (package == Path.GetFileName(item))
                         continue;
+                    // hack: 若根目录有两个母包和其渠道包，这里会把母包覆盖掉其它的母包
                     WriteChannelToAPK(ReadAPKChannel(item), package, item);
                     Console.WriteLine("重新生成渠道包【{0}】成功", item);
                 }
