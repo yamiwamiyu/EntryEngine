@@ -492,7 +492,7 @@ export default {
     font-weight: bold;
     font-size: 14px;
     cursor: pointer;
-    /deep/ .el-breadcrumb__inner {
+    ::deep .el-breadcrumb__inner {
       color: #409eff;
     }
   }
@@ -504,7 +504,7 @@ export default {
     text-align: right;
   }
 }
-/deep/ .el-icon-zoom-in {
+::deep .el-icon-zoom-in {
   display: none;
 }
 </style>

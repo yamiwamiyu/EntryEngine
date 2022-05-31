@@ -1,5 +1,5 @@
-import _IP4 from '@/api/Protocol4Proxy.js';//不需要登录的接口
-import _IP5 from '@/api/Protocol5Proxy.js';//需要登录的接口
+import _IP4 from '@/api/IServiceProxy.js';//不需要登录的接口
+import _IP5 from '@/api/ICenterProxy.js';//需要登录的接口
 // import config from '../../public/config.js'
 import { ElMessage, ElLoading } from 'element-plus'
 import router from '@/router'

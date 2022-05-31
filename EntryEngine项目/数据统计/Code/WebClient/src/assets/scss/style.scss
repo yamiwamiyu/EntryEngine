@@ -108,7 +108,7 @@ $color-dark-font:#ffffff; //用于深色背景字体默认颜色
 
 .hide-upload {
     color: #000;
-    /deep/ .el-upload--picture-card {
+    ::deep .el-upload--picture-card {
         display: none;
     }
 }

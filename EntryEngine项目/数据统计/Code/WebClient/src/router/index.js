@@ -1,4 +1,4 @@
-import P5 from '@/api/Protocol5Proxy';
+import P5 from '@/api/IServiceProxy';
 import store from '@/store';
 import Login from '@/views/Login';
 import { ElMessage } from 'element-plus';

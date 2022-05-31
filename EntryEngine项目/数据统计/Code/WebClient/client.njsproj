@@ -1,0 +1,127 @@
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003" ToolsVersion="4.0">
+  <PropertyGroup>
+    <VisualStudioVersion Condition="'$(VisualStudioVersion)' == ''">14.0</VisualStudioVersion>
+    <VSToolsPath Condition="'$(VSToolsPath)' == ''">$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)</VSToolsPath>
+    <Name>client</Name>
+    <RootNamespace>client</RootNamespace>
+  </PropertyGroup>
+  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>b23465b7-af8d-478c-b9a5-e8c4632a33e6</ProjectGuid>
+    <ProjectHome>.</ProjectHome>
+    <StartupFile>node_modules\@vue\cli-service\bin\vue-cli-service.js</StartupFile>
+    <SearchPath>
+    </SearchPath>
+    <WorkingDirectory>.</WorkingDirectory>
+    <OutputPath>.</OutputPath>
+    <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
+    <ProjectTypeGuids>{3AF33F2E-1136-4D97-BBB7-1795711AC8B8};{349c5851-65df-11da-9384-00065b846f21};{9092AA53-FB77-4645-B42D-1CCCA6BD08BD}</ProjectTypeGuids>
+    <NodejsPort>1337</NodejsPort>
+    <StartWebBrowser>true</StartWebBrowser>
+    <ScriptArguments>serve</ScriptArguments>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
+    <DebugSymbols>true</DebugSymbols>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
+    <DebugSymbols>true</DebugSymbols>
+  </PropertyGroup>
+  <PropertyGroup>
+    <PostBuildEvent>
+      npm run build
+    </PostBuildEvent>
+  </PropertyGroup>
+  <ItemGroup>
+    <Content Include="babel.config.js" />
+    <Content Include="jsconfig.json" />
+    <Content Include="package-lock.json" />
+    <Content Include="package.json" />
+    <Content Include="public\config.js" />
+    <Content Include="public\favicon.ico" />
+    <Content Include="public\index.html" />
+    <Content Include="README.md" />
+    <Content Include="src\api\ICenterProxy.js" />
+    <Content Include="src\api\IServiceProxy.js" />
+    <Content Include="src\api\jk.js" />
+    <Content Include="src\App.vue" />
+    <Content Include="src\assets\imgs\copyright.png" />
+    <Content Include="src\assets\imgs\login\slogan.png" />
+    <Content Include="src\assets\imgs\logo.png" />
+    <Content Include="src\assets\logo.png" />
+    <Content Include="src\assets\scss\style.scss" />
+    <Content Include="src\components\HelloWorld.vue" />
+    <Content Include="src\components\test.vue" />
+    <Content Include="src\components\titleUI.vue" />
+    <Content Include="src\components\UploadFile.vue" />
+    <Content Include="src\main.js" />
+    <Content Include="src\router\index.js" />
+    <Content Include="src\store\index.js" />
+    <Content Include="src\tool\index.js" />
+    <Content Include="src\views\Analysis.vue" />
+    <Content Include="src\views\GameManager.vue" />
+    <Content Include="src\views\GameTask.vue" />
+    <Content Include="src\views\GameTime.vue" />
+    <Content Include="src\views\GameVerfication.vue" />
+    <Content Include="src\views\Index.vue" />
+    <Content Include="src\views\Keep.vue" />
+    <Content Include="src\views\Login.vue" />
+    <Content Include="src\views\OnLineCount.vue" />
+    <Content Include="src\views\SystemSetting.vue" />
+    <Content Include="vue.config.js" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="public\" />
+    <Folder Include="src\" />
+    <Folder Include="src\api\" />
+    <Folder Include="src\assets\" />
+    <Folder Include="src\assets\imgs\" />
+    <Folder Include="src\assets\imgs\login\" />
+    <Folder Include="src\assets\scss\" />
+    <Folder Include="src\components\" />
+    <Folder Include="src\router\" />
+    <Folder Include="src\store\" />
+    <Folder Include="src\tool\" />
+    <Folder Include="src\views\" />
+  </ItemGroup>
+  <Import Project="$(VSToolsPath)\Node.js Tools\Microsoft.NodejsToolsV2.targets" />
+  <ProjectExtensions>
+    <VisualStudio>
+      <FlavorProperties GUID="{349c5851-65df-11da-9384-00065b846f21}">
+        <WebProjectProperties>
+          <UseIIS>False</UseIIS>
+          <AutoAssignPort>True</AutoAssignPort>
+          <DevelopmentServerPort>0</DevelopmentServerPort>
+          <DevelopmentServerVPath>/</DevelopmentServerVPath>
+          <IISUrl>http://localhost:48022/</IISUrl>
+          <NTLMAuthentication>False</NTLMAuthentication>
+          <UseCustomServer>True</UseCustomServer>
+          <CustomServerUrl>http://localhost:1337</CustomServerUrl>
+          <SaveServerSettingsInUserFile>False</SaveServerSettingsInUserFile>
+        </WebProjectProperties>
+      </FlavorProperties>
+      <FlavorProperties GUID="{349c5851-65df-11da-9384-00065b846f21}" User="">
+        <WebProjectProperties>
+          <StartPageUrl>
+          </StartPageUrl>
+          <StartAction>CurrentPage</StartAction>
+          <AspNetDebugging>True</AspNetDebugging>
+          <SilverlightDebugging>False</SilverlightDebugging>
+          <NativeDebugging>False</NativeDebugging>
+          <SQLDebugging>False</SQLDebugging>
+          <ExternalProgram>
+          </ExternalProgram>
+          <StartExternalURL>
+          </StartExternalURL>
+          <StartCmdLineArguments>
+          </StartCmdLineArguments>
+          <StartWorkingDirectory>
+          </StartWorkingDirectory>
+          <EnableENC>False</EnableENC>
+          <AlwaysStartWebServerOnDebug>False</AlwaysStartWebServerOnDebug>
+        </WebProjectProperties>
+      </FlavorProperties>
+    </VisualStudio>
+  </ProjectExtensions>
+</Project>
