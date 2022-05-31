@@ -307,6 +307,7 @@ namespace WriteCommentToAPK
             {
                 foreach (var item in Directory.GetFiles(Environment.CurrentDirectory, "*.apk"))
                     Console.WriteLine("渠道包[{0}]的渠道号：{1}", Path.GetFileNameWithoutExtension(item), ReadAPKChannel(item));
+                Console.ReadKey();
                 return;
             }
             string package = args[0];
