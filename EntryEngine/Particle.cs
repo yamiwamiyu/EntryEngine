@@ -1229,12 +1229,12 @@ namespace EntryEngine
                 Update(fps);
             this._elapsed = value;
         }
-        public void Update(float elapsed)
+        public override void Update(float time)
         {
             for (int i = 0; i < emitters.Count; i++)
-                emitters[i].Update(elapsed);
+                emitters[i].Update(time);
             _updated = true;
-            _elapsed += elapsed;
+            _elapsed += time;
         }
         protected internal override bool Draw(GRAPHICS graphics, ref SpriteVertex vertex)
         {
