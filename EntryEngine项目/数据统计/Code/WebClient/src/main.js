@@ -11,7 +11,7 @@ import { createApp } from 'vue';
 import App from './App.vue';
 
 
-document.getElementsByTagName('html').item(0).style.fontSize = "32px";
+document.getElementsByTagName('html').item(0).style.fontSize = "36px";
 
 const app = createApp(App)
 
