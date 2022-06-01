@@ -5,14 +5,14 @@
       height="100px;"
     >
       <h1 class="logo">
-        <img src="../assets/logo.png" />
+        <img src="../assets/logo2.png" />
       </h1>
       <img src="../assets/imgs/login/slogan.png" />
     </el-header>
     <el-main class="main">
       <div class="form">
         <img src="../assets/logo.png" />
-        <div style="padding:20px 0">欢迎来到1996游戏平台</div>
+        <div style="padding:20px 0">欢迎来到入口引擎小游戏统计平台</div>
         <el-collapse-transition>
           <div v-show="modelUser">
             <el-input
@@ -69,7 +69,7 @@
         </div>
       </div>
     </el-main>
-    <el-footer class="copyright">
+    <el-footer v-if="false" class="copyright">
       <span>经营许可证：桂B2-20200032</span>
       <a
         target="_blank"
@@ -135,14 +135,12 @@ export default {
     .logo {
       color: $color-title-font;
       object-fit: scale-down;
-      height: 30px;
-      width: 150px;
       display: flex;
       flex-direction: row;
       flex-wrap: nowrap;
       align-items: center;
       img {
-        height: 40px;
+        height: 100px;
       }
     }
   }

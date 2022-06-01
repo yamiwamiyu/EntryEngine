@@ -1,10 +1,9 @@
-import P5 from '@/api/IServiceProxy';
+import P5 from '@/api/ICenterProxy';
 import store from '@/store';
 import Login from '@/views/Login';
 import { ElMessage } from 'element-plus';
-import { createRouter, createWebHistory } from 'vue-router';
+import { createRouter, createWebHashHistory } from 'vue-router';
 
-const history = createWebHistory()
 const index = () =>
     import ('@/views/Index')
 const routes = [{
@@ -70,43 +69,36 @@ const routes = [{
 
 ]
 const router = createRouter({
-    history, // 路由模式
+    base: process.env.BASE_URL,
+    history: createWebHashHistory(process.env.BASE_URL),
     routes
 })
 router.beforeEach((to, from, next) => {
-    // 如果去游戏测试页，无需登录
-    if (to.path.slice(0, 10) == '/gameTest/') {
-        next();
-        return;
-    } else if (to.path == '/') { // 跳转到登录页
-        next({ path: '/login' })
-        return
+  // 如果去游戏测试页，无需登录
+  if (to.path.slice(0, 10) == '/gameTest/' || to.path == '/login') {
+    next();
+    return;
+  } else if (to.path == '/') { // 跳转到登录页
+    next({ path: '/login' })
+    return
+  }
+  
+  let token = localStorage.getItem('token')
+  if (store.getters.getLogin())
+    next();
+  else {
+    if (token) {
+      P5.GetUserInfo((res) => {
+        store.commit('login', res)
+        next()
+      })
+    } else {
+      ElMessage({
+        message: '请先登录',
+        type: 'error'
+      })
+      next({ path: '/login' })
     }
-
-    let token = localStorage.getItem('token')
-    let urls = ['/login']
-    console.log(to.path)
-        // next();
-        // return;
-    if (urls.includes(to.path))
-        next();
-    else if (store.getters.getLogin())
-        next();
-    else {
-        if (token != undefined && token != '') {
-            P5.GetUserInfo((res) => {
-                store.commit('login', res)
-                next()
-            })
-        } else {
-            ElMessage({
-                message: '请先登录',
-                type: 'error'
-            })
-            next({
-                path: '/login'
-            })
-        }
-    }
+  }
 })
 export default router;

@@ -12,7 +12,7 @@ const store = createStore({
         return tool.copy(initState)
     },
     mutations: {
-        login(state, provider) {
+      login(state, provider) {
             Object.assign(state, tool.copy(initState))
             state.hasLogin = true;
             state.userInfo = provider;

@@ -2,10 +2,7 @@
   <el-container class="index">
     <el-header class="header" height="100px;">
       <h1 class="logo">
-        <img
-            src="../assets/logo.png"
-            style="width:91px; height:32px;"
-        />
+        <img src="../assets/logo2.png" />
         <i style="padding: 0 16px 0 16px; margin-top:-2px;">|</i>
         <span>游戏平台</span>
       </h1>
@@ -149,16 +146,16 @@ export default {
               text: "游戏统计",
               route: "/index/gameManager",
             },
-            {
-              icon: "",
-              text: "游戏任务管理",
-              route: "/index/gameTask",
-            },
-            {
-              icon: "",
-              text: "获奖码核销",
-              route: "/index/gameVerfication",
-            },
+            //{
+            //  icon: "",
+            //  text: "游戏任务管理",
+            //  route: "/index/gameTask",
+            //},
+            //{
+            //  icon: "",
+            //  text: "获奖码核销",
+            //  route: "/index/gameVerfication",
+            //},
           ],
         },
         {

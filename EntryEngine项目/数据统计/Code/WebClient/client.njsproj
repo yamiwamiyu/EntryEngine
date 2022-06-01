@@ -50,6 +50,7 @@
     <Content Include="src\assets\imgs\login\slogan.png" />
     <Content Include="src\assets\imgs\logo.png" />
     <Content Include="src\assets\logo.png" />
+    <Content Include="src\assets\logo2.png" />
     <Content Include="src\assets\scss\style.scss" />
     <Content Include="src\components\HelloWorld.vue" />
     <Content Include="src\components\test.vue" />
