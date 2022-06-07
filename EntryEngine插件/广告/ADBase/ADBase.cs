@@ -100,7 +100,8 @@ public abstract class ADBase
                             if (!type.IsAbstract && type.IsAnsiClass && type.BaseType != null && type.BaseType == currentSDK)
                             {
                                 _AutoType = type;
-                                return (ADBase)Activator.CreateInstance(_AutoType);
+                                AD = (ADBase)Activator.CreateInstance(_AutoType);
+                                return AD;
                             }
                         }
                     }
@@ -109,8 +110,6 @@ public abstract class ADBase
         }
         if (_AutoType == null)
             AD = new ADEmpty();
-        else
-            AD = (ADBase)Activator.CreateInstance(_AutoType);
         return AD;
     }
     public static ADBase CreateEmpty()
