@@ -3638,8 +3638,10 @@ return result;"
                                 ImageDraw(texture, graphics =>
                                 {
                                     graphics.DrawImage(source,
-                                        (width - source.Width) / 2,
-                                        (height - source.Height) / 2);
+                                        new Rectangle(
+                                            (int)((width - source.Width) / 2),
+                                            (int)((height - source.Height) / 2),
+                                            source.Width, source.Height));
                                 });
                                 textures[i] = texture;
                             }
@@ -3778,9 +3780,13 @@ return result;"
                     Bitmap texture = new Bitmap(desc.Width, desc.Height);
                     ImageDraw(texture, graphics =>
                     {
+                        // HACK: DrawImage第二个参数最好是Rectangle的，否则在图片分辨率72和96这样不同的情况，绘制出来的图片大小将会不一致
                         graphics.DrawImage(source,
-                                (int)(desc.Width * 0.5f - (areaOfPixel.X + areaOfPixel.Width * 0.5f)),
-                                (int)(desc.Height * 0.5f - (areaOfPixel.Y + areaOfPixel.Height * 0.5f)));
+                                new Rectangle(
+                                    (int)(desc.Width * 0.5f - areaOfPixel.Width * 0.5f),
+                                    (int)(desc.Height * 0.5f - areaOfPixel.Height * 0.5f),
+                                    areaOfPixel.Width, areaOfPixel.Height),
+                                areaOfPixel, GraphicsUnit.Pixel);
                     });
                     textures[i] = texture;
                 }
@@ -10492,12 +10498,8 @@ return result;"
                         ImageDraw(map, graphics =>
                         {
                             for (int j = 0; j < count; j++)
-                            {
                                 using (Image source = textures[j])
-                                {
                                     graphics.DrawImage(source, result[j]);
-                                }
-                            }
                         });
 
                         root = inputDir + onePiece.Root;
