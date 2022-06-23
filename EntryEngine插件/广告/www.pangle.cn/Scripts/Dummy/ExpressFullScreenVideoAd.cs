@@ -11,7 +11,7 @@ namespace ByteDance.Union
     /// <summary>
     /// The full screen video Ad.
     /// </summary>
-    public sealed class ExpressFullScreenVideoAd
+    public sealed class ExpressFullScreenVideoAd:IClientBidding
     {
          public void Dispose()
         {
@@ -20,14 +20,14 @@ namespace ByteDance.Union
         /// Sets the interaction listener for this Ad.
         /// </summary>
         public void SetFullScreenVideoAdInteractionListener(
-            IFullScreenVideoAdInteractionListener listener)
+            IFullScreenVideoAdInteractionListener listener, bool callbackOnMainThread = true)
         {
         }
 
         /// <summary>
         /// Sets the listener for the Ad download.
         /// </summary>
-        public void SetDownloadListener(IAppDownloadListener listener)
+        public void SetDownloadListener(IAppDownloadListener listener, bool callbackOnMainThread = true)
         {
         }
 
@@ -50,6 +50,18 @@ namespace ByteDance.Union
         /// Set to show the download bar.
         /// </summary>
         public void SetShowDownLoadBar(bool show)
+        {
+        }
+        public void setAuctionPrice(double price)
+        {
+            
+        }
+
+        public void win(double price)
+        {
+        }
+
+        public void Loss(double price, string reason, string bidder)
         {
         }
     }

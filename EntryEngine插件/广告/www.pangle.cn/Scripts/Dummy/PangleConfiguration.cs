@@ -4,7 +4,7 @@
     public class PangleConfiguration
     {
         public enum BUAdSDKTerritory {
-            BUAdSDKTerritory_CN,
+            BUAdSDKTerritory_CN = 1,
             BUAdSDKTerritory_NO_CN,
         }
         public enum BUAdSDKLogLevel {

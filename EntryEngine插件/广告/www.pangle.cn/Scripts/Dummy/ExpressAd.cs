@@ -12,7 +12,7 @@ namespace ByteDance.Union {
     /// <summary>
     /// The express Ad.
     /// </summary>
-    public sealed class ExpressAd {
+    public sealed class ExpressAd:IClientBidding {
 
         public int index;
 
@@ -28,7 +28,7 @@ namespace ByteDance.Union {
         /// <summary>
         /// Sets the interaction listener for this Ad.
         /// </summary>
-        public void SetExpressInteractionListener (IExpressAdInteractionListener listener) 
+        public void SetExpressInteractionListener (IExpressAdInteractionListener listener, bool callbackOnMainThread = true) 
         { 
         }
 
@@ -36,7 +36,7 @@ namespace ByteDance.Union {
         /// Sets the dislike callback.
         /// </summary>
         /// <param name="dislikeCallback">Dislike callback.</param>
-        public void SetDislikeCallback(IDislikeInteractionListener dislikeCallback)
+        public void SetDislikeCallback(IDislikeInteractionListener dislikeCallback, bool callbackOnMainThread = true)
         {
 
         }
@@ -44,7 +44,7 @@ namespace ByteDance.Union {
         /// <summary>
         /// Sets the download listener.
         /// </summary>
-        public void SetDownloadListener (IAppDownloadListener listener) { }
+        public void SetDownloadListener (IAppDownloadListener listener, bool callbackOnMainThread = true) { }
 
         /// <summary>
         /// Set this Ad not allow sdk count down.
@@ -66,6 +66,19 @@ namespace ByteDance.Union {
         /// </summary>
         /// <param name="intervalTime">Interval time.</param>
         public void SetSlideIntervalTime(int intervalTime){}
+        
+        public void setAuctionPrice(double price)
+        {
+            
+        }
+
+        public void win(double price)
+        {
+        }
+
+        public void Loss(double price, string reason, string bidder)
+        {
+        }
 
     }
 

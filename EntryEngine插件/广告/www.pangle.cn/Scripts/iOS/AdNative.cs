@@ -35,9 +35,9 @@ namespace ByteDance.Union
         /// <summary>
         /// Load the native Ad asynchronously and notice on listener.
         /// </summary>
-        public void LoadNativeAd(AdSlot adSlot, INativeAdListener listener)
+        public void LoadNativeAd(AdSlot adSlot, INativeAdListener listener, bool callbackOnMainThead = true)
         {
-            NativeAd.LoadNativeAd(adSlot,listener);
+            NativeAd.LoadNativeAd(adSlot,listener, callbackOnMainThead);
         }
 
         /// <summary>
@@ -62,17 +62,17 @@ namespace ByteDance.Union
         /// specify timeout.
         /// </summary>
         public BUSplashAd LoadSplashAd_iOS(
-            AdSlot adSlot, ISplashAdListener listener, int timeOut)
+            AdSlot adSlot, ISplashAdListener listener, int timeOut, bool callbackOnMainThead = true)
         {
-            return BUSplashAd.LoadSplashAd(adSlot, listener, timeOut);
+            return BUSplashAd.LoadSplashAd(adSlot, listener, timeOut, callbackOnMainThead);
         }
 
         /// <summary>
         /// Load the splash Ad asynchronously and notice on listener.
         /// </summary>
-        public BUSplashAd LoadSplashAd_iOS(AdSlot adSlot, ISplashAdListener listener)
+        public BUSplashAd LoadSplashAd_iOS(AdSlot adSlot, ISplashAdListener listener, bool callbackOnMainThead = true)
         {
-            return BUSplashAd.LoadSplashAd(adSlot, listener, -1);
+            return BUSplashAd.LoadSplashAd(adSlot, listener, -1, callbackOnMainThead);
         }
 
         /// <summary>
@@ -80,65 +80,65 @@ namespace ByteDance.Union
         /// specify timeout.
         /// </summary>
         public BUExpressSplashAd LoadExpressSplashAd_iOS(
-            AdSlot adSlot, ISplashAdListener listener, int timeOut)
+            AdSlot adSlot, ISplashAdListener listener, int timeOut, bool callbackOnMainThread = true)
         {
-            return BUExpressSplashAd.LoadSplashAd(adSlot, listener, timeOut);
+            return BUExpressSplashAd.LoadSplashAd(adSlot, listener, timeOut, callbackOnMainThread);
         }
 
         /// <summary>
         /// Load the splash Ad asynchronously and notice on listener.
         /// </summary>
-        public BUExpressSplashAd LoadExpressSplashAd_iOS(AdSlot adSlot, ISplashAdListener listener)
+        public BUExpressSplashAd LoadExpressSplashAd_iOS(AdSlot adSlot, ISplashAdListener listener, bool callbackOnMainThread = true)
         {
-            return BUExpressSplashAd.LoadSplashAd(adSlot, listener, -1);
+            return BUExpressSplashAd.LoadSplashAd(adSlot, listener, -1, callbackOnMainThread);
         }
 
         /// <summary>
         /// Load the reward video Ad asynchronously and notice on listener.
         /// </summary>
         public void LoadRewardVideoAd(
-            AdSlot adSlot, IRewardVideoAdListener listener)
+            AdSlot adSlot, IRewardVideoAdListener listener, bool callbackOnMainThead =true)
         {
-            RewardVideoAd.LoadRewardVideoAd(adSlot, listener);
+            RewardVideoAd.LoadRewardVideoAd(adSlot, listener, callbackOnMainThead);
         }
 
         /// <summary>
         /// Load the full screen video Ad asynchronously and notice on listener.
         /// </summary>
         public void LoadFullScreenVideoAd(
-            AdSlot adSlot, IFullScreenVideoAdListener listener)
+            AdSlot adSlot, IFullScreenVideoAdListener listener, bool callbackOnMainThead = true)
         {
-            FullScreenVideoAd.LoadFullScreenVideoAd(adSlot, listener);
+            FullScreenVideoAd.LoadFullScreenVideoAd(adSlot, listener, callbackOnMainThead);
         }
     
         public void LoadExpressRewardAd(
-            AdSlot adSlot, IRewardVideoAdListener listener)
+            AdSlot adSlot, IRewardVideoAdListener listener, bool callbackOnMainThead = true)
         {
-            ExpressRewardVideoAd.LoadRewardVideoAd(adSlot, listener);
+            ExpressRewardVideoAd.LoadRewardVideoAd(adSlot, listener, callbackOnMainThead);
         }
 
         public void LoadExpressFullScreenVideoAd(
-           AdSlot adSlot, IFullScreenVideoAdListener listener)
+           AdSlot adSlot, IFullScreenVideoAdListener listener, bool callbackOnMainThead = true)
         {
-            ExpressFullScreenVideoAd.LoadFullScreenVideoAd(adSlot, listener);
+            ExpressFullScreenVideoAd.LoadFullScreenVideoAd(adSlot, listener, callbackOnMainThead);
         }
 
         public void LoadNativeExpressAd(
-            AdSlot adSlot, IExpressAdListener listener)
+            AdSlot adSlot, IExpressAdListener listener, bool callbackOnMainThead = true)
         {
-            ExpressAd.LoadExpressAdAd(adSlot, listener);
+            ExpressAd.LoadExpressAdAd(adSlot, listener, callbackOnMainThead);
         }
 
         public void LoadExpressInterstitialAd(
-            AdSlot adSlot, IExpressAdListener listener)
+            AdSlot adSlot, IExpressAdListener listener, bool callbackOnMainThead = true)
         {
-            ExpressInterstitialAd.LoadExpressAd(adSlot, listener);
+            ExpressInterstitialAd.LoadExpressAd(adSlot, listener, callbackOnMainThead);
         }
 
         public void LoadExpressBannerAd(
-            AdSlot adSlot, IExpressAdListener listener)
+            AdSlot adSlot, IExpressAdListener listener, bool callbackOnMainThead = true)
         {
-            ExpressBannerAd.LoadExpressAd(adSlot, listener);
+            ExpressBannerAd.LoadExpressAd(adSlot, listener, callbackOnMainThead);
         }
     }
 #endif

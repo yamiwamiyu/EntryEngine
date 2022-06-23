@@ -5,6 +5,7 @@
 // Proprietary and confidential.
 //------------------------------------------------------------------------------
 
+using System.Runtime.InteropServices;
 namespace ByteDance.Union
 {
 #if !UNITY_EDITOR && UNITY_IOS
@@ -31,7 +32,7 @@ namespace ByteDance.Union
         internal int viewheight;
         internal string mediaExtra;
         internal int intervalTime;
-
+        internal AdLoadType adLoadType;
         /// <summary>
         /// The builder used to build an Ad slot.
         /// </summary>
@@ -138,6 +139,22 @@ namespace ByteDance.Union
                 return this;
             }
 
+             public Builder WithBid(string bidAdm){
+                 this.builder.Call<AndroidJavaObject>("withBid", bidAdm);
+                 return this;
+            }
+            
+            /// <summary>
+            /// set ad load type
+            /// </summary>
+            /// <param name="type">AdLoadType</param>
+            /// <returns>Builder</returns>
+            public Builder SetAdLoadType(AdLoadType type)
+            {
+                this.slot.adLoadType = type;
+                return this;
+            }
+            
             /// <summary>
             /// Build the Ad slot.
             /// </summary>
@@ -145,6 +162,66 @@ namespace ByteDance.Union
             {
                 return this.slot;
             }
+        }
+    }
+    
+    [StructLayout(LayoutKind.Sequential)]
+    public struct AdSlotStruct
+    {
+        [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 512)]
+        public string slotId;
+        
+        [MarshalAs(UnmanagedType.I4)]
+        public int adCount;
+        
+        [MarshalAs(UnmanagedType.I4)]
+        public int width;
+        
+        [MarshalAs(UnmanagedType.I4)]
+        public int height;
+        
+        [MarshalAs(UnmanagedType.I4)]
+        public int adType;
+        
+        [MarshalAs(UnmanagedType.I4)]
+        public int adLoadType;
+        
+        [MarshalAs(UnmanagedType.I4)]
+        public int intervalTime;
+        
+        [MarshalAs(UnmanagedType.I4)]
+        public int viewWidth;
+        
+        [MarshalAs(UnmanagedType.I4)]
+        public int viewHeight;
+        
+        [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 1024)]
+        public string mediaExtra;
+
+        [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 512)]
+        public string userId;
+        
+    }
+
+    public class AdSlotBuilder
+    {
+        public static AdSlotStruct getAdSlot(AdSlot adSlot)
+        {
+            AdSlotStruct slot = new AdSlotStruct()
+            {
+                slotId = adSlot.CodeId,
+                adCount = adSlot.adCount,
+                width = adSlot.width,
+                height = adSlot.height,
+                adType = (int)adSlot.type,
+                adLoadType = (int)adSlot.adLoadType,
+                intervalTime = adSlot.intervalTime,
+                viewHeight = adSlot.viewheight,
+                viewWidth = adSlot.viewwidth,
+                mediaExtra = adSlot.mediaExtra,
+                userId = adSlot.UserId
+            };
+            return slot;
         }
     }
 #endif

@@ -19,27 +19,31 @@ namespace ByteDance.Union
     internal sealed class DislikeInteractionCallback : AndroidJavaProxy
     {
         private readonly IDislikeInteractionListener listener;
-
+        private bool callbackOnMainThread;
         public DislikeInteractionCallback(
-            IDislikeInteractionListener listener)
+            IDislikeInteractionListener listener, bool callbackOnMainThread)
             : base("com.bytedance.sdk.openadsdk.TTAdDislike$DislikeInteractionCallback")
         {
             this.listener = listener;
+            this.callbackOnMainThread = callbackOnMainThread;
         }
 
         public void onSelected(int var1, string var2, bool enforce)
         {
-            this.listener.OnSelected(var1, var2, enforce);
+            UnityDispatcher.PostTask(
+                () => this.listener.OnSelected(var1, var2, enforce), callbackOnMainThread);
         }
 
         public void onCancel()
         {
-            this.listener.OnCancel();
+            UnityDispatcher.PostTask(
+                () => this.listener.OnCancel(), callbackOnMainThread);
         }
 
         public void onShow()
         {
-            this.listener.OnShow();
+            UnityDispatcher.PostTask(
+                () => this.listener.OnShow(), callbackOnMainThread);
         }
 
     }

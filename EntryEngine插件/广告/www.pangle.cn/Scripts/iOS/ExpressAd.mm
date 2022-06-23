@@ -7,7 +7,7 @@
 
 #import <BUAdSDK/BUAdSDK.h>
 #import "UnityAppController.h"
-
+#import "AdSlot.h"
 static const char* AutonomousStringCopy_Express(const char* string);
 
 static const char* AutonomousStringCopy_Express(const char* string)
@@ -246,26 +246,25 @@ extern "C" {
 #endif
     void UnionPlatform_ExpressAd_Load(
                                       int context,
-                                      const char* slotID,
-                                      float width,
-                                      float height,
-                                      int adCount,
+                                      AdSlotStruct *adSlot,
                                       ExpressAd_OnLoad onLoad,
                                       ExpressAd_OnLoadError onLoadError) {
         LGToUnityExpressAdManager *instance = [LGToUnityExpressAdManager sharedInstance];
         instance.loadContext = context;
         instance.onLoad = onLoad;
         instance.onLoadError = onLoadError;
-        instance.adWidth = width / [UIScreen mainScreen].scale;
-        instance.adHeight = height / [UIScreen mainScreen].scale;
+        instance.adWidth = adSlot-> width / [UIScreen mainScreen].scale;
+        instance.adHeight = adSlot-> height / [UIScreen mainScreen].scale;
         
         BUAdSlot *slot = [[BUAdSlot alloc] init];
-        slot.ID = [NSString stringWithUTF8String:slotID];
+        slot.ID = [NSString stringWithUTF8String:adSlot->slotId ?:""];
         slot.AdType = BUAdSlotAdTypeFeed;
         BUSize *imgSize = [BUSize sizeBy:BUProposalSize_Feed228_150];
         slot.imgSize = imgSize;
         slot.position = BUAdSlotPositionFeed;
-        
+        if (adSlot->adLoadType != 0) {
+           slot.adLoadType = (BUAdLoadType)[@(adSlot->adLoadType) integerValue];
+        }
         CGFloat expressWidth = (CGFloat)instance.adWidth;
         CGFloat expressHeight = (CGFloat)instance.adHeight;
         
@@ -280,7 +279,7 @@ extern "C" {
         
         instance.expressAdManager = [[BUNativeExpressAdManager alloc] initWithSlot:slot adSize:adSize];
         instance.expressAdManager.delegate = [LGToUnityExpressAdManager sharedInstance];
-        [instance.expressAdManager loadAdDataWithCount:adCount];
+        [instance.expressAdManager loadAdDataWithCount:adSlot->adCount];
         
         (__bridge_retained void*)instance;
     }

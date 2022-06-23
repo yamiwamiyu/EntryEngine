@@ -5,6 +5,8 @@
 // Proprietary and confidential.
 //------------------------------------------------------------------------------
 
+using System;
+
 namespace ByteDance.Union
 {
     /// <summary>
@@ -45,7 +47,12 @@ namespace ByteDance.Union
         /// <summary>
         /// Invoke when the reward is verified.
         /// </summary>
+#if UNITY_ANDROID
+        [Obsolete("use OnRewardArrived(bool isRewardValid, int rewardType, IRewardBundleModel extraInfo)")]
+#endif
         void OnRewardVerify(
-            bool rewardVerify, int rewardAmount, string rewardName);
+            bool rewardVerify, int rewardAmount, string rewardName, int rewardType = -1, float rewardPropose = -1f);
+
+        void OnRewardArrived(bool isRewardValid, int rewardType, IRewardBundleModel extraInfo);
     }
 }

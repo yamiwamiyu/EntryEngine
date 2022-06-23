@@ -31,5 +31,7 @@ namespace ByteDance.Union
         /// Invoke when the Ad load success.
         /// </summary>
         void OnExpressRewardVideoAdLoad(ExpressRewardVideoAd ad);
+        
+        void OnRewardVideoCached(RewardVideoAd ad);
     }
 }

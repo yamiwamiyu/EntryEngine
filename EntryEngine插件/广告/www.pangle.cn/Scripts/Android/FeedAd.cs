@@ -32,9 +32,9 @@ namespace ByteDance.Union
         /// <summary>
         /// Set the video Ad listener.
         /// </summary>
-        public void SetVideoAdListener(IVideoAdListener listener)
+        public void SetVideoAdListener(IVideoAdListener listener, bool callbackOnMainThread = true)
         {
-            var androidListener = new VideoAdListener(this, listener);
+            var androidListener = new VideoAdListener(this, listener, callbackOnMainThread);
             this.ad.Call("setVideoAdListener", androidListener);
         }
 
@@ -45,43 +45,49 @@ namespace ByteDance.Union
         {
             private readonly FeedAd ad;
             private readonly IVideoAdListener listener;
-
+            private bool callbackOnMainThread;
             public VideoAdListener(
                 FeedAd ad,
-                IVideoAdListener listener)
+                IVideoAdListener listener, bool callbackOnMainThread)
                 : base("com.bytedance.sdk.openadsdk.TTNativeAd$VideoAdListener")
             {
                 this.ad = ad;
                 this.listener = listener;
+                this.callbackOnMainThread = callbackOnMainThread;
             }
 
             public void onVideoLoad(AndroidJavaObject ad)
             {
                 var feedAd = (ad == this.ad.Handle) ? this.ad : new FeedAd(ad);
-                this.listener.OnVideoLoad(feedAd);
+                UnityDispatcher.PostTask(
+                    () => this.listener.OnVideoLoad(feedAd), callbackOnMainThread);
             }
 
             public void onVideoError(int var1, int var2)
             {
-                this.listener.OnVideoError(var1, var2);
+                UnityDispatcher.PostTask(
+                    () => this.listener.OnVideoError(var1, var2), callbackOnMainThread);
             }
 
             public void onVideoAdStartPlay(AndroidJavaObject ad)
             {
                 var feedAd = (ad == this.ad.Handle) ? this.ad : new FeedAd(ad);
-                this.listener.OnVideoAdStartPlay(feedAd);
+                UnityDispatcher.PostTask(
+                    () => this.listener.OnVideoAdStartPlay(feedAd), callbackOnMainThread);
             }
 
             public void onVideoAdPaused(AndroidJavaObject ad)
             {
                 var feedAd = (ad == this.ad.Handle) ? this.ad : new FeedAd(ad);
-                this.listener.OnVideoAdPaused(feedAd);
+                UnityDispatcher.PostTask(
+                    () => this.listener.OnVideoAdPaused(feedAd), callbackOnMainThread);
             }
 
             public void onVideoAdContinuePlay(AndroidJavaObject ad)
             {
                 var feedAd = (ad == this.ad.Handle) ? this.ad : new FeedAd(ad);
-                this.listener.OnVideoAdContinuePlay(feedAd);
+                UnityDispatcher.PostTask(
+                    () => this.listener.OnVideoAdContinuePlay(feedAd), callbackOnMainThread);
             }
         }
 

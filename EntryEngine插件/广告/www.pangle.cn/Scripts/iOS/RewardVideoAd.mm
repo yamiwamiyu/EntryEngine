@@ -8,7 +8,7 @@
 #import <BUAdSDK/BURewardedVideoAd.h>
 #import <BUAdSDK/BURewardedVideoModel.h>
 #import "UnityAppController.h"
-
+#import "AdSlot.h"
 extern const char* AutonomousStringCopy(const char* string);
 
 const char* AutonomousStringCopy(const char* string)
@@ -35,13 +35,13 @@ typedef void(*RewardVideoAd_OnVideoComplete)(int context);
 typedef void(*RewardVideoAd_OnVideoError)(int context);
 typedef void(*RewardVideoAd_OnVideoSkip)(int context);
 typedef void(*ExpressRewardVideoAd_OnRewardVerify)(
-    bool rewardVerify, int rewardAmount, const char* rewardName, int context);
+    bool rewardVerify, int rewardAmount, const char* rewardName, int rewardType, float rewardPropose, int context);
 
 // The BURewardedVideoAdDelegate implement.
 @interface RewardVideoAd : NSObject
 @end
 
-@interface RewardVideoAd () <BURewardedVideoAdDelegate>
+@interface RewardVideoAd () <BURewardedVideoAdDelegate,BUAdObjectProtocol>
 @property (nonatomic, strong) BURewardedVideoAd *rewardedVideoAd;
 
 @property (nonatomic, assign) int loadContext;
@@ -57,53 +57,92 @@ typedef void(*ExpressRewardVideoAd_OnRewardVerify)(
 @property (nonatomic, assign) RewardVideoAd_OnVideoError onVideoError;
 @property (nonatomic, assign) RewardVideoAd_OnVideoSkip onVideoSkip;
 @property (nonatomic, assign) ExpressRewardVideoAd_OnRewardVerify onRewardVerify;
+
+@property (nonatomic, strong) RewardVideoAd *againObject;
+
 @end
 
 @implementation RewardVideoAd
 - (void)rewardedVideoAdDidLoad:(BURewardedVideoAd *)rewardedVideoAd {
-    self.onRewardVideoAdLoad((__bridge void*)self, self.loadContext);
+    if (self.onRewardVideoAdLoad) {
+        self.onRewardVideoAdLoad((__bridge void*)self, self.loadContext);
+    }
 }
 
 - (void)rewardedVideoAdVideoDidLoad:(BURewardedVideoAd *)rewardedVideoAd {
-    self.onRewardVideoCached(self.loadContext);
+    if (self.onRewardVideoCached) {
+        self.onRewardVideoCached(self.loadContext);
+    }
 }
 
 - (void)rewardedVideoAdWillVisible:(BURewardedVideoAd *)rewardedVideoAd {
-    self.onAdShow(self.interactionContext);
+    if (self.onAdShow) {
+        self.onAdShow(self.interactionContext);
+    }
 }
 
 - (void)rewardedVideoAdDidClose:(BURewardedVideoAd *)rewardedVideoAd {
-    self.onAdClose(self.interactionContext);
+    if (self.onAdClose) {
+        self.onAdClose(self.interactionContext);
+    }
 }
 
 - (void)rewardedVideoAdDidClick:(BURewardedVideoAd *)rewardedVideoAd {
-    self.onAdVideoBarClick(self.interactionContext);
+    if (self.onAdVideoBarClick) {  
+        self.onAdVideoBarClick(self.interactionContext);
+    }
 }
 
 - (void)rewardedVideoAd:(BURewardedVideoAd *)rewardedVideoAd didFailWithError:(NSError *)error {
-    self.onError((int)error.code, AutonomousStringCopy([[error localizedDescription] UTF8String]), self.loadContext);
+    if (self.onError) {
+        self.onError((int)error.code, AutonomousStringCopy([[error localizedDescription] UTF8String]), self.loadContext);
+    }
 }
 
 - (void)rewardedVideoAdDidClickSkip:(BURewardedVideoAd *)rewardedVideoAd {
-    self.onVideoSkip(self.interactionContext);
+    if (self.onVideoSkip) {
+        self.onVideoSkip(self.interactionContext);
+    }
 }
 
 - (void)rewardedVideoAdDidPlayFinish:(BURewardedVideoAd *)rewardedVideoAd didFailWithError:(NSError *)error {
     if (error) {
-        self.onVideoError(self.interactionContext);
+        if (self.onVideoError) {
+            self.onVideoError(self.interactionContext);
+        }
     } else {
-        self.onVideoComplete(self.interactionContext);
+        if (self.onVideoComplete) {
+            self.onVideoComplete(self.interactionContext);
+        }
     }
 }
 
 - (void)rewardedVideoAdServerRewardDidFail:(BURewardedVideoAd *)rewardedVideoAd error:(NSError *)error {
-    NSString *rewardName = rewardedVideoAd.rewardedVideoModel.rewardName?:@"";
-    self.onRewardVerify(false, (int)rewardedVideoAd.rewardedVideoModel.rewardAmount, (char*)[rewardName cStringUsingEncoding:NSUTF8StringEncoding], self.interactionContext);
+    if (self.onRewardVerify) {
+        NSString *rewardName = rewardedVideoAd.rewardedVideoModel.rewardName?:@"";
+        self.onRewardVerify(false,
+                            (int)rewardedVideoAd.rewardedVideoModel.rewardAmount,
+                            (char*)[rewardName cStringUsingEncoding:NSUTF8StringEncoding],
+                            (int)rewardedVideoAd.rewardedVideoModel.rewardType,
+                            rewardedVideoAd.rewardedVideoModel.rewardPropose,
+                            self.interactionContext);
+    }
 }
 
 - (void)rewardedVideoAdServerRewardDidSucceed:(BURewardedVideoAd *)rewardedVideoAd verify:(BOOL)verify {
-    NSString *rewardName = rewardedVideoAd.rewardedVideoModel.rewardName?:@"";
-    self.onRewardVerify(verify, (int)rewardedVideoAd.rewardedVideoModel.rewardAmount, (char*)[rewardName cStringUsingEncoding:NSUTF8StringEncoding], self.interactionContext);
+    if (self.onRewardVerify) {
+        NSString *rewardName = rewardedVideoAd.rewardedVideoModel.rewardName?:@"";
+        self.onRewardVerify(verify,
+                            (int)rewardedVideoAd.rewardedVideoModel.rewardAmount,
+                            (char*)[rewardName cStringUsingEncoding:NSUTF8StringEncoding],
+                            (int)rewardedVideoAd.rewardedVideoModel.rewardType,
+                            rewardedVideoAd.rewardedVideoModel.rewardPropose,
+                            self.interactionContext);
+    }
+}
+
+- (id<BUAdClientBiddingProtocol>)adObject {
+    return self.rewardedVideoAd;
 }
 @end
 
@@ -112,25 +151,32 @@ extern "C" {
 #endif
 
 void UnionPlatform_RewardVideoAd_Load(
-    const char* slotID,
-    const char* userID,
-    const char* mediaExtra,
+    AdSlotStruct *adSlot,
     RewardVideoAd_OnError onError,
     RewardVideoAd_OnRewardVideoAdLoad onRewardVideoAdLoad,
     RewardVideoAd_OnRewardVideoCached onRewardVideoCached,
     int context) {
     BURewardedVideoModel *model = [[BURewardedVideoModel alloc] init];
-    model.userId = [[NSString alloc] initWithUTF8String:userID?:""];
-    model.extra = [[NSString alloc] initWithUTF8String:mediaExtra?:""];
+    model.userId = [[NSString alloc] initWithUTF8String:adSlot->userId?:""];
+    model.extra = [[NSString alloc] initWithUTF8String:adSlot->mediaExtra?:""];
     
-    BURewardedVideoAd* rewardedVideoAd = [[BURewardedVideoAd alloc] initWithSlotID:[[NSString alloc] initWithUTF8String:slotID?:""] rewardedVideoModel:model];
+    BURewardedVideoAd* rewardedVideoAd = [[BURewardedVideoAd alloc] initWithSlotID:[[NSString alloc] initWithUTF8String:adSlot->slotId?:""] rewardedVideoModel:model];
+
     RewardVideoAd* instance = [[RewardVideoAd alloc] init];
+    RewardVideoAd* again_instance = [[RewardVideoAd alloc] init];
+
     instance.rewardedVideoAd = rewardedVideoAd;
+    instance.againObject = again_instance;
+
     instance.onError = onError;
     instance.onRewardVideoAdLoad = onRewardVideoAdLoad;
     instance.onRewardVideoCached = onRewardVideoCached;
+
     instance.loadContext = context;
+    again_instance.loadContext = context;
+
     rewardedVideoAd.delegate = instance;
+    rewardedVideoAd.rewardPlayAgainInteractionDelegate = again_instance;
     [rewardedVideoAd loadAdData];
 
     (__bridge_retained void*)instance;
@@ -164,6 +210,38 @@ void UnionPlatform_RewardVideoAd_ShowRewardVideoAd(void* rewardedVideoAdPtr) {
 
 void UnionPlatform_RewardVideoAd_Dispose(void* rewardedVideoAdPtr) {
     (__bridge_transfer RewardVideoAd*)rewardedVideoAdPtr;
+}
+
+void UnionPlatform_RewardVideoAd_Again_SetInteractionListener(
+    void* rewardedVideoAdPtr,
+    RewardVideoAd_OnAdShow onAdShow,
+    RewardVideoAd_OnAdVideoBarClick onAdVideoBarClick,
+    RewardVideoAd_OnVideoComplete onVideoComplete,
+    RewardVideoAd_OnVideoError onVideoError,
+    RewardVideoAd_OnVideoSkip onVideoSkip,
+    ExpressRewardVideoAd_OnRewardVerify onRewardVerify,
+    int context) {
+    RewardVideoAd* rewardedVideoAd = (__bridge RewardVideoAd*)rewardedVideoAdPtr;
+    if (rewardedVideoAd.againObject) {
+        rewardedVideoAd.againObject.onAdShow = onAdShow;
+        rewardedVideoAd.againObject.onAdVideoBarClick = onAdVideoBarClick;
+        rewardedVideoAd.againObject.onVideoComplete = onVideoComplete;
+        rewardedVideoAd.againObject.onVideoError = onVideoError;
+        rewardedVideoAd.againObject.onVideoSkip = onVideoSkip;
+        rewardedVideoAd.againObject.onRewardVerify = onRewardVerify;
+        rewardedVideoAd.againObject.interactionContext = context;
+    }
+}
+
+bool UnionPlatform_rewardVideoMaterialMetaIsFromPreload(void* rewardedVideoAdPtr) {
+    RewardVideoAd* rewardedVideoAd = (__bridge RewardVideoAd*)rewardedVideoAdPtr;
+    BOOL preload = [rewardedVideoAd.rewardedVideoAd materialMetaIsFromPreload];
+    return preload == YES;
+}
+
+long UnionPlatform_rewardVideoExpireTime(void * rewardedVideoAdPtr) {
+    RewardVideoAd* rewardedVideoAd = (__bridge RewardVideoAd*)rewardedVideoAdPtr;
+    return [rewardedVideoAd.rewardedVideoAd getExpireTimestamp];
 }
 
 #if defined (__cplusplus)

@@ -7,7 +7,7 @@
 
 #import <BUAdSDK/BUAdSDK.h>
 #import "UnityAppController.h"
-
+#import "AdSlot.h"
 static const char* AutonomousStringCopy_Express(const char* string);
 
 const char* AutonomousStringCopy_Express(const char* string)
@@ -27,8 +27,11 @@ typedef void(*ExpressAd_OnLoadError)(int errCode,const char* errMsg,int context)
 typedef void(*ExpressAd_WillShow)(int context);
 typedef void(*ExpressAd_DidClick)(int context);
 typedef void(*ExpressAd_DidClose)(int context);
+typedef void(*ExpressAd_DidRemove)(int context);
+typedef void(*ExpressAd_RenderFailed)(int errCode,const char* errMsg,int context);
+typedef void(*ExpressAd_RenderSuccess)(void* expressAd,int context);
 
-@interface ExpressInterstitialAd : NSObject<BUNativeExpresInterstitialAdDelegate>
+@interface ExpressInterstitialAd : NSObject<BUNativeExpresInterstitialAdDelegate,BUAdObjectProtocol>
 
 @property (nonatomic, strong) BUNativeExpressInterstitialAd *interstitialAd;
 @property (nonatomic, assign) float adWidth;
@@ -42,12 +45,18 @@ typedef void(*ExpressAd_DidClose)(int context);
 @property (nonatomic, assign) ExpressAd_WillShow willShow;
 @property (nonatomic, assign) ExpressAd_DidClick didClick;
 @property (nonatomic, assign) ExpressAd_DidClose didClose;
+@property (nonatomic, assign) ExpressAd_DidRemove didRemove;
+@property (nonatomic, assign) ExpressAd_RenderFailed renderFailed;
+@property (nonatomic, assign) ExpressAd_RenderSuccess renderSuccess;
 @end
 
 
 @implementation ExpressInterstitialAd
 #pragma ---BUNativeExpresInterstitialAdDelegate
 - (void)nativeExpresInterstitialAdDidLoad:(BUNativeExpressInterstitialAd *)interstitialAd {
+    if (self.onLoad) {
+        self.onLoad((__bridge void*)self, self.loadContext);
+    }
 }
 
 - (void)nativeExpresInterstitialAd:(BUNativeExpressInterstitialAd *)interstitialAd didFailWithError:(NSError *)error {
@@ -57,14 +66,14 @@ typedef void(*ExpressAd_DidClose)(int context);
 }
 
 - (void)nativeExpresInterstitialAdRenderSuccess:(BUNativeExpressInterstitialAd *)interstitialAd {
-    if (self.onLoad) {
-        self.onLoad((__bridge void*)self, self.loadContext);
+    if (self.renderSuccess) {
+       self.renderSuccess((__bridge void*)self, self.loadContext);
     }
 }
 
 - (void)nativeExpresInterstitialAdRenderFail:(BUNativeExpressInterstitialAd *)interstitialAd error:(NSError *)error {
-    if (self.onLoadError) {
-        self.onLoadError((int)error.code,[[error localizedDescription] UTF8String],self.loadContext);
+    if (self.renderFailed) {
+        self.renderFailed((int)error.code,[[error localizedDescription] UTF8String],self.loadContext);
     }
 }
 
@@ -89,28 +98,34 @@ typedef void(*ExpressAd_DidClose)(int context);
     }
 }
 
+- (id<BUAdClientBiddingProtocol>)adObject {
+    return self.interstitialAd;
+}
+
 @end
 
 #if defined (__cplusplus)
 extern "C" {
 #endif
     void UnionPlatform_ExpressInterstitialsAd_Load(
-                                      const char* slotID,
-                                      float width,
-                                      float height,
+                                      AdSlotStruct *adSlot,
                                       ExpressAd_OnLoad onLoad,
                                       ExpressAd_OnLoadError onLoadError,
+                                      ExpressAd_RenderSuccess renderSuccess,
+                                      ExpressAd_RenderFailed renderFailed,
                                       int context) {
                                           
-        CGFloat newWidth = width/[UIScreen mainScreen].scale;
-        CGFloat newHeight = height/[UIScreen mainScreen].scale;
+        CGFloat newWidth = adSlot->viewWidth/[UIScreen mainScreen].scale;
+        CGFloat newHeight = adSlot-> viewHeight/[UIScreen mainScreen].scale;
         ExpressInterstitialAd *instance = [[ExpressInterstitialAd alloc] init];;
-        instance.interstitialAd = [[BUNativeExpressInterstitialAd alloc] initWithSlotID:[[NSString alloc] initWithUTF8String:slotID?:""] adSize:CGSizeMake(newWidth,newHeight)];
+        instance.interstitialAd = [[BUNativeExpressInterstitialAd alloc] initWithSlotID:[[NSString alloc] initWithUTF8String:adSlot->slotId?:""] adSize:CGSizeMake(newWidth,newHeight)];
         instance.interstitialAd.delegate = instance;
         
         instance.onLoad = onLoad;
         instance.onLoadError = onLoadError;
         instance.loadContext = context;
+        instance.renderSuccess = renderSuccess;
+        instance.renderFailed =renderFailed;
         [instance.interstitialAd loadAdData];
         
         (__bridge_retained void*)instance;

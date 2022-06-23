@@ -7,13 +7,13 @@
 
 namespace ByteDance.Union
 {
-#if !UNITY_EDITOR && UNITY_ANDROID
+#if (DEV || !UNITY_EDITOR) && UNITY_ANDROID
     using UnityEngine;
 
     /// <summary>
     /// The native Ad.
     /// </summary>
-    public class NativeAd
+    public class NativeAd : IClintBidding
     {
         protected readonly AndroidJavaObject ad;
 
@@ -100,15 +100,30 @@ namespace ByteDance.Union
         /// <summary>
         /// Sets the download listener.
         /// </summary>
-        public void SetDownloadListener(IAppDownloadListener listener)
+        public void SetDownloadListener(IAppDownloadListener listener, bool callbackOnMainThread = true)
         {
-            var androidListener = new AppDownloadListener(listener);
+            var androidListener = new AppDownloadListener(listener, callbackOnMainThread);
             this.ad.Call("setDownloadListener", androidListener);
         }
 
         public void Dispose()
         {
            
+        }
+        
+        public void Win(double auctionBidToWin)
+        {
+            ClientBiddingUtils.Win(ad, auctionBidToWin);
+        }
+
+        public void Loss(double auctionPrice = double.NaN, string lossReason = null, string winBidder = null)
+        {
+            ClientBiddingUtils.Loss(ad, auctionPrice, lossReason, winBidder);
+        }
+
+        public void SetPrice(double auctionPrice = double.NaN)
+        {
+            ClientBiddingUtils.SetPrice(ad, auctionPrice);
         }
     }
 #endif

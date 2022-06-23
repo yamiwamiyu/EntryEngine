@@ -7,7 +7,7 @@
 
 #import <BUAdSDK/BUFullscreenVideoAd.h>
 #import "UnityAppController.h"
-
+#import "AdSlot.h"
 const char* AutonomousStringCopy1(const char* string)
 {
     if (string == NULL) {
@@ -36,7 +36,7 @@ typedef void(*FullScreenVideoAd_OnVideoError)(int context);
 @interface FullScreenVideoAd : NSObject
 @end
 
-@interface FullScreenVideoAd () <BUFullscreenVideoAdDelegate>
+@interface FullScreenVideoAd () <BUFullscreenVideoAdDelegate,BUAdObjectProtocol>
 @property (nonatomic, strong) BUFullscreenVideoAd *fullScreenVideoAd;
 
 @property (nonatomic, assign) int loadContext;
@@ -101,6 +101,10 @@ typedef void(*FullScreenVideoAd_OnVideoError)(int context);
 
 
 
+- (id<BUAdClientBiddingProtocol>)adObject {
+    return self.fullScreenVideoAd;
+}
+
 @end
 
 #if defined (__cplusplus)
@@ -108,14 +112,13 @@ extern "C" {
 #endif
 
 void UnionPlatform_FullScreenVideoAd_Load(
-    const char* slotID,
-    const char* userID,
+    AdSlotStruct *adSlot,
     FullScreenVideoAd_OnError onError,
     FullScreenVideoAd_OnFullScreenVideoAdLoad onFullScreenVideoAdLoad,
     FullScreenVideoAd_OnFullScreenVideoCached onFullScreenVideoCached,
     int context) {
 
-    BUFullscreenVideoAd* fullScreenVideoAd = [[BUFullscreenVideoAd alloc] initWithSlotID:[[NSString alloc] initWithUTF8String:slotID?:""]];
+    BUFullscreenVideoAd* fullScreenVideoAd = [[BUFullscreenVideoAd alloc] initWithSlotID:[[NSString alloc] initWithUTF8String:adSlot->slotId?:""]];
     FullScreenVideoAd* instance = [[FullScreenVideoAd alloc] init];
     instance.fullScreenVideoAd = fullScreenVideoAd;
     instance.onError = onError;
@@ -153,6 +156,16 @@ void UnionPlatform_FullScreenVideoAd_ShowFullScreenVideoAd(void* fullscreenVideo
 
 void UnionPlatform_FullScreenVideoAd_Dispose(void* fullscreenVideoAdPtr) {
     (__bridge_transfer FullScreenVideoAd*)fullscreenVideoAdPtr;
+}
+bool UnionPlatform_FullScreenVideoMaterialMetaIsFromPreload(void* fullscreenAd) {
+    FullScreenVideoAd* fullScreenVideoAd = (__bridge FullScreenVideoAd*)fullscreenAd;
+    BOOL preload = [fullScreenVideoAd.fullScreenVideoAd materialMetaIsFromPreload];
+    return preload == YES;
+}
+
+long UnionPlatform_FullScreenVideoExpireTime(void * fullscreenAd) {
+    FullScreenVideoAd* fullScreenVideoAd = (__bridge FullScreenVideoAd*)fullscreenAd;
+    return [fullScreenVideoAd.fullScreenVideoAd getExpireTimestamp];
 }
 
 #if defined (__cplusplus)

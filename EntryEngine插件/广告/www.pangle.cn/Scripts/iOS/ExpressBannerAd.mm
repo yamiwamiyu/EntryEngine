@@ -7,7 +7,7 @@
 
 #import <BUAdSDK/BUAdSDK.h>
 #import "UnityAppController.h"
-
+#import "AdSlot.h"
 static const char* AutonomousStringCopy_Express(const char* string);
 
 const char* AutonomousStringCopy_Express(const char* string)
@@ -28,8 +28,10 @@ typedef void(*ExpressAd_WillShow)(int context);
 typedef void(*ExpressAd_DidClick)(int context);
 typedef void(*ExpressAd_DidClose)(int context);
 typedef void(*ExpressAd_DidRemove)(int context);
+typedef void(*ExpressAd_RenderFailed)(int errCode,const char* errMsg,int context);
+typedef void(*ExpressAd_RenderSuccess)(void* expressAd,int context);
 
-@interface ExpressBannerAd : NSObject<BUNativeExpressBannerViewDelegate>
+@interface ExpressBannerAd : NSObject<BUNativeExpressBannerViewDelegate,BUAdObjectProtocol>
 
 @property(nonatomic, strong) BUNativeExpressBannerView *bannerView;
 @property (nonatomic, assign) float adWidth;
@@ -44,6 +46,8 @@ typedef void(*ExpressAd_DidRemove)(int context);
 @property (nonatomic, assign) ExpressAd_DidClick didClick;
 @property (nonatomic, assign) ExpressAd_DidClose didClose;
 @property (nonatomic, assign) ExpressAd_DidRemove didRemove;
+@property (nonatomic, assign) ExpressAd_RenderFailed renderFailed;
+@property (nonatomic, assign) ExpressAd_RenderSuccess renderSuccess;
 @end
 
 
@@ -54,6 +58,9 @@ typedef void(*ExpressAd_DidRemove)(int context);
 
 #pragma BUNativeExpressBannerViewDelegate
 - (void)nativeExpressBannerAdViewDidLoad:(BUNativeExpressBannerView *)bannerAdView {
+    if (self.onLoad) {
+        self.onLoad((__bridge void*)self, self.loadContext);
+    }
 }
 
 - (void)nativeExpressBannerAdView:(BUNativeExpressBannerView *)bannerAdView didLoadFailWithError:(NSError *)error {
@@ -63,14 +70,14 @@ typedef void(*ExpressAd_DidRemove)(int context);
 }
 
 - (void)nativeExpressBannerAdViewRenderSuccess:(BUNativeExpressBannerView *)bannerAdView {
-    if (self.onLoad) {
-        self.onLoad((__bridge void*)self, self.loadContext);
+    if (self.renderSuccess) {
+        self.renderSuccess((__bridge void*)self, self.loadContext);
     }
 }
 
 - (void)nativeExpressBannerAdViewRenderFail:(BUNativeExpressBannerView *)bannerAdView error:(NSError *)error {
-    if (self.onLoadError) {
-        self.onLoadError((int)error.code,[[error localizedDescription] UTF8String],self.loadContext);
+    if (self.renderFailed) {
+        self.renderFailed((int)error.code,[[error localizedDescription] UTF8String],self.loadContext);
     }
 }
 
@@ -105,34 +112,38 @@ typedef void(*ExpressAd_DidRemove)(int context);
     }
 }
 
+- (id<BUAdClientBiddingProtocol>)adObject {
+    return self.bannerView;
+}
 @end
 
 #if defined (__cplusplus)
 extern "C" {
 #endif
     void UnionPlatform_ExpressBannersAd_Load(
-                                      const char* slotID,
-                                      float width,
-                                      float height,
-                                      int intervalTime,
+                                      AdSlotStruct *adSlot,
                                       ExpressAd_OnLoad onLoad,
                                       ExpressAd_OnLoadError onLoadError,
+                                      ExpressAd_RenderSuccess renderSuccess,
+                                      ExpressAd_RenderFailed renderFailed,
                                       int context) {
         ExpressBannerAd *instance = [[ExpressBannerAd alloc] init];
 
-        CGFloat newWidth = width/[UIScreen mainScreen].scale;
-        CGFloat newHeight = height/[UIScreen mainScreen].scale;
+        CGFloat newWidth = adSlot->viewWidth/[UIScreen mainScreen].scale;
+        CGFloat newHeight = adSlot->viewHeight/[UIScreen mainScreen].scale;
 
-        if (intervalTime > 0) {
-            instance.bannerView = [[BUNativeExpressBannerView alloc] initWithSlotID:[[NSString alloc] initWithUTF8String:slotID?:""] rootViewController:GetAppController().rootViewController adSize:CGSizeMake(newWidth, newHeight) interval:intervalTime];
+        if (adSlot->intervalTime > 0) {
+            instance.bannerView = [[BUNativeExpressBannerView alloc] initWithSlotID:[[NSString alloc] initWithUTF8String:adSlot->slotId?:""] rootViewController:GetAppController().rootViewController adSize:CGSizeMake(newWidth, newHeight) interval:adSlot->intervalTime];
         } else {
-            instance.bannerView = [[BUNativeExpressBannerView alloc] initWithSlotID:[[NSString alloc] initWithUTF8String:slotID?:""] rootViewController:GetAppController().rootViewController adSize:CGSizeMake(newWidth, newHeight)];
+            instance.bannerView = [[BUNativeExpressBannerView alloc] initWithSlotID:[[NSString alloc] initWithUTF8String:adSlot->slotId?:""] rootViewController:GetAppController().rootViewController adSize:CGSizeMake(newWidth, newHeight)];
         }
         instance.bannerView.frame = CGRectMake(0, CGRectGetHeight([UIScreen mainScreen].bounds)-newHeight, newWidth, newHeight);
         instance.bannerView.delegate = instance;
         instance.onLoad = onLoad;
         instance.onLoadError = onLoadError;
         instance.loadContext = context;
+        instance.renderFailed = renderFailed;
+        instance.renderSuccess = renderSuccess;
         [instance.bannerView loadAdData];
 
         (__bridge_retained void*)instance;

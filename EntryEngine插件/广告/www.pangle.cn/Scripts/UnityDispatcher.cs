@@ -37,11 +37,18 @@ namespace ByteDance.Union
         /// <summary>
         /// Work thread post a task to the main thread.
         /// </summary>
-        public static void PostTask(Action task)
+        public static void PostTask(Action task,bool executeOnMainThread = true)
         {
-            lock (postTasks)
+            if (executeOnMainThread)
             {
-                postTasks.Add(task);
+                lock (postTasks)
+                {
+                    postTasks.Add(task);
+                }
+            }
+            else
+            {
+                task?.Invoke();
             }
         }
 

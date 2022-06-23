@@ -30,18 +30,18 @@ namespace ByteDance.Union
         /// <summary>
         /// Load the feed Ad asynchronously and notice on listener.
         /// </summary>
-        public void LoadFeedAd(AdSlot adSlot, IFeedAdListener listener)
+        public void LoadFeedAd(AdSlot adSlot, IFeedAdListener listener, bool callbackOnMainThread = true)
         {
-            var androidListener = new FeedAdListener(listener);
+            var androidListener = new FeedAdListener(listener, callbackOnMainThread);
             this.adNative.Call("loadFeedAd", adSlot.Handle, androidListener);
         }
 
         /// <summary>
         /// Load the draw feed Ad asynchronously and notice on listener.
         /// </summary>
-        public void LoadDrawFeedAd(AdSlot adSlot, IDrawFeedAdListener listener)
+        public void LoadDrawFeedAd(AdSlot adSlot, IDrawFeedAdListener listener, bool callbackOnMainThread = true)
         {
-            var androidListener = new DrawFeedAdListener(listener);
+            var androidListener = new DrawFeedAdListener(listener, callbackOnMainThread);
             this.adNative.Call(
                 "loadDrawFeedAd", adSlot.Handle, androidListener);
         }
@@ -49,18 +49,18 @@ namespace ByteDance.Union
         /// <summary>
         /// Load the native Ad asynchronously and notice on listener.
         /// </summary>
-        public void LoadNativeAd(AdSlot adSlot, INativeAdListener listener)
+        public void LoadNativeAd(AdSlot adSlot, INativeAdListener listener, bool callbackOnMainThread = true)
         {
-            var androidListener = new NativeAdListener(listener);
+            var androidListener = new NativeAdListener(listener, callbackOnMainThread);
             this.adNative.Call("loadNativeAd", adSlot.Handle, androidListener);
         }
 
         /// <summary>
         /// Load the banner Ad asynchronously and notice on listener.
         /// </summary>
-        public void LoadBannerAd(AdSlot adSlot, IBannerAdListener listener)
+        public void LoadBannerAd(AdSlot adSlot, IBannerAdListener listener, bool callbackOnMainThread = true)
         {
-            var androidListener = new BannerAdListener(listener);
+            var androidListener = new BannerAdListener(listener, callbackOnMainThread);
             this.adNative.Call("loadBannerAd", adSlot.Handle, androidListener);
         }
 
@@ -68,9 +68,9 @@ namespace ByteDance.Union
         /// Load the interaction Ad asynchronously and notice on listener.
         /// </summary>
         public void LoadInteractionAd(
-            AdSlot adSlot, IInteractionAdListener listener)
+            AdSlot adSlot, IInteractionAdListener listener, bool callbackOnMainThread = true)
         {
-            var androidListener = new InteractionAdListener(listener);
+            var androidListener = new InteractionAdListener(listener, callbackOnMainThread);
             this.adNative.Call(
                 "loadInteractionAd", adSlot.Handle, androidListener);
         }
@@ -80,9 +80,9 @@ namespace ByteDance.Union
         /// specify timeout.
         /// </summary>
         public void LoadSplashAd(
-            AdSlot adSlot, ISplashAdListener listener, int timeOut)
+            AdSlot adSlot, ISplashAdListener listener, int timeOut, bool callbackOnMainThread = true)
         {
-            var androidListener = new SplashAdListener(listener);
+            var androidListener = new SplashAdListener(listener, callbackOnMainThread);
             this.adNative.Call(
                 "loadSplashAd", adSlot.Handle, androidListener, timeOut);
         }
@@ -90,9 +90,9 @@ namespace ByteDance.Union
         /// <summary>
         /// Load the splash Ad asynchronously and notice on listener.
         /// </summary>
-        public void LoadSplashAd(AdSlot adSlot, ISplashAdListener listener)
+        public void LoadSplashAd(AdSlot adSlot, ISplashAdListener listener, bool callbackOnMainThread = true)
         {
-            var androidListener = new SplashAdListener(listener);
+            var androidListener = new SplashAdListener(listener, callbackOnMainThread);
             this.adNative.Call("loadSplashAd", adSlot.Handle, androidListener);
         }
 
@@ -119,9 +119,9 @@ namespace ByteDance.Union
         /// Load the reward video Ad asynchronously and notice on listener.
         /// </summary>
         public void LoadRewardVideoAd(
-            AdSlot adSlot, IRewardVideoAdListener listener)
+            AdSlot adSlot, IRewardVideoAdListener listener, bool callbackOnMainThread = true)
         {
-            var androidListener = new RewardVideoAdListener(listener);
+            var androidListener = new RewardVideoAdListener(listener, callbackOnMainThread);
             this.adNative.Call(
                 "loadRewardVideoAd", adSlot.Handle, androidListener);
         }
@@ -130,9 +130,9 @@ namespace ByteDance.Union
         /// Load the full screen video Ad asynchronously and notice on listener.
         /// </summary>
         public void LoadFullScreenVideoAd(
-            AdSlot adSlot, IFullScreenVideoAdListener listener)
+            AdSlot adSlot, IFullScreenVideoAdListener listener, bool callbackOnMainThread = true)
         {
-            var androidListener = new FullScreenVideoAdListener(listener);
+            var androidListener = new FullScreenVideoAdListener(listener, callbackOnMainThread);
             this.adNative.Call(
                 "loadFullScreenVideoAd", adSlot.Handle, androidListener);
         }
@@ -150,25 +150,25 @@ namespace ByteDance.Union
         }
 
         public void LoadNativeExpressAd(
-            AdSlot adSlot, IExpressAdListener listener)
+            AdSlot adSlot, IExpressAdListener listener, bool callbackOnMainThread)
         {
-            var androidListener = new ExpressAdListener(listener);
+            var androidListener = new ExpressAdListener(listener, callbackOnMainThread);
             this.adNative.Call(
                 "loadNativeExpressAd",adSlot.Handle, androidListener);
         }
 
         public void LoadExpressInterstitialAd(
-            AdSlot adSlot, IExpressAdListener listener)
+            AdSlot adSlot, IExpressAdListener listener, bool callbackOnMainThread = true)
         {
-            var androidListener = new ExpressAdListener(listener);
+            var androidListener = new ExpressAdListener(listener, callbackOnMainThread);
             this.adNative.Call(
                 "loadInteractionExpressAd",adSlot.Handle, androidListener);
         }
 
         public void LoadExpressBannerAd(
-            AdSlot adSlot, IExpressAdListener listener)
+            AdSlot adSlot, IExpressAdListener listener, bool callbackOnMainThread = true)
         {
-            var androidListener = new ExpressAdListener(listener);
+            var androidListener = new ExpressAdListener(listener, callbackOnMainThread);
             this.adNative.Call(
                 "loadBannerExpressAd",adSlot.Handle, androidListener);
         }
@@ -177,16 +177,18 @@ namespace ByteDance.Union
         private sealed class FeedAdListener : AndroidJavaProxy
         {
             private readonly IFeedAdListener listener;
-
-            public FeedAdListener(IFeedAdListener listener)
+            private bool callbackOnMainThread;
+            public FeedAdListener(IFeedAdListener listener, bool callbackOnMainThread)
                 : base("com.bytedance.sdk.openadsdk.TTAdNative$FeedAdListener")
             {
                 this.listener = listener;
+                this.callbackOnMainThread = callbackOnMainThread;
             }
 
             public void onError(int code, string message)
             {
-                this.listener.OnError(code, message);
+                UnityDispatcher.PostTask(
+                    () => this.listener.OnError(code, message), callbackOnMainThread);
             }
 
             public void onFeedAdLoad(AndroidJavaObject list)
@@ -199,23 +201,27 @@ namespace ByteDance.Union
                         list.Call<AndroidJavaObject>("get", i));
                 }
 
-                this.listener.OnFeedAdLoad(ads);
+                UnityDispatcher.PostTask(
+                    () => this.listener.OnFeedAdLoad(ads), callbackOnMainThread);
             }
         }
 
         private sealed class DrawFeedAdListener : AndroidJavaProxy
         {
             private readonly IDrawFeedAdListener listener;
+            private bool callbackOnMainThread;
 
-            public DrawFeedAdListener(IDrawFeedAdListener listener)
+            public DrawFeedAdListener(IDrawFeedAdListener listener, bool callbackOnMainThread)
                 : base("com.bytedance.sdk.openadsdk.TTAdNative$DrawFeedAdListener")
             {
                 this.listener = listener;
+                this.callbackOnMainThread = callbackOnMainThread;
             }
 
             public void onError(int code, string message)
             {
-                this.listener.OnError(code, message);
+                UnityDispatcher.PostTask(
+                    () => this.listener.OnError(code, message), callbackOnMainThread);
             }
 
             public void onDrawFeedAdLoad(AndroidJavaObject list)
@@ -228,23 +234,26 @@ namespace ByteDance.Union
                         list.Call<AndroidJavaObject>("get", i));
                 }
 
-                this.listener.OnDrawFeedAdLoad(ads);
+                UnityDispatcher.PostTask(
+                    () => this.listener.OnDrawFeedAdLoad(ads), callbackOnMainThread);
             }
         }
 
         private sealed class NativeAdListener : AndroidJavaProxy
         {
             private readonly INativeAdListener listener;
-
-            public NativeAdListener(INativeAdListener listener)
+            private bool callbackOnMainThread;
+            public NativeAdListener(INativeAdListener listener,bool callbackOnMainThread)
                 : base("com.bytedance.sdk.openadsdk.TTAdNative$NativeAdListener")
             {
                 this.listener = listener;
+                this.callbackOnMainThread = callbackOnMainThread;
             }
 
             public void onError(int code, string message)
             {
-                this.listener.OnError(code, message);
+                UnityDispatcher.PostTask(
+                    () => this.listener.OnError(code, message), callbackOnMainThread);
             }
 
             public void onNativeAdLoad(AndroidJavaObject list)
@@ -257,146 +266,185 @@ namespace ByteDance.Union
                         list.Call<AndroidJavaObject>("get", i));
                 }
 
-                this.listener.OnNativeAdLoad(list,null);
+                UnityDispatcher.PostTask(
+                    () => this.listener.OnNativeAdLoad(list,null), callbackOnMainThread);
             }
         }
 
         private sealed class BannerAdListener : AndroidJavaProxy
         {
             private readonly IBannerAdListener listener;
+            private bool callbackOnMainThread;
 
-            public BannerAdListener(IBannerAdListener listener)
+            public BannerAdListener(IBannerAdListener listener, bool callbackOnMainThread)
                 : base("com.bytedance.sdk.openadsdk.TTAdNative$BannerAdListener")
             {
                 this.listener = listener;
+                this.callbackOnMainThread = callbackOnMainThread;
             }
 
             public void onError(int code, string message)
             {
-                this.listener.OnError(code, message);
+                UnityDispatcher.PostTask(
+                    () => this.listener.OnError(code, message), callbackOnMainThread);
             }
 
             public void onBannerAdLoad(AndroidJavaObject handle)
             {
                 var ad = new BannerAd(handle);
-                this.listener.OnBannerAdLoad(ad);
+                UnityDispatcher.PostTask(
+                    () => this.listener.OnBannerAdLoad(ad), callbackOnMainThread);
             }
         }
 
         private sealed class InteractionAdListener : AndroidJavaProxy
         {
             private readonly IInteractionAdListener listener;
+            private bool callbackOnMainThread;
 
-            public InteractionAdListener(IInteractionAdListener listener)
+            public InteractionAdListener(IInteractionAdListener listener, bool callbackOnMainThread)
                 : base("com.bytedance.sdk.openadsdk.TTAdNative$InteractionAdListener")
             {
                 this.listener = listener;
+                this.callbackOnMainThread = callbackOnMainThread;
             }
 
             public void onError(int code, string message)
             {
-                this.listener.OnError(code, message);
+                UnityDispatcher.PostTask(
+                    () => this.listener.OnError(code, message), callbackOnMainThread);
             }
 
             public void onInteractionAdLoad(AndroidJavaObject handle)
             {
                 var ad = new InteractionAd(handle);
-                this.listener.OnInteractionAdLoad(ad);
+                UnityDispatcher.PostTask(
+                    () => this.listener.OnInteractionAdLoad(ad), callbackOnMainThread);
             }
         }
 
         private sealed class SplashAdListener : AndroidJavaProxy
         {
             private readonly ISplashAdListener listener;
-
-            public SplashAdListener(ISplashAdListener listener)
+            private bool callbackOnMainThread;
+            public SplashAdListener(ISplashAdListener listener, bool callbackOnMainThread)
                 : base("com.bytedance.sdk.openadsdk.TTAdNative$SplashAdListener")
             {
                 this.listener = listener;
+                this.callbackOnMainThread = callbackOnMainThread;
             }
 
             public void onError(int code, string message)
             {
-                this.listener.OnError(code, message);
+                UnityDispatcher.PostTask(
+                    () => this.listener.OnError(code, message), callbackOnMainThread);
             }
 
             public void onSplashAdLoad(AndroidJavaObject handle)
             {
                 var ad = new BUSplashAd(handle);
-                this.listener.OnSplashAdLoad(ad);
+                UnityDispatcher.PostTask(
+                    () => this.listener.OnSplashAdLoad(ad), callbackOnMainThread);
             }
             
             public void onTimeout()
             {
-                this.listener.OnTimeout();
+                UnityDispatcher.PostTask(
+                    () => this.listener.OnTimeout(), callbackOnMainThread);
             }
         }
 
         private sealed class RewardVideoAdListener : AndroidJavaProxy
         {
             private readonly IRewardVideoAdListener listener;
-
-            public RewardVideoAdListener(IRewardVideoAdListener listener)
+            private bool callbackOnMainThread;
+            public RewardVideoAdListener(IRewardVideoAdListener listener, bool callbackOnMainThread)
                 : base("com.bytedance.sdk.openadsdk.TTAdNative$RewardVideoAdListener")
             {
                 this.listener = listener;
+                this.callbackOnMainThread = callbackOnMainThread;
             }
 
             public void onError(int code, string message)
             {
-                this.listener.OnError(code, message);
+                UnityDispatcher.PostTask(
+                    () => this.listener.OnError(code, message),callbackOnMainThread);
             }
 
             public void onRewardVideoAdLoad(AndroidJavaObject handle)
             {
                 var ad = new RewardVideoAd(handle);
-                this.listener.OnRewardVideoAdLoad(ad);
+                UnityDispatcher.PostTask(
+                    () => this.listener.OnRewardVideoAdLoad(ad),callbackOnMainThread);
             }
 
             public void onRewardVideoCached()
             {
-                this.listener.OnRewardVideoCached();
+                UnityDispatcher.PostTask(
+                    () => this.listener.OnRewardVideoCached(),callbackOnMainThread);
             }
+            
+            public void onRewardVideoCached(AndroidJavaObject handle)
+            {
+                var ad = new RewardVideoAd(handle);
+                UnityDispatcher.PostTask(
+                    () => this.listener.OnRewardVideoCached(ad),callbackOnMainThread);
+            } 
         }
 
         private sealed class FullScreenVideoAdListener : AndroidJavaProxy
         {
             private readonly IFullScreenVideoAdListener listener;
+            private bool callbackOnMainThread;
 
             public FullScreenVideoAdListener(
-                IFullScreenVideoAdListener listener)
+                IFullScreenVideoAdListener listener, bool callbackOnMainThread)
                 : base("com.bytedance.sdk.openadsdk.TTAdNative$FullScreenVideoAdListener")
             {
                 this.listener = listener;
+                this.callbackOnMainThread = callbackOnMainThread;
             }
 
             public void onError(int code, string message)
             {
-                this.listener.OnError(code, message);
+                UnityDispatcher.PostTask(
+                    () => this.listener.OnError(code, message), callbackOnMainThread);
             }
 
             public void onFullScreenVideoAdLoad(AndroidJavaObject handle)
             {
                 var ad = new FullScreenVideoAd(handle);
-                this.listener.OnFullScreenVideoAdLoad(ad);
+                UnityDispatcher.PostTask(
+                    () => this.listener.OnFullScreenVideoAdLoad(ad), callbackOnMainThread);
             }
 
             public void onFullScreenVideoCached()
             {
-                this.listener.OnFullScreenVideoCached();
+                UnityDispatcher.PostTask(
+                    () => this.listener.OnFullScreenVideoCached(), callbackOnMainThread);
             }
+            
+            public void onFullScreenVideoCached(AndroidJavaObject handle)
+            {
+                var ad = new FullScreenVideoAd(handle);
+                UnityDispatcher.PostTask(
+                    () => this.listener.OnFullScreenVideoCached(ad), callbackOnMainThread);
+            }
+            
         }
 
         private sealed class ExpressAdListener : AndroidJavaProxy {
             private readonly IExpressAdListener callback;
+            private bool callbackOnMainThread;
 
-            public ExpressAdListener (IExpressAdListener listener) : base ("com.bytedance.sdk.openadsdk.TTAdNative$NativeExpressAdListener") {
+            public ExpressAdListener (IExpressAdListener listener, bool callbackOnMainThread) : base ("com.bytedance.sdk.openadsdk.TTAdNative$NativeExpressAdListener") {
                 this.callback = listener;
-
+                this.callbackOnMainThread = callbackOnMainThread;
             }
 
             void onError (int code, String message) {
-                 this.callback.OnError (code, message);
+                UnityDispatcher.PostTask (
+                    () => this.callback.OnError (code, message), callbackOnMainThread);
             }
 
             void onNativeExpressAdLoad (AndroidJavaObject ads) {
@@ -409,7 +457,8 @@ namespace ByteDance.Union
                         ads.Call<AndroidJavaObject>("get", i));
                     expressAds.Insert(i, ad);
                 }
-                this.callback.OnExpressAdLoad (expressAds);
+                UnityDispatcher.PostTask (
+                    () => this.callback.OnExpressAdLoad (expressAds), callbackOnMainThread);
             }
         }
 

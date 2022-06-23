@@ -15,7 +15,7 @@ namespace ByteDance.Union
     /// <summary>
     /// The native Ad.
     /// </summary>
-    public sealed class NativeAd : IDisposable
+    public sealed class NativeAd : IDisposable,IClientBidding
     {
         private static int loadContextID = 0;
         private static Dictionary<int, INativeAdListener> loadListeners =
@@ -37,6 +37,7 @@ namespace ByteDance.Union
         private bool disposed;
         private AdSlotType slotType;
 
+        private static bool _callbackOnMainThead;
         internal NativeAd(IntPtr nativeAd, AdSlotType slotType)
         {
             this.nativeAd = nativeAd;
@@ -59,21 +60,18 @@ namespace ByteDance.Union
         }
 
         internal static void LoadNativeAd(
-            AdSlot adSlot, INativeAdListener listener)
+            AdSlot adSlot, INativeAdListener listener, bool callbackOnMainThead)
         {
+            _callbackOnMainThead = callbackOnMainThead;
             var context = loadContextID++;
             loadListeners.Add(context, listener);
             Debug.Log(adSlot.CodeId);
-
+            AdSlotStruct slot = AdSlotBuilder.getAdSlot(adSlot);
             UnionPlatform_NativeAd_Load(
-            adSlot.CodeId,
-            adSlot.adCount,
-            adSlot.type,
-            adSlot.width, 
-            adSlot.height,
-            NativeAd_OnErrorMethod,
-            NativeAd_OnNativeAdLoadMethod,
-            context);
+                ref slot,
+                NativeAd_OnErrorMethod,
+                NativeAd_OnNativeAdLoadMethod,
+                context);
         }
 
         public void Dispose()
@@ -94,8 +92,9 @@ namespace ByteDance.Union
         }
 
         public void SetNativeAdInteractionListener(
-        IInteractionAdInteractionListener listener)
+        IInteractionAdInteractionListener listener, bool callbackOnMainThead = true)
         {
+            _callbackOnMainThead = callbackOnMainThead;
             var context = interactionContextID++;
             interactionListeners.Add(context, listener);
             UnionPlatform_NativeAd_SetInteractionListener(
@@ -114,11 +113,7 @@ namespace ByteDance.Union
 
         [DllImport("__Internal")]
         private static extern void UnionPlatform_NativeAd_Load(
-            string slotID,
-            int adCount,
-            AdSlotType nativeAdType,
-            int width, 
-            int height,
+            ref AdSlotStruct slot,
             NativeAd_OnError onError,
             NativeAd_OnNativeAdLoad onNativeAdLoad,
             int context);
@@ -138,7 +133,8 @@ namespace ByteDance.Union
         [AOT.MonoPInvokeCallback(typeof(NativeAd_OnError))]
         private static void NativeAd_OnErrorMethod(int code, string message, int context)
         {
-            (() =>
+            Debug.Log("OnNativeAdError:");
+            UnityDispatcher.PostTask(() =>
             {
                 INativeAdListener listener;
                 if (loadListeners.TryGetValue(context, out listener))
@@ -151,13 +147,14 @@ namespace ByteDance.Union
                     Debug.LogError(
                         "The OnError can not find the context.");
                 }
-            });
+            }, _callbackOnMainThead);
         }
 
         [AOT.MonoPInvokeCallback(typeof(NativeAd_OnNativeAdLoad))]
         private static void NativeAd_OnNativeAdLoadMethod(IntPtr nativeAd, int context, int slotType)
         {
-            (() =>
+            Debug.Log("OnNativeAdLoad:");
+            UnityDispatcher.PostTask(() =>
             {
                 INativeAdListener listener;
                 if (loadListeners.TryGetValue(context, out listener))
@@ -187,13 +184,13 @@ namespace ByteDance.Union
                     Debug.LogError(
                         "The NativeAd_OnNativeAdLoad can not find the context.");
                 }
-            });
+            }, _callbackOnMainThead);
         }
 
         [AOT.MonoPInvokeCallback(typeof(NativeAd_OnAdShow))]
         private static void NativeAd_OnAdShowMethod(int context)
         {
-            (() =>
+            UnityDispatcher.PostTask(() =>
             {
                 IInteractionAdInteractionListener listener;
                 if (interactionListeners.TryGetValue(context, out listener))
@@ -205,13 +202,13 @@ namespace ByteDance.Union
                     Debug.LogError(
                         "The OnAdShow can not find the context.");
                 }
-            });
+            }, _callbackOnMainThead);
         }
 
         [AOT.MonoPInvokeCallback(typeof(NativeAd_OnAdDidClick))]
         private static void NativeAd_OnAdDidClickMethed(int context)
         {
-            (() =>
+            UnityDispatcher.PostTask(() =>
             {
                 IInteractionAdInteractionListener listener;
                 if (interactionListeners.TryGetValue(context, out listener))
@@ -223,13 +220,13 @@ namespace ByteDance.Union
                     Debug.LogError(
                         "The OnAdVideoBarClick can not find the context.");
                 }
-            });
+            }, _callbackOnMainThead);
         }
 
         [AOT.MonoPInvokeCallback(typeof(NativeAd_OnAdClose))]
         private static void NativeAd_OnAdCloseMethod(int context)
         {
-            (() =>
+            UnityDispatcher.PostTask(() =>
             {
                 IInteractionAdInteractionListener listener;
                 if (interactionListeners.TryGetValue(context, out listener))
@@ -241,13 +238,14 @@ namespace ByteDance.Union
                     Debug.LogError(
                         "The OnAdClose can not find the context.");
                 }
-            });
+            }, _callbackOnMainThead);
         }
 
         [AOT.MonoPInvokeCallback(typeof(NativeAd_OnAdRemove))]
         private static void NativeAd_OnAdRemoveMethod(int context)
         {
-            (() =>
+            Debug.Log("onAdRemoved");
+            UnityDispatcher.PostTask(() =>
             {
                 IInteractionAdInteractionListener listener;
                 if (interactionListeners.TryGetValue(context, out listener))
@@ -259,9 +257,23 @@ namespace ByteDance.Union
                     Debug.LogError(
                         "The onAdRemoved can not find the context.");
                 }
-            });
+            }, _callbackOnMainThead);
         }
 
+        public void setAuctionPrice( double price)
+        {
+            ClientBidManager.SetAuctionPrice(this.nativeAd,price);
+        }
+
+        public void win(double price)
+        {
+            ClientBidManager.Win(this.nativeAd,price);
+        }
+
+        public void Loss( double price, string reason, string bidder)
+        {
+            ClientBidManager.Loss(this.nativeAd,price,reason,bidder);
+        }
     }
 #endif
 }

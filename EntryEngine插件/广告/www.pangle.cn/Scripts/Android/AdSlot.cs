@@ -153,12 +153,37 @@ namespace ByteDance.Union
                 return this;
             }
 
+            public Builder WithBid(string bidAdm){
+                 this.builder.Call<AndroidJavaObject>("withBid", bidAdm);
+                 return this;
+            }
+
+            public Builder SetAdLoadType(AdLoadType adLoadType)
+            {
+                var ajc= new AndroidJavaClass("com.bytedance.sdk.openadsdk.TTAdLoadType");
+                var param  = ajc.GetStatic<AndroidJavaObject>("UNKNOWN");
+                switch (adLoadType)
+                {
+                    case AdLoadType.PreLoad:
+                        param=ajc.GetStatic<AndroidJavaObject>("PRELOAD");
+                        break;
+                    case AdLoadType.Load:
+                        param=ajc.GetStatic<AndroidJavaObject>("LOAD");
+                        break;
+                }
+                this.builder.Call<AndroidJavaObject>("setAdLoadType", param);
+                return this;
+            }
+
             /// <summary>
             /// Build the Ad slot.
             /// </summary>
             public AdSlot Build()
             {
                 var native = this.builder.Call<AndroidJavaObject>("build");
+#if DEBUG
+                Debug.Log($"{native.Call<string>("toString")}");
+#endif
                 return new AdSlot(native);
             }
         }

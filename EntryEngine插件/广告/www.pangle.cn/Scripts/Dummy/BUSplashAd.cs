@@ -13,7 +13,7 @@ namespace ByteDance.Union
     /// <summary>
     /// The banner Ad.
     /// </summary>
-    public class BUSplashAd
+    public class BUSplashAd:IClientBidding
     {
         public AndroidJavaObject ad;
 
@@ -36,20 +36,33 @@ namespace ByteDance.Union
         /// Sets the interaction listener for this Ad.
         /// </summary>
         public void SetSplashInteractionListener(
-            ISplashAdInteractionListener listener)
+            ISplashAdInteractionListener listener, bool callbackOnMainThread = true)
         {
         }
 
         /// <summary>
         /// Sets the listener for the Ad download.
         /// </summary>
-        public void SetDownloadListener(IAppDownloadListener listener)
+        public void SetDownloadListener(IAppDownloadListener listener,bool callbackOnMainThread = true)
         {
         }
 
         public void Dispose()
         {
         }
+        public void setAuctionPrice(double price)
+        {
+            
+        }
+
+        public void win(double price)
+        {
+        }
+
+        public void Loss(double price, string reason, string bidder)
+        {
+        }
+    
     }
 #endif
 }

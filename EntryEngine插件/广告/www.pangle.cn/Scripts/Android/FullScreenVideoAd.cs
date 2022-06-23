@@ -7,13 +7,13 @@
 
 namespace ByteDance.Union
 {
-#if !UNITY_EDITOR && UNITY_ANDROID
+#if (DEV || !UNITY_EDITOR) && UNITY_ANDROID
     using UnityEngine;
-
+    using System.Collections.Generic;
     /// <summary>
     /// The full screen video Ad.
     /// </summary>
-    public sealed class FullScreenVideoAd
+    public sealed class FullScreenVideoAd : IClintBidding
     {
         private readonly AndroidJavaObject ad;
         /// <summary>
@@ -33,10 +33,10 @@ namespace ByteDance.Union
         /// Sets the interaction listener for this Ad.
         /// </summary>
         public void SetFullScreenVideoAdInteractionListener(
-            IFullScreenVideoAdInteractionListener listener)
+            IFullScreenVideoAdInteractionListener listener, bool callbackOnMainThread)
         {
             var androidListener =
-                new FullScreenVideoAdInteractionListener(listener);
+                new FullScreenVideoAdInteractionListener(listener, callbackOnMainThread);
             this.ad.Call(
                 "setFullScreenVideoAdInteractionListener", androidListener);
         }
@@ -44,9 +44,9 @@ namespace ByteDance.Union
         /// <summary>
         /// Sets the listener for the Ad download.
         /// </summary>
-        public void SetDownloadListener(IAppDownloadListener listener)
+        public void SetDownloadListener(IAppDownloadListener listener, bool callbackOnMainThread = true)
         {
-            var androidListener = new AppDownloadListener(listener);
+            var androidListener = new AppDownloadListener(listener, callbackOnMainThread);
             this.ad.Call("setDownloadListener", androidListener);
         }
 
@@ -76,6 +76,25 @@ namespace ByteDance.Union
         {
             this.ad.Call("setShowDownLoadBar", show);
         }
+        /// <summary>
+        /// get media extra info dictionary,all value is string type,some need developer cast to real type manually
+        /// </summary>
+        /// <returns></returns>
+        public Dictionary<string, string> GetMediaExtraInfo()
+        {
+            var map= this.ad.Call<AndroidJavaObject>("getMediaExtraInfo");
+            var result = new Dictionary<string, string>();
+            var entries = map.Call<AndroidJavaObject>("entrySet").Call<AndroidJavaObject>("iterator");
+
+            while (entries.Call<bool>("hasNext"))
+            {
+                var entry = entries.Call<AndroidJavaObject>("next");
+                var key = entry.Call<AndroidJavaObject>("getKey").Call<string>("toString");
+                var value = entry.Call<AndroidJavaObject>("getValue").Call<string>("toString");
+                result.Add(key,value);
+            }
+            return result;
+        }
 
 #pragma warning disable SA1300
 #pragma warning disable IDE1006
@@ -83,42 +102,58 @@ namespace ByteDance.Union
         private sealed class FullScreenVideoAdInteractionListener : AndroidJavaProxy
         {
             private readonly IFullScreenVideoAdInteractionListener listener;
+            private bool callbackOnMainThread;
 
             public FullScreenVideoAdInteractionListener(
-                IFullScreenVideoAdInteractionListener listener)
+                IFullScreenVideoAdInteractionListener listener, bool callbackOnMainThread)
                 : base("com.bytedance.sdk.openadsdk.TTFullScreenVideoAd$FullScreenVideoAdInteractionListener")
             {
                 this.listener = listener;
+                this.callbackOnMainThread = callbackOnMainThread;
             }
 
             public void onAdShow()
             {
-                this.listener.OnAdShow();
+               UnityDispatcher.PostTask(()=>this.listener.OnAdShow(), callbackOnMainThread);
             }
 
             public void onAdVideoBarClick()
             {
-                this.listener.OnAdVideoBarClick();
+                UnityDispatcher.PostTask(()=>this.listener.OnAdVideoBarClick(), callbackOnMainThread);
             }
 
             public void onAdClose()
             {
-                this.listener.OnAdClose();
+                UnityDispatcher.PostTask(()=>this.listener.OnAdClose(), callbackOnMainThread);
             }
 
             public void onVideoComplete()
             {
-                this.listener.OnVideoComplete();
+                UnityDispatcher.PostTask(()=>this.listener.OnVideoComplete(), callbackOnMainThread);
             }
 
             public void onSkippedVideo()
             {
-                this.listener.OnSkippedVideo();
+                UnityDispatcher.PostTask(()=>this.listener.OnSkippedVideo(), callbackOnMainThread);
             }
         }
 
 #pragma warning restore SA1300
 #pragma warning restore IDE1006
+        public void Win(double auctionBidToWin)
+        {
+            ClientBiddingUtils.Win(ad, auctionBidToWin);
+        }
+
+        public void Loss(double auctionPrice = double.NaN, string lossReason = null, string winBidder = null)
+        {
+            ClientBiddingUtils.Loss(ad, auctionPrice, lossReason, winBidder);
+        }
+
+        public void SetPrice(double auctionPrice = double.NaN)
+        {
+            ClientBiddingUtils.SetPrice(ad, auctionPrice);
+        }
     }
 #endif
 }

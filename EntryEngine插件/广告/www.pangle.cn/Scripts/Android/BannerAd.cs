@@ -29,18 +29,18 @@ namespace ByteDance.Union
         /// Sets the interaction listener for this Ad.
         /// </summary>
         public void SetBannerInteractionListener(
-            IBannerAdInteractionListener listener)
+            IBannerAdInteractionListener listener, bool callbackOnMainThread = true)
         {
-            var androidListener = new AdInteractionListener(listener);
+            var androidListener = new AdInteractionListener(listener, callbackOnMainThread);
             this.ad.Call("setBannerInteractionListener", androidListener);
         }
 
         /// <summary>
         /// Sets the listener for the Ad download.
         /// </summary>
-        public void SetDownloadListener(IAppDownloadListener listener)
+        public void SetDownloadListener(IAppDownloadListener listener, bool  callbackOnMainThread = true)
         {
-            var androidListener = new AppDownloadListener(listener);
+            var androidListener = new AppDownloadListener(listener, callbackOnMainThread);
             this.ad.Call("setDownloadListener", androidListener);
         }
 
@@ -55,18 +55,18 @@ namespace ByteDance.Union
         /// <summary>
         /// Sets the show dislike icon.
         /// </summary>
-        public void SetShowDislikeIcon(IDislikeInteractionListener listener)
+        public void SetShowDislikeIcon(IDislikeInteractionListener listener, bool callbackOnMainThread = true)
         {
-            var androidListener = new DislikeInteractionCallback(listener);
+            var androidListener = new DislikeInteractionCallback(listener, callbackOnMainThread);
             this.ad.Call("setShowDislikeIcon", androidListener);
         }
 
         /// <summary>
         /// Gets the dislike dislog.
         /// </summary>
-        public AdDislike GetDislikeDialog(IDislikeInteractionListener listener)
+        public AdDislike GetDislikeDialog(IDislikeInteractionListener listener, bool callbackOnMainThread = true)
         {
-            var androidListener = new DislikeInteractionCallback(listener);
+            var androidListener = new DislikeInteractionCallback(listener,callbackOnMainThread);
             var dislike = this.ad.Call<AndroidJavaObject>(
                 "getDislikeDialog", androidListener);
             return new AdDislike(dislike);
@@ -86,22 +86,26 @@ namespace ByteDance.Union
         private sealed class AdInteractionListener : AndroidJavaProxy
         {
             private readonly IBannerAdInteractionListener listener;
+            private bool callbackOnMainThread;
 
             public AdInteractionListener(
-                IBannerAdInteractionListener listener)
+                IBannerAdInteractionListener listener, bool callbackOnMainThread)
                 : base("com.bytedance.sdk.openadsdk.TTBannerAd$AdInteractionListener")
             {
                 this.listener = listener;
+                this.callbackOnMainThread = callbackOnMainThread;
             }
 
             public void onAdClicked(AndroidJavaObject view, int var2)
             {
-                this.listener.OnAdClicked(var2);
+                UnityDispatcher.PostTask(
+                    () => this.listener.OnAdClicked(var2), callbackOnMainThread);
             }
 
             public void onAdShow(AndroidJavaObject view, int var2)
             {
-                this.listener.OnAdShow(var2);
+                UnityDispatcher.PostTask(
+                    () => this.listener.OnAdShow(var2), callbackOnMainThread);
             }
         }
 

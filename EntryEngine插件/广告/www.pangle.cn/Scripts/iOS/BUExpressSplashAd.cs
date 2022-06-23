@@ -18,22 +18,28 @@ namespace ByteDance.Union
     /// </summary>
     public sealed class BUExpressSplashAd : BUSplashAd
     {
-
         private static int loadContextID = 0;
+
         private static Dictionary<int, ISplashAdListener> loadListeners =
             new Dictionary<int, ISplashAdListener>();
 
         private static int interactionContextID = 0;
+
         private static Dictionary<int, ISplashAdInteractionListener> interactionListeners =
             new Dictionary<int, ISplashAdInteractionListener>();
 
         private delegate void ExpressSplashAd_OnError(int code, string message, int context);
+
         private delegate void ExpressSplashAd_OnLoad(IntPtr splashAd, int context);
 
         private delegate void ExpressSplashAd_OnAdShow(int context, int type);
+
         private delegate void ExpressSplashAd_OnAdClick(int context, int type);
+
         private delegate void ExpressSplashAd_OnAdClose(int context);
+
         private delegate void ExpressSplashAd_OnAdSkip(int context);
+
         private delegate void ExpressSplashAd_OnAdTimeOver(int context);
 
         private IntPtr splashAd;
@@ -48,7 +54,7 @@ namespace ByteDance.Union
         {
             this.Dispose(false);
         }
-        
+
 
         public void Dispose()
         {
@@ -71,13 +77,15 @@ namespace ByteDance.Union
         /// <summary>
         /// Load the  splash Ad.
         /// </summary>
-        internal static BUExpressSplashAd LoadSplashAd(AdSlot adSlot, ISplashAdListener listener, int timeOut)
+        internal static BUExpressSplashAd LoadSplashAd(AdSlot adSlot, ISplashAdListener listener, int timeOut,
+            bool callbackOnMainThead)
         {
+            CallbackOnMainThead = callbackOnMainThead;
             var context = loadContextID++;
             loadListeners.Add(context, listener);
-
+            AdSlotStruct slot = AdSlotBuilder.getAdSlot(adSlot);
             IntPtr ad = UnionPlatform_ExpressSplashAd_Load(
-                adSlot.CodeId,
+                ref slot,
                 timeOut,
                 ExpressSplashAd_OnErrorMethod,
                 ExpressSplashAd_OnLoadMethod,
@@ -90,8 +98,9 @@ namespace ByteDance.Union
         /// Sets the interaction listener for this Ad.
         /// </summary>
         public void SetSplashInteractionListener(
-            ISplashAdInteractionListener listener)
+            ISplashAdInteractionListener listener, bool callbackOnMainThead = true)
         {
+            CallbackOnMainThead = callbackOnMainThead;
             var context = interactionContextID++;
             interactionListeners.Add(context, listener);
 
@@ -123,7 +132,7 @@ namespace ByteDance.Union
 
         [DllImport("__Internal")]
         private static extern IntPtr UnionPlatform_ExpressSplashAd_Load(
-            string slotID,
+            ref AdSlotStruct adslot,
             int timeOut,
             ExpressSplashAd_OnError onError,
             ExpressSplashAd_OnLoad onAdLoad,
@@ -148,11 +157,11 @@ namespace ByteDance.Union
             IntPtr splashAd);
 
 
-
         [AOT.MonoPInvokeCallback(typeof(ExpressSplashAd_OnError))]
         private static void ExpressSplashAd_OnErrorMethod(int code, string message, int context)
         {
-            (() =>
+            Debug.Log("expressSplash load OnError");
+            UnityDispatcher.PostTask(() =>
             {
                 ISplashAdListener listener;
                 if (loadListeners.TryGetValue(context, out listener))
@@ -165,13 +174,14 @@ namespace ByteDance.Union
                     Debug.LogError(
                         "The SplashAd_OnError can not find the context.");
                 }
-            });
+            }, CallbackOnMainThead);
         }
 
         [AOT.MonoPInvokeCallback(typeof(ExpressSplashAd_OnLoad))]
         private static void ExpressSplashAd_OnLoadMethod(IntPtr splashAd, int context)
         {
-            (() =>
+            Debug.Log("expressSplash load Onsucc");
+            UnityDispatcher.PostTask(() =>
             {
                 ISplashAdListener listener;
                 if (loadListeners.TryGetValue(context, out listener))
@@ -184,18 +194,18 @@ namespace ByteDance.Union
                     Debug.LogError(
                         "The SplashAd_OnLoad can not find the context.");
                 }
-            });
+            }, CallbackOnMainThead);
         }
 
         [AOT.MonoPInvokeCallback(typeof(ExpressSplashAd_OnAdShow))]
         private static void ExpressSplashAd_OnAdShowMethod(int context, int type)
         {
-            (() =>
+            Debug.Log("expressSplash Ad OnAdShow");
+            UnityDispatcher.PostTask(() =>
             {
                 ISplashAdInteractionListener listener;
                 if (interactionListeners.TryGetValue(context, out listener))
                 {
-                   
                     listener.OnAdShow(type);
                 }
                 else
@@ -203,18 +213,18 @@ namespace ByteDance.Union
                     Debug.LogError(
                         "The SplashAd_OnAdShow can not find the context.");
                 }
-            });
+            }, CallbackOnMainThead);
         }
 
         [AOT.MonoPInvokeCallback(typeof(ExpressSplashAd_OnAdClick))]
         private static void ExpressSplashAd_OnAdClickMethod(int context, int type)
         {
-            (() =>
+            Debug.Log("expressSplash Ad OnAdClicked type");
+            UnityDispatcher.PostTask(() =>
             {
                 ISplashAdInteractionListener listener;
                 if (interactionListeners.TryGetValue(context, out listener))
                 {
-                    
                     listener.OnAdClicked(type);
                 }
                 else
@@ -222,14 +232,15 @@ namespace ByteDance.Union
                     Debug.LogError(
                         "The SplashAd_OnAdClick can not find the context.");
                 }
-            });
+            }, CallbackOnMainThead);
         }
 
-        
+
         [AOT.MonoPInvokeCallback(typeof(ExpressSplashAd_OnAdClose))]
         private static void ExpressSplashAd_OnAdCloseMethod(int context)
         {
-            (() =>
+            Debug.Log("expressSplash Ad OnAdClose");
+            UnityDispatcher.PostTask(() =>
             {
                 ISplashAdInteractionListener listener;
                 if (interactionListeners.TryGetValue(context, out listener))
@@ -242,18 +253,18 @@ namespace ByteDance.Union
                     Debug.LogError(
                         "The ExpressSplashAd_OnAdClose can not find the context.");
                 }
-            });
+            }, CallbackOnMainThead);
         }
 
         [AOT.MonoPInvokeCallback(typeof(ExpressSplashAd_OnAdSkip))]
         private static void ExpressSplashAd_OnAdSkipMethod(int context)
         {
-            (() =>
+            Debug.Log("expressSplash Ad OnAdSkip ");
+            UnityDispatcher.PostTask(() =>
             {
                 ISplashAdInteractionListener listener;
                 if (interactionListeners.TryGetValue(context, out listener))
                 {
-                    
                     listener.OnAdSkip();
                 }
                 else
@@ -261,13 +272,14 @@ namespace ByteDance.Union
                     Debug.LogError(
                         "The SplashAd_OnAdSkip can not find the context.");
                 }
-            });
+            }, CallbackOnMainThead);
         }
 
         [AOT.MonoPInvokeCallback(typeof(ExpressSplashAd_OnAdTimeOver))]
         private static void ExpressSplashAd_OnAdTimeOverMethod(int context)
         {
-            (() =>
+            Debug.Log("expressSplash Ad OnAdTimeOver ");
+            UnityDispatcher.PostTask(() =>
             {
                 ISplashAdInteractionListener listener;
                 if (interactionListeners.TryGetValue(context, out listener))
@@ -279,7 +291,7 @@ namespace ByteDance.Union
                     Debug.LogError(
                         "The SplashAd_OnAdTimeOver can not find the context.");
                 }
-            });
+            }, CallbackOnMainThead);
         }
     }
 #endif

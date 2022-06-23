@@ -126,7 +126,15 @@ namespace ByteDance.Union
             {
                 return this;
             }
-
+            
+            public Builder WithBid(string bidAdm){
+                return this;
+            }
+            
+            public Builder SetAdLoadType(AdLoadType adLoadType)
+            {
+                return this;
+            }
             /// <summary>
             /// Build the Ad slot.
             /// </summary>

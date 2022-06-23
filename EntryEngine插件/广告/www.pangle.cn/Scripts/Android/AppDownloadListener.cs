@@ -18,50 +18,52 @@ namespace ByteDance.Union
     internal sealed class AppDownloadListener : AndroidJavaProxy
     {
         private readonly IAppDownloadListener listener;
-
+        private bool callbackOnMainThread;
         public AppDownloadListener(
-            IAppDownloadListener listener)
+            IAppDownloadListener listener, bool callbackOnMainThread)
             : base("com.bytedance.sdk.openadsdk.TTAppDownloadListener")
         {
             this.listener = listener;
+            this.callbackOnMainThread = callbackOnMainThread;
         }
 
         public void onIdle()
         {
-            this.listener.OnIdle();
+            UnityDispatcher.PostTask(() => this.listener.OnIdle(), callbackOnMainThread);
         }
 
         public void onDownloadActive(
             long totalBytes, long currBytes, string fileName, string appName)
         {
-            this.listener.OnDownloadActive(
-                totalBytes, currBytes, fileName, appName);
+            UnityDispatcher.PostTask(() => this.listener.OnDownloadActive(
+                totalBytes, currBytes, fileName, appName), callbackOnMainThread);
         }
 
         public void onDownloadPaused(
             long totalBytes, long currBytes, string fileName, string appName)
         {
-            this.listener.OnDownloadPaused(
-                totalBytes, currBytes, fileName, appName);
+            UnityDispatcher.PostTask(() => this.listener.OnDownloadPaused(
+                totalBytes, currBytes, fileName, appName), callbackOnMainThread);
         }
 
         public void onDownloadFailed(
             long totalBytes, long currBytes, string fileName, string appName)
         {
-            this.listener.OnDownloadFailed(
-                totalBytes, currBytes, fileName, appName);
+            UnityDispatcher.PostTask(() => this.listener.OnDownloadFailed(
+                totalBytes, currBytes, fileName, appName), callbackOnMainThread);
         }
 
         public void onDownloadFinished(
             long totalBytes, string fileName, string appName)
         {
-            this.listener.OnDownloadFinished(
-                totalBytes, fileName, appName);
+            UnityDispatcher.PostTask(() => this.listener.OnDownloadFinished(
+                totalBytes, fileName, appName), callbackOnMainThread);
         }
 
         public void onInstalled(string fileName, string appName)
         {
-            this.listener.OnInstalled(fileName, appName);
+            UnityDispatcher.PostTask(
+                () => this.listener.OnInstalled(fileName, appName), callbackOnMainThread);
         }
     }
 

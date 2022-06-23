@@ -9,8 +9,7 @@
 
 #import "UnityAppController.h"
 #import "BUToUnityAdManager.h"
-
-
+#import "AdSlot.h"
 const char* AutonomousStringCopy_ExpressSplash(const char* string)
 {
     if (string == NULL) {
@@ -34,7 +33,7 @@ typedef void(*ExpressSplashAd_DidSkip)(int context);
 typedef void(*ExpressSplashAd_DidCountdownToZero)(int context);
 typedef void(*ExpressSplashAd_DidCloseOtherController)(int interactionType, int context);
 
-@interface BUToUnityExpressSplashAd : NSObject<BUNativeExpressSplashViewDelegate>
+@interface BUToUnityExpressSplashAd : NSObject<BUNativeExpressSplashViewDelegate,BUAdObjectProtocol>
 
 @property (nonatomic, strong) BUNativeExpressSplashView *splashAdView;
 
@@ -163,12 +162,15 @@ typedef void(*ExpressSplashAd_DidCloseOtherController)(int interactionType, int 
     }
 }
 
+- (id<BUAdClientBiddingProtocol>)adObject {
+    return self.splashAdView;
+}
 
 #if defined (__cplusplus)
 extern "C" {
 #endif
     void* UnionPlatform_ExpressSplashAd_Load(
-                                            const char* slotID,
+                                            AdSlotStruct *adSlot,
                                             int time,
                                             ExpressSplashAd_OnLoadError onLoadError,
                                             ExpressSplashAd_OnLoad onLoad,
@@ -179,7 +181,21 @@ extern "C" {
         instance.onLoad = onLoad;
         instance.onLoadError = onLoadError;
         
-        instance.splashAdView = [[BUNativeExpressSplashView alloc] initWithSlotID:[NSString stringWithUTF8String:slotID] adSize:[UIScreen mainScreen].bounds.size rootViewController:GetAppController().rootViewController];
+        CGRect frame = CGRectMake(0, 0, CGRectGetWidth([UIScreen mainScreen].bounds), CGRectGetHeight([UIScreen mainScreen].bounds));
+        BUAdSlot *slot = [BUAdSlot new];
+        slot.ID = [NSString stringWithUTF8String:adSlot->slotId?:""];
+        slot.AdType = BUAdSlotAdTypeSplash;
+        slot.position = BUAdSlotPositionFullscreen;
+        if (adSlot->adLoadType != 0) {
+                slot.adLoadType = (BUAdLoadType)[@(adSlot->adLoadType) integerValue];
+        }
+        BUSize *size = [[BUSize alloc] init];
+        size.width = frame.size.width * [[UIScreen mainScreen] scale];
+        size.height = frame.size.height * [[UIScreen mainScreen] scale];
+        slot.imgSize = size;
+        slot.adloadSeq = 0;
+        slot.primeRit = nil;
+        instance.splashAdView = [[BUNativeExpressSplashView alloc] initWithSlot:slot adSize:frame.size rootViewController:GetAppController().rootViewController];
         instance.splashAdView.delegate = instance;
         
         if (time > 0) {

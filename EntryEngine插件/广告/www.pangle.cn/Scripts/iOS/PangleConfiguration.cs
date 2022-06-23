@@ -1,3 +1,5 @@
+ using System;
+
  namespace ByteDance.Union
 {
     // #if UNITY_EDITOR || (!UNITY_ANDROID && !UNITY_IOS)
@@ -6,7 +8,7 @@
     public class PangleConfiguration
     {
         public enum BUAdSDKTerritory {
-            BUAdSDKTerritory_CN,
+            BUAdSDKTerritory_CN = 1,
             BUAdSDKTerritory_NO_CN,
         }
         public enum BUAdSDKLogLevel {
@@ -105,6 +107,14 @@
             return abvids;
         }
 
+        /// <summary>
+        /// set true if you are unity developer
+        /// </summary>
+        public bool unityDeveloper
+        {
+            get { return UnionPlatform_UnityDeveloper(); }
+            set {UnionPlatform_SetUnityDeveloper(value);}
+        }
         private static PangleConfiguration _Singleton = null;
         private static object Singleton_Lock = new object();
         public static PangleConfiguration CreateInstance()
@@ -184,6 +194,11 @@
         private static extern void UnionPlatform_setAllowModifyAudioSessionSetting(bool allowModifyAudioSessionSetting);
         [DllImport("__Internal")]
         private static extern bool UnionPlatform_allowModifyAudioSessionSetting();
+        [DllImport("__Internal")]
+        private static extern void UnionPlatform_SetUnityDeveloper(bool unityDeveloper);
+        [DllImport("__Internal")]
+        private static extern bool UnionPlatform_UnityDeveloper();
+
 
     }
     #endif

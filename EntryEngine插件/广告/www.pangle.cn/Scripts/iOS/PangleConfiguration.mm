@@ -126,6 +126,14 @@ extern "C" {
     bool UnionPlatform_allowModifyAudioSessionSetting() {
         return [BUAdSDKConfiguration configuration].allowModifyAudioSessionSetting;
     }
+    
+    bool UnionPlatform_UnityDeveloper() {
+        return [BUAdSDKConfiguration configuration].unityDeveloper;
+    }
+    
+    void UnionPlatform_SetUnityDeveloper(bool unityDeveloper) {
+        [BUAdSDKConfiguration configuration].unityDeveloper = (unityDeveloper == true);
+    }
 
 #if defined (__cplusplus)
 }

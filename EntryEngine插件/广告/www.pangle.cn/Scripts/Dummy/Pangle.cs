@@ -8,8 +8,17 @@ namespace ByteDance.Union
     using UnityEngine;
     public abstract class Pangle : PangleBase
     {
-        public static void InitializeSDK(PangleInitializeCallBack callback) {
+        public static void InitializeSDK(PangleInitializeCallBack callback,CustomConfiguration configuration=null) {
 
+        }
+        
+        public static void setCoppa(int coppa)
+        {
+        }
+
+        public static int getCoppa()
+        {
+            return 0;
         }
     }
     #endif

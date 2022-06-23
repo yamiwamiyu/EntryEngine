@@ -10,7 +10,7 @@ namespace ByteDance.Union
     {
         private static PangleInitializeCallBack callbackio;
         
-        public static void InitializeSDK(PangleInitializeCallBack callback)
+        public static void InitializeSDK(PangleInitializeCallBack callback,CustomConfiguration configuration=null)
         {
             callbackio = callback;
             UnionPlatform_PangleInitializeSDK(PangleInitializeCallBackCC);
@@ -24,6 +24,22 @@ namespace ByteDance.Union
         {
             callbackio(success,message);
         }
+
+        public static void setCoppa(int coppa)
+        {
+            UnionPlatform_PangleSetCoppa(coppa);
+        }
+
+        public static int getCoppa()
+        {
+            return UnionPlatform_PangleGetCoppa();
+        }
+        
+        [DllImport("__Internal")]
+        private static extern void UnionPlatform_PangleSetCoppa(int coppa);
+        
+        [DllImport("__Internal")]
+        private static extern int UnionPlatform_PangleGetCoppa();
     }
     #endif
 }

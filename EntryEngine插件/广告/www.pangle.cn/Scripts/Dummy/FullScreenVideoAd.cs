@@ -5,13 +5,15 @@
 // Proprietary and confidential.
 //------------------------------------------------------------------------------
 
+using System.Collections.Generic;
+
 namespace ByteDance.Union
 {
 #if UNITY_EDITOR || (!UNITY_ANDROID && !UNITY_IOS)
     /// <summary>
     /// The full screen video Ad.
     /// </summary>
-    public sealed class FullScreenVideoAd
+    public sealed class FullScreenVideoAd:IClientBidding
     {
          public void Dispose()
         {
@@ -20,14 +22,14 @@ namespace ByteDance.Union
         /// Sets the interaction listener for this Ad.
         /// </summary>
         public void SetFullScreenVideoAdInteractionListener(
-            IFullScreenVideoAdInteractionListener listener)
+            IFullScreenVideoAdInteractionListener listener, bool callbackOnMainThread = true)
         {
         }
 
         /// <summary>
         /// Sets the listener for the Ad download.
         /// </summary>
-        public void SetDownloadListener(IAppDownloadListener listener)
+        public void SetDownloadListener(IAppDownloadListener listener, bool callbackOnMainThread = true)
         {
         }
 
@@ -50,6 +52,28 @@ namespace ByteDance.Union
         /// Set to show the download bar.
         /// </summary>
         public void SetShowDownLoadBar(bool show)
+        {
+        }
+        /// <summary>
+        /// get media extra info dictionary,all value is string type,some need developer cast to real type manually
+        /// </summary>
+        /// <returns></returns>
+        public Dictionary<string, string> GetMediaExtraInfo()
+        {
+            var result = new Dictionary<string, string>();
+            return result;
+        }
+        
+        public void setAuctionPrice(double price)
+        {
+            
+        }
+
+        public void win(double price)
+        {
+        }
+
+        public void Loss(double price, string reason, string bidder)
         {
         }
     }

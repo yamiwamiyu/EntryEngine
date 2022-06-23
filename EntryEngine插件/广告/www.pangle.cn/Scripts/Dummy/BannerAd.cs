@@ -11,7 +11,7 @@ namespace ByteDance.Union
     /// <summary>
     /// The banner Ad.
     /// </summary>
-    public sealed class BannerAd
+    public sealed class BannerAd:IClientBidding
     {
         /// <summary>
         /// Sets the interaction listener for this Ad.
@@ -57,6 +57,19 @@ namespace ByteDance.Union
         /// Sets the slide interval time.
         /// </summary>
         public void SetSlideIntervalTime(int interval)
+        {
+        }
+
+        public void setAuctionPrice(double price)
+        {
+            
+        }
+
+        public void win(double price)
+        {
+        }
+
+        public void Loss(double price, string reason, string bidder)
         {
         }
     }

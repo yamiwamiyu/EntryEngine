@@ -15,41 +15,61 @@ namespace ByteDance.Union
         /// <summary>
         /// The banner Ad type.
         /// </summary>
-        Banner = 1,
+        Banner,
 
         /// <summary>
         /// The interaction Ad type.
         /// </summary>
-        InteractionAd = 2,
+        InteractionAd,
 
         /// <summary>
         /// The splash Ad type.
         /// </summary>
-        Splash = 3,
+        Splash,
 
         /// <summary>
         /// The cached splash Ad type.
         /// </summary>
-        CachedSplash = 4,
+        CachedSplash,
 
         /// <summary>
         /// The feed Ad type.
         /// </summary>
-        Feed = 5,
+        Feed,
 
         /// <summary>
         /// The reward video Ad type.
         /// </summary>
-        RewardVideo = 7,
+        RewardVideo,
 
         /// <summary>
         /// The full screen video Ad type.
         /// </summary>
-        FullScreenVideo = 8,
+        FullScreenVideo,
 
         /// <summary>
         /// The draw feed Ad type.
         /// </summary>
-        DrawFeed = 9,
+        DrawFeed,
+        
+        UNKOWN
+    }
+
+    public enum AdLoadType : int
+    {
+        /// <summary>
+        /// Unknown type
+        /// </summary>
+        Unknown = -1,
+
+        /// <summary>
+        /// Preload resources
+        /// </summary>
+        PreLoad = 1,
+
+        /// <summary>
+        /// Load resources in real time
+        /// </summary>
+        Load = 3
     }
 }

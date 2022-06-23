@@ -16,7 +16,7 @@ namespace ByteDance.Union
     /// <summary>
     /// The reward video Ad.
     /// </summary>
-    public sealed class ExpressAd : IDisposable
+    public sealed class ExpressAd : IDisposable,IClientBidding
     {
         private static int loadContextID = 0;
         private static Dictionary<int, IExpressAdListener> loadListeners =
@@ -46,6 +46,7 @@ namespace ByteDance.Union
         static List<ExpressAd> expressAds = new List<ExpressAd>();
         private bool disposed;
         public int index;
+        private static bool _callbackOnMainThead;
 
         internal ExpressAd(IntPtr expressAd, int flag)
         {
@@ -100,8 +101,9 @@ namespace ByteDance.Union
         }
 
         internal static void LoadExpressAdAd(
-            AdSlot slot, IExpressAdListener listener)
+            AdSlot slot, IExpressAdListener listener, bool callbackOnMainThead)
         {
+            _callbackOnMainThead = callbackOnMainThead;
             var context = loadContextID++;
             loadListeners.Add(context, listener);
 
@@ -110,12 +112,10 @@ namespace ByteDance.Union
                 expressAds.Add(new ExpressAd(i));
             }
 
+            AdSlotStruct adSlot = AdSlotBuilder.getAdSlot(slot);
             UnionPlatform_ExpressAd_Load(
                 context,
-                slot.CodeId,
-                slot.width,
-                slot.height,
-                slot.adCount,
+                ref adSlot,
                 ExpressAd_OnLoadMethod,
                 ExpressAd_OnLoadErrorMethod);
         }
@@ -124,8 +124,9 @@ namespace ByteDance.Union
         /// Sets the interaction listener for this Ad.
         /// </summary>
         public void SetDislikeCallback(
-            IDislikeInteractionListener listener)
+            IDislikeInteractionListener listener, bool callbackOnMainThead)
         {
+            _callbackOnMainThead = callbackOnMainThead;
             var context = dislikeContextID++;
             dislikeListeners.Add(context, listener);
 
@@ -139,8 +140,9 @@ namespace ByteDance.Union
         /// Sets the interaction listener for this Ad.
         /// </summary>
         public void SetExpressInteractionListener(
-            IExpressAdInteractionListener listener)
+            IExpressAdInteractionListener listener, bool callbackOnMainThead)
         {
+            _callbackOnMainThead = callbackOnMainThead;
             var context = interactionContextID++;
             interactionListeners.Add(context, listener);
 
@@ -159,7 +161,7 @@ namespace ByteDance.Union
         /// <summary>
         /// Sets the download listener.
         /// </summary>
-        public void SetDownloadListener(IAppDownloadListener listener)
+        public void SetDownloadListener(IAppDownloadListener listener, bool callbackOnMainThead = true)
         {
         }
 
@@ -175,10 +177,7 @@ namespace ByteDance.Union
         [DllImport("__Internal")]
         private static extern void UnionPlatform_ExpressAd_Load(
             int context,
-            string slotID,
-            float width,
-            float height,
-            int adCount,
+            ref AdSlotStruct slot,
             ExpressAd_OnLoad onLoad,
             ExpressAd_OnLoadError onLoadError);
 
@@ -217,7 +216,8 @@ namespace ByteDance.Union
         [AOT.MonoPInvokeCallback(typeof(ExpressAd_OnLoad))]
         private static void ExpressAd_OnLoadMethod(IntPtr expressAd, int context)
         {
-            (() =>
+            Debug.Log("OnExpressAdLoad");
+            UnityDispatcher.PostTask(() =>
             {
                 ;
                 IExpressAdListener listener;
@@ -231,13 +231,14 @@ namespace ByteDance.Union
                     Debug.LogError(
                         "The ExpressAd_OnLoad can not find the context.");
                 }
-            });
+            }, _callbackOnMainThead);
         }
 
         [AOT.MonoPInvokeCallback(typeof(ExpressAd_OnLoadError))]
         private static void ExpressAd_OnLoadErrorMethod(int code, string message, int context)
         {
-            (() =>
+            Debug.Log("ExpressAd OnLoadError :" + message);
+            UnityDispatcher.PostTask(() =>
             {
                 IExpressAdListener listener;
                 if (loadListeners.TryGetValue(context, out listener))
@@ -250,13 +251,13 @@ namespace ByteDance.Union
                     Debug.LogError(
                         "The ExpressAd_OnLoadError can not find the context.");
                 }
-            });
+            }, _callbackOnMainThead);
         }
 
         [AOT.MonoPInvokeCallback(typeof(ExpressAd_OnAdViewRenderSucc))]
         private static void ExpressAd_OnAdViewRenderSuccMethod(int index, float width, float height, int context)
         {
-            (() =>
+            UnityDispatcher.PostTask(() =>
             {
                 IExpressAdInteractionListener listener;
                 if (interactionListeners.TryGetValue(context, out listener))
@@ -269,13 +270,14 @@ namespace ByteDance.Union
                     Debug.LogError(
                         "The ExpressAd_OnAdViewRenderSucc can not find the context.");
                 }
-            });
+            }, _callbackOnMainThead);
         }
 
         [AOT.MonoPInvokeCallback(typeof(ExpressAd_OnAdViewRenderError))]
         private static void ExpressAd_OnAdViewRenderErrorMethod(int index, int code, string message, int context)
         {
-            (() =>
+            Debug.Log("express OnAdViewRenderError,type: ExpressAd");
+            UnityDispatcher.PostTask(() =>
             {
                 IExpressAdInteractionListener listener;
                 if (interactionListeners.TryGetValue(context, out listener))
@@ -288,13 +290,13 @@ namespace ByteDance.Union
                     Debug.LogError(
                         "The ExpressAd_OnAdViewRenderError can not find the context.");
                 }
-            });
+            },_callbackOnMainThead);
         }
 
         [AOT.MonoPInvokeCallback(typeof(ExpressAd_WillVisible))]
         private static void ExpressAd_WillVisibleMethod(int index, int context)
         {
-            (() =>
+            UnityDispatcher.PostTask(() =>
             {
                 IExpressAdInteractionListener listener;
                 if (interactionListeners.TryGetValue(context, out listener))
@@ -307,13 +309,13 @@ namespace ByteDance.Union
                     Debug.LogError(
                         "The ExpressAd_WillVisible can not find the context.");
                 }
-            });
+            }, _callbackOnMainThead);
         }
 
         [AOT.MonoPInvokeCallback(typeof(ExpressAd_DidClick))]
         private static void ExpressAd_DidClickMethod(int index, int context)
         {
-            (() =>
+            UnityDispatcher.PostTask(() =>
             {
                 IExpressAdInteractionListener listener;
                 if (interactionListeners.TryGetValue(context, out listener))
@@ -326,13 +328,14 @@ namespace ByteDance.Union
                     Debug.LogError(
                         "The ExpressAd_DidClick can not find the context.");
                 }
-            });
+            }, _callbackOnMainThead);
         }
 
         [AOT.MonoPInvokeCallback(typeof(ExpressAd_DidRemove))]
         private static void ExpressAd_DidRemoveMethod(int index, int context)
         {
-            (() =>
+            Debug.Log("express onAdRemoved,type:"+ index);
+            UnityDispatcher.PostTask(() =>
             {
                 IExpressAdInteractionListener listener;
                 if (interactionListeners.TryGetValue(context, out listener))
@@ -345,13 +348,13 @@ namespace ByteDance.Union
                     Debug.LogError(
                         "The onAdRemoved can not find the context.");
                 }
-            });
+            }, _callbackOnMainThead);
         }
 
         [AOT.MonoPInvokeCallback(typeof(ExpressAd_DidClose))]
         private static void ExpressAd_DidCloseMethod(int index, int context)
         {
-            (() =>
+            UnityDispatcher.PostTask(() =>
             {
                 IExpressAdInteractionListener listener;
                 if (interactionListeners.TryGetValue(context, out listener))
@@ -364,14 +367,14 @@ namespace ByteDance.Union
                     Debug.LogError(
                         "The OnAdClose can not find the context.");
                 }
-            });
+            }, _callbackOnMainThead);
         }
 
         [AOT.MonoPInvokeCallback(typeof(ExpressAd_OnAdDislike))]
         private static void ExpressAd_OnAdDislikeMethod(int index, int dislikeID, string dislikeReason, int context)
         {
             
-            (() =>
+            UnityDispatcher.PostTask(() =>
             {
                 IDislikeInteractionListener listener;
                 if (dislikeListeners.TryGetValue(context, out listener))
@@ -384,7 +387,22 @@ namespace ByteDance.Union
                     Debug.LogError(
                         "The ExpressAd_OnAdDislike can not find the context.");
                 }
-            });
+            }, _callbackOnMainThead);
+        }
+
+        public void setAuctionPrice(double price)
+        {
+            ClientBidManager.SetAuctionPrice(this.expressAdView,price);
+        }
+
+        public void win(double price)
+        {
+            ClientBidManager.Win(this.expressAdView,price);
+        }
+
+        public void Loss(double price, string reason, string bidder)
+        {
+            ClientBidManager.Loss(this.expressAdView,price,reason,bidder);
         }
     }
 #endif

@@ -31,5 +31,10 @@ namespace ByteDance.Union
         /// Invoke when the Ad load success.
         /// </summary>
         void OnExpressFullScreenVideoAdLoad(ExpressFullScreenVideoAd ad);
+        
+        /**
+         * 广告视频本地加载完成的回调，接入方可以在这个回调后直接播放本地视频
+         */
+        void OnFullScreenVideoCached(FullScreenVideoAd ad);
     }
 }

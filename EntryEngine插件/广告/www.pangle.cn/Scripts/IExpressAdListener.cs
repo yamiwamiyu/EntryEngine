@@ -27,11 +27,23 @@ namespace ByteDance.Union
         /// Invoke when the ExpressBannerAd load success.
         /// </summary>
         void OnExpressBannerAdLoad(ExpressBannerAd ad);
+        
+        void OnAdViewRenderError(int code, string message);
+        
+        void OnAdViewRenderSucc(ExpressBannerAd ad);
+        
+        void OnAdRemoved(ExpressBannerAd ad);
+
+        void OnAdRemoved(ExpressAd ad);
+
+        void OnRenderFailed(int code, string message);
 
         /// <summary>
         /// Invoke when the ExpressBannerAd load success.
         /// </summary>
         void OnExpressInterstitialAdLoad(ExpressInterstitialAd ad);
+        
+        void OnAdViewRenderSucc(ExpressInterstitialAd ad);
 #else
 #endif
     }

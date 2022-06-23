@@ -110,7 +110,7 @@ namespace ByteDance.Union
 
             public void onExitInstall()
             {
-                this.callback();
+                UnityDispatcher.PostTask(this.callback,true);
             }
         }
 

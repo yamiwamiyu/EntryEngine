@@ -9,7 +9,7 @@
 #import <BUAdSDK/BUNativeAdRelatedView.h>
 #import "UnityAppController.h"
 #import "BUToUnityBundleHelper.h"
-
+#include "AdSlot.h"
 extern const char* AutonomousStringCopy2(const char* string);
 
 const char* AutonomousStringCopy2(const char* string)
@@ -36,7 +36,7 @@ typedef void(*NativeAd_OnAdRemove)(int context);
 @interface NativeAd : NSObject
 @end
 
-@interface NativeAd () <BUNativeAdDelegate, BUVideoAdViewDelegate>
+@interface NativeAd () <BUNativeAdDelegate, BUVideoAdViewDelegate,BUAdObjectProtocol>
 @property (nonatomic, strong) BUNativeAd *nativeAd;
 
 @property (nonatomic, assign) int loadContext;
@@ -371,6 +371,10 @@ typedef void(*NativeAd_OnAdRemove)(int context);
     }
 }
 
+- (id<BUAdClientBiddingProtocol>)adObject {
+    return self.nativeAd;
+}
+
 @end
 
 #if defined (__cplusplus)
@@ -378,36 +382,35 @@ extern "C" {
 #endif
 
 void UnionPlatform_NativeAd_Load(
-    const char* slotID,
-    int adCount,
-    int nativeAdType,
-    int width,
-    int height,
+    AdSlotStruct *slot,
     NativeAd_OnError onError,
     NativeAd_OnNativeAdLoad onNativeAdLoad,
     int context) {
         
     BUNativeAd *nad = [[BUNativeAd alloc] init];
-    
+    NSLog(@"%s",slot->slotId);
     NativeAd* instance = [NativeAd sharedInstance];
     instance.nativeAd = nad;
     instance.onError = onError;
     instance.onNativeAdLoad = onNativeAdLoad;
     instance.loadContext = context;
-    
+    NSString *slotID = [[NSString alloc] initWithCString:slot->slotId encoding:NSUTF8StringEncoding];
     BUAdSlot *slot1 = [[BUAdSlot alloc] init];
     BUSize *imgSize1 = [[BUSize alloc] init];
-    imgSize1.width = width;
-    imgSize1.height = height;
+    imgSize1.width = slot->width;
+    imgSize1.height = slot->height;
     slot1.imgSize = imgSize1;
-    slot1.ID = [[NSString alloc] initWithUTF8String:slotID?:""];
+    slot1.ID = slotID;
     slot1.isOriginAd = YES;
-    if (nativeAdType == 0) {
+    if (slot->adLoadType != 0) {
+        slot1.adLoadType = (BUAdLoadType)[@(slot->adLoadType) integerValue];
+    }
+    if (slot->adType == 0) {
         [NativeAd sharedInstance].adType = BUAdSlotAdTypeBanner;
         slot1.AdType = BUAdSlotAdTypeBanner;
         slot1.position = BUAdSlotPositionTop;
         [instance buildupViewBanner];
-    } else if (nativeAdType == 1) {
+    } else if (slot->adType == 1) {
         [NativeAd sharedInstance].adType = BUAdSlotAdTypeInterstitial;
         slot1.AdType = BUAdSlotAdTypeInterstitial;
         slot1.position = BUAdSlotPositionMiddle;

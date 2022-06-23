@@ -11,7 +11,7 @@ namespace ByteDance.Union
     /// <summary>
     /// The native Ad.
     /// </summary>
-    public class NativeAd
+    public class NativeAd:IClientBidding
     {
         public void Dispose()
         {
@@ -96,7 +96,7 @@ namespace ByteDance.Union
         }
 
         public void SetNativeAdInteractionListener(
-        IInteractionAdInteractionListener listener)
+        IInteractionAdInteractionListener listener, bool callbackOnMainThread = true)
         {
         }
 
@@ -116,6 +116,19 @@ namespace ByteDance.Union
         public AdSlotType GetAdType()
         {
             return 0;
+        }
+        
+        public void setAuctionPrice(double price)
+        {
+            
+        }
+
+        public void win(double price)
+        {
+        }
+
+        public void Loss(double price, string reason, string bidder)
+        {
         }
     }
 #endif

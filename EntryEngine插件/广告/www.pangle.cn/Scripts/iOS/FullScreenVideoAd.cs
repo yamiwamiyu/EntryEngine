@@ -16,7 +16,7 @@ namespace ByteDance.Union
     /// <summary>
     /// The fullScreen video Ad.
     /// </summary>
-    public sealed class FullScreenVideoAd : IDisposable
+    public sealed class FullScreenVideoAd : IDisposable,IClientBidding
     {
         private static int loadContextID = 0;
         private static Dictionary<int, IFullScreenVideoAdListener> loadListeners =
@@ -39,6 +39,7 @@ namespace ByteDance.Union
         private IntPtr fullScreenVideoAd;
         private bool disposed;
 
+        private static bool _callbackOnMainThead;
         internal FullScreenVideoAd(IntPtr fullScreenVideoAd)
         {
             this.fullScreenVideoAd = fullScreenVideoAd;
@@ -50,14 +51,15 @@ namespace ByteDance.Union
         }
 
         internal static void LoadFullScreenVideoAd(
-            AdSlot adSlot, IFullScreenVideoAdListener listener)
+            AdSlot adSlot, IFullScreenVideoAdListener listener, bool callbackOnMainThead)
         {
+            _callbackOnMainThead = callbackOnMainThead;
             var context = loadContextID++;
             loadListeners.Add(context, listener);
 
+            AdSlotStruct adSlotStruct = AdSlotBuilder.getAdSlot(adSlot);
             UnionPlatform_FullScreenVideoAd_Load(
-                adSlot.CodeId,
-                adSlot.UserId,
+                ref adSlotStruct,
                 FullScreenVideoAd_OnErrorMethod,
                 FullScreenVideoAd_OnFullScreenVideoAdLoadMethod,
                 FullScreenVideoAd_OnFullScreenVideoCachedMethod,
@@ -85,8 +87,9 @@ namespace ByteDance.Union
         /// Sets the interaction listener for this Ad.
         /// </summary>
         public void SetFullScreenVideoAdInteractionListener(
-            IFullScreenVideoAdInteractionListener listener)
+            IFullScreenVideoAdInteractionListener listener, bool callbackOnMainThead)
         {
+            _callbackOnMainThead = callbackOnMainThead;
             var context = interactionContextID++;
             interactionListeners.Add(context, listener);
 
@@ -104,7 +107,7 @@ namespace ByteDance.Union
         /// <summary>
         /// Sets the download listener.
         /// </summary>
-        public void SetDownloadListener(IAppDownloadListener listener)
+        public void SetDownloadListener(IAppDownloadListener listener, bool callbackOnMainThead)
         {
         }
 
@@ -131,10 +134,28 @@ namespace ByteDance.Union
         {
         }
 
+        /// <summary>
+        /// return the video is From preload
+        /// </summary>
+        /// <returns>bool</returns>
+        public bool materialMetaIsFromPreload()
+        {
+            return UnionPlatform_FullScreenVideoMaterialMetaIsFromPreload(this.fullScreenVideoAd);
+        }
+
+        /// <summary>
+        /// return the expire time of the video
+        /// </summary>
+        /// <returns>time stamp</returns>
+        public long expireTime()
+        {
+            return UnionPlatform_FullScreenVideoExpireTime(this.fullScreenVideoAd);
+        }
+
+        
         [DllImport("__Internal")]
         private static extern void UnionPlatform_FullScreenVideoAd_Load(
-            string slotID,
-            string userID,
+            ref AdSlotStruct adSlotStruct,
             FullScreenVideoAd_OnError onError,
             FullScreenVideoAd_OnFullScreenVideoAdLoad onFullScreenVideoAdLoad,
             FullScreenVideoAd_OnFullScreenVideoCached onFullScreenVideoCached,
@@ -159,10 +180,18 @@ namespace ByteDance.Union
         private static extern void UnionPlatform_FullScreenVideoAd_Dispose(
             IntPtr fullScreenVideoAd);
 
+        [DllImport("__Internal")]
+        private static extern bool UnionPlatform_FullScreenVideoMaterialMetaIsFromPreload(IntPtr fullscreenVideoAd);
+        [DllImport("__Internal")]
+        private static extern long UnionPlatform_FullScreenVideoExpireTime(IntPtr fullscreenVideoAd);
+
+
+        
         [AOT.MonoPInvokeCallback(typeof(FullScreenVideoAd_OnError))]
         private static void FullScreenVideoAd_OnErrorMethod(int code, string message, int context)
         {
-            (() =>
+            Debug.Log("OnFullScreenError: " + message);
+            UnityDispatcher.PostTask(() =>
             {
                 IFullScreenVideoAdListener listener;
                 if (loadListeners.TryGetValue(context, out listener))
@@ -175,13 +204,14 @@ namespace ByteDance.Union
                     Debug.LogError(
                         "The OnError can not find the context.");
                 }
-            });
+            }, _callbackOnMainThead);
         }
 
         [AOT.MonoPInvokeCallback(typeof(FullScreenVideoAd_OnFullScreenVideoAdLoad))]
         private static void FullScreenVideoAd_OnFullScreenVideoAdLoadMethod(IntPtr fullScreenVideoAd, int context)
         {
-            (() =>
+            Debug.Log("OnFullScreenAdLoad");
+            UnityDispatcher.PostTask(() =>
             {
                 IFullScreenVideoAdListener listener;
                 if (loadListeners.TryGetValue(context, out listener))
@@ -193,13 +223,14 @@ namespace ByteDance.Union
                     Debug.LogError(
                         "The OnFullScreenVideoAdLoad can not find the context.");
                 }
-            });
+            }, _callbackOnMainThead);
         }
 
         [AOT.MonoPInvokeCallback(typeof(FullScreenVideoAd_OnFullScreenVideoCached))]
         private static void FullScreenVideoAd_OnFullScreenVideoCachedMethod(int context)
         {
-            (() =>
+            Debug.Log("OnFullScreenVideoCached");
+            UnityDispatcher.PostTask(() =>
             {
                 IFullScreenVideoAdListener listener;
                 if (loadListeners.TryGetValue(context, out listener))
@@ -212,13 +243,14 @@ namespace ByteDance.Union
                     Debug.LogError(
                         "The OnFullScreenVideoCached can not find the context.");
                 }
-            });
+            }, _callbackOnMainThead);
         }
 
         [AOT.MonoPInvokeCallback(typeof(FullScreenVideoAd_OnAdShow))]
         private static void FullScreenVideoAd_OnAdShowMethod(int context)
         {
-            (() =>
+            Debug.Log("fullScreenVideoAd show");
+            UnityDispatcher.PostTask(() =>
             {
                 IFullScreenVideoAdInteractionListener listener;
                 if (interactionListeners.TryGetValue(context, out listener))
@@ -230,13 +262,14 @@ namespace ByteDance.Union
                     Debug.LogError(
                         "The OnAdShow can not find the context.");
                 }
-            });
+            }, _callbackOnMainThead);
         }
 
         [AOT.MonoPInvokeCallback(typeof(FullScreenVideoAd_OnAdVideoBarClick))]
         private static void FullScreenVideoAd_OnAdVideoBarClickMethod(int context)
         {
-            (() =>
+            Debug.Log("fullScreenVideoAd OnAdVideoBarClick");
+            UnityDispatcher.PostTask(() =>
             {
                 IFullScreenVideoAdInteractionListener listener;
                 if (interactionListeners.TryGetValue(context, out listener))
@@ -248,13 +281,14 @@ namespace ByteDance.Union
                     Debug.LogError(
                         "The OnAdVideoBarClick can not find the context.");
                 }
-            });
+            }, _callbackOnMainThead);
         }
 
         [AOT.MonoPInvokeCallback(typeof(FullScreenVideoAd_OnAdVideoClickSkip))]
         private static void FullScreenVideoAd_OnAdVideoClickSkipMethod(int context)
         {
-            (() =>
+            Debug.Log("fullScreenVideoAd OnSkippedVideo");
+            UnityDispatcher.PostTask(() =>
             {
                 IFullScreenVideoAdInteractionListener listener;
                 if (interactionListeners.TryGetValue(context, out listener))
@@ -266,13 +300,14 @@ namespace ByteDance.Union
                     Debug.LogError(
                         "The OnSkippedVideo can not find the context.");
                 }
-            });
+            }, _callbackOnMainThead);
         }
 
         [AOT.MonoPInvokeCallback(typeof(FullScreenVideoAd_OnAdClose))]
         private static void FullScreenVideoAd_OnAdCloseMethod(int context)
         {
-            (() =>
+            Debug.Log("fullScreenVideoAd close");
+            UnityDispatcher.PostTask(() =>
             {
                 IFullScreenVideoAdInteractionListener listener;
                 if (interactionListeners.TryGetValue(context, out listener))
@@ -285,13 +320,13 @@ namespace ByteDance.Union
                     Debug.LogError(
                         "The OnAdClose can not find the context.");
                 }
-            });
+            }, _callbackOnMainThead);
         }
 
         [AOT.MonoPInvokeCallback(typeof(FullScreenVideoAd_OnVideoComplete))]
         private static void FullScreenVideoAd_OnVideoCompleteMethod(int context)
         {
-            (() =>
+            UnityDispatcher.PostTask(() =>
             {
                 IFullScreenVideoAdInteractionListener listener;
                 if (interactionListeners.TryGetValue(context, out listener))
@@ -303,13 +338,14 @@ namespace ByteDance.Union
                     Debug.LogError(
                         "The OnVideoComplete can not find the context.");
                 }
-            });
+            }, _callbackOnMainThead);
         }
 
         [AOT.MonoPInvokeCallback(typeof(FullScreenVideoAd_OnVideoError))]
         private static void FullScreenVideoAd_OnVideoErrorMethod(int context)
         {
-            (() =>
+            Debug.Log("fullScreenVideoAd OnVideoError");
+            UnityDispatcher.PostTask(() =>
             {
                 IFullScreenVideoAdInteractionListener listener;
                 if (interactionListeners.TryGetValue(context, out listener))
@@ -321,7 +357,22 @@ namespace ByteDance.Union
                     Debug.LogError(
                         "The OnVideoError can not find the context.");
                 }
-            });
+            }, _callbackOnMainThead);
+        }
+
+        public void setAuctionPrice(double price)
+        {
+            ClientBidManager.SetAuctionPrice(this.fullScreenVideoAd,price);
+        }
+
+        public void win(double price)
+        {
+            ClientBidManager.Win(this.fullScreenVideoAd,price);
+        }
+
+        public void Loss(double price, string reason, string bidder)
+        {
+            ClientBidManager.Loss(this.fullScreenVideoAd,price,reason,bidder);
         }
     }
 #endif

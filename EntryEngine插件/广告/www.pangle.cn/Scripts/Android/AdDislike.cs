@@ -37,9 +37,9 @@ namespace ByteDance.Union
         /// Set the dislike interaction listener.
         /// </summary>
         public void SetDislikeInteractionCallback(
-            IDislikeInteractionListener listener)
+            IDislikeInteractionListener listener,bool callbackOnMainThread)
         {
-            var androidListener = new DislikeInteractionCallback(listener);
+            var androidListener = new DislikeInteractionCallback(listener,callbackOnMainThread);
             this.ad.Call("setDislikeInteractionCallback", androidListener);
         }
     }
