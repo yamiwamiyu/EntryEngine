@@ -18,12 +18,13 @@
             "  props: [ ],",
 			"  // 计算属性，有依赖其它属性时，且其它属性没有发生变化，计算属性将不会重新计算而使用缓存",
 			"  computed: { },",
-			"  methods: { },",
+			"  methods: {\n",
+			"  },",
 			"  watch: { },",
-			"  mounted: { },",
+			"  mounted() { },",
             "}",
             "</script>\n",
-            "<style lang=\"stylus\" scoped>",
+            "<style lang=\"scss\" scoped>",
             "</style>"
         ],
         "description": "Log output to console"
