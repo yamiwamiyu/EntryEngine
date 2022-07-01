@@ -158,7 +158,7 @@
             private void onSelected(int position, string value, bool enforce)
             {
                 Debug.Log("DisLikeCallback -->onSelected position -" + position + " value---" + value);
-                Debug.Log($"position -{position} value---{value} dislike onSelected");
+                Debug.Log(string.Format("position -{0} value---{1} dislike onSelected", position, value));
                 UnityDispatcher.PostTask(
                     () => this.dislikeInteractionCallback.OnSelected(position, value, enforce), callbackOnMainThread);
             }

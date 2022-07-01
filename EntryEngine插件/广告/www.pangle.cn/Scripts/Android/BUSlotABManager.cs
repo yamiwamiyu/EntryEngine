@@ -48,7 +48,8 @@ namespace ByteDance.Union
                 var slotType = ritObject.Call<int>("getSlotType");
                 var type = GetAdSlotType(slotType);
 
-                managerListener?.onComplete(ritId,type,0,null);
+                if (managerListener != null)
+                    managerListener.onComplete(ritId,type,0,null);
             }
 
 
@@ -62,7 +63,8 @@ namespace ByteDance.Union
 #if DEBUG
                 Debug.Log("TtCodeGroupRitListener onFail");
 #endif
-                managerListener?.onComplete(null,AdSlotType.UNKOWN,code,message);
+                if (managerListener != null)
+                    managerListener.onComplete(null,AdSlotType.UNKOWN,code,message);
             }
 
             private static AdSlotType GetAdSlotType(int slotType)

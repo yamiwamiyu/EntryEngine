@@ -182,7 +182,7 @@ namespace ByteDance.Union
             {
                 var native = this.builder.Call<AndroidJavaObject>("build");
 #if DEBUG
-                Debug.Log($"{native.Call<string>("toString")}");
+                Debug.Log(native.Call<string>("toString"));
 #endif
                 return new AdSlot(native);
             }

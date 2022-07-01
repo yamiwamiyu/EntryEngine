@@ -55,15 +55,16 @@ namespace ByteDance.Union
             }
         }
 
-        public int ServerErrorCode { get; }
-        public string ServerErrorMsg { get; }
-        public string RewardName { get; }
-        public int RewardAmount { get; }
-        public float RewardPropose { get; }
+        public int ServerErrorCode { get; private set; }
+        public string ServerErrorMsg { get; private set; }
+        public string RewardName { get; private set; }
+        public int RewardAmount { get; private set; }
+        public float RewardPropose { get; private set; }
 
         public override string ToString()
         {
-            return $"ServerErrorCode : {ServerErrorCode}, ServerErrorMsg:{ServerErrorMsg}, RewardName:{RewardName}, RewardAmount:{RewardAmount}, RewardPropose:{RewardPropose}";
+            return string.Format("ServerErrorCode : {0}, ServerErrorMsg:{1}, RewardName:{2}, RewardAmount:{3}, RewardPropose:{4}"
+                , ServerErrorCode, ServerErrorMsg, RewardName, RewardAmount, RewardPropose);
         }
     }
 }

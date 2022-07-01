@@ -48,7 +48,8 @@ namespace ByteDance.Union
             }
             else
             {
-                task?.Invoke();
+                if (task != null)
+                    task.Invoke();
             }
         }
 

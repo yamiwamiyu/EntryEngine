@@ -17,7 +17,8 @@ namespace ByteDance.Union
                 return;
             }
 
-            adObject?.Call("win", ToDoubleObject(auctionBidToWin));
+            if (adObject != null)
+                adObject.Call("win", ToDoubleObject(auctionBidToWin));
         }
 
         /**
@@ -28,7 +29,8 @@ namespace ByteDance.Union
         */
         public static void Loss(AndroidJavaObject adObject, double auctionPrice, string lossReason, string winBidder)
         {
-            adObject?.Call("loss", ToDoubleObject(auctionPrice), lossReason, winBidder);
+            if (adObject != null)
+                adObject.Call("loss", ToDoubleObject(auctionPrice), lossReason, winBidder);
         }
 
         /**
@@ -37,7 +39,8 @@ namespace ByteDance.Union
         */
         public static void SetPrice(AndroidJavaObject adObject, double auctionPrice)
         {
-            adObject?.Call("setPrice", ToDoubleObject(auctionPrice));
+            if (adObject != null)
+                adObject.Call("setPrice", ToDoubleObject(auctionPrice));
         }
 
         private static AndroidJavaObject ToDoubleObject(double value)
