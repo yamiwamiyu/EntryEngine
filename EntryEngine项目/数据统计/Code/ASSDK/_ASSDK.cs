@@ -333,7 +333,7 @@ public static class _ASSDK
     /// <param name="value">分析值，相同标题不同值会在一起进行分析，例如1级，2级</param>
     /// <param name="orderID">分析排序，传0则按照value值升序，否则按照orderID升序</param>
     /// <param name="canRepeat">分析能否重复，重复时一般用于统计数量，不重复时一般用于统计进度</param>
-    public static void Analysis(string title, string value, int orderID = 0, bool canRepeat = false)
+    public static void Analysis(string title, string value, int orderID, bool canRepeat)
     {
         CheckInitialize();
         // 如果设备号为空，就不再统计行为
@@ -348,6 +348,18 @@ public static class _ASSDK
                 Count = canRepeat ? 1 : 0,
             });
         }
+    }
+    public static void Analysis(string title, string value)
+    {
+        Analysis(title, value, 0, false);
+    }
+    public static void Analysis(string title, string value, int orderID)
+    {
+        Analysis(title, value, orderID, false);
+    }
+    public static void Analysis(string title, string value, bool canRepeat)
+    {
+        Analysis(title, value, 0, canRepeat);
     }
 }
 class T_Analysis
