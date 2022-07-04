@@ -12,13 +12,13 @@ public class AD : ADBase
     private AdNative _native;
     protected override void _Initialize(Action<bool, string> callback)
     {
-        SDK.RequestPermissionIfNecessary();
         Pangle.InitializeSDK((success, msg) =>
         {
             if (success)
             {
                 _native = SDK.CreateAdNative();
                 _LOG.Debug("Pangle初始化成功 {0}", _native);
+                SDK.RequestPermissionIfNecessary();
             }
             if (callback != null)
                 callback(success, msg);

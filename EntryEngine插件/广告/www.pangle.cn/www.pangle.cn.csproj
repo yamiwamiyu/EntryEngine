@@ -70,30 +70,8 @@
     <Compile Include="Scripts\Android\RewardVideoAd.cs" />
     <Compile Include="Scripts\Android\SDK.cs" />
     <Compile Include="Scripts\CustomConfiguration.cs" />
-    <Compile Include="Scripts\Dummy\AdDislike.cs" />
-    <Compile Include="Scripts\Dummy\AdNative.cs" />
-    <Compile Include="Scripts\Dummy\AdSlot.cs" />
-    <Compile Include="Scripts\Dummy\BannerAd.cs" />
-    <Compile Include="Scripts\Dummy\BUExpressSplashAd.cs" />
-    <Compile Include="Scripts\Dummy\BUSplashAd.cs" />
-    <Compile Include="Scripts\Dummy\DrawFeedAd.cs" />
-    <Compile Include="Scripts\Dummy\ExpressAd.cs" />
-    <Compile Include="Scripts\Dummy\ExpressBannerAd.cs" />
-    <Compile Include="Scripts\Dummy\ExpressFullScreenVideoAd.cs" />
-    <Compile Include="Scripts\Dummy\ExpressInterstitialAd.cs" />
-    <Compile Include="Scripts\Dummy\ExpressRewardVideoAd.cs" />
-    <Compile Include="Scripts\Dummy\FeedAd.cs" />
-    <Compile Include="Scripts\Dummy\FullScreenVideoAd.cs" />
-    <Compile Include="Scripts\Dummy\InteractionAd.cs" />
-    <Compile Include="Scripts\Dummy\NativeAd.cs" />
-    <Compile Include="Scripts\Dummy\NativeAdManager.cs" />
-    <Compile Include="Scripts\Dummy\Pangle.cs" />
-    <Compile Include="Scripts\Dummy\PangleBase.cs" />
-    <Compile Include="Scripts\Dummy\PangleConfiguration.cs" />
-    <Compile Include="Scripts\Dummy\PangleTools.cs" />
-    <Compile Include="Scripts\Dummy\RewardVideoAd.cs" />
-    <Compile Include="Scripts\Dummy\SDK.cs" />
-    <Compile Include="Scripts\Dummy\SplashAd.cs" />
+    <Compile Include="Scripts\IBUSlotABManagerListener.cs" />
+    <Compile Include="Scripts\PangleBase.cs" />
     <Compile Include="Scripts\IAppDownloadListener.cs" />
     <Compile Include="Scripts\IBannerAdInteractionListener.cs" />
     <Compile Include="Scripts\IBannerAdListener.cs" />
@@ -108,33 +86,6 @@
     <Compile Include="Scripts\IInteractionAdInteractionListener.cs" />
     <Compile Include="Scripts\IInteractionAdListener.cs" />
     <Compile Include="Scripts\INativeAdListener.cs" />
-    <Compile Include="Scripts\iOS\AdDislike.cs" />
-    <Compile Include="Scripts\iOS\AdNative.cs" />
-    <Compile Include="Scripts\iOS\AdSlot.cs" />
-    <Compile Include="Scripts\iOS\BannerAd.cs" />
-    <Compile Include="Scripts\iOS\BUExpressSplashAd.cs" />
-    <Compile Include="Scripts\iOS\BUSlotABManager.cs" />
-    <Compile Include="Scripts\iOS\BUSplashAd.cs" />
-    <Compile Include="Scripts\iOS\ClientBidManager.cs" />
-    <Compile Include="Scripts\iOS\DrawFeedAd.cs" />
-    <Compile Include="Scripts\iOS\Editor\XCodePostProcess.cs" />
-    <Compile Include="Scripts\iOS\ExpressAd.cs" />
-    <Compile Include="Scripts\iOS\ExpressBannerAd.cs" />
-    <Compile Include="Scripts\iOS\ExpressFullScreenVideoAd.cs" />
-    <Compile Include="Scripts\iOS\ExpressInterstitialAd.cs" />
-    <Compile Include="Scripts\iOS\ExpressRewardVideoAd.cs" />
-    <Compile Include="Scripts\iOS\FeedAd.cs" />
-    <Compile Include="Scripts\iOS\FullScreenVideoAd.cs" />
-    <Compile Include="Scripts\iOS\IBUSlotABManagerListener.cs" />
-    <Compile Include="Scripts\iOS\InteractionAd.cs" />
-    <Compile Include="Scripts\iOS\NativeAd.cs" />
-    <Compile Include="Scripts\iOS\NativeAdManager.cs" />
-    <Compile Include="Scripts\iOS\Pangle.cs" />
-    <Compile Include="Scripts\iOS\PangleConfiguration.cs" />
-    <Compile Include="Scripts\iOS\PangleTools.cs" />
-    <Compile Include="Scripts\iOS\RewardVideoAd.cs" />
-    <Compile Include="Scripts\iOS\SDK.cs" />
-    <Compile Include="Scripts\iOS\SplashAd.cs" />
     <Compile Include="Scripts\IRewardAdInteractionListener.cs" />
     <Compile Include="Scripts\IRewardBundleModel.cs" />
     <Compile Include="Scripts\IRewardVideoAdListener.cs" />
@@ -152,31 +103,6 @@
       <Project>{206162A1-6DA8-4532-9280-C66005060D96}</Project>
       <Name>ADBase</Name>
     </ProjectReference>
-  </ItemGroup>
-  <ItemGroup>
-    <Content Include="Scripts\iOS\AdSlot.h" />
-    <Content Include="Scripts\iOS\BUAdObjectProtocol.h" />
-    <Content Include="Scripts\iOS\Utils\BUToUnityAdManager.h" />
-    <Content Include="Scripts\iOS\Utils\BUToUnityBundleHelper.h" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="Scripts\iOS\BUSlotABManagerAdapter.mm" />
-    <None Include="Scripts\iOS\BUToUnityExpressSplashAd.mm" />
-    <None Include="Scripts\iOS\BUToUnitySplashAd.mm" />
-    <None Include="Scripts\iOS\ClientBidManager.mm" />
-    <None Include="Scripts\iOS\ExpressAd.mm" />
-    <None Include="Scripts\iOS\ExpressBannerAd.mm" />
-    <None Include="Scripts\iOS\ExpressFullScreenVideoAd.mm" />
-    <None Include="Scripts\iOS\ExpressInterstitialAd.mm" />
-    <None Include="Scripts\iOS\ExpressRewardVideoAd.mm" />
-    <None Include="Scripts\iOS\FullScreenVideoAd.mm" />
-    <None Include="Scripts\iOS\NativeAd.mm" />
-    <None Include="Scripts\iOS\Pangle.mm" />
-    <None Include="Scripts\iOS\PangleConfiguration.mm" />
-    <None Include="Scripts\iOS\PangleTools.mm" />
-    <None Include="Scripts\iOS\RewardVideoAd.mm" />
-    <None Include="Scripts\iOS\Utils\BUToUnityAdManager.m" />
-    <None Include="Scripts\iOS\Utils\BUToUnityBundleHelper.m" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

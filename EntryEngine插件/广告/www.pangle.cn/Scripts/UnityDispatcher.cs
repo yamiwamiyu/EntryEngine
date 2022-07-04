@@ -15,7 +15,7 @@ namespace ByteDance.Union
     /// The unity thread dispatcher.
     /// </summary>
     [DisallowMultipleComponent]
-    internal sealed class UnityDispatcher : MonoBehaviour
+    public sealed class UnityDispatcher : MonoBehaviour
     {
         private static UnityDispatcher instance;
 
