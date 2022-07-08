@@ -65,7 +65,7 @@ namespace Server.Impl
             var now = DateTime.Now;
             var today = DateTime.Today;
             int result;
-            if (_DB._T_Register.Exists2("WHERE GameName = @p0 AND DeviceID = @p1", gameName, deviceID))
+            if (_DB._T_Register.Exists2("WHERE GameName = @p0 AND DeviceID = @p1 AND channel = @p2", gameName, deviceID, channel))
             {
                 result = _DB._T_Register.Select(new ET_Register[] { ET_Register.ID }, "WHERE GameName = @p0 AND DeviceID = @p1 AND channel = @p2", gameName, deviceID, channel).ID;
             }
