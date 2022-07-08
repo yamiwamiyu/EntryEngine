@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using ByteDance.Union;
-using EntryEngine;
+using UnityEngine;
 
 public class AD : ADBase
 {
@@ -12,21 +12,19 @@ public class AD : ADBase
     private AdNative _native;
     protected override void _Initialize(Action<bool, string> callback)
     {
-        Pangle.InitializeSDK((success, msg) =>
+        Pangle.InitializeSDK((code, msg) =>
         {
-            if (success)
-            {
-                _native = SDK.CreateAdNative();
-                _LOG.Debug("Pangle初始化成功 {0}", _native);
-                SDK.RequestPermissionIfNecessary();
-            }
             if (callback != null)
-                callback(success, msg);
+                callback(code, msg);
         });
     }
     protected override void _LoadAD(LoadedAD load)
     {
-        _LOG.Debug("加载广告 ID:{0} Type: {1}", load.ADID, ChangeADType(load.Type));
+        if (_native == null)
+        {
+            _native = SDK.CreateAdNative();
+            SDK.RequestPermissionIfNecessary();
+        }
         var builder = new AdSlot.Builder()
             .SetCodeId(load.ADID)
             .SetNativeAdType(ChangeADType(load.Type))
@@ -39,17 +37,14 @@ public class AD : ADBase
             builder.SetImageAcceptedSize(width, height)
                 .SetExpressViewAcceptedSize(width, height)
                 .SetOrientation(width < height ? AdOrientation.Vertical : AdOrientation.Horizontal);
-            _LOG.Debug("设置广告宽高 {0},{1}", width, height);
         }
         AdSlot slot = builder.Build();
         switch (load.Type)
         {
             case EADType.Banner:
-                _LOG.Debug("LoadExpressBannerAd");
                 _native.LoadExpressBannerAd(slot, new ExpressAdListener() { AD = load, Type = 1 });
                 break;
             case EADType.Interaction:
-                _LOG.Debug("LoadExpressInterstitialAd");
                 _native.LoadExpressInterstitialAd(slot, new ExpressAdListener() { AD = load, Type = 2 });
                 // 新插屏广告
                 //_native.LoadFullScreenVideoAd(slot, new FullScreenVideoAdListener() { AD = load });
@@ -70,11 +65,9 @@ public class AD : ADBase
             switch (ad.Type)
             {
                 case EADType.Banner:
-                    _LOG.Debug("ShowExpressBannerAd");
                     NativeAdManager.Instance().ShowExpressBannerAd(SDK.GetActivity(), ((ExpressAd)ad.AD).handle, null, null);
                     break;
                 case EADType.Interaction:
-                    _LOG.Debug("ShowExpressInteractionAd");
                     NativeAdManager.Instance().ShowExpressInterstitialAd(SDK.GetActivity(), ((ExpressAd)ad.AD).handle, null);
                     break;
                 case EADType.Splash:
@@ -123,11 +116,11 @@ public class AD : ADBase
         }
         public void OnError(int code, string message)
         {
-            _LOG.Error("ExpressAdListener Error! code: {0} msg: {1}", code, message);
+            Debug.LogErrorFormat("ExpressAdListener Error! code: {0} msg: {1}", code, message);
         }
         public void OnExpressAdLoad(List<ExpressAd> ads)
         {
-            _LOG.Debug("OnExpressAdLoad: {0}", ads.Count);
+            Debug.LogFormat("OnExpressAdLoad: {0}", ads.Count);
             foreach (var ad in ads)
             {
                 //if (AD.X != null && AD.Y != null)
@@ -143,11 +136,11 @@ public class AD : ADBase
         }
         public void OnAdViewRenderError(ExpressAd ad, int code, string message)
         {
-            _LOG.Error("OnAdViewRenderError code: {0} msg: {1}", code, message);
+            Debug.LogErrorFormat("OnAdViewRenderError code: {0} msg: {1}", code, message);
         }
         public void OnAdShow(ExpressAd ad)
         {
-            _LOG.Debug("OnAdShow", ad.index);
+            Debug.LogFormat("OnAdShow", ad.index);
         }
         public void OnAdClicked(ExpressAd ad)
         {
@@ -165,7 +158,7 @@ public class AD : ADBase
     {
         public void OnError(int code, string message)
         {
-            _LOG.Error("SplashAdListener Error! code: {0} msg: {1}", code, message);
+            Debug.LogErrorFormat("SplashAdListener Error! code: {0} msg: {1}", code, message);
         }
         public void OnSplashAdLoad(BUSplashAd ad)
         {
@@ -174,14 +167,14 @@ public class AD : ADBase
         }
         public void OnTimeout()
         {
-            _LOG.Error("加载 SplashAd 超时");
+            Debug.Log("加载 SplashAd 超时");
         }
     }
     class RewardVideoAdListener : AdListenerBase, IRewardVideoAdListener, IRewardAdInteractionListener
     {
         void IRewardVideoAdListener.OnError(int code, string message)
         {
-            _LOG.Error("RewardVideoAdListener Error! code: {0} msg: {1}", code, message);
+            Debug.LogErrorFormat("RewardVideoAdListener Error! code: {0} msg: {1}", code, message);
         }
         void IRewardVideoAdListener.OnRewardVideoAdLoad(RewardVideoAd ad)
         {

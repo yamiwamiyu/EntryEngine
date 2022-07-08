@@ -146,7 +146,6 @@ public abstract class ADBase
     /// <param name="width">广告宽度，单位屏幕像素</param>
     /// <param name="height">广告高度，单位屏幕像素</param>
     /// <param name="onReward">广告看完时回调，一般用于看完有奖励的广告</param>
-    /// <returns>广告对象</returns>
     public void ShowAD(string adid, EADType type,
         int? x, int? y, int? width, int? height,
         Action onReward)
@@ -159,15 +158,15 @@ public abstract class ADBase
     }
     public void ShowAD(string adid, EADType type)
     {
-        ShowAD(adid, type, 0, 0, 0, 0, null);
+        ShowAD(adid, type, null, null, null, null, null);
     }
     public void ShowAD(string adid, EADType type, Action onReward)
     {
-        ShowAD(adid, type, 0, 0, 0, 0, onReward);
+        ShowAD(adid, type, null, null, null, null, onReward);
     }
     public void ShowAD(string adid)
     {
-        ShowAD(adid, EADType.Unknown, 0, 0, 0, 0, null);
+        ShowAD(adid, EADType.Unknown, null, null, null, null, null);
     }
     public abstract void ShowAD(LoadedAD ad, Action onReward);
 

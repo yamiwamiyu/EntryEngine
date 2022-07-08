@@ -21,6 +21,7 @@
     <DefineConstants>TRACE;DEBUG;UNITY_ANDROID</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <PlatformTarget>x86</PlatformTarget>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
@@ -95,10 +96,6 @@
     <Compile Include="Scripts\UnityDispatcher.cs" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\..\EntryEngine\EntryEngine.csproj">
-      <Project>{424D14E4-1661-42E9-A192-B1C60D4669FF}</Project>
-      <Name>EntryEngine</Name>
-    </ProjectReference>
     <ProjectReference Include="..\ADBase\ADBase.csproj">
       <Project>{206162A1-6DA8-4532-9280-C66005060D96}</Project>
       <Name>ADBase</Name>
