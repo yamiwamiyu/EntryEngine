@@ -6,6 +6,20 @@
    否则会在data/data/com.xxx.xxx/files/里面
 5. Unity导出的IOS项目，仅被反射调用的代码将被优化掉，主要反映在数据表生成类型的构造函数和带翻译的Set属性
 6. Unity导出的IOS项目，GameObject.FindWithTag用不了，请改用GameObject.Find
+7. 网络请求失败：在<application标签加上android:usesCleartextTraffic="true"
+还可以增加android:networkSecurityConfig="@xml/network_config"，在res/xml/目录下新建network_config.xml，范文如下
+<?xml version="1.0" encoding="utf-8"?>
+<network-security-config>
+    <base-config cleartextTrafficPermitted="true">
+        <trust-anchors>
+            <certificates src="user" />
+            <certificates src="system" />
+        </trust-anchors>
+    </base-config>
+</network-security-config>
+Android系统出于安全性考虑，在Android P系统（Android API >= 28）的设备上，如果应用使用的是非加密的明文流量的http网络请求，
+则会导致该应用无法进行网络请求，https则不会受影响；
+8. Unity2021.3.3f1c1编译选择.net standard 2.1不明原因游戏会比较卡，建议选择.net framework
 
 Unity项目架构
 
