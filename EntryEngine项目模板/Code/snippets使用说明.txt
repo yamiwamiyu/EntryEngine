@@ -9,7 +9,7 @@ vue.snippet用于Visual Studio任意版本
 导入编辑器后可以输入vue，按两下Tab键，输出vue模板代码
 
 vscode导入：
-点击左下角 设置图标按钮 -> 用户代码片段 -> 新建代码片段，将vue.code-snippets代码粘贴保存即可
+点击左下角 设置图标按钮 -> 用户代码片段 -> 新建代码片段(或已有代码片段)，将vue.code-snippets代码粘贴保存即可
 
 vs导入：
 点击导航栏 工具 -> 代码段管理器 -> 导入 -> 选择vue.snippet即可
