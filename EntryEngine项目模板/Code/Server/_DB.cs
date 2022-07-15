@@ -343,7 +343,9 @@ namespace Server
         //}
         #endregion
         #region 微信支付
-        /// <summary>微信支付</summary>
+        /// <summary>微信支付
+        /// 微信支付API有v2和v3版本，现在最新网上找到的文档为v3版本，这里实现的是v2版本
+        /// </summary>
         //public static class _WX
         //{
         //    public class WXPay
@@ -619,10 +621,25 @@ namespace Server
 
         //    public static string WXToken = "ddz123456789";
 
+        //    /// <summary>
+        //    /// 可以是微信开放平台：https://open.weixin.qq.com/
+        //    /// 1. 开发者资质认证需要300元
+        //    /// 2. 管理中心 -> 创建移动应用（创建网页应用虽然能创建也能通过，但是最终商户支付不支持绑定网页应用的AppID）
+        //    /// 注意：创建移动应用需要有应用官网，官网网址可以是IP地址的不一定要域名，内容包含要创建的移动应用的名字和简介就行
+        //    /// 
+        //    /// 可以是微信公众平台：https://mp.weixin.qq.com/
+        //    /// 1. 注册公众号，小程序都可，不需要费用，认证流程很复杂，支付具体流程没走过
+        //    /// </summary>
         //    public static string APP_ID = "wxcb58cff2ad9855b5";
+        //    /// <summary>以微信开放平台移动应用为例，创建成功后 -> 查看应用 -> AppSecret -> 生成即可</summary>
         //    public static string APP_KEY = "bba60ac760de4JHgLZPa11966c41c135";
+        //    /// <summary>微信商户平台：https://pay.weixin.qq.com/
+        //    /// 注册时需要填写已有支付场景，例如移动应用，公众号，小程序等，所以还是先去搞到AppID再注册商户
+        //    /// </summary>
         //    public static string SHOP_ID = "1542949881";
-        //    /// <summary>这个不对，无法拉起微信登录</summary>
+        //    /// <summary>
+        //    /// 商户平台管理员设置API安全：https://pay.weixin.qq.com/index.php/core/cert/api_cert#/
+        //    /// </summary>
         //    public static string APP_SECRET = "650c9cd33ae6cf1d77add725c06afd45";
         //    public static string PAY_CALLBACK = "http//8.134.53.149:35001/Action/1/WeChatPayCallback";
         //    public static string REFUND_CALLBACK = "https://api.1996yx.com/Action/219/WeChatRefundCallback";
