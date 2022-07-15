@@ -35,13 +35,11 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="Microsoft.Xna.Framework, Version=3.1.0.0, Culture=neutral, PublicKeyToken=6d5c3888ef60e27d, processorArchitecture=x86">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\Xna\Microsoft.Xna.Framework.dll</HintPath>
+    <Reference Include="Microsoft.Xna.Framework">
+      <HintPath>..\EntryEngine运行时\Xna\Microsoft.Xna.Framework.dll</HintPath>
     </Reference>
-    <Reference Include="Microsoft.Xna.Framework.Game, Version=3.1.0.0, Culture=neutral, PublicKeyToken=6d5c3888ef60e27d, processorArchitecture=x86">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\Xna\Microsoft.Xna.Framework.Game.dll</HintPath>
+    <Reference Include="Microsoft.Xna.Framework.Game">
+      <HintPath>..\EntryEngine运行时\Xna\Microsoft.Xna.Framework.Game.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
@@ -54,7 +52,7 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\DragonBone\DragonBone.csproj">
+    <ProjectReference Include="..\EntryEngine插件\2D动画\DragonBone\DragonBone.csproj">
       <Project>{45325383-F04A-4E9D-9EC1-FAC6E151E680}</Project>
       <Name>DragonBone</Name>
     </ProjectReference>
@@ -62,22 +60,25 @@
       <Project>{424D14E4-1661-42E9-A192-B1C60D4669FF}</Project>
       <Name>EntryEngine</Name>
     </ProjectReference>
-    <ProjectReference Include="..\ReflectionHelper\ReflectionHelper.csproj">
+    <ProjectReference Include="..\EntryEngine开发工具\ReflectionHelper\ReflectionHelper.csproj">
       <Project>{D6E12A5C-CD9D-4671-9BD7-5D3E79CE3543}</Project>
       <Name>ReflectionHelper</Name>
     </ProjectReference>
-    <ProjectReference Include="..\Spine\Spine.csproj">
+    <ProjectReference Include="..\EntryEngine插件\2D动画\Spine\Spine.csproj">
       <Project>{20947282-9AAF-4023-BC1E-325D89415391}</Project>
       <Name>Spine</Name>
     </ProjectReference>
-    <ProjectReference Include="..\Xna\Xna.csproj">
+    <ProjectReference Include="..\EntryEngine运行时\Xna\Xna.csproj">
       <Project>{88408D4A-1C4C-448F-8FF0-DD7F22BF789B}</Project>
       <Name>Xna</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
-    <PostBuildEvent>copy $(ProjectDir)..\Xna\fmodex.dll $(TargetDir)</PostBuildEvent>
+    <PostBuildEvent>copy $(ProjectDir)..\EntryEngine运行时\Xna\fmodex.dll $(TargetDir)
+copy $(ProjectDir)..\EntryEngine运行时\Xna\X3DAudio1_6.dll $(TargetDir)
+copy $(ProjectDir)..\EntryEngine运行时\Xna\xinput1_3.dll $(TargetDir)
+copy $(ProjectDir)..\EntryEngine运行时\Xna\d3dx9_31.dll $(TargetDir)</PostBuildEvent>
   </PropertyGroup>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
