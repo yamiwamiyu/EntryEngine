@@ -12,31 +12,33 @@ public class AD : ADBase
     private AdNative _native;
     protected override void _Initialize(Action<bool, string> callback)
     {
-        Pangle.InitializeSDK((code, msg) =>
+        Pangle.InitializeSDK((success, msg) =>
         {
+            if (success)
+            {
+                _native = SDK.CreateAdNative();
+                SDK.RequestPermissionIfNecessary();
+            }
             if (callback != null)
-                callback(code, msg);
+                callback(success, msg);
         });
     }
     protected override void _LoadAD(LoadedAD load)
     {
-        if (_native == null)
-        {
-            _native = SDK.CreateAdNative();
-            SDK.RequestPermissionIfNecessary();
-        }
         var builder = new AdSlot.Builder()
             .SetCodeId(load.ADID)
             .SetNativeAdType(ChangeADType(load.Type))
             .SetAdCount(1)
             .SetSupportDeepLink(true);
+        Debug.LogFormat("_LoadAD! ID: {0} Type: {1}", load.ADID, load.Type);
         if (load.Width != null && load.Height != null)
         {
             int width = load.Width.Value;
             int height = load.Height.Value;
-            builder.SetImageAcceptedSize(width, height)
+            builder.SetImageAcceptedSize(1080, 1920)
                 .SetExpressViewAcceptedSize(width, height)
                 .SetOrientation(width < height ? AdOrientation.Vertical : AdOrientation.Horizontal);
+            Debug.LogFormat("SetExpressViewAcceptedSize! Width: {0} Height: {1}", load.Width.Value, load.Height.Value);
         }
         AdSlot slot = builder.Build();
         switch (load.Type)
@@ -57,6 +59,7 @@ public class AD : ADBase
                 _native.LoadRewardVideoAd(slot, new RewardVideoAdListener() { AD = load });
                 break;
         }
+        Debug.LogFormat("_LoadAD Completed! ID: {0} Type: {1}", load.ADID, load.Type);
     }
     public override void ShowAD(LoadedAD ad, Action onReward)
     {
@@ -65,6 +68,8 @@ public class AD : ADBase
             switch (ad.Type)
             {
                 case EADType.Banner:
+                    //((ExpressAd)ad.AD).ShowExpressAd(ad.X.Value, ad.Y.Value);
+                    ((ExpressAd)ad.AD).SetSlideIntervalTime(30 * 1000);
                     NativeAdManager.Instance().ShowExpressBannerAd(SDK.GetActivity(), ((ExpressAd)ad.AD).handle, null, null);
                     break;
                 case EADType.Interaction:
