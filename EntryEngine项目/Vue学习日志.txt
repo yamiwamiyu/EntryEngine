@@ -112,4 +112,5 @@ window.onresize = FixWindowRem
 2. 以后样式需用到单位时，必须使用rem单位（结合postcss-pxtorem可以使用px单位）
 
 作用说明：去掉body和html之间的空白间隔
-使用说明：在任意css位置加上 * { margin: 0px; }
+作用说明：去掉各种文字标签上下一部分的空白像素，有空白像素文字内容会和蓝湖等设计工具间隔像素不一致
+使用说明：在任意css位置加上 * { margin: 0px; line-height: 1; }
