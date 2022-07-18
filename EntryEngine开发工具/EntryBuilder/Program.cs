@@ -5977,6 +5977,7 @@ return result;"
             if (append.RowCount > 0)
             {
                 Console.WriteLine("需要追加翻译{0}.csv", Path.GetFileNameWithoutExtension(translateTableXlsx));
+                CSVWriter.CSVEncoding = Encoding.Default;
                 WriteCSVTable(Path.ChangeExtension(translateTableXlsx, "csv"), append);
             }
         }

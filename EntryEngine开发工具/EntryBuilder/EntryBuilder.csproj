@@ -186,15 +186,15 @@
 ::copy $(TargetDir)EntryBuilder.exe D:\Projects\WWC\Tools\EntryBuilder.exe
 
 IF NOT $(ConfigurationName) == EntryBuilder GOTO end
-$(TargetPath) 0 $(ProjectDir)..\EntryEngine\
-$(TargetPath) BuildStaticInterface $(TargetDir)EntryEngine.dll\EntryEngine._LOG $(ProjectDir)..\EntryEngine\_LOG.static.cs true ""
-::$(TargetPath) BuildStaticInterface $(TargetDir)EntryEngine.dll\EntryEngine._MATH $(ProjectDir)..\EntryEngine\_MATH.static.cs false ""
-::$(TargetPath) BuildStaticInterface $(TargetDir)EntryEngine.dll\EntryEngine._RANDOM $(ProjectDir)..\EntryEngine\_RANDOM.static.cs true ""
-$(TargetPath) BuildStaticInterface $(TargetDir)EntryEngine.dll\EntryEngine._IO $(ProjectDir)..\EntryEngine\_IO.static.cs true ""
-$(TargetPath) BuildStaticInterface $(TargetDir)EntryEngine.dll\EntryEngine.Network._DATABASE $(ProjectDir)..\EntryEngine\Network\_DATABASE.static.cs false SERVER
-$(TargetPath) BuildDepthInvoke EntryEngine.dll\EntryEngine.INPUT Entry._INPUT 1 $(ProjectDir)..\EntryEngine\__INPUT.static.cs CLIENT
-$(TargetPath) BuildDepthInvoke EntryEngine.dll\EntryEngine.GRAPHICS Entry._GRAPHICS 0 $(ProjectDir)..\EntryEngine\__GRAPHICS.static.cs CLIENT
-$(TargetPath) BuildDepthInvoke EntryEngine.dll\EntryEngine.AUDIO Entry._AUDIO 0 $(ProjectDir)..\EntryEngine\__AUDIO.static.cs CLIENT
+$(TargetPath) BuildEntryEngine $(ProjectDir)..\..\EntryEngine\
+$(TargetPath) BuildStaticInterface $(TargetDir)EntryEngine.dll\EntryEngine._LOG $(ProjectDir)..\..\EntryEngine\_LOG.static.cs true ""
+::$(TargetPath) BuildStaticInterface $(TargetDir)EntryEngine.dll\EntryEngine._MATH $(ProjectDir)..\..\EntryEngine\_MATH.static.cs false ""
+::$(TargetPath) BuildStaticInterface $(TargetDir)EntryEngine.dll\EntryEngine._RANDOM $(ProjectDir)..\..\EntryEngine\_RANDOM.static.cs true ""
+$(TargetPath) BuildStaticInterface $(TargetDir)EntryEngine.dll\EntryEngine._IO $(ProjectDir)..\..\EntryEngine\_IO.static.cs true ""
+$(TargetPath) BuildStaticInterface $(TargetDir)EntryEngine.dll\EntryEngine.Network._DATABASE $(ProjectDir)..\..\EntryEngine\Network\_DATABASE.static.cs false SERVER
+$(TargetPath) BuildDepthInvoke EntryEngine.dll\EntryEngine.INPUT Entry._INPUT 1 $(ProjectDir)..\..\EntryEngine\__INPUT.static.cs CLIENT
+$(TargetPath) BuildDepthInvoke EntryEngine.dll\EntryEngine.GRAPHICS Entry._GRAPHICS 0 $(ProjectDir)..\..\EntryEngine\__GRAPHICS.static.cs CLIENT
+$(TargetPath) BuildDepthInvoke EntryEngine.dll\EntryEngine.AUDIO Entry._AUDIO 0 $(ProjectDir)..\..\EntryEngine\__AUDIO.static.cs CLIENT
 :end</PostBuildEvent>
   </PropertyGroup>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
