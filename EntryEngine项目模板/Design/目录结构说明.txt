@@ -9,4 +9,37 @@ UI
 
 根目录
 1. 游戏内的翻译文件及其批处理
+翻译表的使用：翻译针对UI和数据表
+(1). 设定使用翻译
+UI编辑器：菜单栏 文件 -> 更换翻译表 -> 选择本目录下的LANGUAGE.csv，之后UI上任何Text属性的中文都会自动进入表内
+数据表：第二行数据类型，字符串类型写String(大写S)，之后Build时该列的数据内容都会自动进入表内
+(2). 开始翻译
+执行"_翻译.bat"，会生成"LANGUAGE翻译.csv"，打开文件复制第一列第二行开始的内容到"LANGUAGE翻译.xlsx"中同样第一列第二行位置粘贴
+"LANGUAGE翻译.xlsx"内第二列以后的第一行就是多国语言的名字，第二行就对照第一列进行翻译即可
+(3). 使用翻译
+执行"_翻译.bat"，此时"LANGUAGE.csv"已经是带有最新翻译的语言表了，再执行"Tables/Build.bat"即可发布到程序内
+程序使用_LANGUAGE类进行加载和切换语言
+若UI使用了带语言的内容，参考以下代码将多国语言内容放入对应语言文件夹内
+    class EntryIO : EntryXna
+    {
+        protected override _IO.iO InternalNewiO(string root)
+        {
+            return new IOLanguage() { RootDirectory = root };
+        }
+    }
+    class IOLanguage : _IO.iO
+    {
+        public override string BuildPath(string file)
+        {
+            if (file.StartsWith("UI/") && _LANGUAGE.Language != "CHS")
+            {
+                string temp = string.Format("{0}/{1}", _LANGUAGE.Language, file.Substring(3));
+                temp = base.BuildPath(temp);
+                if (System.IO.File.Exists(temp))
+                    return temp;
+            }
+            return base.BuildPath(file);
+        }
+    }
+
 2. 游戏资源处理文件及其批处理
