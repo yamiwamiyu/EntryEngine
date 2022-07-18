@@ -128,7 +128,10 @@ namespace EntryEngine
                     OnReadByte(ref data);
                 return data;
             }
-            public string BuildPath(string file)
+            /// <summary>读取路径文件前构建最终路径</summary>
+            /// <param name="file">原始要读取的文件路径</param>
+            /// <returns>最终文件路径，默认追加了RootDirection，将\替换成了/</returns>
+            public virtual string BuildPath(string file)
             {
                 //if (!string.IsNullOrEmpty(RootDirectory))
                 //{
