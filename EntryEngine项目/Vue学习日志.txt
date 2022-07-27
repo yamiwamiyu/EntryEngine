@@ -38,6 +38,8 @@ vue.use(Vant)
 const { defineConfig } = require('@vue/cli-service')
 module.exports = defineConfig({
     transpileDependencies: true,
+	// lint要求组件名必须是2个单词以上的名字例如HomePage，此配置可取消限制例如Home
+	lintOnSave: false,
 	// 发布时不生成.map文件
 	productionSourceMap: false,
 	// 发布后可以将网站配置到IIS的一个文件夹里，方便一个IIS网站跑多个项目
@@ -129,6 +131,85 @@ function param(key) {
 	return __param[key];
 }
 2. 获取参数：param("要获取的参数名")
+
+作用说明：在使用router的情况下，希望将url增加特定的参数(例如用户ID以便分享链接时带上分享人)
+使用说明：
+1. 在路由守护事件上加上参数后再跳转
+// url加上参数，第一个参数加'?'，以后的参数加'&'
+const query = (path: string, key: string, value: any) => {
+  if (path.includes('?'))
+    path += '&'
+  else
+    path += '?'
+  path += key + "=" + value
+  return path;
+}
+// 路由守护
+router.beforeEach((to, from, next) => {
+  let path = to.fullPath
+  if (store.getters.getUser && store.getters.getUser.ID) {
+	// 没有该参数才加该参数，防止加完参数二次跳转时死循环
+    if (!to.query.inviteID)
+      path = query(path, "inviteID", store.getters.getUser.ID)
+  }
+  if (exclude.includes(<string>to.name)) {
+    // 已经登录了只能进入首页，不能进入登录页
+    if (store.getters.getUser.ID) {
+      next('/')
+      return;
+    }
+  }
+  // 二次进入后没加任何参数，直接next
+  if (path == to.fullPath)
+    next()
+  // 首次进入加完参数后跳转加了参数后的url
+  else
+    next(path)
+})
+
+作用说明：进入某个需要登录的页面时尚未登录，跳转登录页登录后应该跳回原本要去的页面
+使用说明：
+1. 需要登录一般是指某个接口发过去后端返回指定错误码要求登录，统一发接口的代码例如下
+const errmsg = function (res:any) {
+	// 100代表指定的需要登录的错误码
+    if (res.errCode === 100) {
+		// 防止多个接口都返回需要登录导致重复跳转
+		if (router.currentRoute.value.name != 'Login') {
+			console.log("接口登出")
+			// 修改用户登出状态
+			store.default.commit("logout")
+			// 跳转登录页
+			router.push({ 
+				name: 'Login',
+				// 这里加上现在所在的页面作为参数，后面登录后方便跳回
+				query: {
+					redirectUrl: router.currentRoute.value.fullPath
+				}
+			})
+			Toast.fail({
+				message: "请先登录",
+				duration: 2000
+			})
+		}
+    } else {
+        Toast.fail({
+            message:res.errMsg,
+            duration:5000
+        })
+    }
+}
+2. 登录页登录成功后的回调，加上跳转页面参数的判断即可，如下
+  iS.LoginBySMSCode(phone.value, code.value, route.query.inviteID).then((res) => {
+    code.value = "";
+    Store.commit("login", res);
+    Toast.success("登陆成功");
+	// 判断地址上有跳转参数就跳转到指定页面
+    if (route.query.redirectUrl)
+      router.push(route.query.redirectUrl)
+	// 跳转到首页
+    else
+      router.push('/');
+  });
 
 作用说明：去掉body和html之间的空白间隔
 作用说明：去掉各种文字标签上下一部分的空白像素，有空白像素文字内容会和蓝湖等设计工具间隔像素不一致
