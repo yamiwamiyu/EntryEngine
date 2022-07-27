@@ -111,6 +111,25 @@ FixWindowRem()
 window.onresize = FixWindowRem
 2. 以后样式需用到单位时，必须使用rem单位（结合postcss-pxtorem可以使用px单位）
 
+作用说明：js获取浏览器地址参数
+使用说明：
+1. 一个公共函数
+var __param;
+function param(key) {
+	if (!__param) {
+		__param = {};
+		if (location.href.search && location.href.search.length) {
+			var array = location.search.substring(1).split("&");
+			for (var item of array){
+				var split = item.split("=");
+				__param[split[0]] = decodeURI(split[1]);
+			}
+		}
+	}
+	return __param[key];
+}
+2. 获取参数：param("要获取的参数名")
+
 作用说明：去掉body和html之间的空白间隔
 作用说明：去掉各种文字标签上下一部分的空白像素，有空白像素文字内容会和蓝湖等设计工具间隔像素不一致
 使用说明：在任意css位置加上 * { margin: 0px; line-height: 1; }
