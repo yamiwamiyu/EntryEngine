@@ -1050,8 +1050,7 @@ namespace Server
             }
             public static T_USER MultiRead(IDataReader reader, int offset, int fieldCount, List<PropertyInfo> properties, List<FieldInfo> fields, int[] indices)
             {
-                return _DATABASE.MultiRead<T_USER>(reader, offset, fieldCount, properties, fields, indices)
-                ;
+                return _DATABASE.MultiRead<T_USER>(reader, offset, fieldCount, properties, fields, indices);
             }
             public static void GetInsertSQL(T_USER target, StringBuilder builder, List<object> values)
             {
@@ -1270,8 +1269,7 @@ namespace Server
             }
             public static T_CENTER_USER MultiRead(IDataReader reader, int offset, int fieldCount, List<PropertyInfo> properties, List<FieldInfo> fields, int[] indices)
             {
-                return _DATABASE.MultiRead<T_CENTER_USER>(reader, offset, fieldCount, properties, fields, indices)
-                ;
+                return _DATABASE.MultiRead<T_CENTER_USER>(reader, offset, fieldCount, properties, fields, indices);
             }
             public static void GetInsertSQL(T_CENTER_USER target, StringBuilder builder, List<object> values)
             {
@@ -1471,8 +1469,7 @@ namespace Server
             }
             public static T_OPLog MultiRead(IDataReader reader, int offset, int fieldCount, List<PropertyInfo> properties, List<FieldInfo> fields, int[] indices)
             {
-                return _DATABASE.MultiRead<T_OPLog>(reader, offset, fieldCount, properties, fields, indices)
-                ;
+                return _DATABASE.MultiRead<T_OPLog>(reader, offset, fieldCount, properties, fields, indices);
             }
             public static void GetInsertSQL(T_OPLog target, StringBuilder builder, List<object> values)
             {
@@ -1819,13 +1816,13 @@ namespace Server
             result.PageSize = pageSize;
             db.ExecuteReader((reader) =>
             {
-                reader.Read();
-                result.Count = (int)(long)reader[0];
+                if (reader.Read()) result.Count = (int)(long)reader[0];
                 result.Models = new List<T>();
                 reader.NextResult();
                 read(reader, result.Models);
             }
             , builder.ToString(), __param);
+            result.CalcTotalPage();
             return result;
         }
         public static void MasterSlave(string masterConnString, string slaveConnStrings)
