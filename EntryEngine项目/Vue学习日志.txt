@@ -124,7 +124,7 @@ function param(key) {
 			var array = location.search.substring(1).split("&");
 			for (var item of array){
 				var split = item.split("=");
-				__param[split[0]] = decodeURI(split[1]);
+				__param[split[0]] = decodeURIComponent(split[1]);
 			}
 		}
 	}

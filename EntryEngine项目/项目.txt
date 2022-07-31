@@ -3,3 +3,11 @@ EntryEngine项目是使用EntryEngine开发的完整项目
 已有内容
 1. 运维工具: 控制台程序，使用网页管理线上多台电脑和每台电脑上的后端服务，基于svn更新线上程序的版本
 2. 数据统计：引用ASSDK.dll，可以调用API统计注册，日活，留存，用户行为等数据。通过网页查看数据
+3. VercelNodejs：使用https://vercel.com/可以免费部署前端项目
+(1). npm全局安装vercel命令行工具，npm i -g vercel
+(2). cmd定位到需要发布的网站项目的根目录
+(3). vercel --prod
+还可以部署基于nodejs的后端项目，VercelNodejs就是后端转发http请求的项目
+通过url将要转发的目标url写入redirect参数，例如
+https://ee-pass.vercel.app/?redirect=http%3A%2F%2F8.134.82.110%3A30015%2FAction%2F1%2FGetRegion
+就可以实现将https请求转发至http请求了（仅限于接口）

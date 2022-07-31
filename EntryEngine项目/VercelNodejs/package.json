@@ -1,0 +1,17 @@
+{
+  "name": "vercelnodejs",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "build": "node index.js",
+    "test": "node index.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@vercel/node": "^2.5.2",
+    "koa": "^2.13.4"
+  }
+}
