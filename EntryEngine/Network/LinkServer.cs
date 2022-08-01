@@ -1983,7 +1983,10 @@ namespace EntryEngine.Network
             }
             else
             {
-                byte[] data = _IO.ReadStream(Context.Request.InputStream, (int)Context.Request.ContentLength64);
+                int length = (int)Context.Request.ContentLength64;
+                if (length < 0)
+                    length = 128;
+                byte[] data = _IO.ReadStream(Context.Request.InputStream, length);
                 // 对于传过来的Base64的字符串图片做UrlDecode会导致字符串内容还原错误
                 //parameters = _NETWORK.ParseQueryString(_NETWORK.UrlDecode(data, Context.Request.ContentEncoding));
                 parameters = _NETWORK.ParseQueryString(Context.Request.ContentEncoding.GetString(data), true, Context.Request.ContentEncoding);
