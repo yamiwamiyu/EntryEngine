@@ -226,7 +226,9 @@ namespace LauncherClient
                     records.Enqueue(record);
             };
             SetStatus(service, EServiceStatus.Starting);
-            launcher.Launch(Path.Combine(service.Directory, service.Exe), null, service.Directory, service.LaunchCommand);
+            launcher.Launch(Path.Combine(service.Directory, service.Exe), null
+                , Path.Combine(service.Directory, Path.GetDirectoryName(service.Exe))
+                , service.LaunchCommand);
             _LOG.Info("启动服务：[{0}]", service.Name);
         }
         void _IManagerCall.Update(string name, CBIManagerCall_Update callback)
