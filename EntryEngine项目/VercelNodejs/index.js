@@ -56,34 +56,50 @@ http.createServer(function (request, response) {
 	let params = param(url);
 	let redirect = params[REDIRECT];
 	if (!redirect) {
+		response.setHeader("access-control-allow-origin", "*");
+		response.setHeader("access-control-allow-methods", "POST,GET,OPTIONS");
+		if (headers["access-control-request-headers"])
+			response.setHeader("access-control-allow-headers", headers["access-control-request-headers"]);
+		response.writeHead(200, { "Content-Type": "text/plain;charset=utf-8" });
 		response.end("请携带encodeURIComponent后的redirect参数向此地址请求转发");
 		return;
 	}
-	
+
 	let body = [];
     request.on('error', (err) => {
-		console.error(err);
+		response.setHeader("access-control-allow-origin", "*");
+		response.writeHead(500, { "Content-Type": "text/plain;charset=utf-8" });
+		response.end("服务器错误");
     }).on('data', (chunk) => {
 		body.push(chunk);
     }).on('end', () => {
-		body = Buffer.concat(body).toString();
+		body = Buffer.concat(body);
 		const options = {
 			method: method,
 			headers: headers,
 		};
+		const __body = body;
 		const req = http.request(redirect + get(params), options, res => {
 			response.writeHead(res.statusCode, res.statusMessage, res.headers);
 			body = [];
+			
 			res.on('data', (chunk) => {
 				body.push(chunk);
 			});
 			res.on('end', () => {
-				body = Buffer.concat(body).toString();
+				body = Buffer.concat(body);
 				response.end(body);
 			});
 		});
-		if (method == "POST" && body.length)
-			req.write(body);
+		req.on('error', (err) => {
+			response.setHeader("access-control-allow-origin", "*");
+			response.writeHead(500, { "Content-Type": "text/plain;charset=utf-8" });
+			response.end("服务器错误");
+		});
+		if (method == "POST" && __body.length) {
+			//console.log("transfer body: ", body);
+			req.write(__body);
+		}
 		req.end();
     });
 }).listen(PORT);
