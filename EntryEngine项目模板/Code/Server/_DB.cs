@@ -1261,21 +1261,17 @@ namespace Server
                     {
                         if (string.IsNullOrEmpty(__Token) || DateTime.Now >= __TokenExpire)
                         {
-                            HttpRequest(
-                                string.Format(API_ACCESSTOKEN, _WX.APP_ID, _WX.APP_SECRET)
-                                , ret =>
-                                {
-                                    var obj = JsonReader.Deserialize(ret);
-                                    if (obj.ContainsKey("errcode"))
-                                    {
-                                        _LOG.Warning("刷新微信AccessToken异常 errcode: {0} errmsg: {1}", obj["errcode"], obj["errmsg"]);
-                                        throw new InvalidOperationException("刷新微信AccessToken异常");
-                                    }
-                                    __Token = obj["access_token"].GetString();
-                                    __TokenExpire = DateTime.Now.AddSeconds(obj["expires_in"].GetInt32() - 300);
-                                    Save();
-                                    _LOG.Debug("刷新微信AccessToken: {0} 过期时间: {1}", __Token, __TokenExpire);
-                                });
+                            var ret = HttpRequest(string.Format(API_ACCESSTOKEN, _WX.APP_ID, _WX.APP_SECRET), null);
+                            var obj = JsonReader.Deserialize(ret);
+                            if (obj.ContainsKey("errcode"))
+                            {
+                                _LOG.Warning("刷新微信AccessToken异常 errcode: {0} errmsg: {1}", obj["errcode"], obj["errmsg"]);
+                                throw new InvalidOperationException("刷新微信AccessToken异常");
+                            }
+                            __Token = obj["access_token"].GetString();
+                            __TokenExpire = DateTime.Now.AddSeconds(obj["expires_in"].GetInt32() - 300);
+                            Save();
+                            _LOG.Debug("刷新微信AccessToken: {0} 过期时间: {1}", __Token, __TokenExpire);
                         }
                         return __Token;
                     }
@@ -1286,35 +1282,32 @@ namespace Server
                     {
                         if (string.IsNullOrEmpty(__Ticket) || DateTime.Now >= __TicketExpire)
                         {
-                            HttpRequest(
-                                string.Format(API_ACCESSTOKEN, AccessToken, _WX.APP_SECRET)
-                                , ret =>
+                            var ret = HttpRequest(string.Format(API_TICKET, AccessToken), null);
+                            var obj = JsonReader.Deserialize(ret);
+                            int err = obj["errcode"].GetInt32();
+                            if (err != 0)
+                            {
+                                if (err == 40001)
                                 {
-                                    var obj = JsonReader.Deserialize(ret);
-                                    int err = obj["errcode"].GetInt32();
-                                    if (err != 0)
-                                    {
-                                        if (err == 40001)
-                                        {
-                                            // 需要重新刷新AccessToken
-                                            __Token = null;
-                                            return;
-                                        }
-                                        _LOG.Warning("刷新微信Ticket异常 errcode: {0} errmsg: {1}", err, obj["errmsg"]);
-                                        throw new InvalidOperationException("刷新微信AccessToken异常");
-                                    }
-                                    __Ticket = obj["ticket"].GetString();
-                                    __TicketExpire = DateTime.Now.AddSeconds(obj["expires_in"].GetInt32() - 300);
-                                    Save();
-                                    _LOG.Debug("刷新微信Ticket: {0} 过期时间: {1}", __Ticket, __TicketExpire);
-                                });
-                        }
-                        if (__Token == null)
-                        {
-                            return Ticket;
+                                    // 需要重新刷新AccessToken
+                                    __Token = null;
+                                    return Ticket;
+                                }
+                                _LOG.Warning("刷新微信Ticket异常 errcode: {0} errmsg: {1}", err, obj["errmsg"]);
+                                throw new InvalidOperationException("刷新微信Ticket异常");
+                            }
+                            __Ticket = obj["ticket"].GetString();
+                            __TicketExpire = DateTime.Now.AddSeconds(obj["expires_in"].GetInt32() - 300);
+                            Save();
+                            _LOG.Debug("刷新微信Ticket: {0} 过期时间: {1}", __Ticket, __TicketExpire);
                         }
                         return __Ticket;
                     }
+                }
+
+                static AccessTokenService()
+                {
+                    Load();
                 }
                 public static void Load()
                 {
