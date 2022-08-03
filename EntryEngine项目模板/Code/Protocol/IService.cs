@@ -55,6 +55,7 @@ public interface IService
         string buyer_id, string buyer_logon_id,
         string trade_status, string total_amount, string gmt_payment,
         Action<string> callback);
+    void WXWXJSSDK(string url, Action<WXJSSDK> callback);
 
     #endregion
 }

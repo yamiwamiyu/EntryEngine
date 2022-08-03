@@ -45,6 +45,7 @@
     <Compile Include="IService.cs" />
     <Compile Include="IUser.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Structure.cs" />
     <Compile Include="_EX.cs" />
   </ItemGroup>
   <ItemGroup>

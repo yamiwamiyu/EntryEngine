@@ -358,16 +358,6 @@ namespace Server
         /// </summary>
         public static class _WX
         {
-            public class WXPay
-            {
-                public string appId;
-                public string nonceStr;
-                public string paySign;
-                public string prepayid;
-                public string partnerid;
-                public string timeStamp;
-                public string package = "Sign=WXPay";
-            }
             /// <summary>
             /// 微信支付协议接口数据类，所有的API接口通信都依赖这个数据结构，
             /// 在调用接口之前先填充各个字段的值，然后进行接口通信，

@@ -210,5 +210,11 @@ namespace Server.Impl
             //    callback.__link.Response("failed");
             //}
         }
+        void _IService.WXWXJSSDK(string url, CBIService_WXWXJSSDK callback)
+        {
+            var config = WXJSSDK.GenerateNew(_DB._WX.AccessTokenService.Ticket, url);
+            config.appId = _DB._WX.APP_ID;
+            callback.Callback(config);
+        }
     }
 }

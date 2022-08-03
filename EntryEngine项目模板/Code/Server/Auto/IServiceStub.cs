@@ -21,6 +21,7 @@ interface _IService
     void UploadFile(EntryEngine.Network.FileUpload file, CBIService_UploadFile callback);
     void WeChatPayCallback(HttpListenerContext __context);
     void AlipayCallback(string trade_no, string out_trade_no, string buyer_id, string buyer_logon_id, string trade_status, string total_amount, string gmt_payment, CBIService_AlipayCallback callback);
+    void WXWXJSSDK(string url, CBIService_WXWXJSSDK callback);
 }
 public class CBIService_SendSMSCode : IDisposable
 {
@@ -407,6 +408,41 @@ public class CBIService_AlipayCallback : IDisposable
         if (!IsCallback) Error(-2, "no callback");
     }
 }
+public class CBIService_WXWXJSSDK : IDisposable
+{
+    internal HttpListenerContext __context { get; private set; }
+    internal StubHttp __link { get; private set; }
+    internal bool IsCallback { get; private set; }
+    public CBIService_WXWXJSSDK(StubHttp link)
+    {
+        this.__link = link;
+        this.__context = link.Context;
+    }
+    public void Callback(WXJSSDK obj) // INDEX = 12
+    {
+        if (IsCallback) return;
+        string __ret = JsonWriter.Serialize(obj);
+        #if DEBUG
+        _LOG.Debug("CBIService_WXWXJSSDK {0}", __ret);
+        #endif
+        __link.Response(__context, __ret);
+        IsCallback = true;
+    }
+    public void Error(int ret, string msg)
+    {
+        if (IsCallback) return;
+        string __ret = JsonWriter.Serialize(new HttpError(ret, msg));
+        #if DEBUG
+        _LOG.Debug("CBIService_WXWXJSSDK Error ret={0} msg={1}", ret, msg);
+        #endif
+        __link.Response(__context, __ret);
+        IsCallback = true;
+    }
+    public void Dispose()
+    {
+        if (!IsCallback) Error(-2, "no callback");
+    }
+}
 
 class IServiceStub : StubHttp
 {
@@ -430,6 +466,7 @@ class IServiceStub : StubHttp
         AddMethod("UploadFile", UploadFile);
         AddMethod("WeChatPayCallback", WeChatPayCallback);
         AddMethod("AlipayCallback", AlipayCallback);
+        AddMethod("WXWXJSSDK", WXWXJSSDK);
     }
     void SendSMSCode(HttpListenerContext __context)
     {
@@ -615,5 +652,19 @@ class IServiceStub : StubHttp
         #endif
         var callback = new CBIService_AlipayCallback(this);
         agent.AlipayCallback(trade_no, out_trade_no, buyer_id, buyer_logon_id, trade_status, total_amount, gmt_payment, callback);
+    }
+    void WXWXJSSDK(HttpListenerContext __context)
+    {
+        var agent = __Agent;
+        if (__GetAgent != null) { var temp = __GetAgent(); if (temp != null) agent = temp; }
+        if (__ReadAgent != null) { var temp = __ReadAgent(__context); if (temp != null) agent = temp; }
+        string __temp;
+        __temp = GetParam("url");
+        string url = __temp;
+        #if DEBUG
+        _LOG.Debug("WXWXJSSDK url: {0},", url);
+        #endif
+        var callback = new CBIService_WXWXJSSDK(this);
+        agent.WXWXJSSDK(url, callback);
     }
 }
