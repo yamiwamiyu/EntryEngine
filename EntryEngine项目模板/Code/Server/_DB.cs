@@ -343,6 +343,18 @@ namespace Server
         // 需要引入.Net组件System.Xml.dll
         /// <summary>微信支付
         /// 微信支付API有v2和v3版本，现在最新网上找到的文档为v3版本，这里实现的是v2版本
+        /// 微信支付申请流程：
+        /// 1. APP到微信开放平台https://open.weixin.qq.com/
+        ///    小程序，公众号到微信公众平台https://mp.weixin.qq.com/
+        ///    注册账号后，都需要300元进行认证
+        /// 2. 认证通过后首次对接支付需要到微信微信商户平台https://pay.weixin.qq.com/
+        ///    注册需要AppID，对公账户汇款验证
+        /// 3. 以认证通过的公众号为例，需要以下配置
+        ///    公众号设置 -> 功能设置 多出网页授权域名，设置前端域名
+        ///    安全中心 -> IP白名单 设置服务端IP
+        /// 4. 商户后台需要以下配置
+        ///    产品中心 -> 开发配置 -> JSAPI支付 添加支付授权前端域名
+        ///    账户中心 -> API安全 -> 申请API，APIv2，APIv3证书
         /// </summary>
         public static class _WX
         {
@@ -626,19 +638,21 @@ namespace Server
             /// 注意：创建移动应用需要有应用官网，官网网址可以是IP地址的不一定要域名，内容包含要创建的移动应用的名字和简介就行
             /// 
             /// 可以是微信公众平台：https://mp.weixin.qq.com/
-            /// 1. 注册公众号，小程序都可，不需要费用，认证流程很复杂，支付具体流程没走过
+            /// 1. 注册公众号，小程序都可，认证需要300元
             /// </summary>
-            public static string APP_ID = "wxcb58cff2ad9855b5";
+            public static string APP_ID = "wx783c68aea3a66450";
             /// <summary>以微信开放平台移动应用为例，创建成功后 -> 查看应用 -> AppSecret -> 生成即可</summary>
-            public static string APP_KEY = "bba60ac760de4JHgLZPa11966c41c135";
+            public static string APP_KEY = "caa792892fd6111f1e40f6e44a8c5f14";
             /// <summary>微信商户平台：https://pay.weixin.qq.com/
             /// 注册时需要填写已有支付场景，例如移动应用，公众号，小程序等，所以还是先去搞到AppID再注册商户
             /// </summary>
-            public static string SHOP_ID = "1542949881";
+            public static string SHOP_ID = "1629524233";
             /// <summary>
             /// 商户平台管理员设置API安全：https://pay.weixin.qq.com/index.php/core/cert/api_cert#/
+            /// 1. API证书：按照平台要求，下载工具，按步骤操作，得到一个压缩包
+            /// 2. API2 & API3证书：都是一个32位字符串
             /// </summary>
-            public static string APP_SECRET = "650c9cd33ae6cf1d77add725c06afd45";
+            public static string APP_SECRET = "caa792892fd6111f1e40f6e44a8c5f14";
             public static string PAY_CALLBACK = "http//8.134.53.149:35001/Action/1/WeChatPayCallback";
             public static string REFUND_CALLBACK = "https://api.1996yx.com/Action/219/WeChatRefundCallback";
             public static string RETURN_URL = "https://api.1996yx.com/pages/oder/paySuccess";
@@ -931,9 +945,12 @@ namespace Server
 
                 WxPayData inputObj = new WxPayData();
                 inputObj.SetValue("out_trade_no", out_trade_no);
+                inputObj.SetValue("out_refund_no", out_refund_no);
                 inputObj.SetValue("notify_url", REFUND_CALLBACK);//异步通知url
                 if (!string.IsNullOrEmpty(refund_desc))
                     inputObj.SetValue("refund_desc", refund_desc);
+                inputObj.SetValue("total_fee", total_fee);
+                inputObj.SetValue("refund_fee", refund_fee);
 
                 inputObj.SetValue("appid", APP_ID);//公众账号ID
                 inputObj.SetValue("mch_id", SHOP_ID);//商户号
@@ -953,6 +970,8 @@ namespace Server
                 //将xml格式的结果转换为对象以返回
                 WxPayData result = new WxPayData();
                 result.FromXml(response);
+
+                result.GetValue("err_code_des").Check(result.GetValue("result_code") != "SUCCESS");
 
                 return result;
             }
