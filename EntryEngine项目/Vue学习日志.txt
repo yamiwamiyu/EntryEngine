@@ -119,7 +119,7 @@ window.onresize = FixWindowRem
 var __param;
 function param(key) {
 	if (!__param) {
-		__param = {};
+		__param = [];
 		if (location.href.search && location.href.search.length) {
 			var array = location.search.substring(1).split("&");
 			for (var item of array){
@@ -130,7 +130,19 @@ function param(key) {
 	}
 	return __param[key];
 }
-2. 获取参数：param("要获取的参数名")
+第二种用法，获取全部的参数：
+function param() {
+	let __param = [];
+	if (location.href.search && location.href.search.length) {
+		var array = location.search.substring(1).split("&");
+		for (var item of array){
+			var split = item.split("=");
+			__param[split[0]] = decodeURIComponent(split[1]);
+		}
+	}
+	return __param;
+}
+2. 获取参数：param("要获取的参数名"); 第二种用法：param()["要获取的参数名"]
 
 作用说明：在使用router的情况下，希望将url增加特定的参数(例如用户ID以便分享链接时带上分享人)
 使用说明：
@@ -210,6 +222,101 @@ const errmsg = function (res:any) {
     else
       router.push('/');
   });
+
+作用说明：JSSDK的微信登录
+使用说明：
+1. 打开微信授权页获取code（此时原本页面其实并未刷新，仅是弹窗授权而已）
+  mounted() {
+    let ua = navigator.userAgent.toLowerCase();
+    if (ua.match(/micromessenger/i) == "micromessenger") {
+      // 微信浏览器则拉起微信登录
+      let appid = "wx783c68aea3a66450";
+      // 若有code则是授权后跳回本页面，否则就是首次打开授权弹窗
+      let code = this.$route.query.code;
+      if (code) {
+        // todo: 将code发给服务端以登录
+      } else {
+        // 征求用户授权
+        let scope = "snsapi_userinfo"
+        let href = "https://open.weixin.qq.com/connect/oauth2/authorize?"
+          + "appid=" + appid
+		  // 同意授权后，将跳转到指定页面，本例是跳转回本页
+          + "&redirect_uri=" + encodeURIComponent(location.href)
+          + "&response_type=code"
+          + "&scope=" + scope
+          + "#wechat_redirect"
+		// 打开授权弹窗，若取消任然会停留在本页
+        location.href = href;
+      }
+    } else {
+	  // todo: 不是微信浏览器
+	}
+  },
+2. 获取code后，将code发给服务端以登录
+
+作用说明：JSSDK的微信支付
+1. 在main.js就可以向vue注入支付结束全局方法
+vue.config.globalProperties.$pay = (res) => {
+    const onBridgeReady = function() {
+        WeixinJSBridge.invoke(
+            'getBrandWCPayRequest', {
+              "appId":res.appId,
+              "timeStamp":res.timeStamp,
+              "nonceStr":res.nonceStr,
+              "package":res.package,     
+              "signType":res.signType,
+              "paySign":res.paySign //微信签名 
+            },
+            function(res2) {
+                // todo: 向后端主动查询订单支付状态，然后跳转支付完成页
+            }
+        ); 
+    }
+    if (typeof WeixinJSBridge == "undefined"){
+        if (document.addEventListener) {
+            document.addEventListener('WeixinJSBridgeReady', onBridgeReady, false);
+        } else if (document.attachEvent) {
+            document.attachEvent('WeixinJSBridgeReady', onBridgeReady); 
+            document.attachEvent('onWeixinJSBridgeReady', onBridgeReady);
+        }
+    }else{
+        onBridgeReady();
+    }
+}
+2. 业务服务端下单接口回调时，调用全局$pay方法即可，例如
+下单接口().then((res) => this.$pay(res));
+
+作用说明：JSSDK其它接口
+1. 向后端发送当前url，获取JSSDK准备必要的参数，对jsApiList设置要调用的微信接口
+所有接口文档，查看https://developers.weixin.qq.com/doc/offiaccount/OA_Web_Apps/JS-SDK.html
+  mounted() {
+    let _this = this;
+	// 从后端接口获取准备参数
+	// url：官网上文档是需要encodeURI，去掉#等各种，实际调用就是当前地址即可
+    WXJSSDK(location.href).then(config => {
+      config.jsApiList = ["scanQRCode"] // 必填，需要使用的 JS 接口列表
+	  // 调试时打开debug，会alert一些调用行数的步骤
+      // config.debug = true;
+      wx.config(config);
+      wx.ready(function(){
+        // config信息验证后会执行 ready 方法，所有接口调用都必须在 config 接口获得结果之后，config是一个客户端的异步操作，所以如果需要在页面加载时就调用相关接口，则须把相关接口放在 ready 函数中调用来确保正确执行。对于用户触发时才调用的接口，则可以直接调用，不需要放在 ready 函数中。
+        _this.ready = true;
+		// todo: 具体的JSSDK接口
+      });
+      wx.error(function(res){
+        // config信息验证失败会执行 error 函数，如签名过期导致验证失败，具体错误信息可以打开 config 的debug模式查看，也可以在返回的 res 参数中查看，对于 SPA 可以在这里更新签名。
+        _this.ready = false;
+      });
+    })
+  },
+2. 调用JSSDK接口，以扫一扫为例，其它接口参考第一步的接口文档
+wx.scanQRCode({
+	needResult: 1, // 默认为0，扫描结果由微信处理，1则直接返回扫描结果，
+	scanType: ["qrCode","barCode"], // 可以指定扫二维码还是一维码，默认二者都有
+	success: function (res) {
+		// todo: 扫描二维码的结果res.resultStr;
+	}
+});
 
 作用说明：去掉body和html之间的空白间隔
 作用说明：去掉各种文字标签上下一部分的空白像素，有空白像素文字内容会和蓝湖等设计工具间隔像素不一致
