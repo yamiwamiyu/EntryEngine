@@ -14,6 +14,7 @@ namespace Server.Impl
         手机号 = 1,
         忘记密码 = 2,
         密码 = 3,
+        微信 = 4,
         其它 = 255,
     }
     /// <summary>基于用户的接口实现基类</summary>

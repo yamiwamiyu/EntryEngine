@@ -24,7 +24,7 @@ namespace Server
             _LOG._Logger = new LoggerFile(new LoggerConsole());
 
             // 构建并设置你的服务
-            Service service = new Service();
+            Service service = _S<Service>.Value;
             service.PermitAcceptTimeout = null;
             service.PermitSameIPLinkPerSecord = null;
             service.PermitSameIPHandlePerSecord = null;

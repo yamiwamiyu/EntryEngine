@@ -92,6 +92,8 @@ public class T_UserBase
     [Index]public string Token;
     /// <summary>账号，可用于登录</summary>
     [Index]public string Account;
+    /// <summary>账号也为敏感信息，会被Mask掉</summary>
+    public string __Account { get; set; }
     /// <summary>登录密码，空则不能用密码登录</summary>
     [Index]public string Password;
     /// <summary>修改密码时不用再去翻数据库</summary>
@@ -124,6 +126,8 @@ public class T_UserBase
         //if (IDCard != null)
         //    IDCard = IDCard.Mask();
         MaskPhone();
+        __Account = Account;
+        Account = null;
         __Password = Password;
         Password = null;
         OnMaskData();

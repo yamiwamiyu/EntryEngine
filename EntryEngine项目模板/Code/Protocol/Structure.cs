@@ -45,9 +45,12 @@ public class WXPay
 {
     public string appId;
     public string nonceStr;
+    public string signType;
     public string paySign;
     public string prepayid;
     public string partnerid;
     public string timeStamp;
     public string package = "Sign=WXPay";
+    /// <summary>业务订单号</summary>
+    public string out_trade_no;
 }

@@ -11,6 +11,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Protocol", "Protocol\Protoc
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Server", "Server\Server.csproj", "{60F6A73E-FD65-4A11-878F-50553156A921}"
 EndProject
+Project("{9092AA53-FB77-4645-B42D-1CCCA6BD08BD}") = "ee-framework", "ee-framework\ee-framework.njsproj", "{BC0FC396-D876-4F64-8BCC-7DC1A55C4442}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -49,6 +51,14 @@ Global
 		{60F6A73E-FD65-4A11-878F-50553156A921}.Release|Any CPU.ActiveCfg = Release|x86
 		{60F6A73E-FD65-4A11-878F-50553156A921}.Release|x86.ActiveCfg = Release|x86
 		{60F6A73E-FD65-4A11-878F-50553156A921}.Release|x86.Build.0 = Release|x86
+		{BC0FC396-D876-4F64-8BCC-7DC1A55C4442}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BC0FC396-D876-4F64-8BCC-7DC1A55C4442}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BC0FC396-D876-4F64-8BCC-7DC1A55C4442}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{BC0FC396-D876-4F64-8BCC-7DC1A55C4442}.Debug|x86.Build.0 = Debug|Any CPU
+		{BC0FC396-D876-4F64-8BCC-7DC1A55C4442}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BC0FC396-D876-4F64-8BCC-7DC1A55C4442}.Release|Any CPU.Build.0 = Release|Any CPU
+		{BC0FC396-D876-4F64-8BCC-7DC1A55C4442}.Release|x86.ActiveCfg = Release|Any CPU
+		{BC0FC396-D876-4F64-8BCC-7DC1A55C4442}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

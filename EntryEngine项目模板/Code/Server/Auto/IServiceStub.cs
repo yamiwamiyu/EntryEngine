@@ -14,14 +14,16 @@ interface _IService
     void LoginByToken(string token, CBIService_LoginByToken callback);
     void LoginByPassword(string phone, string password, CBIService_LoginByPassword callback);
     void ForgetPassword(string phone, string code, string password, CBIService_ForgetPassword callback);
+    void LoginByWX(string code, CBIService_LoginByWX callback);
     void ClearUserCache(int id, CBIService_ClearUserCache callback);
     void CenterLoginByPassword(string name, string password, CBIService_CenterLoginByPassword callback);
     void CenterLoginBySMSCode(string phone, string code, CBIService_CenterLoginBySMSCode callback);
     void UploadImage(EntryEngine.Network.FileUpload file, CBIService_UploadImage callback);
     void UploadFile(EntryEngine.Network.FileUpload file, CBIService_UploadFile callback);
     void WeChatPayCallback(HttpListenerContext __context);
+    void WeChatRefundCallback(HttpListenerContext __context);
+    void WXJSSDK(string url, CBIService_WXJSSDK callback);
     void AlipayCallback(string trade_no, string out_trade_no, string buyer_id, string buyer_logon_id, string trade_status, string total_amount, string gmt_payment, CBIService_AlipayCallback callback);
-    void WXWXJSSDK(string url, CBIService_WXWXJSSDK callback);
 }
 public class CBIService_SendSMSCode : IDisposable
 {
@@ -198,6 +200,41 @@ public class CBIService_ForgetPassword : IDisposable
         if (!IsCallback) Error(-2, "no callback");
     }
 }
+public class CBIService_LoginByWX : IDisposable
+{
+    internal HttpListenerContext __context { get; private set; }
+    internal StubHttp __link { get; private set; }
+    internal bool IsCallback { get; private set; }
+    public CBIService_LoginByWX(StubHttp link)
+    {
+        this.__link = link;
+        this.__context = link.Context;
+    }
+    public void Callback(T_USER obj) // INDEX = 5
+    {
+        if (IsCallback) return;
+        string __ret = JsonWriter.Serialize(obj);
+        #if DEBUG
+        _LOG.Debug("CBIService_LoginByWX {0}", __ret);
+        #endif
+        __link.Response(__context, __ret);
+        IsCallback = true;
+    }
+    public void Error(int ret, string msg)
+    {
+        if (IsCallback) return;
+        string __ret = JsonWriter.Serialize(new HttpError(ret, msg));
+        #if DEBUG
+        _LOG.Debug("CBIService_LoginByWX Error ret={0} msg={1}", ret, msg);
+        #endif
+        __link.Response(__context, __ret);
+        IsCallback = true;
+    }
+    public void Dispose()
+    {
+        if (!IsCallback) Error(-2, "no callback");
+    }
+}
 public class CBIService_ClearUserCache : IDisposable
 {
     internal HttpListenerContext __context { get; private set; }
@@ -208,7 +245,7 @@ public class CBIService_ClearUserCache : IDisposable
         this.__link = link;
         this.__context = link.Context;
     }
-    public void Callback(bool obj) // INDEX = 5
+    public void Callback(bool obj) // INDEX = 6
     {
         if (IsCallback) return;
         string __ret = JsonWriter.Serialize(obj);
@@ -243,7 +280,7 @@ public class CBIService_CenterLoginByPassword : IDisposable
         this.__link = link;
         this.__context = link.Context;
     }
-    public void Callback(T_CENTER_USER obj) // INDEX = 6
+    public void Callback(T_CENTER_USER obj) // INDEX = 7
     {
         if (IsCallback) return;
         string __ret = JsonWriter.Serialize(obj);
@@ -278,7 +315,7 @@ public class CBIService_CenterLoginBySMSCode : IDisposable
         this.__link = link;
         this.__context = link.Context;
     }
-    public void Callback(T_CENTER_USER obj) // INDEX = 7
+    public void Callback(T_CENTER_USER obj) // INDEX = 8
     {
         if (IsCallback) return;
         string __ret = JsonWriter.Serialize(obj);
@@ -313,7 +350,7 @@ public class CBIService_UploadImage : IDisposable
         this.__link = link;
         this.__context = link.Context;
     }
-    public void Callback(string obj) // INDEX = 8
+    public void Callback(string obj) // INDEX = 9
     {
         if (IsCallback) return;
         string __ret = JsonWriter.Serialize(obj);
@@ -348,7 +385,7 @@ public class CBIService_UploadFile : IDisposable
         this.__link = link;
         this.__context = link.Context;
     }
-    public void Callback(string obj) // INDEX = 9
+    public void Callback(string obj) // INDEX = 10
     {
         if (IsCallback) return;
         string __ret = JsonWriter.Serialize(obj);
@@ -373,6 +410,41 @@ public class CBIService_UploadFile : IDisposable
         if (!IsCallback) Error(-2, "no callback");
     }
 }
+public class CBIService_WXJSSDK : IDisposable
+{
+    internal HttpListenerContext __context { get; private set; }
+    internal StubHttp __link { get; private set; }
+    internal bool IsCallback { get; private set; }
+    public CBIService_WXJSSDK(StubHttp link)
+    {
+        this.__link = link;
+        this.__context = link.Context;
+    }
+    public void Callback(WXJSSDK obj) // INDEX = 13
+    {
+        if (IsCallback) return;
+        string __ret = JsonWriter.Serialize(obj);
+        #if DEBUG
+        _LOG.Debug("CBIService_WXJSSDK {0}", __ret);
+        #endif
+        __link.Response(__context, __ret);
+        IsCallback = true;
+    }
+    public void Error(int ret, string msg)
+    {
+        if (IsCallback) return;
+        string __ret = JsonWriter.Serialize(new HttpError(ret, msg));
+        #if DEBUG
+        _LOG.Debug("CBIService_WXJSSDK Error ret={0} msg={1}", ret, msg);
+        #endif
+        __link.Response(__context, __ret);
+        IsCallback = true;
+    }
+    public void Dispose()
+    {
+        if (!IsCallback) Error(-2, "no callback");
+    }
+}
 public class CBIService_AlipayCallback : IDisposable
 {
     internal HttpListenerContext __context { get; private set; }
@@ -383,7 +455,7 @@ public class CBIService_AlipayCallback : IDisposable
         this.__link = link;
         this.__context = link.Context;
     }
-    public void Callback(string obj) // INDEX = 11
+    public void Callback(string obj) // INDEX = 14
     {
         if (IsCallback) return;
         string __ret = JsonWriter.Serialize(obj);
@@ -399,41 +471,6 @@ public class CBIService_AlipayCallback : IDisposable
         string __ret = JsonWriter.Serialize(new HttpError(ret, msg));
         #if DEBUG
         _LOG.Debug("CBIService_AlipayCallback Error ret={0} msg={1}", ret, msg);
-        #endif
-        __link.Response(__context, __ret);
-        IsCallback = true;
-    }
-    public void Dispose()
-    {
-        if (!IsCallback) Error(-2, "no callback");
-    }
-}
-public class CBIService_WXWXJSSDK : IDisposable
-{
-    internal HttpListenerContext __context { get; private set; }
-    internal StubHttp __link { get; private set; }
-    internal bool IsCallback { get; private set; }
-    public CBIService_WXWXJSSDK(StubHttp link)
-    {
-        this.__link = link;
-        this.__context = link.Context;
-    }
-    public void Callback(WXJSSDK obj) // INDEX = 12
-    {
-        if (IsCallback) return;
-        string __ret = JsonWriter.Serialize(obj);
-        #if DEBUG
-        _LOG.Debug("CBIService_WXWXJSSDK {0}", __ret);
-        #endif
-        __link.Response(__context, __ret);
-        IsCallback = true;
-    }
-    public void Error(int ret, string msg)
-    {
-        if (IsCallback) return;
-        string __ret = JsonWriter.Serialize(new HttpError(ret, msg));
-        #if DEBUG
-        _LOG.Debug("CBIService_WXWXJSSDK Error ret={0} msg={1}", ret, msg);
         #endif
         __link.Response(__context, __ret);
         IsCallback = true;
@@ -459,14 +496,16 @@ class IServiceStub : StubHttp
         AddMethod("LoginByToken", LoginByToken);
         AddMethod("LoginByPassword", LoginByPassword);
         AddMethod("ForgetPassword", ForgetPassword);
+        AddMethod("LoginByWX", LoginByWX);
         AddMethod("ClearUserCache", ClearUserCache);
         AddMethod("CenterLoginByPassword", CenterLoginByPassword);
         AddMethod("CenterLoginBySMSCode", CenterLoginBySMSCode);
         AddMethod("UploadImage", UploadImage);
         AddMethod("UploadFile", UploadFile);
         AddMethod("WeChatPayCallback", WeChatPayCallback);
+        AddMethod("WeChatRefundCallback", WeChatRefundCallback);
+        AddMethod("WXJSSDK", WXJSSDK);
         AddMethod("AlipayCallback", AlipayCallback);
-        AddMethod("WXWXJSSDK", WXWXJSSDK);
     }
     void SendSMSCode(HttpListenerContext __context)
     {
@@ -545,6 +584,20 @@ class IServiceStub : StubHttp
         #endif
         var callback = new CBIService_ForgetPassword(this);
         agent.ForgetPassword(phone, code, password, callback);
+    }
+    void LoginByWX(HttpListenerContext __context)
+    {
+        var agent = __Agent;
+        if (__GetAgent != null) { var temp = __GetAgent(); if (temp != null) agent = temp; }
+        if (__ReadAgent != null) { var temp = __ReadAgent(__context); if (temp != null) agent = temp; }
+        string __temp;
+        __temp = GetParam("code");
+        string code = __temp;
+        #if DEBUG
+        _LOG.Debug("LoginByWX code: {0},", code);
+        #endif
+        var callback = new CBIService_LoginByWX(this);
+        agent.LoginByWX(code, callback);
     }
     void ClearUserCache(HttpListenerContext __context)
     {
@@ -627,6 +680,27 @@ class IServiceStub : StubHttp
         if (__ReadAgent != null) { var temp = __ReadAgent(__context); if (temp != null) agent = temp; }
         agent.WeChatPayCallback(__context);
     }
+    void WeChatRefundCallback(HttpListenerContext __context)
+    {
+        var agent = __Agent;
+        if (__GetAgent != null) { var temp = __GetAgent(); if (temp != null) agent = temp; }
+        if (__ReadAgent != null) { var temp = __ReadAgent(__context); if (temp != null) agent = temp; }
+        agent.WeChatRefundCallback(__context);
+    }
+    void WXJSSDK(HttpListenerContext __context)
+    {
+        var agent = __Agent;
+        if (__GetAgent != null) { var temp = __GetAgent(); if (temp != null) agent = temp; }
+        if (__ReadAgent != null) { var temp = __ReadAgent(__context); if (temp != null) agent = temp; }
+        string __temp;
+        __temp = GetParam("url");
+        string url = __temp;
+        #if DEBUG
+        _LOG.Debug("WXJSSDK url: {0},", url);
+        #endif
+        var callback = new CBIService_WXJSSDK(this);
+        agent.WXJSSDK(url, callback);
+    }
     void AlipayCallback(HttpListenerContext __context)
     {
         var agent = __Agent;
@@ -652,19 +726,5 @@ class IServiceStub : StubHttp
         #endif
         var callback = new CBIService_AlipayCallback(this);
         agent.AlipayCallback(trade_no, out_trade_no, buyer_id, buyer_logon_id, trade_status, total_amount, gmt_payment, callback);
-    }
-    void WXWXJSSDK(HttpListenerContext __context)
-    {
-        var agent = __Agent;
-        if (__GetAgent != null) { var temp = __GetAgent(); if (temp != null) agent = temp; }
-        if (__ReadAgent != null) { var temp = __ReadAgent(__context); if (temp != null) agent = temp; }
-        string __temp;
-        __temp = GetParam("url");
-        string url = __temp;
-        #if DEBUG
-        _LOG.Debug("WXWXJSSDK url: {0},", url);
-        #endif
-        var callback = new CBIService_WXWXJSSDK(this);
-        agent.WXWXJSSDK(url, callback);
     }
 }

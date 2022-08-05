@@ -595,31 +595,40 @@ namespace Server
                 public int expires_in;
                 public string refresh_token;
                 public string openid;
+                /// <summary>snsapi_userinfo: 可以获取微信用户信息
+                /// snsapi_base: 仅能
+                /// </summary>
                 public string scope;
+
+                public bool CanGetUserInfo { get { return scope == "snsapi_userinfo"; } }
             }
-            public class WXUserInfo
+            /// <summary>关注公众号的微信用户信息</summary>
+            public class GZHUserInfo : UserInfo
             {
                 public bool subscribe;
-                public string openid;
-                public string nickname;
-                /// <summary>用户的性别，值为1时是男性，值为2时是女性，值为0时是未知</summary>
-                public int sex;
                 public string language;
-                public string city;
-                public string province;
-                public string country;
-                /// <summary>用户头像，最后一个数值代表正方形头像大小（有0、46、64、96、132数值可选，0代表640*640正方形头像），用户没有头像时该项为空。若用户更换头像，原有头像URL将失效。</summary>
-                public string headimgurl;
                 /// <summary>用户关注时间，为时间戳。如果用户曾多次关注，则取最后关注时间</summary>
                 public long subscribe_time;
-                public string unionid;
                 public string remark;
                 public int groupid;
                 public int[] tagid_list;
                 public string subscribe_scene;
             }
-
-            public static string WXToken = "ddz123456789";
+            /// <summary>微信用户基本信息</summary>
+            public class UserInfo
+            {
+                public string openid;
+                public string nickname;
+                /// <summary>用户的性别，值为1时是男性，值为2时是女性，值为0时是未知</summary>
+                public int sex;
+                public string city;
+                public string province;
+                public string country;
+                /// <summary>用户头像，最后一个数值代表正方形头像大小（有0、46、64、96、132数值可选，0代表640*640正方形头像），用户没有头像时该项为空。若用户更换头像，原有头像URL将失效。</summary>
+                public string headimgurl;
+                /// <summary>只有在用户将公众号绑定到微信开放平台帐号后，才会出现该字段。</summary>
+                public string unionid;
+            }
 
             /// <summary>
             /// 可以是微信开放平台：https://open.weixin.qq.com/
@@ -643,27 +652,20 @@ namespace Server
             /// 2. API2 & API3证书：都是一个32位字符串
             /// </summary>
             public static string APP_SECRET = "caa792892fd6111f1e40f6e44a8c5f14";
-            public static string PAY_CALLBACK = "http//8.134.53.149:35001/Action/1/WeChatPayCallback";
-            public static string REFUND_CALLBACK = "https://api.1996yx.com/Action/219/WeChatRefundCallback";
+            /// <summary>微信支付成功的回调</summary>
+            public static string PAY_CALLBACK = string.Format("http//{0}:{1}/Action/1/WeChatPayCallback", _NETWORK.HostIP, _S<Service>.Value.Port);
+            /// <summary>微信退款成功的回调</summary>
+            public static string REFUND_CALLBACK = string.Format("http//{0}:{1}/Action/1/WeChatRefundCallback", _NETWORK.HostIP, _S<Service>.Value.Port);
             public static string RETURN_URL = "https://api.1996yx.com/pages/oder/paySuccess";
 
 
-            /// <summary>获得AccessToken(默认过期时间为2小时)</summary>
-            public static JsonObject GetAccessToken()
-            {
-                string send_url = string.Format("https://api.weixin.qq.com/cgi-bin/token?grant_type=client_credential&appid={0}&secret={1}", APP_ID, APP_SECRET);
-                //发送并接受返回值
-                string result = HttpGet(send_url);
-                if (result.Contains("errmsg"))
-                    throw new InvalidOperationException(string.Format("GetAccessToken异常 Err:{0}", result));
-                return JsonReader.Deserialize(result);
-            }
-            /// <summary>文档：https://developers.weixin.qq.com/doc/offiaccount/OA_Web_Apps/Wechat_webpage_authorization.html#0</summary>
+            /// <summary>获取一个用户的openid和access_token，以便获取用户信息，若仅需要openid，本步骤即可(openid可用于jssdk调用微信充值)
+            /// 文档：https://developers.weixin.qq.com/doc/offiaccount/OA_Web_Apps/Wechat_webpage_authorization.html#0
+            /// </summary>
             /// <param name="code">参见文档第一步，前端获取</param>
-            public static WXOauth oauth2_access_token(string code)
+            public static WXOauth GetOpenID(string code)
             {
                 string url = string.Format("https://api.weixin.qq.com/sns/oauth2/access_token?appid={0}&secret={1}&code={2}&grant_type=authorization_code", APP_ID, APP_SECRET, code);
-                //发送并接受返回值
                 string result = HttpGet(url);
                 if (result.StartsWith("{\"errcode\":"))
                 {
@@ -672,44 +674,36 @@ namespace Server
                 }
                 return JsonReader.Deserialize<WXOauth>(result);
             }
-            /// <summary>获取微信用户的基本资料</summary>
-            /// <param name="auth">oauth2_access_token返回的对象</param>
-            public static WXUserInfo user_info(WXOauth auth)
+            /// <summary>前端是公众号时，不需要用户授权也可获取用户的基本资料。获取不到时返回null</summary>
+            public static GZHUserInfo GetGZHUserInfo(WXOauth auth)
             {
-                // 没有关注公众号信息
-                // https://api.weixin.qq.com/sns/userinfo?access_token=" + access_token + "&openid=" + open_id;
                 // 有关注公众号信息，据网上说有每日2000次的限制
                 // https://api.weixin.qq.com/cgi-bin/user/info?access_token=$access_token&openid=$openid&lang=zh_CN
-
-                // 先通过公众号信息获取微信信息
                 string result = HttpGet(
                     string.Format("https://api.weixin.qq.com/cgi-bin/user/info?access_token={0}&openid={1}", AccessTokenService.AccessToken, auth.openid));
-                WXUserInfo userinfo = null;
+
                 if (!result.StartsWith("{\"errcode\":"))
                 {
-                    userinfo = JsonReader.Deserialize<WXUserInfo>(result);
+                    var userinfo = JsonReader.Deserialize<GZHUserInfo>(result);
                     // 没有关注公众号，拉不出玩家信息
-                    if (!userinfo.subscribe)
-                        userinfo = null;
-                    else
+                    if (userinfo.subscribe)
                         return userinfo;
                 }
 
-                if (userinfo == null)
-                {
-                    // 通过个人授权拉取公众号信息
-                    result = HttpGet(
-                        string.Format("https://api.weixin.qq.com/sns/userinfo?access_token={0}&openid={1}", auth.access_token, auth.openid));
-                    string.Format("获取微信用户信息错误：{0}", result).Check(result.StartsWith("{\"errcode\":"));
-                    userinfo = JsonReader.Deserialize<WXUserInfo>(result);
-                }
-
-                string.Format("获取微信用户信息错误：{0}", result).Check(userinfo == null);
-                return userinfo;
+                return null;
+            }
+            /// <summary>获取微信用户的基本资料</summary>
+            public static UserInfo GetUserInfo(WXOauth auth)
+            {
+                "scope必须是snsapi_userinfo".Check(!auth.CanGetUserInfo);
+                string result = HttpGet(
+                    string.Format("https://api.weixin.qq.com/sns/userinfo?access_token={0}&openid={1}", auth.access_token, auth.openid));
+                string.Format("获取微信用户信息错误：{0}", result).Check(result.StartsWith("{\"errcode\":"));
+                return JsonReader.Deserialize<GZHUserInfo>(result);
             }
 
 
-            public static string GenerateNonceStr()
+            private static string GenerateNonceStr()
             {
                 return Guid.NewGuid().ToString("n");
             }
@@ -812,8 +806,10 @@ namespace Server
                 ret.prepayid = result.GetValue("prepay_id");
                 ret.timeStamp = resign.GetValue("timeStamp");
                 ret.paySign = resign.GetValue("sign");
+                ret.signType = resign.GetValue("signType");
                 ret.partnerid = SHOP_ID;
                 ret.package = "prepay_id=" + ret.prepayid;
+                ret.out_trade_no = out_trade_no;
                 return ret;
             }
             public static RetQueryOrder OrderQuery(string out_trade_no)

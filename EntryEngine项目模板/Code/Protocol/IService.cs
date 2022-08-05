@@ -26,6 +26,8 @@ public interface IService
     void LoginByPassword(string phone, string password, Action<T_USER> callback);
     /// <summary>忘记密码：手机号和验证码登录，并修改密码</summary>
     void ForgetPassword(string phone, string code, string password, Action<T_USER> callback);
+    /// <summary>微信登录</summary>
+    void LoginByWX(string code, Action<T_USER> callback);
 
     /// <summary>清理用户缓存，数据库有修改时，可以用此接口强制清空用户缓存而同步数据库数据</summary>
     void ClearUserCache(int id, Action<bool> callback);
@@ -48,14 +50,21 @@ public interface IService
 
     #region 支付回调
 
+    /// <summary>微信支付回调</summary>
     void WeChatPayCallback();
+    /// <summary>微信支付退款回调</summary>
+    void WeChatRefundCallback();
+    /// <summary>微信JSSDK wx.config 时必要的参数</summary>
+    void WXJSSDK(string url, Action<WXJSSDK> callback);
+
+
     /// <summary>支付宝支付回调</summary>
     void AlipayCallback(
         string trade_no, string out_trade_no,
         string buyer_id, string buyer_logon_id,
         string trade_status, string total_amount, string gmt_payment,
         Action<string> callback);
-    void WXWXJSSDK(string url, Action<WXJSSDK> callback);
+    
 
     #endregion
 }
