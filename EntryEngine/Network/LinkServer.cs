@@ -1968,7 +1968,7 @@ namespace EntryEngine.Network
                             if (result)
                                 position -= 2;
                             if (position > 0)
-                                file.File.Write(reader.Buffer, 0, position);
+                                file.File.Write(reader.Buffer, reader.Position, reader.SignedIndex);
                             reader.Flush();
                             if (result)
                                 break;
@@ -2022,8 +2022,10 @@ namespace EntryEngine.Network
         {
             private Stream stream;
             public byte[] Buffer;
-            public int Offset;
-            private byte[] signBuffer;
+            /// <summary>流读取的偏移值</summary>
+            private int offset;
+            /// <summary>Buffer读取的偏移值</summary>
+            private int __offset;
             private int signIndex;
             private bool end;
             /// <summary>查找Sign的索引</summary>
@@ -2032,8 +2034,8 @@ namespace EntryEngine.Network
                 get;
                 private set;
             }
-            public int Position { get { return SignedIndex == -1 ? Offset : SignedIndex; } }
-            public bool IsEnd { get { return end && Offset == 0; } }
+            public int Position { get { return __offset; } }
+            public bool IsEnd { get { return end && __offset >= offset; } }
 
             public MultipartReader(Stream stream)
             {
@@ -2043,33 +2045,32 @@ namespace EntryEngine.Network
             private void ReadBuffer()
             {
                 if (end) return;
-                int read = stream.Read(Buffer, Offset, Buffer.Length - Offset);
-                Offset += read;
+                int read = stream.Read(Buffer, offset, Buffer.Length - offset);
+                offset += read;
                 end = read == 0;
             }
             public string ReadLine()
             {
                 ReadBuffer();
-                int offset = Offset;
-                for (int i = 0; i < offset; i++)
+                for (int i = __offset; i < offset; i++)
                 {
                     if (Buffer[i] == 10)
                     {
                         int line = i;
                         if (i > 0 && Buffer[i - 1] == 13)
                             line--;
-
-                        string result = Encoding.UTF8.GetString(Buffer, 0, line);
-
-                        i++;
-                        Offset -= i;
-                        Array.Copy(Buffer, i, Buffer, 0, Offset);
-
+                        string result = Encoding.UTF8.GetString(Buffer, __offset, line - __offset);
+                        __offset = i + 1;
                         return result;
                     }
                 }
                 throw new InvalidOperationException("不能读取到完整的行，请扩大Buffer容量");
             }
+            /// <summary>一直读取查找结束标记
+            /// 若文件很大，buffer不够用时，会先读取一部分写入文件
+            /// 下次查找结束标记时，擦除已经读取过的buffer，从流读取新的内容进buffer
+            /// 直到找到标记，若读完了流也未能找到结束标记，则需要抛出异常
+            /// </summary>
             public bool ReadSign(byte[] sign)
             {
                 if (sign.Length > Buffer.Length)
@@ -2077,19 +2078,12 @@ namespace EntryEngine.Network
 
                 ReadBuffer();
 
-                if (!Utility.Equals(signBuffer, sign))
+                for (int i = __offset; i < offset; i++)
                 {
-                    signBuffer = sign;
-                    signIndex = 0;
-                    SignedIndex = -1;
-                }
-
-                for (int i = 0; i < Offset; i++)
-                {
-                    if (Buffer[i] == signBuffer[signIndex])
+                    if (Buffer[i] == sign[signIndex])
                     {
                         signIndex++;
-                        if (signIndex == signBuffer.Length)
+                        if (signIndex == sign.Length)
                         {
                             // 匹配
                             SignedIndex = i + 1 - signIndex;
@@ -2102,11 +2096,20 @@ namespace EntryEngine.Network
                     }
                 }
 
+                // 找到一半可能是结束标记的部分，调用Flush时保留这个部分
                 if (signIndex != 0)
                 {
-                    SignedIndex = Offset - signIndex;
+                    SignedIndex = offset - signIndex;
                     signIndex = 0;
                 }
+                else
+                {
+                    SignedIndex = offset;
+                }
+
+                if (end && __offset >= offset)
+                    throw new ArgumentException("不能读取到结束标记");
+
                 return false;
             }
             public bool ReadSign(string sign)
@@ -2116,18 +2119,15 @@ namespace EntryEngine.Network
             /// <summary>将Buffer积累读取的数据读截取掉</summary>
             public void Flush()
             {
-                if (SignedIndex != -1)
+                if (SignedIndex != offset)
                 {
-                    if (signIndex == signBuffer.Length)
-                    {
-                        SignedIndex += signBuffer.Length;
-                    }
-                    Array.Copy(Buffer, SignedIndex, Buffer, 0, Offset - SignedIndex);
-                    Offset -= SignedIndex;
+                    Array.Copy(Buffer, SignedIndex, Buffer, 0, offset - SignedIndex);
+                    offset -= SignedIndex;
                 }
                 else
-                    Offset = 0;
-                SignedIndex = -1;
+                    offset = 0;
+                __offset = 0;
+                SignedIndex = 0;
                 signIndex = 0;
             }
         }
