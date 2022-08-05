@@ -60,7 +60,10 @@ export default {
   methods: {
     onSubmit(form) {
       console.log("submit", form);
-      this.$IMBSProxy.url = `http://${form.serve}/`;
+      if (form.serve.substring(0, 4) == "http")
+        this.$IMBSProxy.url = form.serve
+      else
+        this.$IMBSProxy.url = `http://${form.serve}/`;
       this.$IMBSProxy.Connect(form.username, form.password, (res) => {
         console.log("---->", res);
         this.$store.commit("login", {
