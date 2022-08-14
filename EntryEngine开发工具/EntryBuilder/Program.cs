@@ -5960,7 +5960,8 @@ return result;"
                         if (line != -1)
                             lang[index, i] = table[index2, line];
                         else
-                            append.AddRow(lang[2, i]);
+                            if (append.GetRowIndex(0, chs[i]) == -1)
+                                append.AddRow(lang[2, i]);
                     }
 
                     WriteCSVTable(languageTableCSV, lang);
