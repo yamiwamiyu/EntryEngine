@@ -958,8 +958,26 @@ namespace EntryEngine.Serialize
             List<object> array = (List<object>)Value;
             T[] result = new T[array.Count];
             for (int i = 0; i < result.Length; i++)
-                result[i] = (T)array[i];
+                result[i] = (T)Convert.ChangeType(array[i], typeof(T));
             return result;
+        }
+        public IEnumerable<JsonObject> GetArray()
+        {
+            if (Value != null)
+            {
+                var value = (List<object>)Value;
+                for (int i = 0; i < value.Count; i++)
+                    yield return new JsonObject(value[i]);
+            }
+        }
+        public IEnumerable<KeyValuePair<string, JsonObject>> GetObject()
+        {
+            if (Value != null)
+            {
+                var value = (Dictionary<string, object>)Value;
+                foreach (var item in value)
+                    yield return new KeyValuePair<string, JsonObject>(item.Key, new JsonObject(item.Value));
+            }
         }
         public DateTime GetDateTime()
         {
