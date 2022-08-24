@@ -591,7 +591,7 @@ namespace EntryEngine.Serialize
                             return ReadNumber(NextWord);
 
                         default:
-                            string word = NextWord;
+                            string word = NextWord.ToLower();
                             switch (word)
                             {
                                 case "true": return true;
