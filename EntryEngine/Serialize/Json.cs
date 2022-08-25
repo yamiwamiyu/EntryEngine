@@ -1301,7 +1301,7 @@ namespace EntryEngine.Serialize
                         case '\n': builder.Append("\\n"); break;
                         case '\r': builder.Append("\\r"); break;
                         case '\t': builder.Append("\\t"); break;
-                        default: builder.Append((ushort)c); break;
+                        default: builder.Append(c); break;
                     }
                 }
                 builder.Append('\"');
