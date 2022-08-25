@@ -1288,9 +1288,27 @@ namespace EntryEngine.Serialize
             }
             else if (value is string)
             {
-                var jw = new JsonWriter();
-                jw.WriteObject(value);
-                builder.Append(jw.Result);
+                builder.Append('\"');
+                char[] charArray = value.ToString().ToCharArray();
+                foreach (var c in charArray)
+                {
+                    switch (c)
+                    {
+                        case '"': builder.Append("\\\""); break;
+                        case '\\': builder.Append("\\\\"); break;
+                        case '\b': builder.Append("\\b"); break;
+                        case '\f': builder.Append("\\f"); break;
+                        case '\n': builder.Append("\\n"); break;
+                        case '\r': builder.Append("\\r"); break;
+                        case '\t': builder.Append("\\t"); break;
+                        default: builder.Append((ushort)c); break;
+                    }
+                }
+                builder.Append('\"');
+            }
+            else if (value is bool)
+            {
+                builder.Append(((bool)value) ? "true" : "false");
             }
             else
             {
