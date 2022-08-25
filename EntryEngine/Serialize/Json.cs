@@ -1288,9 +1288,9 @@ namespace EntryEngine.Serialize
             }
             else if (value is string)
             {
-                builder.Append("\"");
-                builder.Append(value);
-                builder.Append("\"");
+                var jw = new JsonWriter();
+                jw.WriteObject(value);
+                builder.Append(jw.Result);
             }
             else
             {
