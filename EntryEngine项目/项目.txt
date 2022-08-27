@@ -11,3 +11,8 @@ EntryEngine项目是使用EntryEngine开发的完整项目
 通过url将要转发的目标url写入redirect参数，例如
 https://ee-pass.vercel.app/?redirect=http%3A%2F%2F8.134.82.110%3A30015%2FAction%2F1%2FGetRegion
 就可以实现将https请求转发至http请求了（仅限于接口）
+4. 使用osrc.com免费部署项目
+(1). npm全局安装osrc命令行工具，npm i -g osrc-cli
+(2). cmd定位到需要发布的网站项目的根目录
+(3). 首次发布需要osrc login登录
+(4). osrc deploy发布dist文件夹里的内容
