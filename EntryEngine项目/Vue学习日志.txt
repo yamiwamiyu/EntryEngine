@@ -321,3 +321,6 @@ wx.scanQRCode({
 作用说明：去掉body和html之间的空白间隔
 作用说明：去掉各种文字标签上下一部分的空白像素，有空白像素文字内容会和蓝湖等设计工具间隔像素不一致
 使用说明：在任意css位置加上 * { margin: 0px; line-height: 1; }
+
+作用说明：vue路由hash模式会占用'#'，导致html锚点不可用，以下方法一样可以滚动到id的位置
+使用说明：document.getElementById("id").scrollIntoView();
