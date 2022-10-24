@@ -2479,7 +2479,7 @@ return result;"
                         builder.AppendLine(")");
                         builder.AppendBlockWithComma(() =>
                         {
-                            builder.AppendLine("var str = [];");
+                            builder.AppendLine("var form = new FormData();");
                             string callbackName = "callback";
                             for (int j = 0, n = parameters.Length - 1; j <= n; j++)
                             {
@@ -2490,16 +2490,18 @@ return result;"
                                     continue;
                                 }
 
-                                if (param.ParameterType == typeof(FileUpload))
-                                {
-                                    builder.AppendLine("throw '尚未实现该方法';");
-                                    continue;
-                                }
+                                //if (param.ParameterType == typeof(FileUpload))
+                                //{
+                                //    builder.AppendLine("throw '尚未实现该方法';");
+                                //    continue;
+                                //}
 
                                 builder.Append("if ({0}) ", param.Name);
-                                builder.Append("str.push(");
-                                builder.Append("\"{0}=\" + ", param.Name);
-                                if (param.ParameterType == typeof(string))
+                                builder.Append("form.append(");
+                                builder.Append("\"{0}\", ", param.Name);
+                                if (param.ParameterType == typeof(FileUpload))
+                                    builder.Append("{0}", param.Name);
+                                else if (param.ParameterType == typeof(string))
                                     builder.Append("encodeURIComponent({0})", param.Name);
                                 // 可能传时间戳，可能传字符串，可能传Date对象
                                 else if (param.ParameterType == typeof(DateTime))
@@ -2511,7 +2513,7 @@ return result;"
                                     builder.Append("{0}", param.Name);
                                 builder.AppendLine(");");
                             }
-                            builder.AppendLine("return {0}.send(\"{1}/{2}\", str.join(\"&\"), {3});", name, agent.Protocol, method.Name, callbackName);
+                            builder.AppendLine("return {0}.send(\"{1}/{2}\", form, {3});", name, agent.Protocol, method.Name, callbackName);
                         });
                     }
                 });
