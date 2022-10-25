@@ -1902,7 +1902,7 @@ namespace EntryEngine.Network
                 reader.Buffer = UploadFileBuffer;
 
                 byte[] bound = Encoding.ASCII.GetBytes(reader.ReadLine());
-                while (!reader.IsEnd)
+                while (reader.IsMultipart)
                 {
                     string paramName = null;
                     FileUpload file = null;
@@ -1943,12 +1943,8 @@ namespace EntryEngine.Network
                         while (true)
                         {
                             bool result = reader.ReadSign(bound);
-                            int position = reader.Position;
-                            // 会多出一个\r\n
-                            if (result)
-                                position -= 2;
-                            if (position > 0)
-                                builder.Append(Encoding.UTF8.GetString(reader.Buffer, 0, position));
+                            // result为true数据会多出一个\r\n
+                            builder.Append(Encoding.UTF8.GetString(reader.Buffer, reader.Position, reader.SignedIndex - reader.Position - (result ? 2 : 0)));
                             reader.Flush();
                             if (result)
                                 break;
@@ -1963,12 +1959,8 @@ namespace EntryEngine.Network
                         while (true)
                         {
                             bool result = reader.ReadSign(bound);
-                            int position = reader.Position;
-                            // 会多出一个\r\n
-                            if (result)
-                                position -= 2;
-                            if (position > 0)
-                                file.File.Write(reader.Buffer, reader.Position, reader.SignedIndex);
+                            // result为true数据会多出一个\r\n
+                            file.File.Write(reader.Buffer, reader.Position, reader.SignedIndex - reader.Position - (result ? 2 : 0));
                             reader.Flush();
                             if (result)
                                 break;
@@ -2022,11 +2014,10 @@ namespace EntryEngine.Network
         {
             private Stream stream;
             public byte[] Buffer;
-            /// <summary>流读取的偏移值</summary>
+            /// <summary>将流读取到Buffer的偏移值</summary>
             private int offset;
-            /// <summary>Buffer读取的偏移值</summary>
+            /// <summary>Buffer读取成数据的偏移值</summary>
             private int __offset;
-            private int signIndex;
             private bool end;
             /// <summary>查找Sign的索引</summary>
             public int SignedIndex
@@ -2035,7 +2026,8 @@ namespace EntryEngine.Network
                 private set;
             }
             public int Position { get { return __offset; } }
-            public bool IsEnd { get { return end && __offset >= offset; } }
+            /// <summary>流读完了，从流中读出来的Buffer数据也读完了，没读完代表是Multipart格式数据</summary>
+            public bool IsMultipart { get { return !end || __offset < offset; } }
 
             public MultipartReader(Stream stream)
             {
@@ -2078,6 +2070,7 @@ namespace EntryEngine.Network
 
                 ReadBuffer();
 
+                int signIndex = 0;
                 for (int i = __offset; i < offset; i++)
                 {
                     if (Buffer[i] == sign[signIndex])
@@ -2097,17 +2090,9 @@ namespace EntryEngine.Network
                 }
 
                 // 找到一半可能是结束标记的部分，调用Flush时保留这个部分
-                if (signIndex != 0)
-                {
-                    SignedIndex = offset - signIndex;
-                    signIndex = 0;
-                }
-                else
-                {
-                    SignedIndex = offset;
-                }
+                SignedIndex = offset - signIndex;
 
-                if (end && __offset >= offset)
+                if (end && signIndex >= 0)
                     throw new ArgumentException("不能读取到结束标记");
 
                 return false;
@@ -2116,19 +2101,21 @@ namespace EntryEngine.Network
             {
                 return ReadSign(Encoding.UTF8.GetBytes(sign));
             }
-            /// <summary>将Buffer积累读取的数据读截取掉</summary>
+            /// <summary>__offset追offset的过程中，可能流已经读取完，offset已经不会再涨了
+            /// 此时没有必要重新拷贝Buffer，只需继续读取即可
+            /// 只有流没有读完，且offset已经达到Buffer最大值了，有必要将还没有读取的数据放到最前面
+            /// 重置__offset，offset也减少以读取流中后面的数据
+            /// </summary>
             public void Flush()
             {
-                if (SignedIndex != offset)
+                if (!end && offset == Buffer.Length)
                 {
-                    Array.Copy(Buffer, SignedIndex, Buffer, 0, offset - SignedIndex);
+                    if (SignedIndex < offset)
+                        Array.Copy(Buffer, SignedIndex, Buffer, 0, offset - SignedIndex);
                     offset -= SignedIndex;
+                    SignedIndex = 0;
                 }
-                else
-                    offset = 0;
-                __offset = 0;
-                SignedIndex = 0;
-                signIndex = 0;
+                __offset = SignedIndex;
             }
         }
     }
