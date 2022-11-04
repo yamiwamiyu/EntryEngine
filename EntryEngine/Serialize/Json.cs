@@ -824,10 +824,12 @@ namespace EntryEngine.Serialize
                 ((Dictionary<string, object>)Value).TryGetValue(key, out value);
                 return new JsonObject(value);
             }
+            set { ((Dictionary<string, object>)Value)[key] = value.Value; }
         }
         public JsonObject this[int arrayIndex]
         {
             get { return new JsonObject(((List<object>)Value)[arrayIndex]); }
+            set { ((List<object>)Value)[arrayIndex] = value.Value; }
         }
 
         public JsonObject(object value)
@@ -864,6 +866,14 @@ namespace EntryEngine.Serialize
             if (dic == null)
                 return false;
             return dic.ContainsKey(key);
+        }
+        public void SetValue(string key, object value)
+        {
+            ((Dictionary<string, object>)Value)[key] = value;
+        }
+        public void SetValue(int index, object value)
+        {
+            ((List<object>)Value)[index] = value;
         }
         //public T GetValue<T>()
         //{
