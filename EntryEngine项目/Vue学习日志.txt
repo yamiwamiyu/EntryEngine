@@ -324,3 +324,9 @@ wx.scanQRCode({
 
 作用说明：vue路由hash模式会占用'#'，导致html锚点不可用，以下方法一样可以滚动到id的位置
 使用说明：document.getElementById("id").scrollIntoView();
+
+作用说明：普通html网页刷新后，滚动条会滚动到上次滚动的位置，在加上#锚点的情况下，希望到达锚点而不是滚动条上次的位置
+使用说明：if (history.scrollRestoration) { history.scrollRestoration = 'manual'; }
+
+网页在线编辑：https://jsrun.net/new
+有https，可以编写执行js，手机调试Notifycation等时比较方便
