@@ -339,3 +339,10 @@ resize();
 window.onresize = resize;
 2. CSS使用如下
 .class { height: var(--height) }
+
+作用说明：VUE父组件定义的scoped的scss穿透给子组件使用
+使用说明：
+1. 父组件声明样式：.parent .child {}
+2. 生成样式为.parent .child[data-v-xxxx] {}，此时需要子组件包含[data-v-xxxx]
+3. 父组件声明样式加上::v-deep：::v-deep .parent .child {}
+4. 生成样式为.parent[data-v-xxxx] .child {}，此时只需要父组件包含[data-v-xxxx]即可
