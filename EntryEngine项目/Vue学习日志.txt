@@ -330,3 +330,12 @@ wx.scanQRCode({
 
 网页在线编辑：https://jsrun.net/new
 有https，可以编写执行js，手机调试Notifycation等时比较方便
+
+作用说明：有时需要DOM撑满屏幕，100vh在QQ浏览器底部有工具栏时会出现滚动条，window.innerHeight将不包含工具栏
+使用说明：
+1. 以下代码将为body增加 --height CSS变量等于屏幕可视区域高度
+const resize = () => document.body.style.setProperty("--height", window.innerHeight + "px");
+resize();
+window.onresize = resize;
+2. CSS使用如下
+.class { height: var(--height) }
