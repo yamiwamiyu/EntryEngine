@@ -11518,10 +11518,42 @@ return result;"
             File.WriteAllBytes(fileListVersion, BitConverter.GetBytes(new FileInfo(fileList).LastWriteTime.Ticks));
             Console.WriteLine("复制资源完成");
         }
-        public static void PublishToUnity(string xnaDir, string unityStreamingAssetsDir)
+        public static void PublishToUnity(string xnaDir, string unityStreamingAssetsDir, string dllOnlySplitBySemicolon)
         {
             BuildDir(ref xnaDir);
             BuildDir(ref unityStreamingAssetsDir);
+            string fileList = unityStreamingAssetsDir + _HOT_FIX.FILE_LIST;
+            string fileListVersion = unityStreamingAssetsDir + _HOT_FIX.VERSION;
+
+            if (!string.IsNullOrEmpty(dllOnlySplitBySemicolon) && File.Exists(fileList))
+            {
+                string[] dlls = dllOnlySplitBySemicolon.Split(';');
+                Console.WriteLine("热更新程序");
+                string[] lines = File.ReadAllLines(fileList);
+                int done = 0;
+                for (int i = 0; i < lines.Length; i++)
+                {
+                    foreach (var dll in dlls)
+                    {
+                        string _bytes = dll + ".bytes";
+                        if (lines[i].StartsWith(_bytes))
+                        {
+                            string _dll = dll + ".dll";
+                            File.Copy(_dll, unityStreamingAssetsDir + _bytes, true);
+                            FileInfo file = new FileInfo(_dll);
+                            lines[i] = string.Format("{0}\t{1}\t{2}", _bytes, file.LastWriteTime.Ticks, file.Length);
+                            done++;
+                            Console.WriteLine("替换dll:{0}", dll);
+                            if (done == dlls.Length)
+                                break;
+                        }
+                    }
+                }
+                File.WriteAllLines(fileList, lines, Encoding.UTF8);
+                File.WriteAllBytes(fileListVersion, BitConverter.GetBytes(DateTime.Now.Ticks));
+                Console.WriteLine("热更新程序完成");
+                return;
+            }
 
             StringBuilder builder = new StringBuilder();
 
@@ -11558,8 +11590,6 @@ return result;"
                     builder.AppendLine("{0}\t{1}\t{2}", fileName, file.LastWriteTime.Ticks, file.Length);
                 });
 
-            string fileList = unityStreamingAssetsDir + _HOT_FIX.FILE_LIST;
-            string fileListVersion = unityStreamingAssetsDir + _HOT_FIX.VERSION;
             File.WriteAllText(fileList, builder.ToString(), Encoding.UTF8);
             File.WriteAllBytes(fileListVersion, BitConverter.GetBytes(new FileInfo(fileList).LastWriteTime.Ticks));
             Console.WriteLine("复制资源完成");
