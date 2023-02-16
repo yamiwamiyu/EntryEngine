@@ -25,15 +25,17 @@ public class LoadedAD
     /// <summary>广告类型</summary>
     public EADType Type { get; internal set; }
     /// <summary>广告展示X坐标，可以不设置</summary>
-    public int? X { get; internal set; }
+    public float? X { get; internal set; }
     /// <summary>广告展示Y坐标，可以不设置</summary>
-    public int? Y { get; internal set; }
+    public float? Y { get; internal set; }
     /// <summary>广告展示宽度，可以不设置</summary>
-    public int? Width { get; internal set; }
+    public float? Width { get; internal set; }
     /// <summary>广告展示高度，可以不设置</summary>
-    public int? Height { get; internal set; }
+    public float? Height { get; internal set; }
     /// <summary>加载成功时的回调</summary>
-    internal Action<LoadedAD> OnLoad;
+    public Action<LoadedAD> OnLoad;
+    /// <summary>广告播放完毕时的回调</summary>
+    public Action<LoadedAD> OnReward;
     private object ad;
     /// <summary>加载好的AD对象</summary>
     public object AD
@@ -105,6 +107,14 @@ public abstract class ADBase
     }
     protected abstract void _Initialize(Action<bool, string> callback);
 
+    public LoadedAD LoadAD(string adid, EADType type)
+    {
+        return LoadAD(adid, type, null, null, null, null, null, null);
+    }
+    public LoadedAD LoadAD(string adid, EADType type, Action<LoadedAD> onLoad)
+    {
+        return LoadAD(adid, type, null, null, null, null, onLoad, null);
+    }
     /// <summary>预加载一条广告，若已经加载过则也会重复加载</summary>
     /// <param name="adid">广告在平台的ID</param>
     /// <param name="type">广告类型</param>
@@ -113,7 +123,8 @@ public abstract class ADBase
     /// <param name="width">广告宽度，单位屏幕像素</param>
     /// <param name="height">广告高度，单位屏幕像素</param>
     /// <param name="onLoad">加载成功时回调，仅最后一次回调生效</param>
-    public void LoadAD(string adid, EADType type, int? x, int? y, int? width, int? height, Action<LoadedAD> onLoad)
+    /// <param name="onReward">广告成功播放完成可以计算奖励时回调</param>
+    public LoadedAD LoadAD(string adid, EADType type, float? x, float? y, float? width, float? height, Action<LoadedAD> onLoad, Action<LoadedAD> onReward)
     {
         Dictionary<string, LoadedAD> temp;
         LoadedAD ad;
@@ -134,7 +145,9 @@ public abstract class ADBase
         ad.Width = width;
         ad.Height = height;
         ad.OnLoad = onLoad;
+        ad.OnReward = onReward;
         _LoadAD(ad);
+        return ad;
     }
     /// <summary>预加载一条广告（不一定需要预加载，可以不实现；实现时对load.AD赋值即可）</summary>
     protected virtual void _LoadAD(LoadedAD load) { load.AD = "loaded"; }
@@ -147,28 +160,41 @@ public abstract class ADBase
     /// <param name="height">广告高度，单位屏幕像素</param>
     /// <param name="onReward">广告看完时回调，一般用于看完有奖励的广告</param>
     public void ShowAD(string adid, EADType type,
-        int? x, int? y, int? width, int? height,
-        Action onReward)
+        float? x, float? y, float? width, float? height,
+        Action<LoadedAD> onReward)
     {
         var ad = this[adid, type];
         if (ad == null)
-            LoadAD(adid, type, x, y, width, height, i => ShowAD(i, onReward));
+            LoadAD(adid, type, x, y, width, height, i => ShowAD(i), onReward);
         else
-            ShowAD(ad, onReward);
+        {
+            if (onReward != null)
+                ad.OnReward = onReward;
+            ShowAD(ad);
+        }
     }
     public void ShowAD(string adid, EADType type)
     {
         ShowAD(adid, type, null, null, null, null, null);
     }
-    public void ShowAD(string adid, EADType type, Action onReward)
+    public void ShowAD(string adid, EADType type, Action<LoadedAD> onReward)
     {
         ShowAD(adid, type, null, null, null, null, onReward);
     }
     public void ShowAD(string adid)
     {
+        LoadedAD ad;
+        foreach (var item in loads)
+        {
+            if (item.Value.TryGetValue(adid, out ad))
+            {
+                ShowAD(ad);
+                return;
+            }
+        }
         ShowAD(adid, EADType.Unknown, null, null, null, null, null);
     }
-    public abstract void ShowAD(LoadedAD ad, Action onReward);
+    public abstract void ShowAD(LoadedAD ad);
 
     /// <summary>从可用的程序集中自动创建ADBase的实例，若有多个类型则返回首个检测到的类型实例</summary>
     public static ADBase AutoCreateFromAvailableFactory()
@@ -215,10 +241,10 @@ internal class ADEmpty : ADBase
     {
         get { return "广告测试"; }
     }
-    public override void ShowAD(LoadedAD ad, Action onReward)
+    public override void ShowAD(LoadedAD ad)
     {
-        if (onReward != null)
-            onReward();
+        if (ad.OnReward != null)
+            ad.OnReward(ad);
     }
     protected override void _Initialize(Action<bool, string> callback)
     {
