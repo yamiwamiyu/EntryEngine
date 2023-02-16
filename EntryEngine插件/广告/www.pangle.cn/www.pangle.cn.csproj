@@ -21,7 +21,6 @@
     <DefineConstants>TRACE;DEBUG;UNITY_ANDROID</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
-    <PlatformTarget>x86</PlatformTarget>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
@@ -52,9 +51,7 @@
     <Compile Include="Scripts\Android\AppDownloadListener.cs" />
     <Compile Include="Scripts\Android\BannerAd.cs" />
     <Compile Include="Scripts\Android\BUExpressSplashAd.cs" />
-    <Compile Include="Scripts\Android\BUSlotABManager.cs" />
     <Compile Include="Scripts\Android\BUSplashAd.cs" />
-    <Compile Include="Scripts\Android\ClientBiddingUtils.cs" />
     <Compile Include="Scripts\Android\DislikeInteractionCallback.cs" />
     <Compile Include="Scripts\Android\DrawFeedAd.cs" />
     <Compile Include="Scripts\Android\ExpressAd.cs" />
@@ -62,21 +59,16 @@
     <Compile Include="Scripts\Android\ExpressRewardVideoAd.cs" />
     <Compile Include="Scripts\Android\FeedAd.cs" />
     <Compile Include="Scripts\Android\FullScreenVideoAd.cs" />
-    <Compile Include="Scripts\Android\IClintBidding.cs" />
     <Compile Include="Scripts\Android\InteractionAd.cs" />
     <Compile Include="Scripts\Android\NativeAd.cs" />
     <Compile Include="Scripts\Android\NativeAdManager.cs" />
     <Compile Include="Scripts\Android\Pangle.cs" />
-    <Compile Include="Scripts\Android\RewardBundleModel.cs" />
     <Compile Include="Scripts\Android\RewardVideoAd.cs" />
     <Compile Include="Scripts\Android\SDK.cs" />
-    <Compile Include="Scripts\CustomConfiguration.cs" />
-    <Compile Include="Scripts\IBUSlotABManagerListener.cs" />
     <Compile Include="Scripts\PangleBase.cs" />
     <Compile Include="Scripts\IAppDownloadListener.cs" />
     <Compile Include="Scripts\IBannerAdInteractionListener.cs" />
     <Compile Include="Scripts\IBannerAdListener.cs" />
-    <Compile Include="Scripts\IClientBidding.cs" />
     <Compile Include="Scripts\IDislikeInteractionListener.cs" />
     <Compile Include="Scripts\IDrawFeedAdListener.cs" />
     <Compile Include="Scripts\IExpressAdInteractionListener.cs" />
@@ -88,7 +80,6 @@
     <Compile Include="Scripts\IInteractionAdListener.cs" />
     <Compile Include="Scripts\INativeAdListener.cs" />
     <Compile Include="Scripts\IRewardAdInteractionListener.cs" />
-    <Compile Include="Scripts\IRewardBundleModel.cs" />
     <Compile Include="Scripts\IRewardVideoAdListener.cs" />
     <Compile Include="Scripts\ISplashAdInteractionListener.cs" />
     <Compile Include="Scripts\ISplashAdListener.cs" />

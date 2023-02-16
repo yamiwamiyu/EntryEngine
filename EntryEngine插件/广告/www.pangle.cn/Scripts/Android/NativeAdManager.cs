@@ -31,29 +31,11 @@
         /// <param name="expressAd">Express ad.</param>
         /// <param name="listener">Listener.</param>
         /// <param name="dislikeInteractionListener">Dislike interaction listener.</param>
-        public void ShowExpressFeedAd(AndroidJavaObject activity, AndroidJavaObject expressAd,IExpressAdInteractionListener listener,IDislikeInteractionListener dislikeInteractionListener, bool callbackOnMainThread = true)
+        public void ShowExpressFeedAd(AndroidJavaObject activity, AndroidJavaObject expressAd,IExpressAdInteractionListener listener,IDislikeInteractionListener dislikeInteractionListener)
         {
-            // this.nativeAdManager.Call("showExpressFeedAd", activity, expressAd,
-            //                           new ExpressAdInteractionCallback(listener),
-            //                           new DisLikeCallback(dislikeInteractionListener));
-            object[] objs = {activity, expressAd,new ExpressAdInteractionCallback(listener,callbackOnMainThread),new DisLikeCallback(dislikeInteractionListener,callbackOnMainThread)};
-            var signature = "(Landroid.content.Context;Lcom.bytedance.sdk.openadsdk.TTNativeExpressAd;Lcom.bytedance.sdk.openadsdk.TTNativeExpressAd$AdInteractionListener;Lcom.bytedance.sdk.openadsdk.TTAdDislike$DislikeInteractionCallback;)V";
-            CallJavaMethod("showExpressFeedAd",signature, objs);
-        }
-
-        private void CallJavaMethod(string methodName,string signature, object[] objs)
-        {
-            var methodID =
-                AndroidJNIHelper.GetMethodID(nativeAdManager.GetRawClass(), methodName, signature);
-            var jniArgArray = AndroidJNIHelper.CreateJNIArgArray(objs);
-            try
-            {
-                AndroidJNI.CallVoidMethod(nativeAdManager.GetRawObject(), methodID, jniArgArray);
-            }
-            finally
-            {
-                AndroidJNIHelper.DeleteJNIArgArray(objs, jniArgArray);
-            }
+            this.nativeAdManager.Call("showExpressFeedAd", activity, expressAd,
+                                      new ExpressAdInteractionCallback(listener),
+                                      new DisLikeCallback(dislikeInteractionListener));
         }
 
         /// <summary>
@@ -62,31 +44,22 @@
         /// <param name="expressAd">Express ad.</param>
         /// <param name="listener">Listener.</param>
         /// <param name="dislikeInteractionListener">Dislike interaction listener.</param>
-        public void ShowExpressBannerAd(AndroidJavaObject activity, AndroidJavaObject expressAd,IExpressAdInteractionListener listener,IDislikeInteractionListener dislikeInteractionListener,bool callbackOnMainThread = true)
-        { 
-            // this.nativeAdManager.Call("showExpressBannerAd", activity, expressAd,
-            //                           new ExpressAdInteractionCallback(listener),
-            //                           new DisLikeCallback(dislikeInteractionListener));
-            object[] objs = {activity, expressAd,new ExpressAdInteractionCallback(listener, callbackOnMainThread),new DisLikeCallback(dislikeInteractionListener, callbackOnMainThread)};
-            var signature = "(Landroid.content.Context;Lcom.bytedance.sdk.openadsdk.TTNativeExpressAd;Lcom.bytedance.sdk.openadsdk.TTNativeExpressAd$AdInteractionListener;Lcom.bytedance.sdk.openadsdk.TTAdDislike$DislikeInteractionCallback;)V";
-            CallJavaMethod("showExpressBannerAd",signature, objs);
-
+        public void ShowExpressBannerAd(AndroidJavaObject activity, AndroidJavaObject expressAd,IExpressAdInteractionListener listener,IDislikeInteractionListener dislikeInteractionListener)
+        {
+            this.nativeAdManager.Call("showExpressBannerAd", activity, expressAd,
+                                      new ExpressAdInteractionCallback(listener),
+                                      new DisLikeCallback(dislikeInteractionListener));
         }
 
         /// <summary>
        /// Shows the express interstitial ad.
        /// </summary>
-        /// <param name="expressAd">Express ad.</param>
-        /// <param name="listener">Listener.</param>
-        public void ShowExpressInterstitialAd(AndroidJavaObject activity, AndroidJavaObject expressAd,
-            IExpressAdInteractionListener listener, bool callbackOnMainThread = true)
+       /// <param name="expressAd">Express ad.</param>
+       /// <param name="listener">Listener.</param>
+        public void ShowExpressInterstitialAd(AndroidJavaObject activity, AndroidJavaObject expressAd, IExpressAdInteractionListener listener)
         {
-            // this.nativeAdManager.Call("showExpressIntersititalAd", activity, expressAd,
-            //                          new ExpressAdInteractionCallback(listener));
-            var signature =
-                "(Landroid.content.Context;Lcom.bytedance.sdk.openadsdk.TTNativeExpressAd;Lcom.bytedance.sdk.openadsdk.TTNativeExpressAd$AdInteractionListener;)V";
-            object[] objs = {activity, expressAd, new ExpressAdInteractionCallback(listener, callbackOnMainThread)};
-            CallJavaMethod("showExpressIntersititalAd",signature, objs);
+            this.nativeAdManager.Call("showExpressIntersititalAd", activity, expressAd,
+                                     new ExpressAdInteractionCallback(listener));
         }
 
         /// <summary>
@@ -101,81 +74,64 @@
         private sealed class ExpressAdInteractionCallback : AndroidJavaProxy
         {
             private IExpressAdInteractionListener listener;
-            private readonly bool callbackOnMainThread;
-
-            public ExpressAdInteractionCallback(IExpressAdInteractionListener callback, bool callbackOnMainThread) :
-                base("com.bytedance.sdk.openadsdk.TTNativeExpressAd$AdInteractionListener")
+            public ExpressAdInteractionCallback(IExpressAdInteractionListener callback) : base("com.bytedance.sdk.openadsdk.TTNativeExpressAd$AdInteractionListener")
             {
                 this.listener = callback;
-                this.callbackOnMainThread = callbackOnMainThread;
             }
 
             void onAdDismiss()
             {
-                UnityDispatcher.PostTask(
-                    () => this.listener.OnAdClose(null), callbackOnMainThread);
+                this.listener.OnAdClose(null);
             }
 
             void onAdClicked(AndroidJavaObject view, int type)
             {
-                UnityDispatcher.PostTask(
-                    () => this.listener.OnAdClicked(null), callbackOnMainThread);
+                this.listener.OnAdClicked(null);
             }
 
 
             void onAdShow(AndroidJavaObject view, int type)
             {
-                UnityDispatcher.PostTask(
-                    () => this.listener.OnAdShow(null), callbackOnMainThread);
+                this.listener.OnAdShow(null);
             }
 
 
             void onRenderFail(AndroidJavaObject view, string msg, int code)
             {
-                UnityDispatcher.PostTask(
-                    () => this.listener.OnAdViewRenderError(null, code, msg), callbackOnMainThread);
+                this.listener.OnAdViewRenderError(null, code, msg);
             }
 
 
             void onRenderSuccess(AndroidJavaObject view, float width, float height)
             {
-                UnityDispatcher.PostTask(
-                    () => listener.OnAdViewRenderSucc(null, width, height), callbackOnMainThread);
+                listener.OnAdViewRenderSucc(new ExpressAd(view), width, height);
             }
         }
 
         private sealed class DisLikeCallback : AndroidJavaProxy
         {
             private IDislikeInteractionListener dislikeInteractionCallback;
-            private readonly bool callbackOnMainThread;
-
-            public DisLikeCallback(IDislikeInteractionListener dislike, bool callbackOnMainThread) : base(
-                "com.bytedance.sdk.openadsdk.TTAdDislike$DislikeInteractionCallback")
+            public DisLikeCallback(IDislikeInteractionListener dislike) : base("com.bytedance.sdk.openadsdk.TTAdDislike$DislikeInteractionCallback")
             {
                 this.dislikeInteractionCallback = dislike;
             }
 
             private void onSelected(int position, string value, bool enforce)
             {
-                Debug.Log("DisLikeCallback -->onSelected position -" + position + " value---" + value);
-                Debug.Log(string.Format("position -{0} value---{1} dislike onSelected", position, value));
-                UnityDispatcher.PostTask(
-                    () => this.dislikeInteractionCallback.OnSelected(position, value, enforce), callbackOnMainThread);
+                this.dislikeInteractionCallback.OnSelected(position, value, enforce);
             }
 
 
             private void onCancel()
             {
-                UnityDispatcher.PostTask(
-                    () => this.dislikeInteractionCallback.OnCancel(), callbackOnMainThread);
+                this.dislikeInteractionCallback.OnCancel();
             }
-
             public void onShow()
             {
-                UnityDispatcher.PostTask(
-                    () => this.dislikeInteractionCallback.OnShow(), callbackOnMainThread);
+                this.dislikeInteractionCallback.OnShow();
             }
         }
+
     }
 #endif
 }
