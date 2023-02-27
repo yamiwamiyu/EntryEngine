@@ -346,3 +346,13 @@ window.onresize = resize;
 2. 生成样式为.parent .child[data-v-xxxx] {}，此时需要子组件包含[data-v-xxxx]
 3. 父组件声明样式加上::v-deep：::v-deep .parent .child {}
 4. 生成样式为.parent[data-v-xxxx] .child {}，此时只需要父组件包含[data-v-xxxx]即可
+
+VUE插件开发：https://cli.vuejs.org/zh/guide/build-targets.html#web-components-组件
+1. 正常创建vue项目
+2. 修改package.json -> "scripts" -> "build" 为 vue-cli-service build --target lib --name EntryEngineUI src/ee/ui/ee-ui.js
+--target: lib代表输出插件库
+--name: 默认为vue项目名，尽量不要使用带'-'的名字，引入导出的js模块，浏览器可以通过window.EntryEngineUI可以看到导出的模块
+src/ee/ui/ee-ui.js是插件入口，应该引入项目需要的插件，导出给使用者使用的对象
+3. 执行npm run build后导出了模块到dist文件夹中
+4. 只需要css和umd.min.js就行
+5. 可以直接html引用css和umd.min.js，或者发布到npm插件进行引用
