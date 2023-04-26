@@ -528,7 +528,7 @@ namespace EntryEngine
         {
             string[] TAB_OPEN = { "{" };
             // { {
-            string[] TAB_CLOSE = { "}", "},", "};" };
+            string[] TAB_CLOSE = { "}", "})", "});", "},", "};" };
             string[] BREAKER = new string[1] { "\r\n" };
 
             string[] lines = content.Split(BREAKER, StringSplitOptions.None);

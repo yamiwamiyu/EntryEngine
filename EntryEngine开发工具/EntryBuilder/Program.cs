@@ -1,5 +1,6 @@
 ﻿using System;
 using System.CodeDom.Compiler;
+using System.Collections;
 using System.Collections.Generic;
 using System.Data.OleDb;
 using System.Diagnostics;
@@ -9,6 +10,7 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.InteropServices;
+using System.Security.Authentication.ExtendedProtection;
 using System.Text;
 using System.Threading;
 using System.Windows.Forms;
@@ -528,10 +530,10 @@ namespace EntryBuilder
             //PublishToWebGL(@"C:\Yamiwamiyu\Project\EntryEngineGit\trunk\", @"C:\Yamiwamiyu\Project\hdcq3\Code\Client", @"C:\Yamiwamiyu\Project\hdcq3\Code\Protocol;C:\Yamiwamiyu\Project\EntryEngineGit\trunk\DragonBone", @"C:\Yamiwamiyu\Project\hdcq3\Publish\WebGL\index.html", false, 1);
             //BuildTableTranslate("", "");
             //BuildDatabaseMysql(@"C:\Yamiwamiyu\Project\YMHY\Code\Protocol\Protocol\bin\Release\Protocol.dll", "Server._DB", @"C:\Yamiwamiyu\Project\YMHY\Code\Server\Server\_DB.design.cs", "", "", false);
-            //BuildProtocolAgentHttp(@"D:\Desktop\hdcq2\Code\Client\Client", @"D:\Desktop\hdcq2\Code\Server\Server", @"D:\Desktop\hdcq2\Code\Protocol\Protocol\bin\Debug\Protocol.dll", 0);
+            BuildProtocolAgentHttp(@"D:\Yamiwamiyu\EntryEngineGitee\EntryEngine项目模板\Code\Protocol\bin\Debug", @"D:\Yamiwamiyu\EntryEngineGitee\EntryEngine项目模板\Code\Protocol\bin\Debug", @"D:\Yamiwamiyu\EntryEngineGitee\EntryEngine项目模板\Code\Protocol\bin\Debug\Protocol.dll", 1);
             //BuildCSVFromExcel(@"C:\Yamiwamiyu\Project\hdcq2\Design\Tables_Build", @"C:\Yamiwamiyu\Project\IslandChronicle\Design\Tables_Build", null, "12.0", "a.cs", false);
-            //Console.ReadKey();
-            //return;
+            Console.ReadKey();
+            return;
 
             Methods = typeof(Program).GetMethods(BindingFlags.Static | BindingFlags.Public);
 
@@ -994,12 +996,16 @@ namespace EntryBuilder
             }
             /// <summary>前端代码的后缀，例如C#就是cs，JS就是js</summary>
             protected virtual string ClientSuffix { get { return "cs"; } }
+            public string OutputClientPath { get; protected set; }
+            public string OutputServerPath { get; protected set; }
 
-            public void Write(Type type)
+            public void Write(Type type, string outputClientPath, string outputServerPath)
             {
                 if (type == null)
                     throw new ArgumentNullException("type");
                 this.type = type;
+                this.OutputClientPath = outputClientPath;
+                this.OutputServerPath = outputServerPath;
 
                 this.agent = type.GetAttribute<ProtocolStubAttribute>();
                 if (agent == null)
@@ -1786,14 +1792,23 @@ namespace EntryBuilder
                 });
             }
 
-            public void Save(Type type, string outputClientPath, string outputServerPath)
+            public virtual void Save()
             {
-                string clientFile = Path.Combine(outputClientPath, type.Name + "Proxy." + ClientSuffix);
-                string serverFile = Path.Combine(outputServerPath, type.Name + "Stub.cs");
-                SaveCode(clientFile, builder);
-                SaveCode(serverFile, server);
+                if (!string.IsNullOrEmpty(OutputClientPath))
+                {
+                    string clientFile = Path.Combine(OutputClientPath, type.Name + "Proxy." + ClientSuffix);
+                    SaveCode(clientFile, builder);
+                }
+                if (!string.IsNullOrEmpty(OutputServerPath))
+                {
+                    string serverFile = Path.Combine(OutputServerPath, type.Name + "Stub.cs");
+                    SaveCode(serverFile, server);
+                }
                 Console.WriteLine("生成协议类型{0}完成", type.FullName);
+                builder = null;
+                server = null;
             }
+            public virtual void Over() { }
         }
         class ProtocolHttp : ProtocolDefault
         {
@@ -2329,11 +2344,169 @@ return result;"
             {
             }
         }
+        static string TypeToTs(Type type)
+        {
+            if (type == typeof(FileUpload))
+            {
+                return "File";
+            }
+
+            Type nullable;
+            if (type.IsValueType && type.IsNullable(out nullable))
+            {
+                // Nullable<struct>
+                return TypeToTs(nullable);
+            }
+
+            if (type == typeof(char)
+                || type == typeof(string)
+                || type == typeof(DateTime))
+            {
+                return "string";
+            }
+            else if (type == typeof(bool))
+            {
+                return "boolean";
+            }
+            else if (type == typeof(sbyte)
+                || type == typeof(byte)
+                || type == typeof(short)
+                || type == typeof(ushort)
+                || type == typeof(int)
+                || type == typeof(uint)
+                || type == typeof(float)
+                || type == typeof(long)
+                || type == typeof(ulong)
+                || type == typeof(double)
+                )
+            {
+                return "number";
+            }
+
+            bool isList = !type.IsArray && type.Is(typeof(IList));
+            if (type.IsArray || isList)
+            {
+                Type elementType;
+                if (isList)
+                    elementType = type.GetGenericArguments()[0];
+                else
+                    elementType = type.GetElementType();
+                return TypeToTs(elementType) + "[]";
+            }
+
+            return type.Name;
+        }
+        static void BuildTypeToTs(Type type, StringBuilder builder, XmlNode members)
+        {
+            Type nullable;
+            if (type.IsValueType && type.IsNullable(out nullable))
+            {
+                BuildTypeToTs(nullable, builder, members);
+            }
+
+            if (type.IsEnum)
+            {
+                BuildJSDoc(builder, "T:" + type.Name, members);
+                builder.AppendLine("enum {0}", type.Name);
+                builder.AppendBlock(() =>
+                {
+                    var names = Enum.GetNames(type);
+                    var values = Enum.GetValues(type);
+                    Type utype = Enum.GetUnderlyingType(type);
+                    for (int i = 0; i < names.Length; i++)
+                    {
+                        BuildJSDoc(builder, "F:" + type.Name + "." + names[i], members);
+                        builder.AppendLine("{0} = {1},", names[i], Convert.ChangeType(values.GetValue(i), utype));
+                    }
+                });
+            }
+
+            bool isList = !type.IsArray && type.Is(typeof(IList));
+            if (type.IsArray || isList)
+            {
+                Type elementType;
+                if (isList)
+                    elementType = type.GetGenericArguments()[0];
+                else
+                    elementType = type.GetElementType();
+                BuildTypeToTs(type, builder, members);
+            }
+
+            if (type.IsCustomType())
+            {
+                var fields = type.GetFields();
+                if (fields.Length == 0)
+                    return;
+                BuildJSDoc(builder, "T:" + type.Name, members);
+                builder.AppendLine("class {0}", type.Name);
+                builder.AppendBlock(() =>
+                {
+                    foreach (var field in fields)
+                    {
+                        BuildJSDoc(builder, "F:" + type.Name + "." + field.Name, members);
+                        builder.AppendLine("{0}:{1};", field.Name, TypeToTs(field.FieldType));
+                    }
+                });
+            }
+        }
+        /// <summary>生成JSDoc文档格式的注释</summary>
+        /// <param name="key">C#文档的member.name，T:类型 F:字段 M:方法</param>
+        /// <param name="members">C#文档的members标签</param>
+        static void BuildJSDoc(StringBuilder builder, string key, XmlNode members)
+        {
+            if (members == null)
+                return;
+            Func<XmlNode, bool> match;
+            if (key[0] == 'M')
+                match = (i => i.Attributes["name"].StartsWith(key));
+            else
+                match = (i => i.Attributes["name"] == key);
+            var find = members.FirstOrDefault(match);
+            if (find == null)
+                return;
+            if (find.ChildCount == 1 && find[0].Name == "summary")
+            {
+                builder.Append("/** ");
+                AppendSummary(builder, find[0]);
+                builder.AppendLine(" */");
+            }
+            else
+            {
+                builder.AppendLine("/**");
+                foreach (var item in find)
+                {
+                    builder.Append("* ");
+                    if (item.Name == "summary")
+                        AppendSummary(builder, item);
+                    else if (item.Name == "param")
+                        builder.AppendLine("@param {0} - {1}", item.Attributes["name"], item.Value);
+                    else if (item.Name == "returns")
+                        builder.AppendLine("@returns {0}", item.Value);
+                }
+                builder.AppendLine(" */");
+            }
+        }
+        static void AppendSummary(StringBuilder builder, XmlNode summary)
+        {
+            string value = summary.Value.Trim();
+            var lines = value.Split('\n');
+            builder.Append(lines[0].Trim());
+            if (lines.Length > 1)
+            {
+                builder.AppendLine("");
+                for (int i = 1; i < lines.Length; i++)
+                    builder.AppendLine("* {0}", lines[i].Trim());
+            }
+        }
         /// <summary>XMLHttpRequest</summary>
         class ProtocolHttpJS : ProtocolHttp
         {
             /// <summary>是否需要模块化JS：模块化使用export / 非模块化使用var</summary>
+            [Obsolete("统一模块化编码，要非模块化可以到JS层面转换")]
             public bool IsModule;
+            HashSet<Type> types = new HashSet<Type>();
+            StringBuilder ts = new StringBuilder();
+            List<Type> saveTypes = new List<Type>();
 
             protected override string ClientSuffix { get { return "js"; } }
 
@@ -2350,105 +2523,127 @@ return result;"
             }
             protected override void WCCallProxy(StringBuilder builder, MethodInfo[] call, MethodInfo[] callback, Dictionary<int, Type> asyncCB)
             {
-                string name = type.Name + "Proxy";
-                if (IsModule)
-                    builder.AppendLine("const {0} =", name);
-                else
-                    builder.AppendLine("var {0} =", name);
+                // todo: 针对所有后端类型生成注释(读取.xml注释文件)，使用ts代替js
+                string xml = Path.Combine(Path.ChangeExtension(type.Assembly.Location, ".xml"));
+                XmlNode members = null;
+                if (File.Exists(xml))
+                {
+                    Console.WriteLine("协议包含注释文件：{0}", xml);
+                    XmlNode root = new XmlReader(File.ReadAllText(xml)).ReadToNode();
+                    members = root["members"];
+                }
+
+                // 生成过的类型
+                for (int i = 0; i < call.Length; i++)
+                {
+                    ParameterInfo[] parameters = call[i].GetParameters();
+                    bool hasAsync = asyncCB.ContainsKey(i);
+
+                    foreach (var param in parameters)
+                    {
+                        var type = param.ParameterType;
+                        if (hasAsync && param.ParameterType.IsDelegate())
+                            type = param.ParameterType.GetGenericArguments()[0];
+
+                        if (types.Add(type))
+                        {
+                            // 生成类型
+                            BuildTypeToTs(type, ts, members);
+                        }
+                    }
+                }
+
+                string name = type.Name;
+                BuildJSDoc(builder, "T:" + name, members);
+                builder.AppendLine("const {0} =", name);
                 builder.AppendBlockWithEnd(() =>
                 {
-                    builder.AppendLine("onSend: null,");
-                    builder.AppendLine("onSendOnce: null,");
-                    builder.AppendLine("onCallback: null,");
-                    builder.AppendLine("onErrorMsg: null,");
-                    builder.AppendLine("onError: null,");
-                    builder.AppendLine("url: \"\",");
-                    builder.AppendLine("send: function(url, str, callback)");
-                    builder.AppendBlockWithComma(() =>
+                    builder.AppendLine(
+@"install: (vue) => vue.config.globalProperties.{api} = {api},
+/** 后端接口的URL */
+url:  '',
+/** 状态码对应错误信息，错误码和错误信息的对象会回调给event.onerror事件
+ * @type {Object.<number, string>} */
+error: { 0: '请求已中止' },
+/** 接口请求的全局事件
+ * @type {RequestEvent} */
+__event: undefined,
+/** 接口请求的全局事件
+ * @type {RequestEvent} */
+event: undefined,
+/** 本次接口请求的临时事件，onprogress以外的全局事件任然会触发，临时事件优先于全局事件触发
+ * @param {RequestEvent} event
+ * @returns {{api}} */
+eventonce(event:RequestEvent)
+{
+    this.__event = Object.assign({}, this.__event, event);
+    return {api};
+},
+/** 发送接口 */
+send(url:string, data:XMLHttpRequestBodyInit | null, method = 'POST')
+{
+    return new Promise((resolve, reject) => 
+    {
+        const req = new XMLHttpRequest();
+        const event = this.__event;
+        this.__event = undefined;
+        req.onreadystatechange = async () => 
+        {
+            if (req.readyState == 4)
+            {
+                event?.oncomplete?.(req) | this.event.oncomplete?.(req);
+                if (req.status == 200)
+                {
+                    let obj = null;
+                    switch (req.responseType)
                     {
-                        builder.AppendLine("var promise = new Promise(function(resolve, reject)");
-                        builder.AppendBlock(() =>
-                        {
-                            builder.AppendLine("var req = new XMLHttpRequest();");
-                            builder.AppendLine("req.callback = callback;");
-                            builder.AppendLine("req.onreadystatechange = async function()");
-                            builder.AppendBlock(() =>
-                            {
-                                builder.AppendLine("if (req.readyState == 4)");
-                                builder.AppendBlock(() =>
-                                {
-                                    builder.AppendLine("if ({0}.onCallback) {0}.onCallback(req);", name);
-                                    builder.AppendLine("if (req.status == 200)");
-                                    builder.AppendBlock(() =>
-                                    {
-                                        //builder.AppendLine("var obj = req.responseText ? JSON.parse(req.responseText) : null;");
-                                        builder.AppendLine("var obj = null;");
-                                        builder.AppendLine("switch (req.responseType)");
-                                        builder.AppendBlock(() =>
-                                        {
-                                            builder.AppendLine("case \"text\": if (req.response) obj = JSON.parse(req.responseText); break;");
-                                            builder.AppendLine("case \"blob\": ");
-                                            builder.AppendLine("if (req.response.type == \"text/plain\") await req.response.text().then((value) => obj = JSON.parse(value));");
-                                            builder.AppendLine("else obj = req.response; ");
-                                            builder.AppendLine("break;");
-                                        });
-                                        builder.AppendLine("if (obj && obj.errCode)");
-                                        builder.AppendBlock(() =>
-                                        {
-                                            builder.AppendLine("if ({0}.onErrorMsg) {{ {0}.onErrorMsg(obj); }}", name);
-                                            builder.AppendLine("else { console.log(obj); }");
-                                            builder.AppendLine("if (reject) { reject(obj); }");
-                                        });
-                                        builder.AppendLine("else");
-                                        builder.AppendBlock(() =>
-                                        {
-                                            builder.AppendLine("if (req.callback) { req.callback(obj); }");
-                                            builder.AppendLine("else { console.log(obj); }");
-                                            builder.AppendLine("if (resolve) { resolve(obj); }");
-                                        });
-                                    });
-                                    builder.AppendLine("else");
-                                    builder.AppendBlock(() =>
-                                    {
-                                        builder.AppendLine("if ({0}.onError) {{ {0}.onError(req); }}", name);
-                                        builder.AppendLine("else { console.error(req); }");
-                                        builder.AppendLine("if (reject) { reject({ \"errCode\": req.status, \"errMsg\": req.statusText, \"req\": req }); }");
-                                    });
-                                });
-                            });
-                            builder.AppendLine("req.open(\"POST\", {0}.url + url, true);", name);
-                            builder.AppendLine("req.responseType = \"text\";");
-                            builder.AppendLine("if (!{0}.onSendOnce) {{ req.setRequestHeader(\"Content-Type\", \"application/x-www-form-urlencoded;charset=utf-8\"); }}", name);
-                            builder.AppendLine("if ({0}.onSend) {{ {0}.onSend(req); }}", name);
-                            builder.AppendLine("if ({0}.onSendOnce) {{ var __send = {0}.onSendOnce(req); {0}.onSendOnce = null; if (__send) {{ return; }} }}", name);
-                            builder.AppendLine("req.send(str);");
-                        });
-                        builder.AppendLine(");");
-                        builder.AppendLine("return promise;");
-                    });
-                    builder.AppendLine("// Example: {0}.download(\"download.txt\", () => {0}.Download(param1, param2));", name);
-                    builder.AppendLine("download: function(filename, download)");
-                    builder.AppendBlockWithComma(() =>
-                    {
-                        builder.AppendLine("if (!download) throw new Error(\"下载文件必须指定下载函数\");");
-                        builder.AppendLine("{0}.onSendOnce = (req) =>", name);
-                        builder.AppendBlock(() =>
-                        {
-                            builder.AppendLine("req.responseType = \"blob\";");
-                            builder.AppendLine("var __callback = req.callback;");
-                            builder.AppendLine("req.callback = (ret) =>");
-                            builder.AppendBlock(() =>
-                            {
-                                builder.AppendLine("var a = window.document.createElement(\"a\");");
-                                builder.AppendLine("a.href = URL.createObjectURL(ret);");
-                                builder.AppendLine("a.download = filename;");
-                                builder.AppendLine("a.click();");
-                                builder.AppendLine("if (__callback) __callback(ret);");
-                            });
-                        });
-                        builder.AppendLine("download();");
-                        builder.AppendLine("if ({0}.onSendOnce) throw new Error(\"下载文件必须发送接口下载\");", name);
-                    });
+                        case 'text': if (req.response) obj = JSON.parse(req.responseText); break;
+                        case 'blob':
+                        if (req.response.type == 'text/plain') await req.response.text().then((value) => obj = JSON.parse(value));
+                        else obj = req.response;
+                        break;
+                    }
+                    if (obj && obj.errCode)
+                        event?.onerror?.(obj) | this.event.onerror?.(obj) | reject(obj);
+                    else
+                        event?.onsuccess?.(obj) | this.event.onsuccess?.(obj) | resolve(obj);
+                }
+                else
+                {
+                    let error = { errCode: req.status, errMsg: '' };
+                    error.errMsg = this.error[req.status] || req.statusText;
+                    event?.onerror?.(error) | this.event.onerror?.(error) | reject(error);
+                }
+            }
+            else if (req.readyState == 3) event?.onloading?.(req) | this.event.onloading?.(req);
+        }
+        req.open(method, this.url + url, true);
+        req.upload.onprogress = event?.onprogress || this.event.onprogress;
+        req.responseType = 'text';
+        if (event?.onopen) event.onopen(req);
+        else req.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded;charset=utf-8');
+        this.event.onopen?.(req);
+        req.send(data);
+    });
+},
+/** 调用下载文件的接口前调用
+ * @param {string} filename - 下载文件的名字，例如download.csv
+ * @example
+ * api.download('download.csv').downloadCSV()
+ */
+download(filename:string)
+{
+    return {api}.eventonce(
+    {
+        oncomplete(req)
+        {
+            const a = window.document.createElement('a');
+            a.href = URL.createObjectURL(req.response);
+            a.download = filename;
+            a.click();
+        }
+    })
+},".Replace("{api}", name));
                     // 通过代理调用接口方法
                     //WCCallProxy(builder, call, asyncCB);
                     for (int i = 0; i < call.Length; i++)
@@ -2458,29 +2653,77 @@ return result;"
 
                         // 方法头
                         bool hasAsync = asyncCB.ContainsKey(i);
-                        builder.Append("{0}: function(", method.Name);
+                        int pcount = parameters.Where(j => !hasAsync || !j.ParameterType.IsDelegate()).Count();
+                        // 注释
+                        BuildJSDoc(builder, string.Format("M:{0}.{1}", name, method.Name), members);
+                        builder.Append("{0}(", method.Name);
+                        Type returnType = method.ReturnType;
                         // 分别传每个值
                         for (int j = 0, n = parameters.Length - 1; j <= n; j++)
                         {
+                            var param = parameters[j];
+                            if (hasAsync && param.ParameterType.IsDelegate())
+                            {
+                                returnType = param.ParameterType.GenericTypeArguments[0];
+                                continue;
+                            }
                             if (j != 0)
                                 builder.Append(", ");
-                            var param = parameters[j];
                             builder.Append("{0}", param.Name);
+                            builder.Append(":{0}", TypeToTs(param.ParameterType));
+                            //if (j == 0 && pcount > 1)
+                            //{
+                            //    builder.Append("|{");
+                            //    for (int k = 0; k <= n; k++)
+                            //    {
+                            //        var param2 = parameters[k];
+                            //        if (hasAsync && param2.ParameterType.IsDelegate())
+                            //            continue;
+                            //        if (k != 0)
+                            //            builder.Append(", ");
+                            //        builder.Append("{0}", param2.Name);
+                            //        builder.Append(":{0}", TypeToTs(param2.ParameterType));
+                            //    }
+                            //    builder.Append("}");
+                            //}
                         }
                         // 后端接口没有回调，这里固定一个回调函数
-                        if (!hasAsync)
-                        {
-                            if (parameters.Length > 0)
-                                builder.Append(", ");
-                            builder.Append("callback");
-                        }
+                        //if (!hasAsync)
+                        //{
+                        //    if (parameters.Length > 0)
+                        //        builder.Append(", ");
+                        //    builder.Append("callback");
+                        //}
                         // 直接传对象
                         //builder.Append("data, callback");
-                        builder.AppendLine(")");
+                        builder.AppendLine("):Promise<{0}>", returnType.FullName == "System.Void" ? "any" : TypeToTs(returnType));
                         builder.AppendBlockWithComma(() =>
                         {
-                            builder.AppendLine("var form = new FormData();");
+                            bool hasFileUpload = parameters.Any(j => j.ParameterType == typeof(FileUpload));
                             string callbackName = "callback";
+                            if (pcount > 0)
+                            {
+                                // 参数大于1个的允许传一个对象
+                                if (pcount > 1)
+                                {
+                                    builder.Append("arguments.length == 1 && ({ ");
+                                    for (int j = 0, n = parameters.Length - 1; j <= n; j++)
+                                    {
+                                        var param = parameters[j];
+                                        if (hasAsync && param.ParameterType.IsDelegate())
+                                            continue;
+                                        if (j != 0)
+                                            builder.Append(", ");
+                                        builder.Append("{0}", param.Name);
+                                    }
+                                    builder.AppendLine(" } = arguments[0])");
+                                }
+
+                                if (hasFileUpload)
+                                    builder.AppendLine("const data = new FormData();");
+                                else
+                                    builder.AppendLine("const data = [];");
+                            }
                             for (int j = 0, n = parameters.Length - 1; j <= n; j++)
                             {
                                 var param = parameters[j];
@@ -2490,45 +2733,107 @@ return result;"
                                     continue;
                                 }
 
-                                //if (param.ParameterType == typeof(FileUpload))
-                                //{
-                                //    builder.AppendLine("throw '尚未实现该方法';");
-                                //    continue;
-                                //}
-
                                 builder.Append("if ({0}) ", param.Name);
-                                builder.Append("form.append(");
-                                builder.Append("\"{0}\", ", param.Name);
+                                if (hasFileUpload)
+                                {
+                                    builder.Append("data.append(\"{0}\", ", param.Name);
+                                }
+                                else
+                                {
+                                    builder.Append("data.push(\"{0}=\", ", param.Name);
+                                }
                                 if (param.ParameterType == typeof(FileUpload))
                                     builder.Append("{0}", param.Name);
                                 else if (param.ParameterType == typeof(string))
                                     builder.Append("encodeURIComponent({0})", param.Name);
                                 // 可能传时间戳，可能传字符串，可能传Date对象
                                 else if (param.ParameterType == typeof(DateTime))
-                                    //builder.Append("JSON.stringify({0}).replace(\"T\", \" \").replace(\"Z\", \"\")", param.Name);
-                                    builder.Append("({0}.toLocaleString ? {0}.toLocaleString() : {0})", param.Name);
+                                    builder.Append("({0}.toLocaleString?.() || {0})", param.Name);
                                 else if (param.ParameterType.IsCustomType())
                                     builder.Append("encodeURIComponent(JSON.stringify({0}))", param.Name);
                                 else
                                     builder.Append("{0}", param.Name);
                                 builder.AppendLine(");");
                             }
-                            builder.AppendLine("return {0}.send(\"{1}/{2}\", form, {3});", name, agent.Protocol, method.Name, callbackName);
+                            builder.AppendLine("return this.send(\"{0}/{1}\"{2});", agent.Protocol, method.Name,
+                                pcount > 0 ? (hasFileUpload ? ", data" : ", data.join('&')") : "");
                         });
                     }
                 });
-                
-                if (IsModule)
-                    builder.AppendLine("export default {0};", name);
+
+                //if (IsModule)
+                {
+                    builder.AppendLine("export default {0}", name);
+                }
             }
             protected override void WCCallProxy(StringBuilder builder, MethodInfo[] call, Dictionary<int, Type> asyncCB)
             {
+            }
+
+            public override void Save()
+            {
+                saveTypes.Add(type);
+                base.Save();
+            }
+            public override void Over()
+            {
+                ts.AppendLine(
+@"declare interface RequestEvent
+{
+    /** 请求准备发送时的事件，可以用于设置header(setRequestHeader)或timeout等 */
+    onopen?: (req: XMLHttpRequest) => void;
+    /** 请求正在加载的事件(readyState = 3) */
+    onloading?: (req: XMLHttpRequest) => void;
+    /** 请求完成时的事件(readyState = 4) */
+    oncomplete?: (req: XMLHttpRequest) => void;
+    /** 请求成功的事件(readyState = 4 && status == 200 && !response.errCode) */
+    onsuccess?: (req: XMLHttpRequest) => void;
+    /** 请求发生错误时的事件(readyState = 4 && (status != 200 || response.errCode)) */
+    onerror?: (err: { errCode: number, errMsg: string }) => void;
+    /** 上传文件请求的进度事件 */
+    onprogress?: (event: ProgressEvent) => void;
+}
+
+/**
+ * @typedef RequestEvent
+ * @type {Object}
+ * @property {function(XMLHttpRequest)} onopen - 请求准备发送时的事件
+ * @property {function(XMLHttpRequest)} onloading - 请求正在加载的事件(readyState = 3)
+ * @property {function(XMLHttpRequest)} oncomplete - 请求完成时的事件(readyState = 4)
+ * @property {function(XMLHttpRequest)} onsuccess - 请求成功的事件(readyState = 4 && status == 200 && !response.errCode)
+ * @property {function({ errCode: number, errMsg: string })} onerror - 请求发生错误时的事件(readyState = 4 && (status != 200 || response.errCode))
+ * @property {function(ProgressEvent)} onprogress - 上传文件请求的进度事件
+ */
+
+declare module '@vue/runtime-core'
+{
+    interface ComponentCustomProperties
+    {
+        {api}: typeof {api}
+    }
+}");
+                foreach (var type in types)
+                    builder.AppendLine("import {0} from './{0}'", type.Name);
+                ts.AppendLine("declare module '@vue/runtime-core'");
+                ts.AppendBlock(() =>
+                {
+                    ts.AppendLine("interface ComponentCustomProperties");
+                    ts.AppendBlock(() =>
+                    {
+                        foreach (var type in types)
+                            builder.AppendLine("{0}: typeof {0},", type.Name);
+                    });
+                });
+                
+
+                SaveCode(Path.Combine(OutputClientPath, "api.d.ts"), ts.ToString());
             }
         }
         /// <summary>WebSocket用</summary>
         class ProtocolJsonJs : ProtocolDefault
         {
             /// <summary>是否需要模块化JS：模块化使用export / 非模块化使用var</summary>
+            [Obsolete("统一模块化编码，要非模块化可以到JS层面转换")]
             public bool IsModule;
 
             protected override string ClientSuffix { get { return "js"; } }
@@ -2999,101 +3304,101 @@ return result;"
 		{
 			return new CSVReader(File.ReadAllText(file, CSVWriter.CSVEncoding)).ReadTable(rows);
 		}
-        private static Microsoft.Office.Interop.Excel.Application excel;
+        //private static Microsoft.Office.Interop.Excel.Application excel;
         private static Process[] statupProcess;
         private static void QuitExcel()
         {
-            if (excel == null)
-                return;
-            var _excel = excel;
-            excel = null;
-            _excel.Workbooks.Close();
-            _excel.Quit();
-            if (statupProcess != null)
-            {
-                var processes = Process.GetProcesses();
-                foreach (var process in processes)
-                {
-                    if (statupProcess.Any(p => p.Id == process.Id))
-                        continue;
-                    // 多出来的Excel进程就杀掉
-                    if (process.ProcessName == "EXCEL")
-                        process.Kill();
-                }
-                statupProcess = null;
-            }
+            //if (excel == null)
+            //    return;
+            //var _excel = excel;
+            //excel = null;
+            //_excel.Workbooks.Close();
+            //_excel.Quit();
+            //if (statupProcess != null)
+            //{
+            //    var processes = Process.GetProcesses();
+            //    foreach (var process in processes)
+            //    {
+            //        if (statupProcess.Any(p => p.Id == process.Id))
+            //            continue;
+            //        // 多出来的Excel进程就杀掉
+            //        if (process.ProcessName == "EXCEL")
+            //            process.Kill();
+            //    }
+            //    statupProcess = null;
+            //}
         }
         private static List<NamedStringTable> LoadTablesFromExcel(string file)
         {
-            if (excel == null)
-            {
-                statupProcess = Process.GetProcesses();
-                excel = new Microsoft.Office.Interop.Excel.Application();
-                //excel.Visible = false;
-                //excel.DisplayAlerts = false;
-            }
             List<NamedStringTable> results = new List<NamedStringTable>();
-            Microsoft.Office.Interop.Excel.Workbook workbook = null;
-            try
-            {
-                workbook = excel.Workbooks.Open(file);
-                foreach (Microsoft.Office.Interop.Excel.Worksheet sheet in workbook.Sheets)
-                {
-                    string tableName = sheet.Name;
-                    if (tableName.StartsWith("_"))
-                        continue;
+            //if (excel == null)
+            //{
+            //    statupProcess = Process.GetProcesses();
+            //    excel = new Microsoft.Office.Interop.Excel.Application();
+            //    //excel.Visible = false;
+            //    //excel.DisplayAlerts = false;
+            //}
+            //Microsoft.Office.Interop.Excel.Workbook workbook = null;
+            //try
+            //{
+            //    workbook = excel.Workbooks.Open(file);
+            //    foreach (Microsoft.Office.Interop.Excel.Worksheet sheet in workbook.Sheets)
+            //    {
+            //        string tableName = sheet.Name;
+            //        if (tableName.StartsWith("_"))
+            //            continue;
 
-                    object[,] cells = (object[,])sheet.UsedRange.Value;
-                    if (cells == null)
-                        continue;
-                    int columns = cells.GetLength(1);
-                    if (columns == 0)
-                        continue;
+            //        object[,] cells = (object[,])sheet.UsedRange.Value;
+            //        if (cells == null)
+            //            continue;
+            //        int columns = cells.GetLength(1);
+            //        if (columns == 0)
+            //            continue;
 
-                    NamedStringTable table = new NamedStringTable();
-                    if (tableName.EndsWith("$"))
-                        tableName = tableName.Substring(0, tableName.Length - 1);
-                    table.Name = tableName;
+            //        NamedStringTable table = new NamedStringTable();
+            //        if (tableName.EndsWith("$"))
+            //            tableName = tableName.Substring(0, tableName.Length - 1);
+            //        table.Name = tableName;
 
-                    for (int i = 1; i <= columns; i++)
-                        table.AddColumn(cells[1, i].ToString());
-                    for (int j = 2, rows = cells.GetLength(0); j <= rows; j++)
-                    {
-                        bool isEmptyRow = true;
-                        for (int i = 1; i <= columns; i++)
-                        {
-                            if (cells[j, i] != null)
-                            {
-                                isEmptyRow = false;
-                                break;
-                            }
-                        }
-                        if (isEmptyRow)
-                            continue;
-                        for (int i = 1; i <= columns; i++)
-                        {
-                            if (cells[j, i] == null)
-                                table.AddValue(string.Empty);
-                            else
-                                table.AddValue(cells[j, i].ToString());
-                        }
-                    }
+            //        for (int i = 1; i <= columns; i++)
+            //            table.AddColumn(cells[1, i].ToString());
+            //        for (int j = 2, rows = cells.GetLength(0); j <= rows; j++)
+            //        {
+            //            bool isEmptyRow = true;
+            //            for (int i = 1; i <= columns; i++)
+            //            {
+            //                if (cells[j, i] != null)
+            //                {
+            //                    isEmptyRow = false;
+            //                    break;
+            //                }
+            //            }
+            //            if (isEmptyRow)
+            //                continue;
+            //            for (int i = 1; i <= columns; i++)
+            //            {
+            //                if (cells[j, i] == null)
+            //                    table.AddValue(string.Empty);
+            //                else
+            //                    table.AddValue(cells[j, i].ToString());
+            //            }
+            //        }
 
-                    results.Add(table);
-                }
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine(ex.Message);
-            }
-            finally
-            {
-                if (workbook != null)
-                {
-                    workbook.Close();
-                }
-                //excel.Workbooks.Close();
-            }
+            //        results.Add(table);
+            //    }
+            //}
+            //catch (Exception ex)
+            //{
+            //    Console.WriteLine(ex.Message);
+            //}
+            //finally
+            //{
+            //    if (workbook != null)
+            //    {
+            //        workbook.Close();
+            //    }
+            //    //excel.Workbooks.Close();
+            //}
             return results;
         }
         private static List<NamedStringTable> LoadTablesFromExcelOleDb(string file, string version = EXCEL_REVERISION)
@@ -5525,13 +5830,7 @@ return result;"
                 ProtocolDefault writer = new ProtocolDefault();
                 if (isUseJson)
                     writer.IsUseJson = true;
-                writer.Write(type);
-
-                string clientFile = Path.Combine(outputClientPath, type.Name + "Proxy.cs");
-                string serverFile = Path.Combine(outputServerPath, type.Name + "Stub.cs");
-                SaveCode(clientFile, writer.builder);
-                SaveCode(serverFile, writer.server);
-                Console.WriteLine("生成协议类型{0}完成", type.FullName);
+                writer.Write(type, outputClientPath, outputServerPath);
             };
 
             // DLL文件将生成所有带
@@ -5549,66 +5848,47 @@ return result;"
                 build(type);
             }
         }
-        public static void BuildProtocolAgentHttp(string outputClientPath, string outputServerPath, string dllOrWithType, int csharp0jsM1wsM2js3ws4)
+        public static void BuildProtocolAgentHttp(string outputClientPath, string outputServerPath, string dllOrWithType, int csharp0js1ws2)
         {
-            Action<Type> build;
-            switch (csharp0jsM1wsM2js3ws4)
+            ProtocolDefault writer;
+            switch (csharp0js1ws2)
             {
+                // C#
                 case 0:
-                    #region C#
-                    build = (type) =>
-                    {
-                        ProtocolHttp writer = new ProtocolHttp();
-                        writer.Write(type);
-                        writer.Save(type, outputClientPath, outputServerPath);
-                    };
-                    #endregion
-                    break;
+                    writer = new ProtocolHttp(); break;
 
+                // JS
                 case 1:
-                case 3:
-                    #region JS
-                    build = (type) =>
-                    {
-                        ProtocolHttpJS writer = new ProtocolHttpJS();
-                        if (csharp0jsM1wsM2js3ws4 == 1)
-                            writer.IsModule = true;
-                        writer.Write(type);
-                        writer.Save(type, outputClientPath, outputServerPath);
-                    };
-                    #endregion
-                    break;
+                case 3: 
+                    writer = new ProtocolHttpJS(); break;
 
+                // WebSocket JS
                 case 2:
                 case 4:
-                    #region WebSocket JS
-                    build = (type) =>
-                    {
-                        ProtocolJsonJs writer = new ProtocolJsonJs();
-                        if (csharp0jsM1wsM2js3ws4 == 2)
-                            writer.IsModule = true;
-                        writer.Write(type);
-                        writer.Save(type, outputClientPath, outputServerPath);
-                    };
-                    #endregion
-                    break;
+                    writer = new ProtocolJsonJs(); break;
 
                 default: throw new NotImplementedException();
             }
-            // DLL文件将生成所有带
+            // DLL文件将生成所有带ProtocolStubAttribute类型的接口
             if (File.Exists(dllOrWithType))
             {
                 var assembly = Assembly.LoadFile(dllOrWithType);
                 foreach (var type in assembly.GetTypesWithAttribute<ProtocolStubAttribute>())
-                    build(type);
+                {
+                    writer.Write(type, outputClientPath, outputServerPath);
+                    writer.Save();
+                }
             }
             else
             {
                 Type type = GetDllType(dllOrWithType);
                 if (type == null)
                     throw new ArgumentNullException("type");
-                build(type);
+                writer.Write(type, outputClientPath, outputServerPath);
+                writer.Save();
             }
+
+            writer.Over();
         }
         /// <summary>加密素材</summary>
         public static void BuildEncrypt(string dirOrFile, string outputDir)

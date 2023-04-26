@@ -532,7 +532,17 @@ namespace EntryEngine.Serialize
 				{
 					case EXml.OPEN:
 						node = new XmlNode();
-						node.Name = Next(">", false);
+						node.Name = Next("> ", false);
+						// attributes
+						while (true)
+						{
+							var attr = Next("=>");
+							if (string.IsNullOrEmpty(attr))
+								break;
+							pos += 2;
+							node.Attributes[attr] = Next("\"");
+							pos++;
+						}
 
 						if (parent == null)
 						{
