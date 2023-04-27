@@ -530,10 +530,10 @@ namespace EntryBuilder
             //PublishToWebGL(@"C:\Yamiwamiyu\Project\EntryEngineGit\trunk\", @"C:\Yamiwamiyu\Project\hdcq3\Code\Client", @"C:\Yamiwamiyu\Project\hdcq3\Code\Protocol;C:\Yamiwamiyu\Project\EntryEngineGit\trunk\DragonBone", @"C:\Yamiwamiyu\Project\hdcq3\Publish\WebGL\index.html", false, 1);
             //BuildTableTranslate("", "");
             //BuildDatabaseMysql(@"C:\Yamiwamiyu\Project\YMHY\Code\Protocol\Protocol\bin\Release\Protocol.dll", "Server._DB", @"C:\Yamiwamiyu\Project\YMHY\Code\Server\Server\_DB.design.cs", "", "", false);
-            BuildProtocolAgentHttp(@"D:\Yamiwamiyu\EntryEngineGitee\EntryEngine项目模板\Code\Protocol\bin\Debug", @"D:\Yamiwamiyu\EntryEngineGitee\EntryEngine项目模板\Code\Protocol\bin\Debug", @"D:\Yamiwamiyu\EntryEngineGitee\EntryEngine项目模板\Code\Protocol\bin\Debug\Protocol.dll", 1);
+            //BuildProtocolAgentHttp(@"D:\Yamiwamiyu\EntryEngineGitee\EntryEngine项目模板\Code\Protocol\bin\Debug", @"D:\Yamiwamiyu\EntryEngineGitee\EntryEngine项目模板\Code\Protocol\bin\Debug", @"D:\Yamiwamiyu\EntryEngineGitee\EntryEngine项目模板\Code\Protocol\bin\Debug\Protocol.dll", 1);
             //BuildCSVFromExcel(@"C:\Yamiwamiyu\Project\hdcq2\Design\Tables_Build", @"C:\Yamiwamiyu\Project\IslandChronicle\Design\Tables_Build", null, "12.0", "a.cs", false);
-            Console.ReadKey();
-            return;
+            //Console.ReadKey();
+            //return;
 
             Methods = typeof(Program).GetMethods(BindingFlags.Static | BindingFlags.Public);
 
@@ -2344,6 +2344,117 @@ return result;"
             {
             }
         }
+        /// <summary>C#注释生成的XML文档</summary>
+        class CSharpXML
+        {
+            private static Member Empty = new Member();
+            public struct Member
+            {
+                private static Dictionary<string, string> empty1 = new Dictionary<string, string>();
+
+                public XmlNode Node { get; private set; }
+
+                public Member(XmlNode node)
+                {
+                    this.Node = node;
+                }
+
+                /// <summary>summary</summary>
+                public string GetSummary()
+                {
+                    string[] lines = GetSummaries();
+                    if (lines == null)
+                        return null;
+                    return string.Join("\r\n", lines);
+                }
+                /// <summary> * summary \r\n</summary>
+                public string GetSummaryStar()
+                {
+                    string[] lines = GetSummaries();
+                    if (lines == null)
+                        return null;
+                    return " * " + string.Join("\r\n", lines) + "\r\n";
+                }
+                /// <summary>
+                /// summary
+                /// * summary
+                /// * summary
+                /// </summary>
+                public string[] GetSummaries()
+                {
+                    if (Node == null)
+                        return null;
+                    var node = Node.FirstOrDefault(i => i.Name == "summary");
+                    if (node == null)
+                        return null;
+                    string value = node.Value.Trim();
+                    var lines = value.Split('\n');
+                    for (int i = 1; i < lines.Length; i++)
+                        lines[i] = " * " + lines[i].Trim();
+                    return lines;
+                }
+                /// <summary>/** summary */\r\n</summary>
+                public string GetFullSummary()
+                {
+                    string summary = GetSummary();
+                    if (string.IsNullOrEmpty(summary))
+                        return null;
+                    return "/** " + summary + " */\r\n";
+                }
+                /// <summary>name, summary</summary>
+                public Dictionary<string, string> GetParams()
+                {
+                    if (Node == null)
+                        return empty1;
+                    return Node.Where(i => i.Name == "param").ToDictionary(i => i.Attributes["name"], i => i.Value);
+                }
+                public string GetReturn()
+                {
+                    if (Node == null)
+                        return null;
+                    return Node.FirstOrDefault(i => i.Name == "returns")?.Value;
+                }
+            }
+
+            public XmlNode Members { get; private set; }
+
+            public CSharpXML(XmlNode members)
+            {
+                this.Members = members;
+            }
+
+            /// <summary>查找member的注释</summary>
+            /// <param name="key">C#文档的member.name，T:类型 F:字段 M:方法</param>
+            public Member Find(string key)
+            {
+                if (Members == null)
+                    return Empty;
+                Func<XmlNode, bool> match;
+                if (key[0] == 'M')
+                    match = (i => i.Attributes["name"].StartsWith(key));
+                else
+                    match = (i => i.Attributes["name"] == key);
+                return new Member(Members.FirstOrDefault(match));
+            }
+            public Member Find(Type type)
+            {
+                return Find("T:" + type.Name);
+            }
+            public Member Find(Type type, FieldInfo member)
+            {
+                return Find("F:" + type.Name + "." + member.Name);
+            }
+            public Member Find(Type type, MethodInfo member)
+            {
+                return Find("M:" + type.Name + "." + member.Name);
+            }
+
+            public static CSharpXML Read(string file)
+            {
+                XmlNode root = new XmlReader(File.ReadAllText(file)).ReadToNode();
+                return new CSharpXML(root["members"]);
+            }
+        }
         static string TypeToTs(Type type)
         {
             if (type == typeof(FileUpload))
@@ -2362,11 +2473,11 @@ return result;"
                 || type == typeof(string)
                 || type == typeof(DateTime))
             {
-                return "string";
+                return "String";
             }
             else if (type == typeof(bool))
             {
-                return "boolean";
+                return "Boolean";
             }
             else if (type == typeof(sbyte)
                 || type == typeof(byte)
@@ -2380,7 +2491,7 @@ return result;"
                 || type == typeof(double)
                 )
             {
-                return "number";
+                return "Number";
             }
 
             bool isList = !type.IsArray && type.Is(typeof(IList));
@@ -2396,6 +2507,7 @@ return result;"
 
             return type.Name;
         }
+        [Obsolete("交互协议暂时使用了JSDoc，没有使用TS了")]
         static void BuildTypeToTs(Type type, StringBuilder builder, XmlNode members)
         {
             Type nullable;
@@ -2407,7 +2519,7 @@ return result;"
             if (type.IsEnum)
             {
                 BuildJSDoc(builder, "T:" + type.Name, members);
-                builder.AppendLine("enum {0}", type.Name);
+                builder.AppendLine("declare enum {0}", type.Name);
                 builder.AppendBlock(() =>
                 {
                     var names = Enum.GetNames(type);
@@ -2438,7 +2550,7 @@ return result;"
                 if (fields.Length == 0)
                     return;
                 BuildJSDoc(builder, "T:" + type.Name, members);
-                builder.AppendLine("class {0}", type.Name);
+                builder.AppendLine("declare interface {0}", type.Name);
                 builder.AppendBlock(() =>
                 {
                     foreach (var field in fields)
@@ -2449,9 +2561,78 @@ return result;"
                 });
             }
         }
+        static void BuildTypeToJsDoc(Type type, StringBuilder builder, CSharpXML members)
+        {
+            Type nullable;
+            if (type.IsValueType && type.IsNullable(out nullable))
+            {
+                BuildTypeToJsDoc(nullable, builder, members);
+            }
+
+            if (type.IsEnum)
+            {
+                builder.AppendLine("/**");
+                builder.Append(" * @typedef {(");
+                var names = Enum.GetNames(type);
+                var values = Enum.GetValues(type);
+                Type utype = Enum.GetUnderlyingType(type);
+                for (int i = 0, e = names.Length - 1; i <= e; i++)
+                {
+                    builder.Append("'{0}'", Convert.ChangeType(values.GetValue(i), utype));
+                    if (i != e)
+                        builder.Append(" | ");
+                }
+                builder.Append(")}} {0}", type.Name);
+                string summary = members.Find("T:" + type.Name).GetSummary();
+                if (!string.IsNullOrEmpty(summary))
+                    builder.Append(" - {0}", summary);
+                builder.AppendLine();
+                builder.AppendLine(" */");
+                builder.AppendLine("export const {0} =", type.Name);
+                builder.AppendBlock(() =>
+                {
+                    for (int i = 0; i < names.Length; i++)
+                    {
+                        builder.Append(members.Find("F:" + type.Name + "." + names[i]).GetFullSummary());
+                        builder.AppendLine("{0}: {1},", names[i], Convert.ChangeType(values.GetValue(i), utype));
+                    }
+                });
+            }
+
+            bool isList = !type.IsArray && type.Is(typeof(IList));
+            if (type.IsArray || isList)
+            {
+                Type elementType;
+                if (isList)
+                    elementType = type.GetGenericArguments()[0];
+                else
+                    elementType = type.GetElementType();
+                BuildTypeToJsDoc(type, builder, members);
+            }
+
+            if (type.IsCustomType())
+            {
+                var fields = type.GetFields();
+                if (fields.Length == 0)
+                    return;
+                builder.AppendLine("/**");
+                builder.Append(members.Find("T:" + type.Name).GetSummaryStar());
+                builder.AppendLine(" * @typedef {{Object}} {0}", type.Name);
+                foreach (var field in fields)
+                {
+                    builder.Append(" * @property {{{0}}} {1}", TypeToTs(field.FieldType), field.Name);
+                    string s = members.Find("F:" + type.Name + "." + field.Name).GetSummary();
+                    if (!string.IsNullOrEmpty(s))
+                        builder.Append(" - {0}", s);
+                    builder.AppendLine();
+                }
+                builder.AppendLine(" */");
+            }
+        }
         /// <summary>生成JSDoc文档格式的注释</summary>
         /// <param name="key">C#文档的member.name，T:类型 F:字段 M:方法</param>
         /// <param name="members">C#文档的members标签</param>
+        /// <param name="member">成员，包含类型等信息</param>
         static void BuildJSDoc(StringBuilder builder, string key, XmlNode members)
         {
             if (members == null)
@@ -2477,7 +2658,10 @@ return result;"
                 {
                     builder.Append("* ");
                     if (item.Name == "summary")
+                    {
                         AppendSummary(builder, item);
+                        builder.AppendLine();
+                    }
                     else if (item.Name == "param")
                         builder.AppendLine("@param {0} - {1}", item.Attributes["name"], item.Value);
                     else if (item.Name == "returns")
@@ -2504,9 +2688,14 @@ return result;"
             /// <summary>是否需要模块化JS：模块化使用export / 非模块化使用var</summary>
             [Obsolete("统一模块化编码，要非模块化可以到JS层面转换")]
             public bool IsModule;
-            HashSet<Type> types = new HashSet<Type>();
-            StringBuilder ts = new StringBuilder();
-            List<Type> saveTypes = new List<Type>();
+
+            protected string GetTypeShortName()
+            {
+                string name = type.Name;
+                if (name.Length > 2)
+                    name = name.Substring(0, 2);
+                return name.ToLower();
+            }
 
             protected override string ClientSuffix { get { return "js"; } }
 
@@ -2523,7 +2712,6 @@ return result;"
             }
             protected override void WCCallProxy(StringBuilder builder, MethodInfo[] call, MethodInfo[] callback, Dictionary<int, Type> asyncCB)
             {
-                // todo: 针对所有后端类型生成注释(读取.xml注释文件)，使用ts代替js
                 string xml = Path.Combine(Path.ChangeExtension(type.Assembly.Location, ".xml"));
                 XmlNode members = null;
                 if (File.Exists(xml))
@@ -2532,6 +2720,8 @@ return result;"
                     XmlNode root = new XmlReader(File.ReadAllText(xml)).ReadToNode();
                     members = root["members"];
                 }
+                CSharpXML doc = new CSharpXML(members);
+                HashSet<Type> types = new HashSet<Type>();
 
                 // 生成过的类型
                 for (int i = 0; i < call.Length; i++)
@@ -2548,13 +2738,13 @@ return result;"
                         if (types.Add(type))
                         {
                             // 生成类型
-                            BuildTypeToTs(type, ts, members);
+                            BuildTypeToJsDoc(type, builder, doc);
                         }
                     }
                 }
 
-                string name = type.Name;
-                BuildJSDoc(builder, "T:" + name, members);
+                string name = GetTypeShortName();
+                builder.Append(doc.Find(type).GetFullSummary());
                 builder.AppendLine("const {0} =", name);
                 builder.AppendBlockWithEnd(() =>
                 {
@@ -2562,9 +2752,18 @@ return result;"
 @"install: (vue) => vue.config.globalProperties.{api} = {api},
 /** 后端接口的URL */
 url:  '',
-/** 状态码对应错误信息，错误码和错误信息的对象会回调给event.onerror事件
- * @type {Object.<number, string>} */
+/** 状态码对应错误信息，错误码和错误信息的对象会回调给event.onerror事件 */
 error: { 0: '请求已中止' },
+/**
+ * @typedef RequestEvent
+ * @type {Object}
+ * @property {function(XMLHttpRequest)} onopen - 请求准备发送时的事件
+ * @property {function(XMLHttpRequest)} onloading - 请求正在加载的事件(readyState = 3)
+ * @property {function(XMLHttpRequest)} oncomplete - 请求完成时的事件(readyState = 4)
+ * @property {function(XMLHttpRequest)} onsuccess - 请求成功的事件(readyState = 4 && status == 200 && !response.errCode)
+ * @property {function({ errCode: number, errMsg: string })} onerror - 请求发生错误时的事件(readyState = 4 && (status != 200 || response.errCode))
+ * @property {function(ProgressEvent)} onprogress - 上传文件请求的进度事件
+ */
 /** 接口请求的全局事件
  * @type {RequestEvent} */
 __event: undefined,
@@ -2572,15 +2771,18 @@ __event: undefined,
  * @type {RequestEvent} */
 event: undefined,
 /** 本次接口请求的临时事件，onprogress以外的全局事件任然会触发，临时事件优先于全局事件触发
- * @param {RequestEvent} event
- * @returns {{api}} */
-eventonce(event:RequestEvent)
+ * @param {RequestEvent} event */
+eventonce(event)
 {
     this.__event = Object.assign({}, this.__event, event);
-    return {api};
+    return this;
 },
-/** 发送接口 */
-send(url:string, data:XMLHttpRequestBodyInit | null, method = 'POST')
+/** 发送接口
+ * @param {String} url - 接口url
+ * @param {XMLHttpRequestBodyInit} [data] - 数据，可以是FormData或a=1&b=2格式的字符串
+ * @param {('POST' | 'GET')} method - 默认POST
+ */
+send(url, data, method = 'POST')
 {
     return new Promise((resolve, reject) => 
     {
@@ -2631,9 +2833,9 @@ send(url:string, data:XMLHttpRequestBodyInit | null, method = 'POST')
  * @example
  * api.download('download.csv').downloadCSV()
  */
-download(filename:string)
+download(filename)
 {
-    return {api}.eventonce(
+    return this.eventonce(
     {
         oncomplete(req)
         {
@@ -2654,10 +2856,74 @@ download(filename:string)
                         // 方法头
                         bool hasAsync = asyncCB.ContainsKey(i);
                         int pcount = parameters.Where(j => !hasAsync || !j.ParameterType.IsDelegate()).Count();
-                        // 注释
-                        BuildJSDoc(builder, string.Format("M:{0}.{1}", name, method.Name), members);
-                        builder.Append("{0}(", method.Name);
                         Type returnType = method.ReturnType;
+                        var member = doc.Find(type, method);
+                        var _params = member.GetParams();
+                        var _return = member.GetReturn();
+
+                        if (pcount > 1)
+                        {
+                            // 大于一个参数，第一个参数的类型允许是一个object
+                            // 这里声明这个object类型
+                            builder.AppendLine("/**");
+                            builder.AppendLine(" * @typedef {0}", method.Name);
+                            for (int j = 0, n = parameters.Length - 1; j <= n; j++)
+                            {
+                                var param = parameters[j];
+                                if (hasAsync && param.ParameterType.IsDelegate())
+                                {
+                                    returnType = param.ParameterType.GenericTypeArguments[0];
+                                    if (string.IsNullOrEmpty(_return))
+                                    {
+                                        // 回调参数的注释变成返回值的注释
+                                        _params.TryGetValue(param.Name, out _return);
+                                    }
+                                    continue;
+                                }
+                                builder.Append(" * @property {{{0}}} {1}", TypeToTs(param.ParameterType), param.Name);
+                                string s;
+                                if (_params.TryGetValue(param.Name, out s))
+                                    builder.Append(" - {0}", s);
+                                builder.AppendLine();
+                            }
+                            builder.AppendLine(" */");
+                        }
+
+                        // 方法注释
+                        //BuildJSDoc(builder, string.Format("M:{0}.{1}", type.Name, method.Name), members);
+                        builder.AppendLine("/**");
+                        builder.Append(member.GetSummaryStar());
+                        for (int j = 0, n = parameters.Length - 1; j <= n; j++)
+                        {
+                            var param = parameters[j];
+                            if (hasAsync && param.ParameterType.IsDelegate())
+                                continue;
+                            builder.Append(" * @param {{{0}}} {1}", TypeToTs(param.ParameterType) + (j == 0 && pcount > 1 ? " | " + method.Name : ""), param.Name);
+                            string s;
+                            if (_params.TryGetValue(param.Name, out s))
+                                builder.Append(" - {0}", s);
+                            builder.AppendLine();
+                            // 生成第一个参数类型的example，方便复制到组件的data中
+                            if (j == 0 && pcount > 1)
+                            {
+                                builder.AppendLine(" * @example");
+                                builder.AppendLine(" * {");
+                                for (int k = 0; k <= n; k++)
+                                {
+                                    var param2 = parameters[k];
+                                    if (hasAsync && param2.ParameterType.IsDelegate())
+                                        continue;
+                                    builder.AppendLine(" *   {0}: undefined,", param2.Name);
+                                }
+                                builder.AppendLine(" * }");
+                            }
+                        }
+                        builder.Append(" * @returns {{Promise<{0}>}}", returnType.FullName == "System.Void" ? "any" : TypeToTs(returnType));
+                        if (!string.IsNullOrEmpty(_return))
+                            builder.Append(" - {0}", _return);
+                        builder.AppendLine();
+                        builder.AppendLine(" */");
+                        builder.Append("{0}(", method.Name);
                         // 分别传每个值
                         for (int j = 0, n = parameters.Length - 1; j <= n; j++)
                         {
@@ -2670,7 +2936,8 @@ download(filename:string)
                             if (j != 0)
                                 builder.Append(", ");
                             builder.Append("{0}", param.Name);
-                            builder.Append(":{0}", TypeToTs(param.ParameterType));
+                            //builder.Append(":{0}", TypeToTs(param.ParameterType));
+                            // 大于一个参数，第一个参数的类型允许是一个object
                             //if (j == 0 && pcount > 1)
                             //{
                             //    builder.Append("|{");
@@ -2696,7 +2963,8 @@ download(filename:string)
                         //}
                         // 直接传对象
                         //builder.Append("data, callback");
-                        builder.AppendLine("):Promise<{0}>", returnType.FullName == "System.Void" ? "any" : TypeToTs(returnType));
+                        //builder.AppendLine("):Promise<{0}>", returnType.FullName == "System.Void" ? "any" : TypeToTs(returnType));
+                        builder.AppendLine(")");
                         builder.AppendBlockWithComma(() =>
                         {
                             bool hasFileUpload = parameters.Any(j => j.ParameterType == typeof(FileUpload));
@@ -2772,61 +3040,17 @@ download(filename:string)
 
             public override void Save()
             {
-                saveTypes.Add(type);
-                base.Save();
-            }
-            public override void Over()
-            {
-                ts.AppendLine(
-@"declare interface RequestEvent
-{
-    /** 请求准备发送时的事件，可以用于设置header(setRequestHeader)或timeout等 */
-    onopen?: (req: XMLHttpRequest) => void;
-    /** 请求正在加载的事件(readyState = 3) */
-    onloading?: (req: XMLHttpRequest) => void;
-    /** 请求完成时的事件(readyState = 4) */
-    oncomplete?: (req: XMLHttpRequest) => void;
-    /** 请求成功的事件(readyState = 4 && status == 200 && !response.errCode) */
-    onsuccess?: (req: XMLHttpRequest) => void;
-    /** 请求发生错误时的事件(readyState = 4 && (status != 200 || response.errCode)) */
-    onerror?: (err: { errCode: number, errMsg: string }) => void;
-    /** 上传文件请求的进度事件 */
-    onprogress?: (event: ProgressEvent) => void;
-}
-
-/**
- * @typedef RequestEvent
- * @type {Object}
- * @property {function(XMLHttpRequest)} onopen - 请求准备发送时的事件
- * @property {function(XMLHttpRequest)} onloading - 请求正在加载的事件(readyState = 3)
- * @property {function(XMLHttpRequest)} oncomplete - 请求完成时的事件(readyState = 4)
- * @property {function(XMLHttpRequest)} onsuccess - 请求成功的事件(readyState = 4 && status == 200 && !response.errCode)
- * @property {function({ errCode: number, errMsg: string })} onerror - 请求发生错误时的事件(readyState = 4 && (status != 200 || response.errCode))
- * @property {function(ProgressEvent)} onprogress - 上传文件请求的进度事件
- */
+                SaveCode(Path.Combine(OutputClientPath, type.Name + ".d.ts"), 
+@"import {api} from './{api2}Proxy'
 
 declare module '@vue/runtime-core'
 {
     interface ComponentCustomProperties
     {
-        {api}: typeof {api}
+        {api}: typeof {api},
     }
-}");
-                foreach (var type in types)
-                    builder.AppendLine("import {0} from './{0}'", type.Name);
-                ts.AppendLine("declare module '@vue/runtime-core'");
-                ts.AppendBlock(() =>
-                {
-                    ts.AppendLine("interface ComponentCustomProperties");
-                    ts.AppendBlock(() =>
-                    {
-                        foreach (var type in types)
-                            builder.AppendLine("{0}: typeof {0},", type.Name);
-                    });
-                });
-                
-
-                SaveCode(Path.Combine(OutputClientPath, "api.d.ts"), ts.ToString());
+}".Replace("{api}", GetTypeShortName()).Replace("{api2}", type.Name));
+                base.Save();
             }
         }
         /// <summary>WebSocket用</summary>
