@@ -2793,7 +2793,7 @@ send(url, data, method = 'POST')
         {
             if (req.readyState == 4)
             {
-                event?.oncomplete?.(req) | this.event.oncomplete?.(req);
+                event?.oncomplete?.(req) | this.event?.oncomplete?.(req);
                 if (req.status == 200)
                 {
                     let obj = null;
@@ -2806,25 +2806,25 @@ send(url, data, method = 'POST')
                         break;
                     }
                     if (obj && obj.errCode)
-                        event?.onerror?.(obj) | this.event.onerror?.(obj) | reject(obj);
+                        event?.onerror?.(obj) | this.event?.onerror?.(obj) | reject(obj);
                     else
-                        event?.onsuccess?.(obj) | this.event.onsuccess?.(obj) | resolve(obj);
+                        event?.onsuccess?.(obj) | this.event?.onsuccess?.(obj) | resolve(obj);
                 }
                 else
                 {
                     let error = { errCode: req.status, errMsg: '' };
                     error.errMsg = this.error[req.status] || req.statusText;
-                    event?.onerror?.(error) | this.event.onerror?.(error) | reject(error);
+                    event?.onerror?.(error) | this.event?.onerror?.(error) | reject(error);
                 }
             }
-            else if (req.readyState == 3) event?.onloading?.(req) | this.event.onloading?.(req);
+            else if (req.readyState == 3) event?.onloading?.(req) | this.event?.onloading?.(req);
         }
         req.open(method, this.url + url, true);
-        req.upload.onprogress = event?.onprogress || this.event.onprogress;
+        req.upload.onprogress = event?.onprogress || this.event?.onprogress;
         req.responseType = 'text';
         if (event?.onopen) event.onopen(req);
         else req.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded;charset=utf-8');
-        this.event.onopen?.(req);
+        this.event?.onopen?.(req);
         req.send(data);
     });
 },
@@ -3008,7 +3008,7 @@ download(filename)
                                 }
                                 else
                                 {
-                                    builder.Append("data.push(\"{0}=\", ", param.Name);
+                                    builder.Append("data.push(\"{0}=\" + ", param.Name);
                                 }
                                 if (param.ParameterType == typeof(FileUpload))
                                     builder.Append("{0}", param.Name);
