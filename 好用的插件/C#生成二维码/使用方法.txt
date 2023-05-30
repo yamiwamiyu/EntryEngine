@@ -1,0 +1,4 @@
+QRCoder.QRCodeGenerator generator = new QRCoder.QRCodeGenerator();
+var qrData = generator.CreateQrCode("生成二维码的内容", QRCoder.QRCodeGenerator.ECCLevel.L);
+QRCoder.BitmapByteQRCode bitmapData = new QRCoder.BitmapByteQRCode(qrData);
+Bitmap.FromStream(new MemoryStream(bitmapData.GetGraphic(2))).Save("testQR.png", System.Drawing.Imaging.ImageFormat.Png);

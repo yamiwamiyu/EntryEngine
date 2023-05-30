@@ -1,0 +1,27 @@
+需要将apktool_2.4.0.jar放到这个目录下
+
+1. 安装java环境
+2. 命令行执行反编译命令
+java -jar apktool_2.4.0.jar d 反编译目标.apk
+会生成反编译的apk内容
+3. 根据ILSpy找到的要修改的地方 -> 打开ildasm -> 拖入要修改的dll -> 文件>>存储得到il文件 -> 修改il文件
+4. 重新编译il回dll
+C:\Windows\Microsoft.NET\Framework\v2.0.50727\ilasm 编译目标.il /output=编译目标.dll /dll
+或exe
+C:\Windows\Microsoft.NET\Framework\v2.0.50727\ilasm 编译目标.il /output=编译目标.exe /exe
+5. 将修改好的dll覆盖到第二步反编译出来的内容里
+6. java -jar apktool_2.4.0.jar b 反编译目录 -o 重编译目标.apk
+7. 重新签名apk
+错误1：无法打开jar文件 xxx.apk
+解决1：修改AndroidManifest.xml里的compileSdkVersionCodename和platformBuildVersionName降低版本
+"C:\Program Files\Java\jdk1.8.0_111\bin\jarsigner" -signedjar signed.apk -verbose -sigalg SHA1withRSA -digestalg SHA1 -keystore alias.keystore -storepass yamiwamiyu0 -keypass yamiwamiyu0 rebuild.apk alias
+
+
+
+反编译aar
+1. 需要用到jad158g.win\jad
+2. 解压缩aar文件得到classes.jar
+3. 解压缩classes.jar得到com文件夹
+4. 命令行执行反编译命令得到src/*.java源码
+jad158g.win\jad -o -r -s java -d src com/**/*.class
+5. 详细参见"反编译aar.bat"
