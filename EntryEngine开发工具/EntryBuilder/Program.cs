@@ -2755,13 +2755,28 @@ url:  '',
 /** 状态码对应错误信息，错误码和错误信息的对象会回调给event.onerror事件 */
 error: { 0: '请求已中止' },
 /**
- * @typedef RequestEvent
- * @type {Object}
- * @property {function(XMLHttpRequest)} onopen - 请求准备发送时的事件
- * @property {function(XMLHttpRequest)} onloading - 请求正在加载的事件(readyState = 3)
- * @property {function(XMLHttpRequest)} oncomplete - 请求完成时的事件(readyState = 4)
- * @property {function(XMLHttpRequest)} onsuccess - 请求成功的事件(readyState = 4 && status == 200 && !response.errCode)
- * @property {function({ errCode: number, errMsg: string })} onerror - 请求发生错误时的事件(readyState = 4 && (status != 200 || response.errCode))
+ * @typedef {Object} xhr_ex
+ * @property {string} url - 接口的相对 url
+ * @property {XMLHttpRequestBodyInit} data - 发送接口的数据
+ * @property {('POST' | 'GET' | 'PUT' | 'DELETE')} method - 发送接口的方法
+ * @property {function():Promise} resend - 重发接口，并返回重发的结果来完成 Promise
+ */
+/** @typedef {XMLHttpRequest & xhr_ex} xhr */
+/** 请求结果
+ * @callback RequestResult
+ * @param {request_error | any} data - 请求返回的结果
+ * @param {xhr} [xhr] - 重发请求
+ * @param {function(any)} [resolve] - 回复成功
+ * @param {function(any)} [reject] - 回复失败
+ * @returns {Promise<any | undefined> | (any | undefined)} 返回非空则不会继续后面的处理
+ */
+/**
+ * @typedef {Object} RequestEvent
+ * @property {function(xhr)} onopen - 请求准备发送时的事件
+ * @property {function(xhr)} onloading - 请求正在加载的事件(readyState = 3)
+ * @property {function(xhr)} oncomplete - 请求完成时的事件(readyState = 4)
+ * @property {RequestResult} onsuccess - 请求成功的事件(readyState = 4 && status == 200)
+ * @property {RequestResult} onerror - 请求发生错误时的事件(readyState = 4 && status != 200)
  * @property {function(ProgressEvent)} onprogress - 上传文件请求的进度事件
  */
 /** 接口请求的全局事件
@@ -2789,6 +2804,10 @@ send(url, data, method = 'POST')
         const req = new XMLHttpRequest();
         const event = this.__event;
         this.__event = undefined;
+        req.url = url;
+        req.data = data;
+        req.method = method;
+        req.resend = () => { return this.eventonce(event).send(url, data, method).then(i => resolve(i)).catch(i => reject(i)); };
         req.onreadystatechange = async () => 
         {
             if (req.readyState == 4)
@@ -2806,15 +2825,15 @@ send(url, data, method = 'POST')
                         break;
                     }
                     if (obj && obj.errCode)
-                        event?.onerror?.(obj) | this.event?.onerror?.(obj) | reject(obj);
+                        await event?.onerror?.(obj, req, resolve, reject) || await this.event?.onerror?.(obj, req, resolve, reject) | reject(obj);
                     else
-                        event?.onsuccess?.(obj) | this.event?.onsuccess?.(obj) | resolve(obj);
+                        await event?.onsuccess?.(obj, req, resolve, reject) || await this.event?.onsuccess?.(obj, req, resolve, reject) | resolve(obj);
                 }
                 else
                 {
                     let error = { errCode: req.status, errMsg: '' };
-                    error.errMsg = this.error[req.status] || req.statusText;
-                    event?.onerror?.(error) | this.event?.onerror?.(error) | reject(error);
+                    error.errMsg = this.error[req.status] || req.statusText || req.responseText;
+                    await event?.onerror?.(error, req, resolve, reject) || this.event?.onerror?.(error, req, resolve, reject) || reject(error);
                 }
             }
             else if (req.readyState == 3) event?.onloading?.(req) | this.event?.onloading?.(req);
@@ -2823,6 +2842,7 @@ send(url, data, method = 'POST')
         req.upload.onprogress = event?.onprogress || this.event?.onprogress;
         req.responseType = 'text';
         if (event?.onopen) event.onopen(req);
+        else if (this.event?.onopen) this.event.onopen(req);
         else req.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded;charset=utf-8');
         this.event?.onopen?.(req);
         req.send(data);
