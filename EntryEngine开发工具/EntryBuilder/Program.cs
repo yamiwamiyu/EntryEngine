@@ -2749,7 +2749,8 @@ return result;"
                 builder.AppendBlockWithEnd(() =>
                 {
                     builder.AppendLine(
-@"install: (vue) => vue.config.globalProperties.{api} = {api},
+@"/** @param {import('vue').App} vue */
+install: (vue) => vue.config.globalProperties.{api} = {api},
 /** 后端接口的URL */
 url:  '',
 /** 状态码对应错误信息，错误码和错误信息的对象会回调给event.onerror事件 */
@@ -2764,7 +2765,7 @@ error: { 0: '请求已中止' },
 /** @typedef {XMLHttpRequest & xhr_ex} xhr */
 /** 请求结果
  * @callback RequestResult
- * @param {request_error | any} data - 请求返回的结果
+ * @param {{ errCode: number, errMsg: string } | string} data - 请求返回的结果
  * @param {xhr} [xhr] - 重发请求
  * @param {function(any)} [resolve] - 回复成功
  * @param {function(any)} [reject] - 回复失败
