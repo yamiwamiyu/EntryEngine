@@ -530,7 +530,7 @@ namespace EntryBuilder
             //PublishToWebGL(@"C:\Yamiwamiyu\Project\EntryEngineGit\trunk\", @"C:\Yamiwamiyu\Project\hdcq3\Code\Client", @"C:\Yamiwamiyu\Project\hdcq3\Code\Protocol;C:\Yamiwamiyu\Project\EntryEngineGit\trunk\DragonBone", @"C:\Yamiwamiyu\Project\hdcq3\Publish\WebGL\index.html", false, 1);
             //BuildTableTranslate("", "");
             //BuildDatabaseMysql(@"C:\Yamiwamiyu\Project\YMHY\Code\Protocol\Protocol\bin\Release\Protocol.dll", "Server._DB", @"C:\Yamiwamiyu\Project\YMHY\Code\Server\Server\_DB.design.cs", "", "", false);
-            //BuildProtocolAgentHttp(@"D:\Yamiwamiyu\EntryEngineGitee\EntryEngine项目模板\Code\Protocol\bin\Debug", @"D:\Yamiwamiyu\EntryEngineGitee\EntryEngine项目模板\Code\Protocol\bin\Debug", @"D:\Yamiwamiyu\EntryEngineGitee\EntryEngine项目模板\Code\Protocol\bin\Debug\Protocol.dll", 1);
+            //BuildProtocolAgentHttp(@"D:\Yamiwamiyu\flying-park\Code\Protocol\bin\Debug", @"D:\Yamiwamiyu\flying-park\Code\Protocol\bin\Debug", @"D:\Yamiwamiyu\flying-park\Code\Protocol\bin\Debug\Protocol.dll", 1);
             //BuildCSVFromExcel(@"C:\Yamiwamiyu\Project\hdcq2\Design\Tables_Build", @"C:\Yamiwamiyu\Project\IslandChronicle\Design\Tables_Build", null, "12.0", "a.cs", false);
             //Console.ReadKey();
             //return;
@@ -2607,7 +2607,7 @@ return result;"
                     elementType = type.GetGenericArguments()[0];
                 else
                     elementType = type.GetElementType();
-                BuildTypeToJsDoc(type, builder, members);
+                BuildTypeToJsDoc(elementType, builder, members);
             }
 
             if (type.IsCustomType())
