@@ -7,6 +7,17 @@ using EntryEngine.Network;
 
 public static class _EX
 {
+    /// <summary>SQL语句LIKE后使用的字符串参数，例如LIKE '李%'，就是'李'.Like(false, true)</summary>
+    /// <param name="key">搜索的关键字</param>
+    /// <param name="left">开头是否使用'%'通配符</param>
+    /// <param name="right">结尾是否使用'%'通配符</param>
+    public static string Like(this string key, bool left = true, bool right = true)
+    {
+        if (string.IsNullOrEmpty(key)) return null;
+        if (left) key = "%" + key;
+        if (right) key = key + "%";
+        return key;
+    }
 }
 /// <summary>上传/下载文件通用</summary>
 public static class _FILE

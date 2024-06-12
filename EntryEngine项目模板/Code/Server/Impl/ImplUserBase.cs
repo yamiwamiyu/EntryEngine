@@ -17,9 +17,13 @@ namespace Server.Impl
         微信 = 4,
         其它 = 255,
     }
+    public abstract class ImplBase
+    {
+        public static _DB _DB;
+    }
     /// <summary>基于用户的接口实现基类</summary>
     /// <typeparam name="T">用户类型</typeparam>
-    public class ImplUserBase<T> where T : T_UserBase, new()
+    public class ImplUserBase<T> : ImplBase where T : T_UserBase, new()
     {
         // hack: 做分布式使用多进程时，请不要缓存机制
         /// <summary>使用缓存：加速访问，数据库改用户数据无法自动刷新，多进程时无法同步</summary>

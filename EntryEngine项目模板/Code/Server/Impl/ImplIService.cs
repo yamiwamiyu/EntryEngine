@@ -8,7 +8,7 @@ using System.Net;
 
 namespace Server.Impl
 {
-    class ImplIService : _IService
+    class ImplIService : ImplBase, _IService
     {
         void _IService.SendSMSCode(string phone, CBIService_SendSMSCode callback)
         {

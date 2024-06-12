@@ -88,20 +88,20 @@ namespace Server
         public bool IsRunning { get { return Slave_IO_Running == "Yes" && Slave_SQL_Running == "Yes"; } }
         public bool IsSynchronous { get { return Read_Master_Log_Pos == Exec_Master_Log_Pos; } }
     }
-    public static partial class _DB
+    public partial class _DB
     {
-        public static bool IsDropColumn;
-        public static string DatabaseName;
-        public static Action<_DATABASE.Database> OnConstructDatabase;
+        public bool IsDropColumn;
+        public string DatabaseName;
+        public Action<_DATABASE.Database> OnConstructDatabase;
         public static List<MergeTable> AllMergeTable = new List<MergeTable>()
         {
             new MergeTable("T_USER"),
             new MergeTable("T_CENTER_USER"),
             new MergeTable("T_OPLog"),
         };
-        private static _DATABASE.Database _dao;
+        private _DATABASE.Database _dao;
         /// <summary>Set this will set the event 'OnCreateConnection' and 'OnTestConnection'</summary>
-        public static _DATABASE.Database _DAO
+        public _DATABASE.Database _DAO
         {
             get { if (_dao == null) return _DATABASE._Database; else return _dao; }
             set
@@ -116,7 +116,7 @@ namespace Server
             }
         }
         /// <summary>Set this to the _DATABASE.Database.OnCreateConnection event</summary>
-        public static void CREATE_CONNECTION(System.Data.IDbConnection conn, _DATABASE.Database database)
+        public void CREATE_CONNECTION(System.Data.IDbConnection conn, _DATABASE.Database database)
         {
             if (string.IsNullOrEmpty(conn.Database) && !string.IsNullOrEmpty(DatabaseName) && !_DAO.Available)
             {
@@ -134,7 +134,7 @@ namespace Server
             }
         }
         /// <summary>Set this to the _DATABASE.Database.OnTestConnection event</summary>
-        public static void UPDATE_DATABASE_STRUCTURE(System.Data.IDbConnection conn, _DATABASE.Database database)
+        public void UPDATE_DATABASE_STRUCTURE(System.Data.IDbConnection conn, _DATABASE.Database database)
         {
             var cmd = conn.CreateCommand();
             cmd.CommandTimeout = database.Timeout;
@@ -781,7 +781,7 @@ namespace Server
             }
         }
         /// <summary>/* Phase说明 */ BuildTemp: 原库，可用于延长Timeout，_DB操作原库 / ChangeTemp: 临时库，可用于修改主键可能重复的数据，_DB操作临时库 / Merge: 临时库，可用于修改需要参考其它合服数据的数据，_DB操作目标库</summary>
-        public static void MERGE(MergeDatabase[] dbs, Action<_DATABASE.Database> phaseBuildTemp, Action<_DATABASE.Database> phaseChangeTemp, Action<_DATABASE.Database[]> phaseMerge)
+        public void MERGE(MergeDatabase[] dbs, Action<_DATABASE.Database> phaseBuildTemp, Action<_DATABASE.Database> phaseChangeTemp, Action<_DATABASE.Database[]> phaseMerge)
         {
             _DATABASE.Database __target = _DAO;
             if (__target == null) throw new ArgumentNullException("_DAO");
@@ -959,7 +959,7 @@ namespace Server
             }
             #endregion
         }
-        public static void UpdateIdentityKey_T_USER_ID(ref int start)
+        public void UpdateIdentityKey_T_USER_ID(ref int start)
         {
             int min = _DAO.ExecuteScalar<int>("SELECT MIN(`ID`) FROM `T_USER`;");
             int max = _DAO.ExecuteScalar<int>("SELECT MAX(`ID`) FROM `T_USER`;");
@@ -978,7 +978,7 @@ namespace Server
             builder.AppendLine("UPDATE `T_USER` SET `ID` = `ID` + @p0;");
             _DAO.ExecuteNonQuery(builder.ToString(), min);
         }
-        public static void UpdateIdentityKey_T_CENTER_USER_ID(ref int start)
+        public void UpdateIdentityKey_T_CENTER_USER_ID(ref int start)
         {
             int min = _DAO.ExecuteScalar<int>("SELECT MIN(`ID`) FROM `T_CENTER_USER`;");
             int max = _DAO.ExecuteScalar<int>("SELECT MAX(`ID`) FROM `T_CENTER_USER`;");
@@ -997,7 +997,7 @@ namespace Server
             builder.AppendLine("UPDATE `T_CENTER_USER` SET `ID` = `ID` + @p0;");
             _DAO.ExecuteNonQuery(builder.ToString(), min);
         }
-        public static void UpdateIdentityKey_T_OPLog_ID(ref int start)
+        public void UpdateIdentityKey_T_OPLog_ID(ref int start)
         {
             int min = _DAO.ExecuteScalar<int>("SELECT MIN(`ID`) FROM `T_OPLog`;");
             int max = _DAO.ExecuteScalar<int>("SELECT MAX(`ID`) FROM `T_OPLog`;");
@@ -1016,11 +1016,24 @@ namespace Server
             builder.AppendLine("UPDATE `T_OPLog` SET `ID` = `ID` + @p0;");
             _DAO.ExecuteNonQuery(builder.ToString(), min);
         }
-        public partial class _T_USER : T_USER
+        
+        private ___T_USER __insT_USER;
+        public ___T_USER _T_USER
         {
-            public static ET_USER[] FIELD_ALL = { ET_USER.Platform, ET_USER.ID, ET_USER.RegisterTime, ET_USER.Token, ET_USER.Account, ET_USER.Password, ET_USER.Phone, ET_USER.Name, ET_USER.LastLoginTime };
-            public static ET_USER[] FIELD_UPDATE = { ET_USER.Platform, ET_USER.RegisterTime, ET_USER.Token, ET_USER.Account, ET_USER.Password, ET_USER.Phone, ET_USER.Name, ET_USER.LastLoginTime };
-            public static ET_USER[] NoNeedField(params ET_USER[] noNeed)
+            get
+            {
+                if (__insT_USER == null) __insT_USER = new ___T_USER(this);
+                return __insT_USER;
+            }
+        }
+        public class ___T_USER
+        {
+            private _DB __DB;
+            public _DATABASE.Database _DAO { get { return __DB._DAO; } }
+            internal ___T_USER(_DB ___db) { this.__DB = ___db; }
+            public ET_USER[] FIELD_ALL = { ET_USER.Platform, ET_USER.ID, ET_USER.RegisterTime, ET_USER.Token, ET_USER.Account, ET_USER.Password, ET_USER.Phone, ET_USER.Name, ET_USER.LastLoginTime };
+            public ET_USER[] FIELD_UPDATE = { ET_USER.Platform, ET_USER.RegisterTime, ET_USER.Token, ET_USER.Account, ET_USER.Password, ET_USER.Phone, ET_USER.Name, ET_USER.LastLoginTime };
+            public ET_USER[] NoNeedField(params ET_USER[] noNeed)
             {
                 if (noNeed.Length == 0) return FIELD_ALL;
                 List<ET_USER> list = new List<ET_USER>(FIELD_ALL.Length);
@@ -1030,29 +1043,30 @@ namespace Server
                 }
                 return list.ToArray();
             }
-            public static int FieldCount { get { return FIELD_ALL.Length; } }
+            public int FieldCount { get { return FIELD_ALL.Length; } }
             
-            public static T_USER Read(IDataReader reader)
+            public T_USER Read(IDataReader reader)
             {
                 return Read(reader, 0, FieldCount);
             }
-            public static T_USER Read(IDataReader reader, int offset)
+            public T_USER Read(IDataReader reader, int offset)
             {
                 return Read(reader, offset, FieldCount);
             }
-            public static T_USER Read(IDataReader reader, int offset, int fieldCount)
+            public T_USER Read(IDataReader reader, int offset, int fieldCount)
             {
                 return _DATABASE.ReadObject<T_USER>(reader, offset, fieldCount);
             }
-            public static void MultiReadPrepare(IDataReader reader, int offset, int fieldCount, out List<PropertyInfo> properties, out List<FieldInfo> fields, ref int[] indices)
+            public void MultiReadPrepare(IDataReader reader, int offset, int fieldCount, out List<PropertyInfo> properties, out List<FieldInfo> fields, ref int[] indices)
             {
                 _DATABASE.MultiReadPrepare(reader, typeof(T_USER), offset, fieldCount, out properties, out fields, ref indices);
             }
-            public static T_USER MultiRead(IDataReader reader, int offset, int fieldCount, List<PropertyInfo> properties, List<FieldInfo> fields, int[] indices)
+            public T_USER MultiRead(IDataReader reader, int offset, int fieldCount, List<PropertyInfo> properties, List<FieldInfo> fields, int[] indices)
             {
-                return _DATABASE.MultiRead<T_USER>(reader, offset, fieldCount, properties, fields, indices);
+                return _DATABASE.MultiRead<T_USER>(reader, offset, fieldCount, properties, fields, indices)
+                ;
             }
-            public static void GetInsertSQL(T_USER target, StringBuilder builder, List<object> values)
+            public void GetInsertSQL(T_USER target, StringBuilder builder, List<object> values)
             {
                 int index = values.Count;
                 builder.AppendFormat("INSERT `T_USER`(`Platform`, `RegisterTime`, `Token`, `Account`, `Password`, `Phone`, `Name`, `LastLoginTime`) VALUES(");
@@ -1071,7 +1085,7 @@ namespace Server
                 values.Add(target.Name);
                 values.Add(target.LastLoginTime);
             }
-            public static int Insert(T_USER target)
+            public int Insert(T_USER target)
             {
                 StringBuilder builder = new StringBuilder();
                 List<object> values = new List<object>(9);
@@ -1080,21 +1094,21 @@ namespace Server
                 target.ID = _DAO.SelectValue<int>(builder.ToString(), values.ToArray());
                 return target.ID;
             }
-            public static void GetDeleteSQL(int ID, StringBuilder builder, List<object> values)
+            public void GetDeleteSQL(int ID, StringBuilder builder, List<object> values)
             {
                 int index = values.Count;
                 builder.AppendFormat("DELETE FROM `T_USER` WHERE `ID` = @p{0};", index++);
                 values.Add(ID);
             }
-            public static int Delete(int ID)
+            public int Delete(int ID)
             {
                 return _DAO.ExecuteNonQuery("DELETE FROM `T_USER` WHERE `ID` = @p0", ID);
             }
-            public static int DeleteByPlatform(string Platform)
+            public int DeleteByPlatform(string Platform)
             {
                 return _DAO.ExecuteNonQuery("DELETE FROM `T_USER` WHERE `Platform` = @p0;", Platform);
             }
-            public static void GetUpdateSQL(T_USER target, string condition, StringBuilder builder, List<object> values, params ET_USER[] fields)
+            public void GetUpdateSQL(T_USER target, string condition, StringBuilder builder, List<object> values, params ET_USER[] fields)
             {
                 int index = values.Count;
                 bool all = fields.Length == 0 || fields == FIELD_UPDATE;
@@ -1150,14 +1164,14 @@ namespace Server
                 builder.AppendLine(";");
             }
             /// <summary>condition that 'where' or 'join' without ';'</summary>
-            public static int Update(T_USER target, string condition, params ET_USER[] fields)
+            public int Update(T_USER target, string condition, params ET_USER[] fields)
             {
                 StringBuilder builder = new StringBuilder();
                 List<object> values = new List<object>(fields.Length + 1);
                 GetUpdateSQL(target, condition, builder, values, fields);
                 return _DAO.ExecuteNonQuery(builder.ToString(), values.ToArray());
             }
-            public static void GetSelectField(string tableName, StringBuilder builder, params ET_USER[] fields)
+            public void GetSelectField(string tableName, StringBuilder builder, params ET_USER[] fields)
             {
                 if (string.IsNullOrEmpty(tableName)) tableName = "`T_USER`";
                 int count = fields == null ? 0 : fields.Length;
@@ -1173,7 +1187,7 @@ namespace Server
                     if (i != count) builder.Append(",");
                 }
             }
-            public static StringBuilder GetSelectSQL(params ET_USER[] fields)
+            public StringBuilder GetSelectSQL(params ET_USER[] fields)
             {
                 StringBuilder builder = new StringBuilder();
                 builder.AppendLine("SELECT ");
@@ -1181,7 +1195,7 @@ namespace Server
                 builder.AppendLine(" FROM `T_USER`");
                 return builder;
             }
-            public static T_USER Select(int __ID, params ET_USER[] fields)
+            public T_USER Select(int __ID, params ET_USER[] fields)
             {
                 StringBuilder builder = GetSelectSQL(fields);
                 builder.Append(" WHERE `ID` = @p0;");
@@ -1192,22 +1206,22 @@ namespace Server
                 }
                 return ret;
             }
-            public static T_USER Select(ET_USER[] fields, string condition, params object[] param)
+            public T_USER Select(ET_USER[] fields, string condition, params object[] param)
             {
                 StringBuilder builder = GetSelectSQL(fields);
                 if (!string.IsNullOrEmpty(condition)) builder.Append(" {0}", condition);
                 builder.Append(';');
                 return _DAO.SelectObject<T_USER>(builder.ToString(), param);
             }
-            public static bool Exists(int __ID)
+            public bool Exists(int __ID)
             {
                 return _DAO.ExecuteScalar<bool>("SELECT EXISTS(SELECT 1 FROM `T_USER` WHERE `ID` = @p0)", __ID);
             }
-            public static bool Exists2(string condition, params object[] param)
+            public bool Exists2(string condition, params object[] param)
             {
                 return _DAO.ExecuteScalar<bool>(string.Format("SELECT EXISTS(SELECT 1 FROM `T_USER` {0})", condition), param);
             }
-            public static List<T_USER> SelectMultiple(ET_USER[] fields, string condition, params object[] param)
+            public List<T_USER> SelectMultiple(ET_USER[] fields, string condition, params object[] param)
             {
                 StringBuilder builder;
                 if (fields == null || fields.Length == 0) builder = new StringBuilder("SELECT * FROM T_USER");
@@ -1216,7 +1230,7 @@ namespace Server
                 builder.Append(';');
                 return _DAO.SelectObjects<T_USER>(builder.ToString(), param);
             }
-            public static List<T_USER> SelectMultipleByPlatform(ET_USER[] fields, string Platform, string conditionAfterWhere, params object[] param)
+            public List<T_USER> SelectMultipleByPlatform(ET_USER[] fields, string Platform, string conditionAfterWhere, params object[] param)
             {
                 StringBuilder builder = GetSelectSQL(fields);
                 builder.AppendFormat(" WHERE `Platform` = @p{0}", param.Length + 0);
@@ -1225,21 +1239,34 @@ namespace Server
                 if (param.Length == 0) return _DAO.SelectObjects<T_USER>(builder.ToString(), Platform);
                 else return _DAO.SelectObjects<T_USER>(builder.ToString(), param.Add(Platform));
             }
-            public static PagedModel<T_USER> SelectPages(string __where, ET_USER[] fields, string conditionAfterWhere, int page, int pageSize, params object[] param)
+            public PagedModel<T_USER> SelectPages(string __where, ET_USER[] fields, string conditionAfterWhere, int page, int pageSize, params object[] param)
             {
                 var ret = SelectPages<T_USER>(__where, GetSelectSQL(fields).ToString(), conditionAfterWhere, page, pageSize, param);
                 return ret;
             }
-            public static PagedModel<T> SelectPages<T>(string __where, string selectSQL, string conditionAfterWhere, int page, int pageSize, params object[] param) where T : new()
+            public PagedModel<T> SelectPages<T>(string __where, string selectSQL, string conditionAfterWhere, int page, int pageSize, params object[] param) where T : new()
             {
                 return _DB.SelectPages<T>(_DAO, "SELECT count(`T_USER`.`Platform`) FROM `T_USER`", __where, selectSQL, conditionAfterWhere, page, pageSize, param);
             }
         }
-        public partial class _T_CENTER_USER : T_CENTER_USER
+        
+        private ___T_CENTER_USER __insT_CENTER_USER;
+        public ___T_CENTER_USER _T_CENTER_USER
         {
-            public static ET_CENTER_USER[] FIELD_ALL = { ET_CENTER_USER.ID, ET_CENTER_USER.RegisterTime, ET_CENTER_USER.Token, ET_CENTER_USER.Account, ET_CENTER_USER.Password, ET_CENTER_USER.Phone, ET_CENTER_USER.Name, ET_CENTER_USER.LastLoginTime };
-            public static ET_CENTER_USER[] FIELD_UPDATE = { ET_CENTER_USER.RegisterTime, ET_CENTER_USER.Token, ET_CENTER_USER.Account, ET_CENTER_USER.Password, ET_CENTER_USER.Phone, ET_CENTER_USER.Name, ET_CENTER_USER.LastLoginTime };
-            public static ET_CENTER_USER[] NoNeedField(params ET_CENTER_USER[] noNeed)
+            get
+            {
+                if (__insT_CENTER_USER == null) __insT_CENTER_USER = new ___T_CENTER_USER(this);
+                return __insT_CENTER_USER;
+            }
+        }
+        public class ___T_CENTER_USER
+        {
+            private _DB __DB;
+            public _DATABASE.Database _DAO { get { return __DB._DAO; } }
+            internal ___T_CENTER_USER(_DB ___db) { this.__DB = ___db; }
+            public ET_CENTER_USER[] FIELD_ALL = { ET_CENTER_USER.ID, ET_CENTER_USER.RegisterTime, ET_CENTER_USER.Token, ET_CENTER_USER.Account, ET_CENTER_USER.Password, ET_CENTER_USER.Phone, ET_CENTER_USER.Name, ET_CENTER_USER.LastLoginTime };
+            public ET_CENTER_USER[] FIELD_UPDATE = { ET_CENTER_USER.RegisterTime, ET_CENTER_USER.Token, ET_CENTER_USER.Account, ET_CENTER_USER.Password, ET_CENTER_USER.Phone, ET_CENTER_USER.Name, ET_CENTER_USER.LastLoginTime };
+            public ET_CENTER_USER[] NoNeedField(params ET_CENTER_USER[] noNeed)
             {
                 if (noNeed.Length == 0) return FIELD_ALL;
                 List<ET_CENTER_USER> list = new List<ET_CENTER_USER>(FIELD_ALL.Length);
@@ -1249,29 +1276,30 @@ namespace Server
                 }
                 return list.ToArray();
             }
-            public static int FieldCount { get { return FIELD_ALL.Length; } }
+            public int FieldCount { get { return FIELD_ALL.Length; } }
             
-            public static T_CENTER_USER Read(IDataReader reader)
+            public T_CENTER_USER Read(IDataReader reader)
             {
                 return Read(reader, 0, FieldCount);
             }
-            public static T_CENTER_USER Read(IDataReader reader, int offset)
+            public T_CENTER_USER Read(IDataReader reader, int offset)
             {
                 return Read(reader, offset, FieldCount);
             }
-            public static T_CENTER_USER Read(IDataReader reader, int offset, int fieldCount)
+            public T_CENTER_USER Read(IDataReader reader, int offset, int fieldCount)
             {
                 return _DATABASE.ReadObject<T_CENTER_USER>(reader, offset, fieldCount);
             }
-            public static void MultiReadPrepare(IDataReader reader, int offset, int fieldCount, out List<PropertyInfo> properties, out List<FieldInfo> fields, ref int[] indices)
+            public void MultiReadPrepare(IDataReader reader, int offset, int fieldCount, out List<PropertyInfo> properties, out List<FieldInfo> fields, ref int[] indices)
             {
                 _DATABASE.MultiReadPrepare(reader, typeof(T_CENTER_USER), offset, fieldCount, out properties, out fields, ref indices);
             }
-            public static T_CENTER_USER MultiRead(IDataReader reader, int offset, int fieldCount, List<PropertyInfo> properties, List<FieldInfo> fields, int[] indices)
+            public T_CENTER_USER MultiRead(IDataReader reader, int offset, int fieldCount, List<PropertyInfo> properties, List<FieldInfo> fields, int[] indices)
             {
-                return _DATABASE.MultiRead<T_CENTER_USER>(reader, offset, fieldCount, properties, fields, indices);
+                return _DATABASE.MultiRead<T_CENTER_USER>(reader, offset, fieldCount, properties, fields, indices)
+                ;
             }
-            public static void GetInsertSQL(T_CENTER_USER target, StringBuilder builder, List<object> values)
+            public void GetInsertSQL(T_CENTER_USER target, StringBuilder builder, List<object> values)
             {
                 int index = values.Count;
                 builder.AppendFormat("INSERT `T_CENTER_USER`(`RegisterTime`, `Token`, `Account`, `Password`, `Phone`, `Name`, `LastLoginTime`) VALUES(");
@@ -1289,7 +1317,7 @@ namespace Server
                 values.Add(target.Name);
                 values.Add(target.LastLoginTime);
             }
-            public static int Insert(T_CENTER_USER target)
+            public int Insert(T_CENTER_USER target)
             {
                 StringBuilder builder = new StringBuilder();
                 List<object> values = new List<object>(8);
@@ -1298,17 +1326,17 @@ namespace Server
                 target.ID = _DAO.SelectValue<int>(builder.ToString(), values.ToArray());
                 return target.ID;
             }
-            public static void GetDeleteSQL(int ID, StringBuilder builder, List<object> values)
+            public void GetDeleteSQL(int ID, StringBuilder builder, List<object> values)
             {
                 int index = values.Count;
                 builder.AppendFormat("DELETE FROM `T_CENTER_USER` WHERE `ID` = @p{0};", index++);
                 values.Add(ID);
             }
-            public static int Delete(int ID)
+            public int Delete(int ID)
             {
                 return _DAO.ExecuteNonQuery("DELETE FROM `T_CENTER_USER` WHERE `ID` = @p0", ID);
             }
-            public static void GetUpdateSQL(T_CENTER_USER target, string condition, StringBuilder builder, List<object> values, params ET_CENTER_USER[] fields)
+            public void GetUpdateSQL(T_CENTER_USER target, string condition, StringBuilder builder, List<object> values, params ET_CENTER_USER[] fields)
             {
                 int index = values.Count;
                 bool all = fields.Length == 0 || fields == FIELD_UPDATE;
@@ -1359,14 +1387,14 @@ namespace Server
                 builder.AppendLine(";");
             }
             /// <summary>condition that 'where' or 'join' without ';'</summary>
-            public static int Update(T_CENTER_USER target, string condition, params ET_CENTER_USER[] fields)
+            public int Update(T_CENTER_USER target, string condition, params ET_CENTER_USER[] fields)
             {
                 StringBuilder builder = new StringBuilder();
                 List<object> values = new List<object>(fields.Length + 1);
                 GetUpdateSQL(target, condition, builder, values, fields);
                 return _DAO.ExecuteNonQuery(builder.ToString(), values.ToArray());
             }
-            public static void GetSelectField(string tableName, StringBuilder builder, params ET_CENTER_USER[] fields)
+            public void GetSelectField(string tableName, StringBuilder builder, params ET_CENTER_USER[] fields)
             {
                 if (string.IsNullOrEmpty(tableName)) tableName = "`T_CENTER_USER`";
                 int count = fields == null ? 0 : fields.Length;
@@ -1382,7 +1410,7 @@ namespace Server
                     if (i != count) builder.Append(",");
                 }
             }
-            public static StringBuilder GetSelectSQL(params ET_CENTER_USER[] fields)
+            public StringBuilder GetSelectSQL(params ET_CENTER_USER[] fields)
             {
                 StringBuilder builder = new StringBuilder();
                 builder.AppendLine("SELECT ");
@@ -1390,7 +1418,7 @@ namespace Server
                 builder.AppendLine(" FROM `T_CENTER_USER`");
                 return builder;
             }
-            public static T_CENTER_USER Select(int __ID, params ET_CENTER_USER[] fields)
+            public T_CENTER_USER Select(int __ID, params ET_CENTER_USER[] fields)
             {
                 StringBuilder builder = GetSelectSQL(fields);
                 builder.Append(" WHERE `ID` = @p0;");
@@ -1401,22 +1429,22 @@ namespace Server
                 }
                 return ret;
             }
-            public static T_CENTER_USER Select(ET_CENTER_USER[] fields, string condition, params object[] param)
+            public T_CENTER_USER Select(ET_CENTER_USER[] fields, string condition, params object[] param)
             {
                 StringBuilder builder = GetSelectSQL(fields);
                 if (!string.IsNullOrEmpty(condition)) builder.Append(" {0}", condition);
                 builder.Append(';');
                 return _DAO.SelectObject<T_CENTER_USER>(builder.ToString(), param);
             }
-            public static bool Exists(int __ID)
+            public bool Exists(int __ID)
             {
                 return _DAO.ExecuteScalar<bool>("SELECT EXISTS(SELECT 1 FROM `T_CENTER_USER` WHERE `ID` = @p0)", __ID);
             }
-            public static bool Exists2(string condition, params object[] param)
+            public bool Exists2(string condition, params object[] param)
             {
                 return _DAO.ExecuteScalar<bool>(string.Format("SELECT EXISTS(SELECT 1 FROM `T_CENTER_USER` {0})", condition), param);
             }
-            public static List<T_CENTER_USER> SelectMultiple(ET_CENTER_USER[] fields, string condition, params object[] param)
+            public List<T_CENTER_USER> SelectMultiple(ET_CENTER_USER[] fields, string condition, params object[] param)
             {
                 StringBuilder builder;
                 if (fields == null || fields.Length == 0) builder = new StringBuilder("SELECT * FROM T_CENTER_USER");
@@ -1425,21 +1453,34 @@ namespace Server
                 builder.Append(';');
                 return _DAO.SelectObjects<T_CENTER_USER>(builder.ToString(), param);
             }
-            public static PagedModel<T_CENTER_USER> SelectPages(string __where, ET_CENTER_USER[] fields, string conditionAfterWhere, int page, int pageSize, params object[] param)
+            public PagedModel<T_CENTER_USER> SelectPages(string __where, ET_CENTER_USER[] fields, string conditionAfterWhere, int page, int pageSize, params object[] param)
             {
                 var ret = SelectPages<T_CENTER_USER>(__where, GetSelectSQL(fields).ToString(), conditionAfterWhere, page, pageSize, param);
                 return ret;
             }
-            public static PagedModel<T> SelectPages<T>(string __where, string selectSQL, string conditionAfterWhere, int page, int pageSize, params object[] param) where T : new()
+            public PagedModel<T> SelectPages<T>(string __where, string selectSQL, string conditionAfterWhere, int page, int pageSize, params object[] param) where T : new()
             {
                 return _DB.SelectPages<T>(_DAO, "SELECT count(`T_CENTER_USER`.`ID`) FROM `T_CENTER_USER`", __where, selectSQL, conditionAfterWhere, page, pageSize, param);
             }
         }
-        public partial class _T_OPLog : T_OPLog
+        
+        private ___T_OPLog __insT_OPLog;
+        public ___T_OPLog _T_OPLog
         {
-            public static ET_OPLog[] FIELD_ALL = { ET_OPLog.ID, ET_OPLog.PID, ET_OPLog.Operation, ET_OPLog.Time, ET_OPLog.Way, ET_OPLog.Sign, ET_OPLog.Statistic, ET_OPLog.Detail };
-            public static ET_OPLog[] FIELD_UPDATE = { ET_OPLog.PID, ET_OPLog.Operation, ET_OPLog.Time, ET_OPLog.Way, ET_OPLog.Sign, ET_OPLog.Statistic, ET_OPLog.Detail };
-            public static ET_OPLog[] NoNeedField(params ET_OPLog[] noNeed)
+            get
+            {
+                if (__insT_OPLog == null) __insT_OPLog = new ___T_OPLog(this);
+                return __insT_OPLog;
+            }
+        }
+        public class ___T_OPLog
+        {
+            private _DB __DB;
+            public _DATABASE.Database _DAO { get { return __DB._DAO; } }
+            internal ___T_OPLog(_DB ___db) { this.__DB = ___db; }
+            public ET_OPLog[] FIELD_ALL = { ET_OPLog.ID, ET_OPLog.PID, ET_OPLog.Operation, ET_OPLog.Time, ET_OPLog.Way, ET_OPLog.Sign, ET_OPLog.Statistic, ET_OPLog.Detail };
+            public ET_OPLog[] FIELD_UPDATE = { ET_OPLog.PID, ET_OPLog.Operation, ET_OPLog.Time, ET_OPLog.Way, ET_OPLog.Sign, ET_OPLog.Statistic, ET_OPLog.Detail };
+            public ET_OPLog[] NoNeedField(params ET_OPLog[] noNeed)
             {
                 if (noNeed.Length == 0) return FIELD_ALL;
                 List<ET_OPLog> list = new List<ET_OPLog>(FIELD_ALL.Length);
@@ -1449,29 +1490,30 @@ namespace Server
                 }
                 return list.ToArray();
             }
-            public static int FieldCount { get { return FIELD_ALL.Length; } }
+            public int FieldCount { get { return FIELD_ALL.Length; } }
             
-            public static T_OPLog Read(IDataReader reader)
+            public T_OPLog Read(IDataReader reader)
             {
                 return Read(reader, 0, FieldCount);
             }
-            public static T_OPLog Read(IDataReader reader, int offset)
+            public T_OPLog Read(IDataReader reader, int offset)
             {
                 return Read(reader, offset, FieldCount);
             }
-            public static T_OPLog Read(IDataReader reader, int offset, int fieldCount)
+            public T_OPLog Read(IDataReader reader, int offset, int fieldCount)
             {
                 return _DATABASE.ReadObject<T_OPLog>(reader, offset, fieldCount);
             }
-            public static void MultiReadPrepare(IDataReader reader, int offset, int fieldCount, out List<PropertyInfo> properties, out List<FieldInfo> fields, ref int[] indices)
+            public void MultiReadPrepare(IDataReader reader, int offset, int fieldCount, out List<PropertyInfo> properties, out List<FieldInfo> fields, ref int[] indices)
             {
                 _DATABASE.MultiReadPrepare(reader, typeof(T_OPLog), offset, fieldCount, out properties, out fields, ref indices);
             }
-            public static T_OPLog MultiRead(IDataReader reader, int offset, int fieldCount, List<PropertyInfo> properties, List<FieldInfo> fields, int[] indices)
+            public T_OPLog MultiRead(IDataReader reader, int offset, int fieldCount, List<PropertyInfo> properties, List<FieldInfo> fields, int[] indices)
             {
-                return _DATABASE.MultiRead<T_OPLog>(reader, offset, fieldCount, properties, fields, indices);
+                return _DATABASE.MultiRead<T_OPLog>(reader, offset, fieldCount, properties, fields, indices)
+                ;
             }
-            public static void GetInsertSQL(T_OPLog target, StringBuilder builder, List<object> values)
+            public void GetInsertSQL(T_OPLog target, StringBuilder builder, List<object> values)
             {
                 int index = values.Count;
                 builder.AppendFormat("INSERT `T_OPLog`(`PID`, `Operation`, `Time`, `Way`, `Sign`, `Statistic`, `Detail`) VALUES(");
@@ -1489,7 +1531,7 @@ namespace Server
                 values.Add(target.Statistic);
                 values.Add(target.Detail);
             }
-            public static int Insert(T_OPLog target)
+            public int Insert(T_OPLog target)
             {
                 StringBuilder builder = new StringBuilder();
                 List<object> values = new List<object>(8);
@@ -1498,33 +1540,33 @@ namespace Server
                 target.ID = _DAO.SelectValue<int>(builder.ToString(), values.ToArray());
                 return target.ID;
             }
-            public static void GetDeleteSQL(int ID, StringBuilder builder, List<object> values)
+            public void GetDeleteSQL(int ID, StringBuilder builder, List<object> values)
             {
                 int index = values.Count;
                 builder.AppendFormat("DELETE FROM `T_OPLog` WHERE `ID` = @p{0};", index++);
                 values.Add(ID);
             }
-            public static int Delete(int ID)
+            public int Delete(int ID)
             {
                 return _DAO.ExecuteNonQuery("DELETE FROM `T_OPLog` WHERE `ID` = @p0", ID);
             }
-            public static int DeleteByPID(int PID)
+            public int DeleteByPID(int PID)
             {
                 return _DAO.ExecuteNonQuery("DELETE FROM `T_OPLog` WHERE `PID` = @p0;", PID);
             }
-            public static int DeleteByOperation(string Operation)
+            public int DeleteByOperation(string Operation)
             {
                 return _DAO.ExecuteNonQuery("DELETE FROM `T_OPLog` WHERE `Operation` = @p0;", Operation);
             }
-            public static int DeleteByWay(string Way)
+            public int DeleteByWay(string Way)
             {
                 return _DAO.ExecuteNonQuery("DELETE FROM `T_OPLog` WHERE `Way` = @p0;", Way);
             }
-            public static int DeleteBySign(int Sign)
+            public int DeleteBySign(int Sign)
             {
                 return _DAO.ExecuteNonQuery("DELETE FROM `T_OPLog` WHERE `Sign` = @p0;", Sign);
             }
-            public static void GetUpdateSQL(T_OPLog target, string condition, StringBuilder builder, List<object> values, params ET_OPLog[] fields)
+            public void GetUpdateSQL(T_OPLog target, string condition, StringBuilder builder, List<object> values, params ET_OPLog[] fields)
             {
                 int index = values.Count;
                 bool all = fields.Length == 0 || fields == FIELD_UPDATE;
@@ -1575,14 +1617,14 @@ namespace Server
                 builder.AppendLine(";");
             }
             /// <summary>condition that 'where' or 'join' without ';'</summary>
-            public static int Update(T_OPLog target, string condition, params ET_OPLog[] fields)
+            public int Update(T_OPLog target, string condition, params ET_OPLog[] fields)
             {
                 StringBuilder builder = new StringBuilder();
                 List<object> values = new List<object>(fields.Length + 1);
                 GetUpdateSQL(target, condition, builder, values, fields);
                 return _DAO.ExecuteNonQuery(builder.ToString(), values.ToArray());
             }
-            public static void GetSelectField(string tableName, StringBuilder builder, params ET_OPLog[] fields)
+            public void GetSelectField(string tableName, StringBuilder builder, params ET_OPLog[] fields)
             {
                 if (string.IsNullOrEmpty(tableName)) tableName = "`T_OPLog`";
                 int count = fields == null ? 0 : fields.Length;
@@ -1598,7 +1640,7 @@ namespace Server
                     if (i != count) builder.Append(",");
                 }
             }
-            public static StringBuilder GetSelectSQL(params ET_OPLog[] fields)
+            public StringBuilder GetSelectSQL(params ET_OPLog[] fields)
             {
                 StringBuilder builder = new StringBuilder();
                 builder.AppendLine("SELECT ");
@@ -1606,7 +1648,7 @@ namespace Server
                 builder.AppendLine(" FROM `T_OPLog`");
                 return builder;
             }
-            public static T_OPLog Select(int __ID, params ET_OPLog[] fields)
+            public T_OPLog Select(int __ID, params ET_OPLog[] fields)
             {
                 StringBuilder builder = GetSelectSQL(fields);
                 builder.Append(" WHERE `ID` = @p0;");
@@ -1617,22 +1659,22 @@ namespace Server
                 }
                 return ret;
             }
-            public static T_OPLog Select(ET_OPLog[] fields, string condition, params object[] param)
+            public T_OPLog Select(ET_OPLog[] fields, string condition, params object[] param)
             {
                 StringBuilder builder = GetSelectSQL(fields);
                 if (!string.IsNullOrEmpty(condition)) builder.Append(" {0}", condition);
                 builder.Append(';');
                 return _DAO.SelectObject<T_OPLog>(builder.ToString(), param);
             }
-            public static bool Exists(int __ID)
+            public bool Exists(int __ID)
             {
                 return _DAO.ExecuteScalar<bool>("SELECT EXISTS(SELECT 1 FROM `T_OPLog` WHERE `ID` = @p0)", __ID);
             }
-            public static bool Exists2(string condition, params object[] param)
+            public bool Exists2(string condition, params object[] param)
             {
                 return _DAO.ExecuteScalar<bool>(string.Format("SELECT EXISTS(SELECT 1 FROM `T_OPLog` {0})", condition), param);
             }
-            public static List<T_OPLog> SelectMultiple(ET_OPLog[] fields, string condition, params object[] param)
+            public List<T_OPLog> SelectMultiple(ET_OPLog[] fields, string condition, params object[] param)
             {
                 StringBuilder builder;
                 if (fields == null || fields.Length == 0) builder = new StringBuilder("SELECT * FROM T_OPLog");
@@ -1641,7 +1683,7 @@ namespace Server
                 builder.Append(';');
                 return _DAO.SelectObjects<T_OPLog>(builder.ToString(), param);
             }
-            public static List<T_OPLog> SelectMultipleByPID(ET_OPLog[] fields, int PID, string conditionAfterWhere, params object[] param)
+            public List<T_OPLog> SelectMultipleByPID(ET_OPLog[] fields, int PID, string conditionAfterWhere, params object[] param)
             {
                 StringBuilder builder = GetSelectSQL(fields);
                 builder.AppendFormat(" WHERE `PID` = @p{0}", param.Length + 0);
@@ -1650,7 +1692,7 @@ namespace Server
                 if (param.Length == 0) return _DAO.SelectObjects<T_OPLog>(builder.ToString(), PID);
                 else return _DAO.SelectObjects<T_OPLog>(builder.ToString(), param.Add(PID));
             }
-            public static List<T_OPLog> SelectMultipleByOperation(ET_OPLog[] fields, string Operation, string conditionAfterWhere, params object[] param)
+            public List<T_OPLog> SelectMultipleByOperation(ET_OPLog[] fields, string Operation, string conditionAfterWhere, params object[] param)
             {
                 StringBuilder builder = GetSelectSQL(fields);
                 builder.AppendFormat(" WHERE `Operation` = @p{0}", param.Length + 0);
@@ -1659,7 +1701,7 @@ namespace Server
                 if (param.Length == 0) return _DAO.SelectObjects<T_OPLog>(builder.ToString(), Operation);
                 else return _DAO.SelectObjects<T_OPLog>(builder.ToString(), param.Add(Operation));
             }
-            public static List<T_OPLog> SelectMultipleByWay(ET_OPLog[] fields, string Way, string conditionAfterWhere, params object[] param)
+            public List<T_OPLog> SelectMultipleByWay(ET_OPLog[] fields, string Way, string conditionAfterWhere, params object[] param)
             {
                 StringBuilder builder = GetSelectSQL(fields);
                 builder.AppendFormat(" WHERE `Way` = @p{0}", param.Length + 0);
@@ -1668,7 +1710,7 @@ namespace Server
                 if (param.Length == 0) return _DAO.SelectObjects<T_OPLog>(builder.ToString(), Way);
                 else return _DAO.SelectObjects<T_OPLog>(builder.ToString(), param.Add(Way));
             }
-            public static List<T_OPLog> SelectMultipleBySign(ET_OPLog[] fields, int Sign, string conditionAfterWhere, params object[] param)
+            public List<T_OPLog> SelectMultipleBySign(ET_OPLog[] fields, int Sign, string conditionAfterWhere, params object[] param)
             {
                 StringBuilder builder = GetSelectSQL(fields);
                 builder.AppendFormat(" WHERE `Sign` = @p{0}", param.Length + 0);
@@ -1677,7 +1719,7 @@ namespace Server
                 if (param.Length == 0) return _DAO.SelectObjects<T_OPLog>(builder.ToString(), Sign);
                 else return _DAO.SelectObjects<T_OPLog>(builder.ToString(), param.Add(Sign));
             }
-            public static List<T_OPLog> SelectMultipleByPID_Operation(ET_OPLog[] fields, int PID, string Operation, string conditionAfterWhere, params object[] param)
+            public List<T_OPLog> SelectMultipleByPID_Operation(ET_OPLog[] fields, int PID, string Operation, string conditionAfterWhere, params object[] param)
             {
                 StringBuilder builder = GetSelectSQL(fields);
                 builder.AppendFormat(" WHERE `PID` = @p{0} AND `Operation` = @p{1}", param.Length + 0, param.Length + 1);
@@ -1686,7 +1728,7 @@ namespace Server
                 if (param.Length == 0) return _DAO.SelectObjects<T_OPLog>(builder.ToString(), PID, Operation);
                 else return _DAO.SelectObjects<T_OPLog>(builder.ToString(), param.Add(PID, Operation));
             }
-            public static List<T_OPLog> SelectMultipleByPID_Way(ET_OPLog[] fields, int PID, string Way, string conditionAfterWhere, params object[] param)
+            public List<T_OPLog> SelectMultipleByPID_Way(ET_OPLog[] fields, int PID, string Way, string conditionAfterWhere, params object[] param)
             {
                 StringBuilder builder = GetSelectSQL(fields);
                 builder.AppendFormat(" WHERE `PID` = @p{0} AND `Way` = @p{1}", param.Length + 0, param.Length + 1);
@@ -1695,7 +1737,7 @@ namespace Server
                 if (param.Length == 0) return _DAO.SelectObjects<T_OPLog>(builder.ToString(), PID, Way);
                 else return _DAO.SelectObjects<T_OPLog>(builder.ToString(), param.Add(PID, Way));
             }
-            public static List<T_OPLog> SelectMultipleByPID_Sign(ET_OPLog[] fields, int PID, int Sign, string conditionAfterWhere, params object[] param)
+            public List<T_OPLog> SelectMultipleByPID_Sign(ET_OPLog[] fields, int PID, int Sign, string conditionAfterWhere, params object[] param)
             {
                 StringBuilder builder = GetSelectSQL(fields);
                 builder.AppendFormat(" WHERE `PID` = @p{0} AND `Sign` = @p{1}", param.Length + 0, param.Length + 1);
@@ -1704,7 +1746,7 @@ namespace Server
                 if (param.Length == 0) return _DAO.SelectObjects<T_OPLog>(builder.ToString(), PID, Sign);
                 else return _DAO.SelectObjects<T_OPLog>(builder.ToString(), param.Add(PID, Sign));
             }
-            public static List<T_OPLog> SelectMultipleByOperation_Way(ET_OPLog[] fields, string Operation, string Way, string conditionAfterWhere, params object[] param)
+            public List<T_OPLog> SelectMultipleByOperation_Way(ET_OPLog[] fields, string Operation, string Way, string conditionAfterWhere, params object[] param)
             {
                 StringBuilder builder = GetSelectSQL(fields);
                 builder.AppendFormat(" WHERE `Operation` = @p{0} AND `Way` = @p{1}", param.Length + 0, param.Length + 1);
@@ -1713,7 +1755,7 @@ namespace Server
                 if (param.Length == 0) return _DAO.SelectObjects<T_OPLog>(builder.ToString(), Operation, Way);
                 else return _DAO.SelectObjects<T_OPLog>(builder.ToString(), param.Add(Operation, Way));
             }
-            public static List<T_OPLog> SelectMultipleByOperation_Sign(ET_OPLog[] fields, string Operation, int Sign, string conditionAfterWhere, params object[] param)
+            public List<T_OPLog> SelectMultipleByOperation_Sign(ET_OPLog[] fields, string Operation, int Sign, string conditionAfterWhere, params object[] param)
             {
                 StringBuilder builder = GetSelectSQL(fields);
                 builder.AppendFormat(" WHERE `Operation` = @p{0} AND `Sign` = @p{1}", param.Length + 0, param.Length + 1);
@@ -1722,7 +1764,7 @@ namespace Server
                 if (param.Length == 0) return _DAO.SelectObjects<T_OPLog>(builder.ToString(), Operation, Sign);
                 else return _DAO.SelectObjects<T_OPLog>(builder.ToString(), param.Add(Operation, Sign));
             }
-            public static List<T_OPLog> SelectMultipleByWay_Sign(ET_OPLog[] fields, string Way, int Sign, string conditionAfterWhere, params object[] param)
+            public List<T_OPLog> SelectMultipleByWay_Sign(ET_OPLog[] fields, string Way, int Sign, string conditionAfterWhere, params object[] param)
             {
                 StringBuilder builder = GetSelectSQL(fields);
                 builder.AppendFormat(" WHERE `Way` = @p{0} AND `Sign` = @p{1}", param.Length + 0, param.Length + 1);
@@ -1731,7 +1773,7 @@ namespace Server
                 if (param.Length == 0) return _DAO.SelectObjects<T_OPLog>(builder.ToString(), Way, Sign);
                 else return _DAO.SelectObjects<T_OPLog>(builder.ToString(), param.Add(Way, Sign));
             }
-            public static List<T_OPLog> SelectMultipleByPID_Operation_Way(ET_OPLog[] fields, int PID, string Operation, string Way, string conditionAfterWhere, params object[] param)
+            public List<T_OPLog> SelectMultipleByPID_Operation_Way(ET_OPLog[] fields, int PID, string Operation, string Way, string conditionAfterWhere, params object[] param)
             {
                 StringBuilder builder = GetSelectSQL(fields);
                 builder.AppendFormat(" WHERE `PID` = @p{0} AND `Operation` = @p{1} AND `Way` = @p{2}", param.Length + 0, param.Length + 1, param.Length + 2);
@@ -1740,7 +1782,7 @@ namespace Server
                 if (param.Length == 0) return _DAO.SelectObjects<T_OPLog>(builder.ToString(), PID, Operation, Way);
                 else return _DAO.SelectObjects<T_OPLog>(builder.ToString(), param.Add(PID, Operation, Way));
             }
-            public static List<T_OPLog> SelectMultipleByPID_Operation_Sign(ET_OPLog[] fields, int PID, string Operation, int Sign, string conditionAfterWhere, params object[] param)
+            public List<T_OPLog> SelectMultipleByPID_Operation_Sign(ET_OPLog[] fields, int PID, string Operation, int Sign, string conditionAfterWhere, params object[] param)
             {
                 StringBuilder builder = GetSelectSQL(fields);
                 builder.AppendFormat(" WHERE `PID` = @p{0} AND `Operation` = @p{1} AND `Sign` = @p{2}", param.Length + 0, param.Length + 1, param.Length + 2);
@@ -1749,7 +1791,7 @@ namespace Server
                 if (param.Length == 0) return _DAO.SelectObjects<T_OPLog>(builder.ToString(), PID, Operation, Sign);
                 else return _DAO.SelectObjects<T_OPLog>(builder.ToString(), param.Add(PID, Operation, Sign));
             }
-            public static List<T_OPLog> SelectMultipleByPID_Way_Sign(ET_OPLog[] fields, int PID, string Way, int Sign, string conditionAfterWhere, params object[] param)
+            public List<T_OPLog> SelectMultipleByPID_Way_Sign(ET_OPLog[] fields, int PID, string Way, int Sign, string conditionAfterWhere, params object[] param)
             {
                 StringBuilder builder = GetSelectSQL(fields);
                 builder.AppendFormat(" WHERE `PID` = @p{0} AND `Way` = @p{1} AND `Sign` = @p{2}", param.Length + 0, param.Length + 1, param.Length + 2);
@@ -1758,7 +1800,7 @@ namespace Server
                 if (param.Length == 0) return _DAO.SelectObjects<T_OPLog>(builder.ToString(), PID, Way, Sign);
                 else return _DAO.SelectObjects<T_OPLog>(builder.ToString(), param.Add(PID, Way, Sign));
             }
-            public static List<T_OPLog> SelectMultipleByOperation_Way_Sign(ET_OPLog[] fields, string Operation, string Way, int Sign, string conditionAfterWhere, params object[] param)
+            public List<T_OPLog> SelectMultipleByOperation_Way_Sign(ET_OPLog[] fields, string Operation, string Way, int Sign, string conditionAfterWhere, params object[] param)
             {
                 StringBuilder builder = GetSelectSQL(fields);
                 builder.AppendFormat(" WHERE `Operation` = @p{0} AND `Way` = @p{1} AND `Sign` = @p{2}", param.Length + 0, param.Length + 1, param.Length + 2);
@@ -1767,7 +1809,7 @@ namespace Server
                 if (param.Length == 0) return _DAO.SelectObjects<T_OPLog>(builder.ToString(), Operation, Way, Sign);
                 else return _DAO.SelectObjects<T_OPLog>(builder.ToString(), param.Add(Operation, Way, Sign));
             }
-            public static List<T_OPLog> SelectMultipleByPID_Operation_Way_Sign(ET_OPLog[] fields, int PID, string Operation, string Way, int Sign, string conditionAfterWhere, params object[] param)
+            public List<T_OPLog> SelectMultipleByPID_Operation_Way_Sign(ET_OPLog[] fields, int PID, string Operation, string Way, int Sign, string conditionAfterWhere, params object[] param)
             {
                 StringBuilder builder = GetSelectSQL(fields);
                 builder.AppendFormat(" WHERE `PID` = @p{0} AND `Operation` = @p{1} AND `Way` = @p{2} AND `Sign` = @p{3}", param.Length + 0, param.Length + 1, param.Length + 2, param.Length + 3);
@@ -1776,12 +1818,12 @@ namespace Server
                 if (param.Length == 0) return _DAO.SelectObjects<T_OPLog>(builder.ToString(), PID, Operation, Way, Sign);
                 else return _DAO.SelectObjects<T_OPLog>(builder.ToString(), param.Add(PID, Operation, Way, Sign));
             }
-            public static PagedModel<T_OPLog> SelectPages(string __where, ET_OPLog[] fields, string conditionAfterWhere, int page, int pageSize, params object[] param)
+            public PagedModel<T_OPLog> SelectPages(string __where, ET_OPLog[] fields, string conditionAfterWhere, int page, int pageSize, params object[] param)
             {
                 var ret = SelectPages<T_OPLog>(__where, GetSelectSQL(fields).ToString(), conditionAfterWhere, page, pageSize, param);
                 return ret;
             }
-            public static PagedModel<T> SelectPages<T>(string __where, string selectSQL, string conditionAfterWhere, int page, int pageSize, params object[] param) where T : new()
+            public PagedModel<T> SelectPages<T>(string __where, string selectSQL, string conditionAfterWhere, int page, int pageSize, params object[] param) where T : new()
             {
                 return _DB.SelectPages<T>(_DAO, "SELECT count(`T_OPLog`.`ID`) FROM `T_OPLog`", __where, selectSQL, conditionAfterWhere, page, pageSize, param);
             }
@@ -1816,13 +1858,13 @@ namespace Server
             result.PageSize = pageSize;
             db.ExecuteReader((reader) =>
             {
-                if (reader.Read()) result.Count = (int)(long)reader[0];
+                reader.Read();
+                result.Count = (int)(long)reader[0];
                 result.Models = new List<T>();
                 reader.NextResult();
                 read(reader, result.Models);
             }
             , builder.ToString(), __param);
-            result.CalcTotalPage();
             return result;
         }
         public static void MasterSlave(string masterConnString, string slaveConnStrings)

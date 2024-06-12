@@ -71,6 +71,8 @@ namespace Server
         
         void ICmd.SetDatabase(string dbconn, string dbname, bool isRebuild)
         {
+            var _DB = new _DB();
+            ImplBase._DB = _DB;
             // 设置数据库
             _DB.IsDropColumn = true;
             _DB.DatabaseName = dbname;
@@ -91,7 +93,7 @@ namespace Server
         void ICmd.Select(string sql)
         {
             _LOG.Info("查询SQL: {0}", sql);
-            _DB._DAO.ExecuteReader(reader =>
+            ImplBase._DB._DAO.ExecuteReader(reader =>
             {
                 StringBuilder builder = new StringBuilder();
                 int field = reader.FieldCount;
@@ -109,7 +111,7 @@ namespace Server
         }
         void ICmd.Update(string sql)
         {
-            _LOG.Info("更新SQL: {0}, 结果{1}", sql, _DB._DAO.ExecuteNonQuery(sql));
+            _LOG.Info("更新SQL: {0}, 结果{1}", sql, ImplBase._DB._DAO.ExecuteNonQuery(sql));
         }
 
         void ICmd.LoggerToManager()

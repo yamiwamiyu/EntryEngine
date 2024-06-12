@@ -100,17 +100,7 @@ namespace Server
         {
             Download(__context, __context.Response.ContentEncoding.GetBytes(buffer), filename, contentType);
         }
-        /// <summary>SQL语句LIKE后使用的字符串参数，例如LIKE '李%'，就是'李'.Like(false, true)</summary>
-        /// <param name="key">搜索的关键字</param>
-        /// <param name="left">开头是否使用'%'通配符</param>
-        /// <param name="right">结尾是否使用'%'通配符</param>
-        public static string Like(this string key, bool left = true, bool right = true)
-        {
-            if (string.IsNullOrEmpty(key)) return null;
-            if (left) key = "%" + key;
-            if (right) key = key + "%";
-            return key;
-        }
+        
 
         // 发送验证码
         public static void SendSMSCode(T_SMSCode sms)
