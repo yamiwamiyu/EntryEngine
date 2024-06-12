@@ -2845,7 +2845,6 @@ send(url, data, method = 'POST')
         if (event?.onopen) event.onopen(req);
         else if (this.event?.onopen) this.event.onopen(req);
         else req.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded;charset=utf-8');
-        this.event?.onopen?.(req);
         req.send(data);
     });
 },
