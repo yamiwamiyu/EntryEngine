@@ -2466,7 +2466,7 @@ return result;"
             if (type.IsValueType && type.IsNullable(out nullable))
             {
                 // Nullable<struct>
-                return TypeToTs(nullable);
+                return TypeToTs(nullable) + '?';
             }
 
             if (type == typeof(char)
@@ -2503,6 +2503,11 @@ return result;"
                 else
                     elementType = type.GetElementType();
                 return TypeToTs(elementType) + "[]";
+            }
+
+            if (type.IsGenericType)
+            {
+                return string.Format("{0}<{1}>", type.Name.Substring(0, type.Name.IndexOf("`")), string.Join(", ", type.GetGenericArguments().Select(i => GetTSType(i))));
             }
 
             return type.Name;
@@ -2612,12 +2617,22 @@ return result;"
 
             if (type.IsCustomType())
             {
+                bool generic = type.IsGenericType;
+                if (generic)
+                    type = type.GetGenericTypeDefinition();
                 var fields = type.GetFields();
                 if (fields.Length == 0)
                     return;
                 builder.AppendLine("/**");
+                if (generic)
+                {
+                    var generics = type.GetGenericArguments();
+                    Console.WriteLine("泛型" + generics.Length);
+                    foreach (var g in generics)
+                        builder.AppendLine(" * @template {0}", TypeToTs(g));
+                }
                 builder.Append(members.Find("T:" + type.Name).GetSummaryStar());
-                builder.AppendLine(" * @typedef {{Object}} {0}", type.Name);
+                builder.AppendLine(" * @typedef {{Object}} {0}", generic ? type.Name.Substring(0, type.Name.IndexOf("`")) : type.Name);
                 foreach (var field in fields)
                 {
                     builder.Append(" * @property {{{0}}} {1}", TypeToTs(field.FieldType), field.Name);
@@ -2729,7 +2744,7 @@ return result;"
                     ParameterInfo[] parameters = call[i].GetParameters();
                     bool hasAsync = asyncCB.ContainsKey(i);
 
-                    foreach (var param in parameters)
+                    foreach (var param in parameters.Concat(new ParameterInfo[] { call[i].ReturnParameter }))
                     {
                         var type = param.ParameterType;
                         if (hasAsync && param.ParameterType.IsDelegate())
