@@ -1513,6 +1513,63 @@ namespace EntryEngine.Network
     /// <summary>数据表不生成标记了此特性的字段</summary>
     [AttributeUsage(AttributeTargets.Field)]
     public class IgnoreAttribute : Attribute { }
+    /// <summary>可以用来标记字符串类型字段的具体数据库类型，提高字段效率</summary>
+    [AttributeUsage(AttributeTargets.Field)]
+    public class CharAttribute : Attribute
+    {
+        /// <summary>是否使用 NCHAR 类型，Unicode 编码存储</summary>
+        public bool N;
+        /// <summary>是否使用 VARCHAR 类型，字符串长度可变，否则将固定长度</summary>
+        public bool VAR;
+        /// <summary>是否使用 TEXT 类型，长度 255 -> </summary>
+        public bool TEXT;
+        /// <summary>字符串长度</summary>
+        public uint Length;
+
+        /// <summary>使用 VARCHAR(32)，普遍用于用户名，昵称，密码等常用字段</summary>
+        public CharAttribute() : this(false, true, false, 32)
+        {
+        }
+        /// <summary>使用 CHAR(length)，可用于手机号，GUID 等定长字段；当长度大于 32 时使用 VCHAR(length)；大于等于 255 时使用 TEXT(length)</summary>
+        public CharAttribute(uint length) : this(false, length > 32 && length < 255, length >= 255, length)
+        {
+        }
+        public CharAttribute(bool n, bool v, bool t, uint length)
+        {
+            this.N = n;
+            this.VAR = v;
+            this.TEXT = t;
+            this.Length = length;
+        }
+
+        public override string ToString()
+        {
+            if (TEXT)
+            {
+                switch (Length)
+                {
+                    case _TINYINT: return "TINYTEXT";
+                    case _MEDIUMTEXT: return "MEDIUMTEXT";
+                    case _LONGTEXT: return "LONGTEXT";
+                    default: return "TEXT";
+                }
+            }
+            StringBuilder builder = new StringBuilder();
+            if (N)
+                builder.Append("N");
+            if (VAR)
+                builder.Append("VAR");
+            builder.Append("CHAR(");
+            builder.Append(Length);
+            builder.Append(")");
+            return builder.ToString();
+        }
+
+        public const uint _TINYINT = byte.MaxValue;
+        public const uint _TEXT = ushort.MaxValue;
+        public const uint _MEDIUMTEXT = 16777215;
+        public const uint _LONGTEXT = uint.MaxValue;
+    }
     /// <summary>数据库生成标记了此特性的数据表</summary>
     [AttributeUsage(AttributeTargets.Class | AttributeTargets.Struct)]
     public class MemoryTableAttribute : Attribute
@@ -1532,6 +1589,68 @@ namespace EntryEngine.Network
     {
         /// <summary>将自己的属性拷贝给目标</summary>
         void DBCopyTo(T target);
+    }
+
+    /// <summary>基础校验器</summary>
+    [AttributeUsage(AttributeTargets.Field)]
+    public class ValidatorAttribute : Attribute
+    {
+        /// <summary>错误提示</summary>
+        public string Message;
+
+        public ValidatorAttribute() { }
+        /// <param name="msg">使用 {0} 可以替换成字段名</param>
+        public ValidatorAttribute(string msg) { this.Message = msg; }
+    }
+    /// <summary>字段自定义名字</summary>
+    [AttributeUsage(AttributeTargets.Field)]
+    public class FieldAliasAttribute : Attribute
+    {
+        /// <summary>自定义字段名</summary>
+        public string Alias;
+        public FieldAliasAttribute() { }
+        public FieldAliasAttribute(string alias) { this.Alias = alias; }
+    }
+
+    /// <summary>字段必填</summary>
+    public class RequiredAttribute : ValidatorAttribute
+    {
+        public RequiredAttribute(): base("请输入{0}") { }
+        public RequiredAttribute(string msg) : base(msg) { }
+    }
+    /// <summary>字段长度限制 [Min ~ Max]
+    /// <para>字符串：字符串长度</para>
+    /// <para>数字：取值范围</para>
+    /// <para>数组：数组长度</para>
+    /// </summary>
+    public class LengthAttribute : ValidatorAttribute
+    {
+        public int Min;
+        public int Max;
+        public LengthAttribute(int max) : base("{0}最多{1}个字符")
+        {
+            this.Max = max;
+        }
+        public LengthAttribute(int min, int max) : base("{0}的字符数量应在 {1} ~ {2} 之间")
+        {
+            this.Min = min;
+            this.Max = max;
+        }
+        public LengthAttribute(int min, int max, string msg) : base(msg)
+        {
+            this.Min = min;
+            this.Max = max;
+        }
+    }
+    /// <summary>自定义 Lambda 表达式，例如 (data) => data.ID != 0</summary>
+    public class FunctionAttribute : ValidatorAttribute
+    {
+        public string Expression;
+
+        public FunctionAttribute(string expression, string msg) : base(msg)
+        {
+            this.Expression = expression;
+        }
     }
 #endif
 

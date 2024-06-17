@@ -26,8 +26,8 @@ namespace EntryBuilder
     // todo: 2. CSV生成cs代码时，字段引用其它表时，新增属性可以直接获取该类型的字段
 
     partial class Program
-	{
-		private static MethodInfo[] Methods;
+    {
+        private static MethodInfo[] Methods;
 
         public enum EBlurType
         {
@@ -507,7 +507,7 @@ namespace EntryBuilder
         }
 
         [STAThread]
-		static void Main(string[] args)
+        static void Main(string[] args)
         {
             _LOG._Logger = new LoggerConsole();
 
@@ -581,138 +581,138 @@ namespace EntryBuilder
                 _LOG.Error(ex, "命令执行错误");
                 Console.ReadKey();
             }
-		}
+        }
 
-		private static void Invoke(string[] args)
-		{
-			string symbol = args[0];
-			MethodInfo method = Methods.FirstOrDefault(m => m.Name == symbol);
-			if (method == null)
-				method = Methods[int.Parse(symbol)];
-			ParameterInfo[] parameters = method.GetParameters();
+        private static void Invoke(string[] args)
+        {
+            string symbol = args[0];
+            MethodInfo method = Methods.FirstOrDefault(m => m.Name == symbol);
+            if (method == null)
+                method = Methods[int.Parse(symbol)];
+            ParameterInfo[] parameters = method.GetParameters();
 
-			int paramCount = parameters.Length;
-			object[] param = new object[paramCount];
-			for (int i = 0; i < paramCount; i++)
-				param[i] = Convert.ChangeType(args[i + 1], parameters[i].ParameterType);
-			if (args.Length > paramCount + 1)
-				Environment.CurrentDirectory = Path.GetFullPath(args.Last());
-			method.Invoke(null, param);
+            int paramCount = parameters.Length;
+            object[] param = new object[paramCount];
+            for (int i = 0; i < paramCount; i++)
+                param[i] = Convert.ChangeType(args[i + 1], parameters[i].ParameterType);
+            if (args.Length > paramCount + 1)
+                Environment.CurrentDirectory = Path.GetFullPath(args.Last());
+            method.Invoke(null, param);
 
-			Console.WriteLine("invoke {0} completed!", method.Name);
-			Console.WriteLine();
-		}
-		private static Type[] GetDllTypes(string dllAndNamespace, SearchOption option)
-		{
-			// path\Dll.dll\Namespace
-			int index = dllAndNamespace.LastIndexOf('\\');
-			string lib = dllAndNamespace.Substring(0, index);
+            Console.WriteLine("invoke {0} completed!", method.Name);
+            Console.WriteLine();
+        }
+        private static Type[] GetDllTypes(string dllAndNamespace, SearchOption option)
+        {
+            // path\Dll.dll\Namespace
+            int index = dllAndNamespace.LastIndexOf('\\');
+            string lib = dllAndNamespace.Substring(0, index);
             Assembly assembly = Assembly.LoadFile(lib);
-			if (assembly == null)
-			{
-				Console.WriteLine("no library: {0}", lib);
-				return null;
-			}
-			// Namespace
-			dllAndNamespace = dllAndNamespace.Substring(index + 1);
-			if (option == SearchOption.TopDirectoryOnly)
-				return assembly.GetTypes().Where(t => t.Namespace == dllAndNamespace).ToArray();
-			else
-				return assembly.GetTypes().Where(t => t.Namespace.StartsWith(dllAndNamespace)).ToArray();
-		}
-		private static Type GetDllType(string dllAndType)
-		{
-			// path\Dll.dll\Namespace.Class
+            if (assembly == null)
+            {
+                Console.WriteLine("no library: {0}", lib);
+                return null;
+            }
+            // Namespace
+            dllAndNamespace = dllAndNamespace.Substring(index + 1);
+            if (option == SearchOption.TopDirectoryOnly)
+                return assembly.GetTypes().Where(t => t.Namespace == dllAndNamespace).ToArray();
+            else
+                return assembly.GetTypes().Where(t => t.Namespace.StartsWith(dllAndNamespace)).ToArray();
+        }
+        private static Type GetDllType(string dllAndType)
+        {
+            // path\Dll.dll\Namespace.Class
             dllAndType = dllAndType.Replace('/', '\'');
-			int index = dllAndType.LastIndexOf('\\');
-			string lib = Path.GetFullPath(dllAndType.Substring(0, index));
+            int index = dllAndType.LastIndexOf('\\');
+            string lib = Path.GetFullPath(dllAndType.Substring(0, index));
             string libName = Path.GetFileNameWithoutExtension(lib);
             var name = AppDomain.CurrentDomain.GetAssemblies()[0].GetName();
             Assembly assembly = AppDomain.CurrentDomain.GetAssemblies().FirstOrDefault(a => a.GetName().Name == libName);
             if (assembly == null)
                 //assembly = Assembly.LoadFrom(lib);
                 assembly = Assembly.LoadFile(lib);
-			if (assembly == null)
-			{
-				Console.WriteLine("no library: {0}", lib);
-				return null;
-			}
-			// Class
-			string type = dllAndType.Substring(index + 1);
-			Type result = assembly.GetType(type);
-			if (result == null)
-				Console.WriteLine("no type: {0}", type);
-			return result;
-		}
-		private static T GetDllTypeInstance<T>(string dllAndType) where T : class
-		{
-			Type type = GetDllType(dllAndType);
-			if (type == null)
-				return null;
-			T instance = Activator.CreateInstance(type) as T;
-			if (instance == null)
-				Console.WriteLine("can not create instance of {0}", type.FullName);
-			return instance;
-		}
-		private static string[] GetFiles(string dirOrFile, string pattern = null, SearchOption option = SearchOption.TopDirectoryOnly)
-		{
-			if (pattern == null || Path.GetFileName(dirOrFile).Contains('.'))
-			{
-				return new string[] { dirOrFile };
-			}
-			else
-			{
-				return Directory.GetFiles(dirOrFile, pattern, option);
-			}
-		}
-		private static IEnumerable<string> GetFiles(string dirOrFile, SearchOption option = SearchOption.TopDirectoryOnly, params string[] patterns)
-		{
+            if (assembly == null)
+            {
+                Console.WriteLine("no library: {0}", lib);
+                return null;
+            }
+            // Class
+            string type = dllAndType.Substring(index + 1);
+            Type result = assembly.GetType(type);
+            if (result == null)
+                Console.WriteLine("no type: {0}", type);
+            return result;
+        }
+        private static T GetDllTypeInstance<T>(string dllAndType) where T : class
+        {
+            Type type = GetDllType(dllAndType);
+            if (type == null)
+                return null;
+            T instance = Activator.CreateInstance(type) as T;
+            if (instance == null)
+                Console.WriteLine("can not create instance of {0}", type.FullName);
+            return instance;
+        }
+        private static string[] GetFiles(string dirOrFile, string pattern = null, SearchOption option = SearchOption.TopDirectoryOnly)
+        {
+            if (pattern == null || Path.GetFileName(dirOrFile).Contains('.'))
+            {
+                return new string[] { dirOrFile };
+            }
+            else
+            {
+                return Directory.GetFiles(dirOrFile, pattern, option);
+            }
+        }
+        private static IEnumerable<string> GetFiles(string dirOrFile, SearchOption option = SearchOption.TopDirectoryOnly, params string[] patterns)
+        {
             if (Path.GetDirectoryName(dirOrFile).StartsWith("#") ||
                 Path.GetFileName(dirOrFile).StartsWith("#"))
                 yield break;
-			foreach (var pattern in patterns)
-			{
-				foreach (var file in GetFiles(dirOrFile, pattern, option))
-				{
+            foreach (var pattern in patterns)
+            {
+                foreach (var file in GetFiles(dirOrFile, pattern, option))
+                {
                     if (_IO.RelativePathForward(file, dirOrFile).Contains("#"))
                         continue;
-					yield return file;
-				}
-			}
-		}
-		private static void BuildDir(ref string dir, bool full = false)
-		{
-			if (Path.GetFileName(dir).Contains('.'))
-				return;
-			if (string.IsNullOrEmpty(dir))
-				dir = Environment.CurrentDirectory;
+                    yield return file;
+                }
+            }
+        }
+        private static void BuildDir(ref string dir, bool full = false)
+        {
+            if (Path.GetFileName(dir).Contains('.'))
+                return;
+            if (string.IsNullOrEmpty(dir))
+                dir = Environment.CurrentDirectory;
             if (full)
                 dir = Path.GetFullPath(dir);
             dir = _IO.DirectoryWithEnding(dir);
-		}
-		private static void ForeachDirectory(string inputDir, Action<DirectoryInfo> call)
-		{
-			DirectoryInfo directory = new DirectoryInfo(inputDir);
-			ForeachDirectory(directory, call);
-		}
-		private static void ForeachDirectory(DirectoryInfo directory, Action<DirectoryInfo> call)
-		{
-			DirectoryInfo[] directories = directory.GetDirectories();
-			foreach (var dir in directories)
-			{
-				call(dir);
-				ForeachDirectory(dir, call);
-			}
-		}
-		private static string GetFullPath(string path)
-		{
-			BuildDir(ref path);
-			return Path.GetFullPath(path);
-		}
-		private static void ToFullPath(ref string path)
-		{
-			path = GetFullPath(path);
-		}
+        }
+        private static void ForeachDirectory(string inputDir, Action<DirectoryInfo> call)
+        {
+            DirectoryInfo directory = new DirectoryInfo(inputDir);
+            ForeachDirectory(directory, call);
+        }
+        private static void ForeachDirectory(DirectoryInfo directory, Action<DirectoryInfo> call)
+        {
+            DirectoryInfo[] directories = directory.GetDirectories();
+            foreach (var dir in directories)
+            {
+                call(dir);
+                ForeachDirectory(dir, call);
+            }
+        }
+        private static string GetFullPath(string path)
+        {
+            BuildDir(ref path);
+            return Path.GetFullPath(path);
+        }
+        private static void ToFullPath(ref string path)
+        {
+            path = GetFullPath(path);
+        }
         private static bool PublishCopyContent(string xnaContentDir, string publishOutputDir, Action<FileInfo, string> onCopyFile)
         {
             _LOG.Info("发布拷贝资源");
@@ -768,93 +768,93 @@ namespace EntryBuilder
             return isDirDifference;
         }
 
-		private static string[] DEFAULT_NAMESPACE =
-		{
-			"System",
-			"System.Collections.Generic",
-			"System.Linq",
-			"System.Text",
-		};
-		private static void SaveCode(string file, StringBuilder code)
-		{
-			SaveCode(file, code.ToString());
-		}
-		private static void SaveCode(string file, string code)
-		{
+        private static string[] DEFAULT_NAMESPACE =
+        {
+            "System",
+            "System.Collections.Generic",
+            "System.Linq",
+            "System.Text",
+        };
+        private static void SaveCode(string file, StringBuilder code)
+        {
+            SaveCode(file, code.ToString());
+        }
+        private static void SaveCode(string file, string code)
+        {
             File.WriteAllText(file, _RH.Indent(code), Encoding.UTF8);
-		}
-		private static void AppendDefaultNamespace(HashSet<string> set, StringBuilder builder)
-		{
-			foreach (var item in DEFAULT_NAMESPACE)
-			{
-				if (set.Add(item))
-				{
-					builder.AppendLine("using {0};", item);
-				}
-			}
-		}
-		private static HashSet<string> AppendDefaultNamespace(StringBuilder builder)
-		{
-			HashSet<string> set = new HashSet<string>();
-			AppendDefaultNamespace(set, builder);
-			return set;
-		}
-		private static void BuildDepthInvoke(StringBuilder builder, Type type, string[] instances, byte depth)
-		{
-			if (!type.IsCustomType())
-				return;
+        }
+        private static void AppendDefaultNamespace(HashSet<string> set, StringBuilder builder)
+        {
+            foreach (var item in DEFAULT_NAMESPACE)
+            {
+                if (set.Add(item))
+                {
+                    builder.AppendLine("using {0};", item);
+                }
+            }
+        }
+        private static HashSet<string> AppendDefaultNamespace(StringBuilder builder)
+        {
+            HashSet<string> set = new HashSet<string>();
+            AppendDefaultNamespace(set, builder);
+            return set;
+        }
+        private static void BuildDepthInvoke(StringBuilder builder, Type type, string[] instances, byte depth)
+        {
+            if (!type.IsCustomType())
+                return;
 
-			string instance = string.Join(".", instances);
-			string insname = string.Join("", instances.Skip(1).ToArray());
+            string instance = string.Join(".", instances);
+            string insname = string.Join("", instances.Skip(1).ToArray());
 
-			BindingFlags flag = BindingFlags.Public | BindingFlags.Instance;
-			var fields = type.GetFields(flag);
-			var properties = type.GetProperties(flag).WithoutIndex();
-			var methods = type.GetAllMethods(flag).MethodOnly().DeclareTypeNotObject();
+            BindingFlags flag = BindingFlags.Public | BindingFlags.Instance;
+            var fields = type.GetFields(flag);
+            var properties = type.GetProperties(flag).WithoutIndex();
+            var methods = type.GetAllMethods(flag).MethodOnly().DeclareTypeNotObject();
 
-			foreach (var field in fields)
-			{
-				builder.AppendLine("public static {0} {1}{2}", field.FieldType.CodeName(), insname, field.Name);
-				builder.AppendBlock(() =>
-				{
-					builder.AppendLine("get {{ return {0}.{1}; }}", instance, field.Name);
+            foreach (var field in fields)
+            {
+                builder.AppendLine("public static {0} {1}{2}", field.FieldType.CodeName(), insname, field.Name);
+                builder.AppendBlock(() =>
+                {
+                    builder.AppendLine("get {{ return {0}.{1}; }}", instance, field.Name);
                     if (!field.IsInitOnly)
-					    builder.AppendLine("set {{ {0}.{1} = value; }}", instance, field.Name);
-				});
-				if (depth != 0)
-					if (!field.FieldType.IsValueType)
-						BuildDepthInvoke(builder, field.FieldType, instances.Add(field.Name), (byte)(depth - 1));
-			}
-			foreach (var property in properties)
-			{
-				builder.AppendLine("public static {0} {1}{2}", property.PropertyType.CodeName(), insname, property.Name);
-				builder.AppendBlock(() =>
-				{
-					if (property.CanRead && property.GetGetMethod(false) != null)
-						builder.AppendLine("get {{ return {0}.{1}; }}", instance, property.Name);
-					if (property.CanWrite && property.GetSetMethod(false) != null)
-						builder.AppendLine("set {{ {0}.{1} = value; }}", instance, property.Name);
-				});
-				if (depth != 0)
-					if (!property.PropertyType.IsValueType)
-						BuildDepthInvoke(builder, property.PropertyType, instances.Add(property.Name), (byte)(depth - 1));
-			}
-			foreach (var method in methods)
-			{
-				builder.Append("public static {0} {1}{2}", method.ReturnType.CodeName(), insname, method.Name);
-				builder.AppendMethodParametersWithBracket(method);
-				builder.AppendBlock(() =>
-				{
-					builder.AppendMethodInvoke(method, instance);
-				});
-			}
-		}
-        private static string GetMySqlType(Type type)
+                        builder.AppendLine("set {{ {0}.{1} = value; }}", instance, field.Name);
+                });
+                if (depth != 0)
+                    if (!field.FieldType.IsValueType)
+                        BuildDepthInvoke(builder, field.FieldType, instances.Add(field.Name), (byte)(depth - 1));
+            }
+            foreach (var property in properties)
+            {
+                builder.AppendLine("public static {0} {1}{2}", property.PropertyType.CodeName(), insname, property.Name);
+                builder.AppendBlock(() =>
+                {
+                    if (property.CanRead && property.GetGetMethod(false) != null)
+                        builder.AppendLine("get {{ return {0}.{1}; }}", instance, property.Name);
+                    if (property.CanWrite && property.GetSetMethod(false) != null)
+                        builder.AppendLine("set {{ {0}.{1} = value; }}", instance, property.Name);
+                });
+                if (depth != 0)
+                    if (!property.PropertyType.IsValueType)
+                        BuildDepthInvoke(builder, property.PropertyType, instances.Add(property.Name), (byte)(depth - 1));
+            }
+            foreach (var method in methods)
+            {
+                builder.Append("public static {0} {1}{2}", method.ReturnType.CodeName(), insname, method.Name);
+                builder.AppendMethodParametersWithBracket(method);
+                builder.AppendBlock(() =>
+                {
+                    builder.AppendMethodInvoke(method, instance);
+                });
+            }
+        }
+        private static string GetMySqlType(Type type, MemberInfo member)
         {
             bool special;
-            return GetMySqlType(type, out special);
+            return GetMySqlType(type, out special, member);
         }
-        private static string GetMySqlType(Type type, out bool special)
+        private static string GetMySqlType(Type type, out bool special, MemberInfo member)
         {
             special = false;
             if (type == typeof(bool))
@@ -886,19 +886,27 @@ namespace EntryBuilder
             else if (type == typeof(DateTime))
                 return "DATETIME";
             else if (type == typeof(string))
-                return "TEXT";
+            {
+                if (member != null)
+                {
+                    var attr = member.GetCustomAttribute<CharAttribute>(true);
+                    if (attr != null)
+                        return attr.ToString();
+                }
+                return "VARCHAR(32)";
+            }
             else if (type == typeof(byte[]))
                 return "LONGBLOB";
             else if (type.IsEnum)
             {
                 type = Enum.GetUnderlyingType(type);
-                return GetMySqlType(type, out special);
+                return GetMySqlType(type, out special, member);
             }
             else
             {
                 special = true;
                 //throw new ArgumentException("type");
-                return "TEXT";
+                return "JSON";
             }
         }
         private static string GetTSType(Type type)
@@ -2627,7 +2635,6 @@ return result;"
                 if (generic)
                 {
                     var generics = type.GetGenericArguments();
-                    Console.WriteLine("泛型" + generics.Length);
                     foreach (var g in generics)
                         builder.AppendLine(" * @template {0}", TypeToTs(g));
                 }
@@ -3075,7 +3082,7 @@ download(filename)
 
             public override void Save()
             {
-                SaveCode(Path.Combine(OutputClientPath, type.Name + ".d.ts"), 
+                SaveCode(Path.Combine(OutputClientPath, type.Name + ".d.ts"),
 @"import {api} from './{api2}Proxy'
 
 declare module '@vue/runtime-core'
@@ -3504,22 +3511,22 @@ declare module '@vue/runtime-core'
             builder.AppendLine();
         }
 
-		private static void Sleep(int ms)
-		{
-			System.Threading.Thread.Sleep(ms);
-		}
+        private static void Sleep(int ms)
+        {
+            System.Threading.Thread.Sleep(ms);
+        }
         // 鼠标
-		[DllImport("user32")]
-		private static extern IntPtr WindowFromPoint(Point Point);
-		[DllImport("user32")]
-		private static extern int mouse_event(int dwFlags, int dx, int dy, int cButtons, int dwExtraInfo);
-		[DllImport("user32")]
-		private static extern int GetWindowRect(IntPtr hwnd, ref Rectangle lpRect);
-		private static void LeftClick(int x, int y)
-		{
-			Cursor.Position = new Point(x, y);
-			mouse_event(0x0002 | 0x0004, x, y, 0, 0);
-		}
+        [DllImport("user32")]
+        private static extern IntPtr WindowFromPoint(Point Point);
+        [DllImport("user32")]
+        private static extern int mouse_event(int dwFlags, int dx, int dy, int cButtons, int dwExtraInfo);
+        [DllImport("user32")]
+        private static extern int GetWindowRect(IntPtr hwnd, ref Rectangle lpRect);
+        private static void LeftClick(int x, int y)
+        {
+            Cursor.Position = new Point(x, y);
+            mouse_event(0x0002 | 0x0004, x, y, 0, 0);
+        }
         private static void LeftTap(int x, int y)
         {
             Cursor.Position = new Point(x, y);
@@ -3549,20 +3556,20 @@ declare module '@vue/runtime-core'
             }
         }
 
-        
+
         private const string EXCEL_REVERISION = "12.0";
-		private static void WriteCSVTable(string file, StringTable table)
-		{
-			CSVWriter.WriteTable(table, file);
-		}
+        private static void WriteCSVTable(string file, StringTable table)
+        {
+            CSVWriter.WriteTable(table, file);
+        }
         class NamedStringTable : StringTable
         {
             public string Name;
         }
-		private static StringTable ReadCSVTable(string file, int rows = -1)
-		{
-			return new CSVReader(File.ReadAllText(file, CSVWriter.CSVEncoding)).ReadTable(rows);
-		}
+        private static StringTable ReadCSVTable(string file, int rows = -1)
+        {
+            return new CSVReader(File.ReadAllText(file, CSVWriter.CSVEncoding)).ReadTable(rows);
+        }
         //private static Microsoft.Office.Interop.Excel.Application excel;
         private static Process[] statupProcess;
         private static void QuitExcel()
@@ -3738,15 +3745,15 @@ declare module '@vue/runtime-core'
             return results;
         }
         private static StringTable LoadTableFromExcel(string file, string version = EXCEL_REVERISION)
-		{
+        {
             return LoadTablesFromExcelOleDb(file, version)[0];
-		}
-		private static List<int> Translate(StringTable language, StringTable table, string tableSource)
-		{
-			List<int> newRowIndex = new List<int>();
+        }
+        private static List<int> Translate(StringTable language, StringTable table, string tableSource)
+        {
+            List<int> newRowIndex = new List<int>();
             //string[][] sources = language.GetColumns(1).Select(s => JsonReader.Deserialize<string[]>(s)).ToArray();
             string[][] sources = language.GetColumns(1).Select(s => s.Split('|')).ToArray();
-			int lastID = 1 + (language.RowCount == 0 ? 0 : Convert.ToInt32(language[0, language.RowCount - 1]));
+            int lastID = 1 + (language.RowCount == 0 ? 0 : Convert.ToInt32(language[0, language.RowCount - 1]));
 
             if (table.RowCount > 0)
             {
@@ -3787,52 +3794,52 @@ declare module '@vue/runtime-core'
                 }
             }
 
-			// 删除没有了的引用
+            // 删除没有了的引用
             //for (int i = 0; i < sources.Length; i++)
             for (int i = sources.Length - 1; i >= 0; i--)
-			{
-				if (sources[i] != null)
-				{
-					int index = sources[i].IndexOf(tableSource);
-					if (index != -1)
-					{
-						sources[i] = sources[i].Remove(index);
-						if (sources[i].Length == 0)
-						{
-							// 删除已经没有引用的翻译
-							language.RemoveRow(i);
-						}
-						else
-						{
+            {
+                if (sources[i] != null)
+                {
+                    int index = sources[i].IndexOf(tableSource);
+                    if (index != -1)
+                    {
+                        sources[i] = sources[i].Remove(index);
+                        if (sources[i].Length == 0)
+                        {
+                            // 删除已经没有引用的翻译
+                            language.RemoveRow(i);
+                        }
+                        else
+                        {
                             //language[1, i] = JsonWriter.Serialize(sources[i]);
                             language[1, i] = string.Join("|", sources[i]);
-						}
-					}
-				}
-			}
+                        }
+                    }
+                }
+            }
 
-			return newRowIndex;
-		}
-		private static StringTable ReadTranslateTable(string translate)
-		{
-			StringTable result;
-			if (File.Exists(translate))
-			{
-				result = ReadCSVTable(translate);
-			}
-			else
-			{
-				result = StringTable.DefaultLanguageTable();
-			}
-			return result;
-		}
-		private static string[] GetCSVTables(string dir, SearchOption option = SearchOption.AllDirectories)
-		{
-			const string Language = "language.csv";
-			var files = GetFiles(dir, "*.csv", option);
-			files = files.Where(f => !f.ToLower().EndsWith(Language)).ToArray();
-			return files;
-		}
+            return newRowIndex;
+        }
+        private static StringTable ReadTranslateTable(string translate)
+        {
+            StringTable result;
+            if (File.Exists(translate))
+            {
+                result = ReadCSVTable(translate);
+            }
+            else
+            {
+                result = StringTable.DefaultLanguageTable();
+            }
+            return result;
+        }
+        private static string[] GetCSVTables(string dir, SearchOption option = SearchOption.AllDirectories)
+        {
+            const string Language = "language.csv";
+            var files = GetFiles(dir, "*.csv", option);
+            files = files.Where(f => !f.ToLower().EndsWith(Language)).ToArray();
+            return files;
+        }
         private class SpecialField
         {
             public string Name;
@@ -3949,15 +3956,15 @@ declare module '@vue/runtime-core'
 
                 //if (temp != "string")
                 //{
-                    special.NeedBuildType = false;
-                    special.TypeName = temp;
+                special.NeedBuildType = false;
+                special.TypeName = temp;
                 //}
                 //else
                 //{
                 //    special.NeedBuildType = true;
                 //}
             }
-            
+
             temp = reader.PeekNext("]");
             if (temp.Length == 1)
             {
@@ -3980,7 +3987,7 @@ declare module '@vue/runtime-core'
                 }
             }
             else
-                //if (temp.Length != 2)
+            //if (temp.Length != 2)
             {
                 // eat the '['
                 reader.Read();
@@ -4042,34 +4049,34 @@ declare module '@vue/runtime-core'
             }
         }
 
-		private const string IMAGE_FORMAT = "*.png";
-		private static string[] IMAGE_FORMATS =
+        private const string IMAGE_FORMAT = "*.png";
+        private static string[] IMAGE_FORMATS =
         {
             "*.png",
             "*.jpg",
             "*.jpeg",
             "*.bmp",
         };
-		private static Bitmap OpenBitmap(string file)
-		{
-			return (Bitmap)Bitmap.FromFile(file);
-		}
-		private static BitmapData LockBits(Bitmap texture)
-		{
-			return LockBits(texture, ImageLockMode.ReadOnly);
-		}
-		private static BitmapData LockBits(Bitmap texture, ImageLockMode mode)
-		{
-			return LockBits(texture, new Rectangle(0, 0, texture.Width, texture.Height), mode);
-		}
-		private static BitmapData LockBits(Bitmap texture, Rectangle rect, ImageLockMode mode)
-		{
-			return texture.LockBits(rect, mode, PixelFormat.Format32bppArgb);
-		}
-		private static byte[] GetData(Bitmap texture)
-		{
-			return GetData(texture, new Rectangle(0, 0, texture.Width, texture.Height));
-		}
+        private static Bitmap OpenBitmap(string file)
+        {
+            return (Bitmap)Bitmap.FromFile(file);
+        }
+        private static BitmapData LockBits(Bitmap texture)
+        {
+            return LockBits(texture, ImageLockMode.ReadOnly);
+        }
+        private static BitmapData LockBits(Bitmap texture, ImageLockMode mode)
+        {
+            return LockBits(texture, new Rectangle(0, 0, texture.Width, texture.Height), mode);
+        }
+        private static BitmapData LockBits(Bitmap texture, Rectangle rect, ImageLockMode mode)
+        {
+            return texture.LockBits(rect, mode, PixelFormat.Format32bppArgb);
+        }
+        private static byte[] GetData(Bitmap texture)
+        {
+            return GetData(texture, new Rectangle(0, 0, texture.Width, texture.Height));
+        }
         private delegate bool DTextureColor(ref byte b, ref byte g, ref byte r, ref byte a);
         private static void LockBits(Bitmap texture, DTextureColor action)
         {
@@ -4108,18 +4115,18 @@ declare module '@vue/runtime-core'
 
             texture.UnlockBits(data);
         }
-		private static byte[] GetData(Bitmap texture, Rectangle rect)
-		{
-			byte[] buffer = new byte[texture.Width * texture.Height * 4];
-			var data = LockBits(texture);
-			Marshal.Copy(data.Scan0, buffer, 0, buffer.Length);
-			texture.UnlockBits(data);
+        private static byte[] GetData(Bitmap texture, Rectangle rect)
+        {
+            byte[] buffer = new byte[texture.Width * texture.Height * 4];
+            var data = LockBits(texture);
+            Marshal.Copy(data.Scan0, buffer, 0, buffer.Length);
+            texture.UnlockBits(data);
 
-			if (rect.X == 0 && rect.Y == 0 && rect.Width == texture.Width && rect.Height == texture.Height)
-				return buffer;
-			else
-				return buffer.GetArray(rect.X * 4, rect.Y, rect.Width * 4, rect.Height, texture.Width * 4);
-		}
+            if (rect.X == 0 && rect.Y == 0 && rect.Width == texture.Width && rect.Height == texture.Height)
+                return buffer;
+            else
+                return buffer.GetArray(rect.X * 4, rect.Y, rect.Width * 4, rect.Height, texture.Width * 4);
+        }
         private static void BitsAlignCenter(byte[] data1, int width1, int height1, byte[] data2, int width2, int height2, Action<int, int> action)
         {
             // 两张图片像素中心对齐
@@ -4151,10 +4158,10 @@ declare module '@vue/runtime-core'
             }
         }
         private static void ImageDraw(Image texture, Action<Graphics> action)
-		{
-			using (Graphics graphics = Graphics.FromImage(texture))
-				action(graphics);
-		}
+        {
+            using (Graphics graphics = Graphics.FromImage(texture))
+                action(graphics);
+        }
         private static void Cut(IList<Bitmap> textures, Point normalizeSize)
         {
             int minX, minY, maxX, maxY;
@@ -4693,77 +4700,77 @@ declare module '@vue/runtime-core'
             return results;
         }
         private static Rectangle[] Put(Point[] sizes, Point size, bool widthPriority, int space = 0)
-		{
-			Rectangle[] results;
-			if (!widthPriority)
-			{
-				size = new Point(size.Y, size.X);
+        {
+            Rectangle[] results;
+            if (!widthPriority)
+            {
+                size = new Point(size.Y, size.X);
                 results = sizes.Select(s => new Rectangle(0, 0, s.Y + space, s.X + space)).ToArray();
-			}
-			else
+            }
+            else
                 results = sizes.Select(s => new Rectangle(0, 0, s.X + space, s.Y + space)).ToArray();
 
-			Stack<Rectangle> remaind = new Stack<Rectangle>();
+            Stack<Rectangle> remaind = new Stack<Rectangle>();
             remaind.Push(new Rectangle(space, space, size.X - space, size.Y - space));
 
-			HashSet<int> set = new HashSet<int>();
+            HashSet<int> set = new HashSet<int>();
 
-			int max;
-			int index;
-			Rectangle current;
-			int count = results.Length;
-			while (count > 0)
-			{
-				// has no space
-				if (remaind.Count == 0)
-					return null;
+            int max;
+            int index;
+            Rectangle current;
+            int count = results.Length;
+            while (count > 0)
+            {
+                // has no space
+                if (remaind.Count == 0)
+                    return null;
 
-				max = 0;
-				index = -1;
-				current = remaind.Pop();
+                max = 0;
+                index = -1;
+                current = remaind.Pop();
 
-				for (int i = 0; i < results.Length; i++)
-				{
-					var item = results[i];
+                for (int i = 0; i < results.Length; i++)
+                {
+                    var item = results[i];
 
-					// has set
-					if (set.Contains(i))
-						continue;
+                    // has set
+                    if (set.Contains(i))
+                        continue;
 
-					// 放得下
-					if (item.Width <= current.Width && item.Height <= current.Height)
-					{
-						// 最合适
-						if (widthPriority)
-						{
-							if (item.Width > max)
-							{
-								index = i;
-								max = item.Width;
-							}
-						}
-						else
-						{
-							if (item.Height > max)
-							{
-								index = i;
-								max = item.Height;
-							}
-						}
-					}
-				}
+                    // 放得下
+                    if (item.Width <= current.Width && item.Height <= current.Height)
+                    {
+                        // 最合适
+                        if (widthPriority)
+                        {
+                            if (item.Width > max)
+                            {
+                                index = i;
+                                max = item.Width;
+                            }
+                        }
+                        else
+                        {
+                            if (item.Height > max)
+                            {
+                                index = i;
+                                max = item.Height;
+                            }
+                        }
+                    }
+                }
 
-				// current没有能放下的方块
-				if (index == -1)
-					continue;
+                // current没有能放下的方块
+                if (index == -1)
+                    continue;
 
-				// 放置
-				results[index].X = current.X;
-				results[index].Y = current.Y;
+                // 放置
+                results[index].X = current.X;
+                results[index].Y = current.Y;
 
-				// 切割剩余矩形
-				Rectangle temp = results[index];
-				Rectangle split;
+                // 切割剩余矩形
+                Rectangle temp = results[index];
+                Rectangle split;
 
                 // 放入当前块后，矩形切割成右侧和下侧两个区域，右下角区域作为公共区域，根据宽高优先级划归给右侧或下侧
                 if (widthPriority)
@@ -4789,66 +4796,66 @@ declare module '@vue/runtime-core'
                         remaind.Push(split);
                 }
 
-				count--;
-				set.Add(index);
-			}
+                count--;
+                set.Add(index);
+            }
             for (int i = 0; i < results.Length; i++)
             {
                 results[i].Width -= space;
                 results[i].Height -= space;
             }
-			return results;
-		}
-		private static string SavePng(Image texture, string dir, string file, bool disposed = true)
-		{
-			return SaveTexture(texture, dir, Path.ChangeExtension(file, "png"), disposed);
-		}
-		private static string SaveTexture(Image texture, string dir, string file, bool disposed)
-		{
-			if (!Directory.Exists(dir))
-				Directory.CreateDirectory(dir);
-			string output = Path.Combine(dir, Path.GetFileName(file));
-			//texture.Save(output, texture.RawFormat);
-			string suffix = Path.GetExtension(file).ToLower();
-			ImageFormat format;
-			switch (suffix)
-			{
-				case "jpg":
-				case "jpeg":
-					format = ImageFormat.Jpeg;
-					break;
+            return results;
+        }
+        private static string SavePng(Image texture, string dir, string file, bool disposed = true)
+        {
+            return SaveTexture(texture, dir, Path.ChangeExtension(file, "png"), disposed);
+        }
+        private static string SaveTexture(Image texture, string dir, string file, bool disposed)
+        {
+            if (!Directory.Exists(dir))
+                Directory.CreateDirectory(dir);
+            string output = Path.Combine(dir, Path.GetFileName(file));
+            //texture.Save(output, texture.RawFormat);
+            string suffix = Path.GetExtension(file).ToLower();
+            ImageFormat format;
+            switch (suffix)
+            {
+                case "jpg":
+                case "jpeg":
+                    format = ImageFormat.Jpeg;
+                    break;
 
-				case "bmp":
-					format = ImageFormat.Bmp;
-					break;
+                case "bmp":
+                    format = ImageFormat.Bmp;
+                    break;
 
-				default:
-					format = ImageFormat.Png;
-					break;
-			}
-			texture.Save(output, format);
-			if (disposed)
-				texture.Dispose();
-			return output;
-		}
-		private static bool ClearMemory()
-		{
-			// 512M清理内存
-			return ClearMemory(1024 * 1024 * 256);
-		}
-		private static bool ClearMemory(long bytes)
-		{
-			long memory = GC.GetTotalMemory(false);
-			if (memory >= bytes)
-			{
-				Console.WriteLine("Memory[{0}] too much, will clear.", memory);
-				GC.Collect();
-				var status = GC.WaitForFullGCComplete(-1);
-				Console.WriteLine("GC completed. Status: {0} Memory: {1}", status, GC.GetTotalMemory(false));
-				return true;
-			}
-			return false;
-		}
+                default:
+                    format = ImageFormat.Png;
+                    break;
+            }
+            texture.Save(output, format);
+            if (disposed)
+                texture.Dispose();
+            return output;
+        }
+        private static bool ClearMemory()
+        {
+            // 512M清理内存
+            return ClearMemory(1024 * 1024 * 256);
+        }
+        private static bool ClearMemory(long bytes)
+        {
+            long memory = GC.GetTotalMemory(false);
+            if (memory >= bytes)
+            {
+                Console.WriteLine("Memory[{0}] too much, will clear.", memory);
+                GC.Collect();
+                var status = GC.WaitForFullGCComplete(-1);
+                Console.WriteLine("GC completed. Status: {0} Memory: {1}", status, GC.GetTotalMemory(false));
+                return true;
+            }
+            return false;
+        }
         private class Piece
         {
             [ASummary("游戏内加载内容的根目录，使用原始根目录时不填，下面的Directories和OutputFile将自动包含此根目录路径")]
@@ -4871,58 +4878,58 @@ declare module '@vue/runtime-core'
                 get { return !Output.EndsWith("/") && !Output.EndsWith("\\"); }
             }
         }
-		private class Patch
-		{
-			[ASummary("九宫格左锚点")]
-			public ushort Left;
-			[ASummary("九宫格上锚点")]
-			public ushort Top;
-			[ASummary("九宫格右锚点")]
-			public ushort Right;
-			[ASummary("九宫格下锚点")]
-			public ushort Bottom;
-			[ASummary("原图片路径，不带后缀则使用8x8纯白图")]
-			public string Source;
-			[ASummary("中间部分颜色，格式为：R,G,B,A，不填由程序指定")]
-			public string ColorBody;
-			[ASummary("边框部分颜色，格式为：R,G,B,A，不填由程序指定")]
-			public string ColorBorder;
+        private class Patch
+        {
+            [ASummary("九宫格左锚点")]
+            public ushort Left;
+            [ASummary("九宫格上锚点")]
+            public ushort Top;
+            [ASummary("九宫格右锚点")]
+            public ushort Right;
+            [ASummary("九宫格下锚点")]
+            public ushort Bottom;
+            [ASummary("原图片路径，不带后缀则使用8x8纯白图")]
+            public string Source;
+            [ASummary("中间部分颜色，格式为：R,G,B,A，不填由程序指定")]
+            public string ColorBody;
+            [ASummary("边框部分颜色，格式为：R,G,B,A，不填由程序指定")]
+            public string ColorBorder;
 
-			public static COLOR GetColor(string str)
-			{
+            public static COLOR GetColor(string str)
+            {
                 if (string.IsNullOrEmpty(str))
                     return PATCH.NullColor;
 
-				string[] rgba = str.Split(',');
-				if (rgba.Length != 4)
-					throw new ArgumentException("错误的颜色格式");
+                string[] rgba = str.Split(',');
+                if (rgba.Length != 4)
+                    throw new ArgumentException("错误的颜色格式");
 
-				return new COLOR(
-					byte.Parse(rgba[0]),
-					byte.Parse(rgba[1]),
-					byte.Parse(rgba[2]),
-					byte.Parse(rgba[3]));
-			}
-		}
-		private class Animation
-		{
-			[ASummary("序列动画名字")]
-			public string Name;
-			[ASummary("循环次数")]
-			public short Loop;
-			[ASummary("跳转目标动画名字，若有循环次数，则在循环次数达到后跳转，否则永不跳转")]
-			public string Next;
-			[ASummary("帧持续秒")]
-			public float Interval;
-			[ASummary("序列帧图片所在目录")]
-			public string Directory;
-			[ASummary("输出目标文件名(不带后缀)，多个同样输出的动画将组合在一起，若不填则在图片目录并与目录同名")]
-			public string Output;
+                return new COLOR(
+                    byte.Parse(rgba[0]),
+                    byte.Parse(rgba[1]),
+                    byte.Parse(rgba[2]),
+                    byte.Parse(rgba[3]));
+            }
+        }
+        private class Animation
+        {
+            [ASummary("序列动画名字")]
+            public string Name;
+            [ASummary("循环次数")]
+            public short Loop;
+            [ASummary("跳转目标动画名字，若有循环次数，则在循环次数达到后跳转，否则永不跳转")]
+            public string Next;
+            [ASummary("帧持续秒")]
+            public float Interval;
+            [ASummary("序列帧图片所在目录")]
+            public string Directory;
+            [ASummary("输出目标文件名(不带后缀)，多个同样输出的动画将组合在一起，若不填则在图片目录并与目录同名")]
+            public string Output;
             [ASummary("动画尺寸一样时可以预先设定支点的X坐标（单位尺寸百分比）")]
             public float PivotX;
             [ASummary("动画尺寸一样时可以预先设定支点的Y坐标（单位尺寸百分比）")]
             public float PivotY;
-		}
+        }
         private class Tile
         {
             [ASummary("原图片路径，输出的平铺图默认在相同目录下")]
@@ -5112,9 +5119,9 @@ declare module '@vue/runtime-core'
                 else
                     // 进位
                     if (value < 0)
-                        return ((ivalue / 10 - 1) / 100.0).ToString("0.00") + "rem";
-                    else
-                        return ((ivalue / 10 + 1) / 100.0).ToString("0.00") + "rem";
+                    return ((ivalue / 10 - 1) / 100.0).ToString("0.00") + "rem";
+                else
+                    return ((ivalue / 10 + 1) / 100.0).ToString("0.00") + "rem";
             }
         }
         private static string JSColor(PsdColor color)
@@ -5454,9 +5461,9 @@ declare module '@vue/runtime-core'
                         {
                             CreateNewLayer(layers[i],
                                 new PsdRect(
-                                    layers[i].Area.Left - back, 
+                                    layers[i].Area.Left - back,
                                     layers[i].Area.Top,
-                                    layers[i].Area.Right + forward, 
+                                    layers[i].Area.Right + forward,
                                     layers[i].Area.Bottom));
                         }
                         else
@@ -5886,70 +5893,70 @@ declare module '@vue/runtime-core'
             }
         }
 
-		public static void BuildEntryEngine(string outputDir)
-		{
-			var entryType = typeof(Entry);
-			var devices = entryType.Assembly.GetTypesWithAttribute<ADevice>(false).ToArray();
+        public static void BuildEntryEngine(string outputDir)
+        {
+            var entryType = typeof(Entry);
+            var devices = entryType.Assembly.GetTypesWithAttribute<ADevice>(false).ToArray();
             devices.SortOrder((p1, p2) => p1.Name.CompareTo(p2.Name) > 0);
 
-			StringBuilder builder = new StringBuilder();
+            StringBuilder builder = new StringBuilder();
 
-			// using
-			HashSet<string> ns = new HashSet<string>();
-			builder.AppendLine("#if CLIENT");
-			builder.AppendLine();
-			AppendDefaultNamespace(ns, builder);
-			ns.Add(entryType.Namespace);
-			foreach (var device in devices)
-				if (ns.Add(device.Namespace))
-					builder.AppendLine("using {0};", device.Namespace);
-			builder.AppendLine();
+            // using
+            HashSet<string> ns = new HashSet<string>();
+            builder.AppendLine("#if CLIENT");
+            builder.AppendLine();
+            AppendDefaultNamespace(ns, builder);
+            ns.Add(entryType.Namespace);
+            foreach (var device in devices)
+                if (ns.Add(device.Namespace))
+                    builder.AppendLine("using {0};", device.Namespace);
+            builder.AppendLine();
 
-			// namespace
-			builder.AppendLine("namespace EntryEngine");
-			builder.AppendBlock(() =>
-			{
-				builder.AppendLine("partial class {0}", entryType.Name);
-				builder.AppendBlock(() =>
-				{
-					foreach (var device in devices)
-					{
-						string deviceType = device.CodeName();
-						string deviceName = device.Name;
+            // namespace
+            builder.AppendLine("namespace EntryEngine");
+            builder.AppendBlock(() =>
+            {
+                builder.AppendLine("partial class {0}", entryType.Name);
+                builder.AppendBlock(() =>
+                {
+                    foreach (var device in devices)
+                    {
+                        string deviceType = device.CodeName();
+                        string deviceName = device.Name;
 
-						var da = device.GetAttribute<ADevice>();
-						var dva = device.GetAttribute<ADefaultValue>();
-						var constructors = device.GetConstructors().Where(c => c.HasAttribute<ADeviceNew>()).ToArray();
-						bool unique = constructors.Length == 0;
-						bool foreignKey = !string.IsNullOrEmpty(da.StaticInstance);
+                        var da = device.GetAttribute<ADevice>();
+                        var dva = device.GetAttribute<ADefaultValue>();
+                        var constructors = device.GetConstructors().Where(c => c.HasAttribute<ADeviceNew>()).ToArray();
+                        bool unique = constructors.Length == 0;
+                        bool foreignKey = !string.IsNullOrEmpty(da.StaticInstance);
 
-						builder.AppendLine("public static {0} _{1}", deviceType, deviceName);
-						if (foreignKey)
-						{
-							builder.AppendBlock(() =>
-							{
-								builder.AppendLine("get {{ return {0}; }}", da.StaticInstance);
-								builder.AppendLine("set {{ {0} = value; }}", da.StaticInstance);
-							});
-						}
-						else
-						{
-							builder.AppendBlock(() =>
-							{
-								builder.AppendLine("get;");
-								builder.AppendLine("set;");
-							});
-						}
-						builder.AppendLine("public {0} {1} {{ get {{ return _{1}; }} }}", deviceType, deviceName);
+                        builder.AppendLine("public static {0} _{1}", deviceType, deviceName);
+                        if (foreignKey)
+                        {
+                            builder.AppendBlock(() =>
+                            {
+                                builder.AppendLine("get {{ return {0}; }}", da.StaticInstance);
+                                builder.AppendLine("set {{ {0} = value; }}", da.StaticInstance);
+                            });
+                        }
+                        else
+                        {
+                            builder.AppendBlock(() =>
+                            {
+                                builder.AppendLine("get;");
+                                builder.AppendLine("set;");
+                            });
+                        }
+                        builder.AppendLine("public {0} {1} {{ get {{ return _{1}; }} }}", deviceType, deviceName);
 
                         if (constructors.Length == 0)
                             continue;
                         builder.AppendLine("public event Action<{0}> OnNew{1};", deviceType, deviceName);
-						for (int i = 0; i < constructors.Length; i++)
-						{
-							var constructor = constructors[i];
-							var att = constructor.GetAttribute<ADeviceNew>();
-							var parameters = constructor.GetParameters();
+                        for (int i = 0; i < constructors.Length; i++)
+                        {
+                            var constructor = constructors[i];
+                            var att = constructor.GetAttribute<ADeviceNew>();
+                            var parameters = constructor.GetParameters();
 
                             builder.Append("public {0} New{1}", deviceType, deviceName);
                             builder.AppendMethodParametersWithBracket(constructor);
@@ -5960,74 +5967,74 @@ declare module '@vue/runtime-core'
                                 builder.AppendLine("if (OnNew{0} != null) OnNew{0}(__device);", deviceName);
                                 builder.AppendLine("return __device;");
                             });
-							builder.Append("protected virtual {0} InternalNew{1}", deviceType, deviceName);
-							builder.AppendMethodParametersWithBracket(constructor);
-							builder.AppendBlock(() =>
-							{
-								builder.AppendSharpIfThrow(() =>
-								{
-									bool flag = false;
-									if (att.DefaultValue != null)
-									{
-										if (!att.DefaultValue.Is(device))
-											throw new ArgumentNullException("DefaultValue", string.Format("Type \"{0}\" is not the correct device type.", att.DefaultValue.Name));
-										var defaultConstructor = att.DefaultValue.GetConstructor(parameters.Select(p => p.ParameterType).ToArray());
-										if (defaultConstructor == null)
-											throw new ArgumentNullException("DefaultValue", string.Format("Type \"{0}\" don't have matched constructor.", att.DefaultValue.Name));
-										builder.Append("return new {0}", att.DefaultValue.CodeName());
-										builder.AppendMethodInvoke(constructor);
-										flag = true;
-									}
-									else if (dva != null)
-									{
-										var defaultConstructor = dva.DefaultValue.GetConstructor(parameters.Select(p => p.ParameterType).ToArray());
-										if (defaultConstructor != null)
-										{
-											builder.Append("return new {0}", dva.DefaultValue.CodeName());
-											builder.AppendMethodInvoke(constructor);
-											flag = true;
-										}
-									}
-									if (!flag)
-										builder.AppendLine("throw new System.NotImplementedException();");
-								});
-							});
-						}
-					}
+                            builder.Append("protected virtual {0} InternalNew{1}", deviceType, deviceName);
+                            builder.AppendMethodParametersWithBracket(constructor);
+                            builder.AppendBlock(() =>
+                            {
+                                builder.AppendSharpIfThrow(() =>
+                                {
+                                    bool flag = false;
+                                    if (att.DefaultValue != null)
+                                    {
+                                        if (!att.DefaultValue.Is(device))
+                                            throw new ArgumentNullException("DefaultValue", string.Format("Type \"{0}\" is not the correct device type.", att.DefaultValue.Name));
+                                        var defaultConstructor = att.DefaultValue.GetConstructor(parameters.Select(p => p.ParameterType).ToArray());
+                                        if (defaultConstructor == null)
+                                            throw new ArgumentNullException("DefaultValue", string.Format("Type \"{0}\" don't have matched constructor.", att.DefaultValue.Name));
+                                        builder.Append("return new {0}", att.DefaultValue.CodeName());
+                                        builder.AppendMethodInvoke(constructor);
+                                        flag = true;
+                                    }
+                                    else if (dva != null)
+                                    {
+                                        var defaultConstructor = dva.DefaultValue.GetConstructor(parameters.Select(p => p.ParameterType).ToArray());
+                                        if (defaultConstructor != null)
+                                        {
+                                            builder.Append("return new {0}", dva.DefaultValue.CodeName());
+                                            builder.AppendMethodInvoke(constructor);
+                                            flag = true;
+                                        }
+                                    }
+                                    if (!flag)
+                                        builder.AppendLine("throw new System.NotImplementedException();");
+                                });
+                            });
+                        }
+                    }
 
-					// build initialize
-					builder.AppendLine();
-					builder.AppendLine("public void Initialize()");
-					builder.AppendBlock(() =>
-					{
-						foreach (var device in devices)
-							builder.AppendLine("{0} {1};", device.CodeName(), device.Name);
-						builder.Append("Initialize(");
-						Utility.ForeachExceptLast(devices,
-							device => builder.Append("out {0}", device.Name),
-							device => builder.Append(", "));
-						builder.AppendLine(");");
-						foreach (var device in devices)
-							builder.AppendLine("if ({0} != null) _{0} = {0};", device.Name);
+                    // build initialize
+                    builder.AppendLine();
+                    builder.AppendLine("public void Initialize()");
+                    builder.AppendBlock(() =>
+                    {
+                        foreach (var device in devices)
+                            builder.AppendLine("{0} {1};", device.CodeName(), device.Name);
+                        builder.Append("Initialize(");
+                        Utility.ForeachExceptLast(devices,
+                            device => builder.Append("out {0}", device.Name),
+                            device => builder.Append(", "));
+                        builder.AppendLine(");");
+                        foreach (var device in devices)
+                            builder.AppendLine("if ({0} != null) _{0} = {0};", device.Name);
                         builder.AppendLine("OnInitialized();");
-					});
+                    });
 
-					builder.AppendLine("protected abstract void Initialize(");
-					Utility.ForeachExceptLast(devices,
-							device => builder.Append("out {0} {1}", device.CodeName(), device.Name),
-							device => builder.AppendLine(","));
-					builder.AppendLine(");");
-				});
-			});
-			builder.AppendLine();
-			builder.AppendLine("#endif");
+                    builder.AppendLine("protected abstract void Initialize(");
+                    Utility.ForeachExceptLast(devices,
+                            device => builder.Append("out {0} {1}", device.CodeName(), device.Name),
+                            device => builder.AppendLine(","));
+                    builder.AppendLine(");");
+                });
+            });
+            builder.AppendLine();
+            builder.AppendLine("#endif");
 
-			SaveCode(Path.Combine(outputDir, "Entry.Implement.cs"), builder);
-			Console.WriteLine("build entry device completed!");
+            SaveCode(Path.Combine(outputDir, "Entry.Implement.cs"), builder);
+            Console.WriteLine("build entry device completed!");
 
-			BuildStaticInterface("EntryEngine.dll\\EntryEngine.Utility", Path.Combine(outputDir, "Utility.Implement.cs"), true, "");
-			Console.WriteLine("build entry utility completed!");
-		}
+            BuildStaticInterface("EntryEngine.dll\\EntryEngine.Utility", Path.Combine(outputDir, "Utility.Implement.cs"), true, "");
+            Console.WriteLine("build entry utility completed!");
+        }
         public static void BuildDll(string solutionDir, string output, string version, string refferenceDllsSplitBySep, bool dummy, string symbols)
         {
             Project project = new Project();
@@ -6118,7 +6125,7 @@ declare module '@vue/runtime-core'
 
                 // JS
                 case 1:
-                case 3: 
+                case 3:
                     writer = new ProtocolHttpJS(); break;
 
                 // WebSocket JS
@@ -6180,8 +6187,8 @@ declare module '@vue/runtime-core'
         }
         [Code(ECode.ToBeContinue)]
         [Obsolete("使用了新的AsposePSD暂未实现该方法")]
-		public static void BuildPSDTranslate(string dirOrPsdFile, string languageTableCSV)
-		{
+        public static void BuildPSDTranslate(string dirOrPsdFile, string languageTableCSV)
+        {
             //HashSet<string> newWord = new HashSet<string>();
             //StringTable table;
             //string[] files = GetFiles(dirOrPsdFile, "*.psd");
@@ -6257,11 +6264,11 @@ declare module '@vue/runtime-core'
             //}
 
             //WriteCSVTable(languageTableCSV, table);
-		}
+        }
         [Code(ECode.ToBeContinue)]
         [Obsolete("使用了新的AsposePSD暂未实现该方法")]
-		public static void BuildTranslatePSD(string dirOrPsdFile, string languageTableCSV, string language)
-		{
+        public static void BuildTranslatePSD(string dirOrPsdFile, string languageTableCSV, string language)
+        {
             //TableList<string, string> table1 = ReadCSVTable(languageTableCSV);
             //int index1 = table1.GetColumnIndex(language);
             //if (index1 == -1)
@@ -6445,13 +6452,13 @@ declare module '@vue/runtime-core'
             //    Sleep(100);
             //    SendKeys.SendWait("^w");
             //}
-		}
+        }
         /// <summary>UI编辑器翻译</summary>
 		public static void BuildTableTranslate(string languageTableCSV, string inputDirOrFile)
-		{
-			StringTable translate = ReadTranslateTable(languageTableCSV);
+        {
+            StringTable translate = ReadTranslateTable(languageTableCSV);
 
-			string[] tables = GetCSVTables(inputDirOrFile);
+            string[] tables = GetCSVTables(inputDirOrFile);
             if (tables.Length == 1 && !File.Exists(tables[0]))
             {
                 string csv = _IO.RelativePath(tables[0], languageTableCSV);
@@ -6468,8 +6475,8 @@ declare module '@vue/runtime-core'
                 }
             }
 
-			WriteCSVTable(languageTableCSV, translate);
-		}
+            WriteCSVTable(languageTableCSV, translate);
+        }
         //[Obsolete("生成的csv已可以正常编辑，不需要经过xlsx的文件进行转换")]
         public static void BuildTranslate(string languageTableCSV, string translateTableXlsx, string languagesSplitByComma)
         {
@@ -6502,7 +6509,7 @@ declare module '@vue/runtime-core'
                             lang[index, i] = table[index2, line];
                         else
                             if (append.GetRowIndex(0, chs[i]) == -1)
-                                append.AddRow(lang[2, i]);
+                            append.AddRow(lang[2, i]);
                     }
 
                     WriteCSVTable(languageTableCSV, lang);
@@ -6515,7 +6522,7 @@ declare module '@vue/runtime-core'
                     return;
                 }
             }
-            
+
             if (append.RowCount > 0)
             {
                 Console.WriteLine("需要追加翻译{0}.csv", Path.GetFileNameWithoutExtension(translateTableXlsx));
@@ -6525,26 +6532,26 @@ declare module '@vue/runtime-core'
         }
         /// <summary>策划表翻译</summary>
 		public static void BuildCSVFromExcel(string inputDirOrFile, string outputDir, string translateTable, string excelVersion, string outputCS, bool isOutputResult)
-		{
-			BuildDir(ref inputDirOrFile);
-			BuildDir(ref outputDir);
+        {
+            BuildDir(ref inputDirOrFile);
+            BuildDir(ref outputDir);
 
-			if (!Directory.Exists(outputDir))
-				Directory.CreateDirectory(outputDir);
+            if (!Directory.Exists(outputDir))
+                Directory.CreateDirectory(outputDir);
 
-			StringTable tt = null;
-			string root = null;
-			if (!string.IsNullOrEmpty(translateTable))
-			{
-				tt = ReadTranslateTable(translateTable);
-				root = Path.GetDirectoryName(translateTable);
+            StringTable tt = null;
+            string root = null;
+            if (!string.IsNullOrEmpty(translateTable))
+            {
+                tt = ReadTranslateTable(translateTable);
+                root = Path.GetDirectoryName(translateTable);
                 if (!string.IsNullOrEmpty(root))
                     root += "\\";
-			}
+            }
 
-			string[] files = GetFiles(inputDirOrFile, "*.xlsx", SearchOption.AllDirectories);
-			foreach (string file in files)
-			{
+            string[] files = GetFiles(inputDirOrFile, "*.xlsx", SearchOption.AllDirectories);
+            foreach (string file in files)
+            {
                 string tempName = Path.GetFileName(file);
                 if (tempName.StartsWith("_") || tempName.StartsWith("#") || tempName.Contains("$_"))
                 {
@@ -6596,7 +6603,7 @@ declare module '@vue/runtime-core'
                     Console.WriteLine("Error: {0}", ex.Message);
                     return;
                 }
-			}
+            }
             QuitExcel();
 
             if (tt != null)
@@ -6656,38 +6663,38 @@ declare module '@vue/runtime-core'
                 BuildTableFromCSV(outputDir, outputCS);
             }
 
-			if (isOutputResult)
-			{
-				if (tt != null)
-				{
-					if (Path.GetDirectoryName(translateTable) == Path.GetFullPath(outputDir))
-					{
-						Console.WriteLine("翻译表和输出目录在同一目录下不能导出结果");
-						return;
-					}
-					string target = Path.Combine(outputDir, Path.GetFileName(translateTable));
-					File.Copy(translateTable, target, true);
-					translateTable = target;
-				}
+            if (isOutputResult)
+            {
+                if (tt != null)
+                {
+                    if (Path.GetDirectoryName(translateTable) == Path.GetFullPath(outputDir))
+                    {
+                        Console.WriteLine("翻译表和输出目录在同一目录下不能导出结果");
+                        return;
+                    }
+                    string target = Path.Combine(outputDir, Path.GetFileName(translateTable));
+                    File.Copy(translateTable, target, true);
+                    translateTable = target;
+                }
                 Console.WriteLine("输出csv数据表");
-				BuildOutputCSV(translateTable, outputDir);
-			}
-		}
-		public static void BuildTableFromCSV(string inputDirOrFile, string outputTable)
-		{
-			const string PATH = "_path";
-			string className = Path.GetFileNameWithoutExtension(outputTable);
-			int index = className.IndexOf('.');
-			if (index != -1)
-				className = className.Substring(0, index);
+                BuildOutputCSV(translateTable, outputDir);
+            }
+        }
+        public static void BuildTableFromCSV(string inputDirOrFile, string outputTable)
+        {
+            const string PATH = "_path";
+            string className = Path.GetFileNameWithoutExtension(outputTable);
+            int index = className.IndexOf('.');
+            if (index != -1)
+                className = className.Substring(0, index);
 
-			StringBuilder writer = new StringBuilder();
-			writer.AppendLine("using System;");
-			writer.AppendLine("using System.Collections.Generic;");
-			writer.AppendLine("using System.Linq;");
-			writer.AppendLine("using EntryEngine;");
-			writer.AppendLine("using EntryEngine.Serialize;");
-			writer.AppendLine();
+            StringBuilder writer = new StringBuilder();
+            writer.AppendLine("using System;");
+            writer.AppendLine("using System.Collections.Generic;");
+            writer.AppendLine("using System.Linq;");
+            writer.AppendLine("using EntryEngine;");
+            writer.AppendLine("using EntryEngine.Serialize;");
+            writer.AppendLine();
 
             string[] files = GetCSVTables(inputDirOrFile, SearchOption.AllDirectories);
 
@@ -6736,7 +6743,7 @@ declare module '@vue/runtime-core'
 
                             nonOptimize.AppendLine("{0}.{1} = null;", name, column);
                         }
-                        else if(type.StartsWith("enum:") || type == "enum")
+                        else if (type.StartsWith("enum:") || type == "enum")
                         {
                             // 生成枚举类型enum[:UnderlyingType]
                             string enumName = string.Format("E{0}{1}", name, column);
@@ -6839,7 +6846,7 @@ declare module '@vue/runtime-core'
                     }
                 }
 
-                
+
                 nonOptimize.AppendLine("}");
                 writer.AppendLine(nonOptimize.ToString());
 
@@ -6895,8 +6902,8 @@ declare module '@vue/runtime-core'
                 }
             });
 
-			writer.AppendLine("public static partial class {0}", className);
-			writer.AppendLine("{");
+            writer.AppendLine("public static partial class {0}", className);
+            writer.AppendLine("{");
             writer.AppendLine("public static ALL_TABLE AllTables");
             writer.AppendBlock(() =>
             {
@@ -6912,12 +6919,12 @@ declare module '@vue/runtime-core'
                     writer.AppendLine("return all;");
                 });
             });
-			writer.AppendLine("public static string {0} {{ get; private set; }}", PATH);
+            writer.AppendLine("public static string {0} {{ get; private set; }}", PATH);
 
-			foreach (var file in files)
-			{
-				string name = Path.GetFileNameWithoutExtension(file);
-				writer.AppendLine("public static {0}[] _{0};", name);
+            foreach (var file in files)
+            {
+                string name = Path.GetFileNameWithoutExtension(file);
+                writer.AppendLine("public static {0}[] _{0};", name);
                 // 按字段生成字典
                 if (specials.ContainsKey(name))
                     foreach (var item in specials[name].Where(i => i.Value.IsDictionary))
@@ -6925,33 +6932,33 @@ declare module '@vue/runtime-core'
                             writer.AppendLine("public static Dictionary<{0}, {1}[]> _{1}By{2};", item.Value.TypeName, name, item.Key);
                         else
                             writer.AppendLine("public static Dictionary<{0}, {1}> _{1}By{2};", item.Value.TypeName, name, item.Key);
-			}
-			writer.AppendLine();
+            }
+            writer.AppendLine();
             //writer.AppendLine("public static event Func<string, string> OnLoad;");
-			foreach (var file in files)
-			{
-				string name = Path.GetFileNameWithoutExtension(file);
-				writer.AppendLine("public static event Action<{0}[]> OnLoad{0};", name);
-			}
-			writer.AppendLine();
-			writer.AppendLine("public static void SetPath(string path)");
-			writer.AppendLine("{");
-			writer.AppendLine("if ({0} != path)", PATH);
-			writer.AppendLine("{");
-			writer.AppendLine("{0} = _IO.DirectoryWithEnding(path);", PATH);
-			writer.AppendLine("_LOG.Info(\"Set table path: {{0}}\", {0});", PATH);
-			writer.AppendLine("}");
-			writer.AppendLine("}");
-			writer.AppendLine("public static void Load(string path)");
-			writer.AppendLine("{");
-			writer.AppendLine("SetPath(path);");
-			writer.AppendLine("_LOG.Info(\"Load all tables\", path);");
-			foreach (var file in files)
-			{
-				string name = Path.GetFileNameWithoutExtension(file);
-				writer.AppendLine("Load{0}();", name);
-			}
-			writer.AppendLine("}");
+            foreach (var file in files)
+            {
+                string name = Path.GetFileNameWithoutExtension(file);
+                writer.AppendLine("public static event Action<{0}[]> OnLoad{0};", name);
+            }
+            writer.AppendLine();
+            writer.AppendLine("public static void SetPath(string path)");
+            writer.AppendLine("{");
+            writer.AppendLine("if ({0} != path)", PATH);
+            writer.AppendLine("{");
+            writer.AppendLine("{0} = _IO.DirectoryWithEnding(path);", PATH);
+            writer.AppendLine("_LOG.Info(\"Set table path: {{0}}\", {0});", PATH);
+            writer.AppendLine("}");
+            writer.AppendLine("}");
+            writer.AppendLine("public static void Load(string path)");
+            writer.AppendLine("{");
+            writer.AppendLine("SetPath(path);");
+            writer.AppendLine("_LOG.Info(\"Load all tables\", path);");
+            foreach (var file in files)
+            {
+                string name = Path.GetFileNameWithoutExtension(file);
+                writer.AppendLine("Load{0}();", name);
+            }
+            writer.AppendLine("}");
 
             writer.AppendLine("public static IEnumerable<AsyncReadFile> LoadAsync(string path)");
             writer.AppendLine("{");
@@ -6965,11 +6972,11 @@ declare module '@vue/runtime-core'
             writer.AppendLine("yield break;");
             writer.AppendLine("}");
 
-			writer.AppendLine("public static void Reload()");
-			writer.AppendLine("{");
-			writer.AppendLine("_LOG.Info(\"Reload all tables\");");
-			writer.AppendLine("Load({0});", PATH);
-			writer.AppendLine("}");
+            writer.AppendLine("public static void Reload()");
+            writer.AppendLine("{");
+            writer.AppendLine("_LOG.Info(\"Reload all tables\");");
+            writer.AppendLine("Load({0});", PATH);
+            writer.AppendLine("}");
 
             writer.AppendLine("public static IEnumerable<AsyncReadFile> ReloadAsync()");
             writer.AppendLine("{");
@@ -6984,9 +6991,9 @@ declare module '@vue/runtime-core'
             //writer.AppendLine("else return _IO.ReadText(table);");
             //writer.AppendLine("}");
 
-			foreach (var file in files)
-			{
-				string name = Path.GetFileNameWithoutExtension(file);
+            foreach (var file in files)
+            {
+                string name = Path.GetFileNameWithoutExtension(file);
 
                 // special
                 Dictionary<string, SpecialType> s;
@@ -7102,18 +7109,18 @@ declare module '@vue/runtime-core'
                     });
                 }
 
-				writer.AppendLine("public static void Load{0}()", name);
-				writer.AppendLine("{");
-				writer.AppendLine("if (!{0}.__Load) return;", name);
-				writer.AppendLine("_LOG.Debug(\"loading table {0}\");", name);
+                writer.AppendLine("public static void Load{0}()", name);
+                writer.AppendLine("{");
+                writer.AppendLine("if (!{0}.__Load) return;", name);
+                writer.AppendLine("_LOG.Debug(\"loading table {0}\");", name);
                 //writer.AppendLine("CSVReader _reader = new CSVReader(LoadTable(\"{0}.csv\"));", name);
                 writer.AppendLine("CSVReader _reader = new CSVReader(_IO.ReadText({1} + \"{0}.csv\"));", name, PATH);
-				writer.AppendLine("{0}[] temp = _reader.ReadObject<{0}[]>();", name);
+                writer.AppendLine("{0}[] temp = _reader.ReadObject<{0}[]>();", name);
                 if (s != null)
                     writer.AppendLine("__Parse{0}(temp);", name);
-				writer.AppendLine("if (OnLoad{0} != null) OnLoad{0}(temp);", name);
-				writer.AppendLine("_{0} = temp;", name);
-				writer.AppendLine("}");
+                writer.AppendLine("if (OnLoad{0} != null) OnLoad{0}(temp);", name);
+                writer.AppendLine("_{0} = temp;", name);
+                writer.AppendLine("}");
 
                 writer.AppendLine("public static IEnumerable<AsyncReadFile> Load{0}Async()", name);
                 writer.AppendLine("{");
@@ -7129,36 +7136,36 @@ declare module '@vue/runtime-core'
                 writer.AppendLine("if (OnLoad{0} != null) OnLoad{0}(temp);", name);
                 writer.AppendLine("_{0} = temp;", name);
                 writer.AppendLine("}");
-			}
-			writer.AppendLine("}");
+            }
+            writer.AppendLine("}");
 
-			string result = writer.ToString();
+            string result = writer.ToString();
             result = _RH.Indent(result);
 
-			File.WriteAllText(outputTable, result, Encoding.UTF8);
-		}
-		public static void BuildOutputCSV(string languageTableCSV, string csvDirOrFile)
-		{
-			// 去掉Source
-			if (!string.IsNullOrEmpty(languageTableCSV) &&
-				File.Exists(languageTableCSV))
-			{
-				var table = ReadTranslateTable(languageTableCSV);
-				if (table.GetColumn(1) == "Source")
-					table.RemoveColumn(1);
-				WriteCSVTable(languageTableCSV, table);
-			}
+            File.WriteAllText(outputTable, result, Encoding.UTF8);
+        }
+        public static void BuildOutputCSV(string languageTableCSV, string csvDirOrFile)
+        {
+            // 去掉Source
+            if (!string.IsNullOrEmpty(languageTableCSV) &&
+                File.Exists(languageTableCSV))
+            {
+                var table = ReadTranslateTable(languageTableCSV);
+                if (table.GetColumn(1) == "Source")
+                    table.RemoveColumn(1);
+                WriteCSVTable(languageTableCSV, table);
+            }
 
-			// 去掉表头
-			if (!string.IsNullOrEmpty(csvDirOrFile))
-			{
-				string[] tables = GetCSVTables(csvDirOrFile, SearchOption.AllDirectories);
-				foreach (var file in tables)
-				{
+            // 去掉表头
+            if (!string.IsNullOrEmpty(csvDirOrFile))
+            {
+                string[] tables = GetCSVTables(csvDirOrFile, SearchOption.AllDirectories);
+                foreach (var file in tables)
+                {
                     // 跳过语言表
                     if (file == languageTableCSV)
                         continue;
-					var table = ReadCSVTable(file, -1);
+                    var table = ReadCSVTable(file, -1);
                     // 去除enum类型等号前面的名字
                     for (int i = 0; i < table.ColumnCount; i++)
                     {
@@ -7189,18 +7196,18 @@ declare module '@vue/runtime-core'
                             }
                         }
                     }
-					int title = CSVReader.TITLE_ROW_COUNT - 1;
-					for (int i = 0; i < table.ColumnCount; i++)
-					{
-						for (int j = 0; j < title; j++)
-						{
-							table[i, j] = string.Empty;
-						}
-					}
-					WriteCSVTable(file, table);
-				}
-			}
-		}
+                    int title = CSVReader.TITLE_ROW_COUNT - 1;
+                    for (int i = 0; i < table.ColumnCount; i++)
+                    {
+                        for (int j = 0; j < title; j++)
+                        {
+                            table[i, j] = string.Empty;
+                        }
+                    }
+                    WriteCSVTable(file, table);
+                }
+            }
+        }
         public static void BuildConstantTable(string inputXLSX, string outputXml, string outputCS, bool overrideValue, string excelVersion)
         {
             StringTable table = LoadTableFromExcel(inputXLSX, excelVersion);
@@ -7287,735 +7294,735 @@ declare module '@vue/runtime-core'
             File.WriteAllText(outputXml, root.OutterXml, Encoding.UTF8);
         }
         public static void BuildUnityEditorScript(string dllAndNamespace, string outputDir)
-		{
-			Type[] types = GetDllTypes(dllAndNamespace, SearchOption.TopDirectoryOnly);
-			foreach (var type in types.Where(t => t.IsClass))
-			{
-				StringBuilder builder = new StringBuilder();
-				builder.AppendLine("using System;");
-				builder.AppendLine("using System.Collections.Generic;");
-				builder.AppendLine("using UnityEngine;");
-				builder.AppendLine("using {0};", type.Namespace);
-				builder.AppendLine();
-				string className = "Unity_" + type.Name;
-				builder.AppendLine("public class Unity_{0} : MonoBehaviour", type.Name);
-				builder.AppendLine("{");
-				var fields = type.GetFields();
-				string targetName = "__" + type.Name.ToLowerInvariant();
-				builder.AppendLine("private {0} {1} = new {0}();", type.Name, targetName);
-				builder.AppendLine("public {0} {0} {{ get {{ return {1}; }} set {{ {1} = value; Awake(); }} }}", type.Name, targetName);
-				builder.AppendLine();
-				// fields
-				foreach (var field in fields)
-					builder.AppendLine("public {0} {1};", field.FieldType.CodeName(), field.Name);
-				builder.AppendLine();
-				// set script default value
-				builder.AppendLine("void Awake()");
-				builder.AppendLine("{");
-				foreach (var field in fields)
-					builder.AppendLine("this.{1} = {0}.{1};", type.Name, field.Name);
-				builder.AppendLine("}");
-				// update every fields value
-				builder.AppendLine("public void Update()");
-				builder.AppendLine("{");
-				foreach (var field in fields)
-					builder.AppendLine("{0}.{1} = this.{1};", type.Name, field.Name);
-				builder.AppendLine("}");
-				builder.AppendLine("}");
+        {
+            Type[] types = GetDllTypes(dllAndNamespace, SearchOption.TopDirectoryOnly);
+            foreach (var type in types.Where(t => t.IsClass))
+            {
+                StringBuilder builder = new StringBuilder();
+                builder.AppendLine("using System;");
+                builder.AppendLine("using System.Collections.Generic;");
+                builder.AppendLine("using UnityEngine;");
+                builder.AppendLine("using {0};", type.Namespace);
+                builder.AppendLine();
+                string className = "Unity_" + type.Name;
+                builder.AppendLine("public class Unity_{0} : MonoBehaviour", type.Name);
+                builder.AppendLine("{");
+                var fields = type.GetFields();
+                string targetName = "__" + type.Name.ToLowerInvariant();
+                builder.AppendLine("private {0} {1} = new {0}();", type.Name, targetName);
+                builder.AppendLine("public {0} {0} {{ get {{ return {1}; }} set {{ {1} = value; Awake(); }} }}", type.Name, targetName);
+                builder.AppendLine();
+                // fields
+                foreach (var field in fields)
+                    builder.AppendLine("public {0} {1};", field.FieldType.CodeName(), field.Name);
+                builder.AppendLine();
+                // set script default value
+                builder.AppendLine("void Awake()");
+                builder.AppendLine("{");
+                foreach (var field in fields)
+                    builder.AppendLine("this.{1} = {0}.{1};", type.Name, field.Name);
+                builder.AppendLine("}");
+                // update every fields value
+                builder.AppendLine("public void Update()");
+                builder.AppendLine("{");
+                foreach (var field in fields)
+                    builder.AppendLine("{0}.{1} = this.{1};", type.Name, field.Name);
+                builder.AppendLine("}");
+                builder.AppendLine("}");
 
-				string output = Path.Combine(outputDir, className) + ".cs";
-				Console.WriteLine("write script {0} completed.", output);
+                string output = Path.Combine(outputDir, className) + ".cs";
+                Console.WriteLine("write script {0} completed.", output);
                 File.WriteAllText(output, _RH.Indent(builder.ToString()), Encoding.UTF8);
-			}
-		}
-		public static void BuildDatabase(string dll, string ns_dbname, string outputCS, string outputDll)
-		{
-			Assembly assembly = Assembly.LoadFrom(Path.GetFullPath(dll));
-			var types = assembly.GetTypesWithAttribute<MemoryTableAttribute>();
-			// foreign relationship
-			TreeField tree = new TreeField();
-			foreach (var table in types)
-			{
-				var fields = table.GetFields();
-				foreach (var field in fields)
-				{
-					var foreign = field.GetAttribute<ForeignAttribute>();
-					if (foreign != null)
-					{
-						var foreignKey = string.IsNullOrEmpty(foreign.ForeignField) ? field.Name : foreign.ForeignField;
-						var parentField = foreign.ForeignTable.GetField(foreignKey);
-						if (parentField == null)
-							throw new ArgumentNullException(string.Format("{0}.{1} required foreign key {2}.{3} is not exists.", table.Name, field.Name, foreign.ForeignTable.Name, foreignKey));
-						var parentIndex = parentField.GetAttribute<IndexAttribute>();
-						if (parentIndex == null || parentIndex.Index == EIndex.Group)
-							throw new NotSupportedException("Be refferenced foreign field must be a unique key.");
-						var myIndex = field.GetAttribute<IndexAttribute>();
-						if (myIndex == null)
-							throw new NotSupportedException(string.Format("Foreign key {0}.{1} must have a IndexAttribute.", table.Name, field.Name));
-						var parent = tree.Find(f => f.Field == parentField);
-						if (parent == null)
-						{
-							parent = new TreeField(parentField);
-							tree.Add(parent);
-						}
-						else if (parent.Parent != null && parent.Parent.Field == field)
-							throw new NotSupportedException("Foreign key can't be circular.");
+            }
+        }
+        public static void BuildDatabase(string dll, string ns_dbname, string outputCS, string outputDll)
+        {
+            Assembly assembly = Assembly.LoadFrom(Path.GetFullPath(dll));
+            var types = assembly.GetTypesWithAttribute<MemoryTableAttribute>();
+            // foreign relationship
+            TreeField tree = new TreeField();
+            foreach (var table in types)
+            {
+                var fields = table.GetFields();
+                foreach (var field in fields)
+                {
+                    var foreign = field.GetAttribute<ForeignAttribute>();
+                    if (foreign != null)
+                    {
+                        var foreignKey = string.IsNullOrEmpty(foreign.ForeignField) ? field.Name : foreign.ForeignField;
+                        var parentField = foreign.ForeignTable.GetField(foreignKey);
+                        if (parentField == null)
+                            throw new ArgumentNullException(string.Format("{0}.{1} required foreign key {2}.{3} is not exists.", table.Name, field.Name, foreign.ForeignTable.Name, foreignKey));
+                        var parentIndex = parentField.GetAttribute<IndexAttribute>();
+                        if (parentIndex == null || parentIndex.Index == EIndex.Group)
+                            throw new NotSupportedException("Be refferenced foreign field must be a unique key.");
+                        var myIndex = field.GetAttribute<IndexAttribute>();
+                        if (myIndex == null)
+                            throw new NotSupportedException(string.Format("Foreign key {0}.{1} must have a IndexAttribute.", table.Name, field.Name));
+                        var parent = tree.Find(f => f.Field == parentField);
+                        if (parent == null)
+                        {
+                            parent = new TreeField(parentField);
+                            tree.Add(parent);
+                        }
+                        else if (parent.Parent != null && parent.Parent.Field == field)
+                            throw new NotSupportedException("Foreign key can't be circular.");
 
-						// added as other foreign parent
-						var me = tree.Find(f => f.Field == field);
-						if (me == null)
-							me = new TreeField(field);
+                        // added as other foreign parent
+                        var me = tree.Find(f => f.Field == field);
+                        if (me == null)
+                            me = new TreeField(field);
 
-						parent.Add(me);
-					}
-				}
-			}
+                        parent.Add(me);
+                    }
+                }
+            }
 
-			StringBuilder builder = new StringBuilder();
-			builder.AppendLine("using System;");
-			builder.AppendLine("using System.Collections;");
-			builder.AppendLine("using System.Collections.Generic;");
-			builder.AppendLine("using System.Linq;");
-			builder.AppendLine("using EntryEngine;");
-			builder.AppendLine("using EntryEngine.Serialize;");
-			builder.AppendLine("using EntryEngine.Network.Database;");
-			foreach (var ns in types.Select(t => t.Namespace).Distinct())
-				builder.AppendLine("using {0};", ns);
-			builder.AppendLine();
+            StringBuilder builder = new StringBuilder();
+            builder.AppendLine("using System;");
+            builder.AppendLine("using System.Collections;");
+            builder.AppendLine("using System.Collections.Generic;");
+            builder.AppendLine("using System.Linq;");
+            builder.AppendLine("using EntryEngine;");
+            builder.AppendLine("using EntryEngine.Serialize;");
+            builder.AppendLine("using EntryEngine.Network.Database;");
+            foreach (var ns in types.Select(t => t.Namespace).Distinct())
+                builder.AppendLine("using {0};", ns);
+            builder.AppendLine();
 
-			int dot = ns_dbname.LastIndexOf('.');
-			if (dot == -1)
-			{
-				builder.AppendLine("namespace {0}", ns_dbname);
-			}
-			else
-			{
-				builder.AppendLine("namespace {0}", ns_dbname.Substring(0, dot));
-				ns_dbname = ns_dbname.Substring(dot + 1);
-			}
-			builder.AppendLine("{");
+            int dot = ns_dbname.LastIndexOf('.');
+            if (dot == -1)
+            {
+                builder.AppendLine("namespace {0}", ns_dbname);
+            }
+            else
+            {
+                builder.AppendLine("namespace {0}", ns_dbname.Substring(0, dot));
+                ns_dbname = ns_dbname.Substring(dot + 1);
+            }
+            builder.AppendLine("{");
 
-			// build memory table
-			foreach (var table in types)
-			{
-				var obj = Activator.CreateInstance(table);
-				var fields = table.GetFields();
-				var primary = fields.Where(f =>
-				{
-					var index = f.GetAttribute<IndexAttribute>();
-					return index != null && index.Index == EIndex.Primary;
-				}).ToArray();
+            // build memory table
+            foreach (var table in types)
+            {
+                var obj = Activator.CreateInstance(table);
+                var fields = table.GetFields();
+                var primary = fields.Where(f =>
+                {
+                    var index = f.GetAttribute<IndexAttribute>();
+                    return index != null && index.Index == EIndex.Primary;
+                }).ToArray();
 
-				if (primary.Length > 1)
-				{
-					// NotSupportedException: multiple primary key can't be refferenced by foreign key
-					if (tree.Find(f => primary.Contains(f.Field)) != null)
-						throw new NotSupportedException("Multiple primary key can't be refferenced by foreign key.");
-					// multiple primary key type
-					builder.AppendLine("public struct Primary{0} : IEquatable<Primary{0}>", table.Name);
-					builder.AppendLine("{");
-					foreach (var field in primary)
-						builder.AppendLine("public {0} {1};", field.FieldType.CodeName(), field.Name);
-					// ToString
+                if (primary.Length > 1)
+                {
+                    // NotSupportedException: multiple primary key can't be refferenced by foreign key
+                    if (tree.Find(f => primary.Contains(f.Field)) != null)
+                        throw new NotSupportedException("Multiple primary key can't be refferenced by foreign key.");
+                    // multiple primary key type
+                    builder.AppendLine("public struct Primary{0} : IEquatable<Primary{0}>", table.Name);
+                    builder.AppendLine("{");
+                    foreach (var field in primary)
+                        builder.AppendLine("public {0} {1};", field.FieldType.CodeName(), field.Name);
+                    // ToString
                     builder.AppendLine("public override string ToString() { return JsonWriter.Serialize(this); }");
-					// GetHashCode
-					builder.AppendLine("public override int GetHashCode()");
-					builder.AppendLine("{");
-					builder.AppendLine("int hash = 0;");
-					foreach (var field in primary)
-						builder.AppendLine("hash += {0}.GetHashCode();", field.Name);
-					builder.AppendLine("return hash;");
-					builder.AppendLine("}");
-					// Equals
-					builder.AppendLine("public bool Equals(Primary{0} obj)", table.Name);
-					builder.AppendLine("{");
-					builder.AppendLine("return {0};", string.Join(" && ", primary.Select(p => string.Format("obj.{0} == this.{0}", p.Name)).ToArray()));
-					builder.AppendLine("}");
-					builder.AppendLine("public override bool Equals(object obj)");
-					builder.AppendLine("{");
-					builder.AppendLine("bool result = false;");
-					builder.AppendLine("if (obj is Primary{0}) return Equals((Primary{0})obj);", table.Name);
-					builder.AppendLine("return result;");
-					builder.AppendLine("}");
-					builder.AppendLine("}");
-				}
-				// table class
-				builder.AppendLine("public class _{0} : {0}", table.Name);
-				builder.AppendLine("{");
-				builder.AppendLine("public Memory{0} MemoryTable {{ get; internal set; }}", table.Name);
-				//builder.AppendLine("internal _{0}() {{ }}", table.Name);
-				builder.AppendLine("internal _{0}(Memory{0} memory, {0} table)", table.Name);
-				builder.AppendLine("{");
-				builder.AppendLine("MemoryTable = memory;");
-				foreach (var field in fields)
-					builder.AppendLine("base.{0} = table.{0};", field.Name);
-				builder.AppendLine("}");
-				// update
-				builder.AppendLine("public void Update({0} table)", table.Name);
-				builder.AppendLine("{");
-				foreach (var field in fields)
-					builder.AppendLine("this.{0} = table.{0};", field.Name);
-				builder.AppendLine("}");
-				if (primary.Length > 1)
-				{
-					// multiple primary key
-					builder.AppendLine("public Primary{0} Primary", table.Name);
-					builder.AppendLine("{");
-					builder.AppendLine("get");
-					builder.AppendLine("{");
-					builder.AppendLine("Primary{0} primary = new Primary{0}();", table.Name);
-					foreach (var field in primary)
-						builder.AppendLine("primary.{0} = {0};", field.Name);
-					builder.AppendLine("return primary;");
-					builder.AppendLine("}");
-					builder.AppendLine("}");
-				}
-				foreach (var field in fields)
-				{
-					var foreign = tree.Find(t => t.Field == field);
-					if (foreign != null)
-					{
-						if (foreign.Parent != null && foreign.Parent.Field != null)
-						{
-							builder.AppendLine("public _{0} Foreign{1}{0}", foreign.Parent.Table.Name, foreign.Parent.Field.Name);
-							builder.AppendLine("{");
-							//builder.AppendLine("get;");
-							//builder.AppendLine("internal set;");
-							builder.AppendLine("get {{ return MemoryTable.MemoryDatabase.{0}.FindBy{1}({2}); }}", foreign.Parent.Table.Name, foreign.Parent.Field.Name, field.Name);
-							builder.AppendLine("}");
-						}
-						foreach (var item in foreign)
-						{
-							var childIndex = item.Field.GetAttribute<IndexAttribute>();
-							// null index has been checked by check foreign key
-							if (childIndex == null ||
-								childIndex.Index == EIndex.Group ||
-								item.Table.GetFields().Count(f =>
-								{
-									var index = f.GetAttribute<IndexAttribute>();
-									return index != null && index.Index == EIndex.Primary;
-								}) > 1)
-								builder.AppendLine("public IEnumerable<_{0}> Foreign{1}{0}", item.Table.Name, item.Field.Name);
-							else
-								builder.AppendLine("public _{0} Foreign{1}{0}", item.Table.Name, item.Field.Name);
-							builder.AppendLine("{");
-							//builder.AppendLine("get;");
-							//builder.AppendLine("internal set;");
-							builder.AppendLine("get {{ return MemoryTable.MemoryDatabase.{0}.FindBy{1}({2}); }}", item.Table.Name, item.Field.Name, field.Name);
-							builder.AppendLine("}");
-						}
-					}
-				}
-				foreach (var field in fields)
-				{
-					var foreign = tree.Find(t => t.Field == field);
-					var index = field.GetAttribute<IndexAttribute>();
-					var check = new StringBuilder();
-					check.Append("if (MemoryTable.FindBy{0}(value) != null) throw new InvalidOperationException(string.Format(\"Modify duplicate {0} = {{0}}.\", value));", field.Name);
-					var temp = new StringBuilder();
-					var fp = foreign;
-					while (index == null)
-					{
-						if (fp == null || fp.Field == null)
-							break;
-						index = fp.Field.GetAttribute<IndexAttribute>();
-						fp = fp.Parent;
-					}
-					if (index != null)
-					{
-						switch (index.Index)
-						{
-							case EIndex.Index:
-								temp = null;
-								break;
+                    // GetHashCode
+                    builder.AppendLine("public override int GetHashCode()");
+                    builder.AppendLine("{");
+                    builder.AppendLine("int hash = 0;");
+                    foreach (var field in primary)
+                        builder.AppendLine("hash += {0}.GetHashCode();", field.Name);
+                    builder.AppendLine("return hash;");
+                    builder.AppendLine("}");
+                    // Equals
+                    builder.AppendLine("public bool Equals(Primary{0} obj)", table.Name);
+                    builder.AppendLine("{");
+                    builder.AppendLine("return {0};", string.Join(" && ", primary.Select(p => string.Format("obj.{0} == this.{0}", p.Name)).ToArray()));
+                    builder.AppendLine("}");
+                    builder.AppendLine("public override bool Equals(object obj)");
+                    builder.AppendLine("{");
+                    builder.AppendLine("bool result = false;");
+                    builder.AppendLine("if (obj is Primary{0}) return Equals((Primary{0})obj);", table.Name);
+                    builder.AppendLine("return result;");
+                    builder.AppendLine("}");
+                    builder.AppendLine("}");
+                }
+                // table class
+                builder.AppendLine("public class _{0} : {0}", table.Name);
+                builder.AppendLine("{");
+                builder.AppendLine("public Memory{0} MemoryTable {{ get; internal set; }}", table.Name);
+                //builder.AppendLine("internal _{0}() {{ }}", table.Name);
+                builder.AppendLine("internal _{0}(Memory{0} memory, {0} table)", table.Name);
+                builder.AppendLine("{");
+                builder.AppendLine("MemoryTable = memory;");
+                foreach (var field in fields)
+                    builder.AppendLine("base.{0} = table.{0};", field.Name);
+                builder.AppendLine("}");
+                // update
+                builder.AppendLine("public void Update({0} table)", table.Name);
+                builder.AppendLine("{");
+                foreach (var field in fields)
+                    builder.AppendLine("this.{0} = table.{0};", field.Name);
+                builder.AppendLine("}");
+                if (primary.Length > 1)
+                {
+                    // multiple primary key
+                    builder.AppendLine("public Primary{0} Primary", table.Name);
+                    builder.AppendLine("{");
+                    builder.AppendLine("get");
+                    builder.AppendLine("{");
+                    builder.AppendLine("Primary{0} primary = new Primary{0}();", table.Name);
+                    foreach (var field in primary)
+                        builder.AppendLine("primary.{0} = {0};", field.Name);
+                    builder.AppendLine("return primary;");
+                    builder.AppendLine("}");
+                    builder.AppendLine("}");
+                }
+                foreach (var field in fields)
+                {
+                    var foreign = tree.Find(t => t.Field == field);
+                    if (foreign != null)
+                    {
+                        if (foreign.Parent != null && foreign.Parent.Field != null)
+                        {
+                            builder.AppendLine("public _{0} Foreign{1}{0}", foreign.Parent.Table.Name, foreign.Parent.Field.Name);
+                            builder.AppendLine("{");
+                            //builder.AppendLine("get;");
+                            //builder.AppendLine("internal set;");
+                            builder.AppendLine("get {{ return MemoryTable.MemoryDatabase.{0}.FindBy{1}({2}); }}", foreign.Parent.Table.Name, foreign.Parent.Field.Name, field.Name);
+                            builder.AppendLine("}");
+                        }
+                        foreach (var item in foreign)
+                        {
+                            var childIndex = item.Field.GetAttribute<IndexAttribute>();
+                            // null index has been checked by check foreign key
+                            if (childIndex == null ||
+                                childIndex.Index == EIndex.Group ||
+                                item.Table.GetFields().Count(f =>
+                                {
+                                    var index = f.GetAttribute<IndexAttribute>();
+                                    return index != null && index.Index == EIndex.Primary;
+                                }) > 1)
+                                builder.AppendLine("public IEnumerable<_{0}> Foreign{1}{0}", item.Table.Name, item.Field.Name);
+                            else
+                                builder.AppendLine("public _{0} Foreign{1}{0}", item.Table.Name, item.Field.Name);
+                            builder.AppendLine("{");
+                            //builder.AppendLine("get;");
+                            //builder.AppendLine("internal set;");
+                            builder.AppendLine("get {{ return MemoryTable.MemoryDatabase.{0}.FindBy{1}({2}); }}", item.Table.Name, item.Field.Name, field.Name);
+                            builder.AppendLine("}");
+                        }
+                    }
+                }
+                foreach (var field in fields)
+                {
+                    var foreign = tree.Find(t => t.Field == field);
+                    var index = field.GetAttribute<IndexAttribute>();
+                    var check = new StringBuilder();
+                    check.Append("if (MemoryTable.FindBy{0}(value) != null) throw new InvalidOperationException(string.Format(\"Modify duplicate {0} = {{0}}.\", value));", field.Name);
+                    var temp = new StringBuilder();
+                    var fp = foreign;
+                    while (index == null)
+                    {
+                        if (fp == null || fp.Field == null)
+                            break;
+                        index = fp.Field.GetAttribute<IndexAttribute>();
+                        fp = fp.Parent;
+                    }
+                    if (index != null)
+                    {
+                        switch (index.Index)
+                        {
+                            case EIndex.Index:
+                                temp = null;
+                                break;
 
-							case EIndex.Primary:
-								// check multiple primary key
-								if (primary.Length > 1)
-								{
-									check = new StringBuilder();
-									check.AppendLine("var _primary = Primary;");
-									check.AppendLine("_primary.{0} = value;", field.Name);
-									check.Append("if (MemoryTable.FindByPrimary(_primary) != null) throw new InvalidOperationException(string.Format(\"Modify Primary{0} duplicate {{0}}.\", _primary));", table.Name);
-								}
-								temp = null;
-								break;
+                            case EIndex.Primary:
+                                // check multiple primary key
+                                if (primary.Length > 1)
+                                {
+                                    check = new StringBuilder();
+                                    check.AppendLine("var _primary = Primary;");
+                                    check.AppendLine("_primary.{0} = value;", field.Name);
+                                    check.Append("if (MemoryTable.FindByPrimary(_primary) != null) throw new InvalidOperationException(string.Format(\"Modify Primary{0} duplicate {{0}}.\", _primary));", table.Name);
+                                }
+                                temp = null;
+                                break;
 
-							case EIndex.Identity:
-								//builder.AppendLine("internal static {0} Identity{1} = {2};", field.FieldType.CodeName(), field.Name, field.GetValue(obj));
-								//builder.AppendLine("internal static {0} GetIdentity{1}()", field.FieldType.CodeName(), field.Name);
-								//builder.AppendLine("{");
-								//builder.AppendLine("return Identity{0}++;", field.Name);
-								//builder.AppendLine("}");
-								temp.Append("if (value > MemoryTable.Identity{0}) MemoryTable.Identity{0} = value;", field.Name);
-								break;
+                            case EIndex.Identity:
+                                //builder.AppendLine("internal static {0} Identity{1} = {2};", field.FieldType.CodeName(), field.Name, field.GetValue(obj));
+                                //builder.AppendLine("internal static {0} GetIdentity{1}()", field.FieldType.CodeName(), field.Name);
+                                //builder.AppendLine("{");
+                                //builder.AppendLine("return Identity{0}++;", field.Name);
+                                //builder.AppendLine("}");
+                                temp.Append("if (value > MemoryTable.Identity{0}) MemoryTable.Identity{0} = value;", field.Name);
+                                break;
 
-							case EIndex.Group:
-								temp.Append("MemoryTable.UpdateGroup{0}(this, value);", field.Name);
-								check = null;
-								break;
+                            case EIndex.Group:
+                                temp.Append("MemoryTable.UpdateGroup{0}(this, value);", field.Name);
+                                check = null;
+                                break;
 
-							default:
-								throw new ArgumentException(string.Format("error index type: {0}", index.Index));
-						}
-						builder.AppendSummary(field);
-						builder.AppendLine("public new {0} {1}", field.FieldType.CodeName(), field.Name);
-						builder.AppendLine("{");
-						builder.AppendLine("get {{ return base.{0}; }}", field.Name);
-						builder.AppendLine("set");
-						builder.AppendLine("{");
-						if (foreign != null && foreign.Parent != null && foreign.Parent.Field != null)
-						{
-							builder.AppendLine("if (value == {0}) return;", field.Name);
-							// send message to foreign parent
-							builder.AppendLine("Foreign{0}{1}.{0} = value;", foreign.Parent.Field.Name, foreign.Parent.Table.Name);
-							builder.AppendLine("}");
-							builder.AppendLine("}");
-							builder.AppendLine("internal void SetForeign{0}({1} value)", field.Name, field.FieldType.CodeName());
-							builder.AppendLine("{");
-						}
-						else
-						{
-							builder.AppendLine("if (value == {0}) return;", field.Name);
-							if (check != null)
-								builder.AppendLine(check.ToString());
-						}
-						builder.AppendLine("_LOG.Debug(\"Update {0}.{1} {{0}} => {{1}}\", base.{1}, value);", field.DeclaringType.Name, field.Name);
-						builder.AppendLine("base.{0} = value;", field.Name);
-						if (temp != null)
-							builder.AppendLine(temp.ToString());
-						// child foreign field will be changede
-						if (foreign != null && foreign.ChildCount > 0)
-						{
-							foreach (var child in foreign)
-							{
-								var childIndex = child.Field.GetAttribute<IndexAttribute>();
-								// null index has been checked by check foreign key
-								if (childIndex == null ||
-									childIndex.Index == EIndex.Group ||
-									child.Table.GetFields().Count(f =>
-									{
-										var tempIndex = f.GetAttribute<IndexAttribute>();
-										return tempIndex != null && tempIndex.Index == EIndex.Primary;
-									}) > 1)
-									builder.AppendLine("foreach (var table in Foreign{0}{1}) table.SetForeign{0}(value);", child.Field.Name, child.Table.Name);
-								else
-									builder.AppendLine("Foreign{0}{1}.SetForeign{0}(value);", child.Field.Name, child.Table.Name);
-							}
-						}
-						builder.AppendLine("}");
-						if (!(foreign != null && foreign.Parent != null && foreign.Parent.Field != null))
-							builder.AppendLine("}");
-					}
-				}
-				builder.AppendLine("}");
+                            default:
+                                throw new ArgumentException(string.Format("error index type: {0}", index.Index));
+                        }
+                        builder.AppendSummary(field);
+                        builder.AppendLine("public new {0} {1}", field.FieldType.CodeName(), field.Name);
+                        builder.AppendLine("{");
+                        builder.AppendLine("get {{ return base.{0}; }}", field.Name);
+                        builder.AppendLine("set");
+                        builder.AppendLine("{");
+                        if (foreign != null && foreign.Parent != null && foreign.Parent.Field != null)
+                        {
+                            builder.AppendLine("if (value == {0}) return;", field.Name);
+                            // send message to foreign parent
+                            builder.AppendLine("Foreign{0}{1}.{0} = value;", foreign.Parent.Field.Name, foreign.Parent.Table.Name);
+                            builder.AppendLine("}");
+                            builder.AppendLine("}");
+                            builder.AppendLine("internal void SetForeign{0}({1} value)", field.Name, field.FieldType.CodeName());
+                            builder.AppendLine("{");
+                        }
+                        else
+                        {
+                            builder.AppendLine("if (value == {0}) return;", field.Name);
+                            if (check != null)
+                                builder.AppendLine(check.ToString());
+                        }
+                        builder.AppendLine("_LOG.Debug(\"Update {0}.{1} {{0}} => {{1}}\", base.{1}, value);", field.DeclaringType.Name, field.Name);
+                        builder.AppendLine("base.{0} = value;", field.Name);
+                        if (temp != null)
+                            builder.AppendLine(temp.ToString());
+                        // child foreign field will be changede
+                        if (foreign != null && foreign.ChildCount > 0)
+                        {
+                            foreach (var child in foreign)
+                            {
+                                var childIndex = child.Field.GetAttribute<IndexAttribute>();
+                                // null index has been checked by check foreign key
+                                if (childIndex == null ||
+                                    childIndex.Index == EIndex.Group ||
+                                    child.Table.GetFields().Count(f =>
+                                    {
+                                        var tempIndex = f.GetAttribute<IndexAttribute>();
+                                        return tempIndex != null && tempIndex.Index == EIndex.Primary;
+                                    }) > 1)
+                                    builder.AppendLine("foreach (var table in Foreign{0}{1}) table.SetForeign{0}(value);", child.Field.Name, child.Table.Name);
+                                else
+                                    builder.AppendLine("Foreign{0}{1}.SetForeign{0}(value);", child.Field.Name, child.Table.Name);
+                            }
+                        }
+                        builder.AppendLine("}");
+                        if (!(foreign != null && foreign.Parent != null && foreign.Parent.Field != null))
+                            builder.AppendLine("}");
+                    }
+                }
+                builder.AppendLine("}");
 
-				// memory table
-				string tableName = "_" + table.Name;
-				builder.AppendLine("public class Memory{0} : IEnumerable<{1}>", table.Name, tableName);
-				builder.AppendLine("{");
+                // memory table
+                string tableName = "_" + table.Name;
+                builder.AppendLine("public class Memory{0} : IEnumerable<{1}>", table.Name, tableName);
+                builder.AppendLine("{");
                 builder.AppendLine("public static bool IsSaveLoad = {0};", _RH.CodeValue(!table.GetAttribute<MemoryTableAttribute>().TempTable));
-				builder.AppendLine("public event Action<{0}> OnAdd;", tableName);
-				builder.AppendLine("public event Action<{0}> OnDelete;", tableName);
-				builder.AppendLine("public event Action<IEnumerable<{0}>> OnTruncate;", tableName);
-				builder.AppendLine("public int Count { get { return " + table.Name + ".Count; } }");
-				builder.AppendLine("public {0} MemoryDatabase {{ get; private set; }}", ns_dbname);
-				builder.AppendLine();
-				// dictionary
-				builder.AppendLine("private List<{1}> {0} = new List<{1}>();", table.Name, tableName);
-				if (primary.Length > 1)
-					builder.AppendLine("private Dictionary<Primary{0}, {1}> {0}Primary = new Dictionary<Primary{0}, {1}>();", table.Name, tableName);
-				foreach (var field in fields)
-				{
-					var index = field.GetAttribute<IndexAttribute>();
-					if (index != null)
-					{
-						switch (index.Index)
-						{
-							case EIndex.Primary:
-								if (primary.Length > 1)
-									goto case EIndex.Group;
-								else
-									goto case EIndex.Index;
+                builder.AppendLine("public event Action<{0}> OnAdd;", tableName);
+                builder.AppendLine("public event Action<{0}> OnDelete;", tableName);
+                builder.AppendLine("public event Action<IEnumerable<{0}>> OnTruncate;", tableName);
+                builder.AppendLine("public int Count { get { return " + table.Name + ".Count; } }");
+                builder.AppendLine("public {0} MemoryDatabase {{ get; private set; }}", ns_dbname);
+                builder.AppendLine();
+                // dictionary
+                builder.AppendLine("private List<{1}> {0} = new List<{1}>();", table.Name, tableName);
+                if (primary.Length > 1)
+                    builder.AppendLine("private Dictionary<Primary{0}, {1}> {0}Primary = new Dictionary<Primary{0}, {1}>();", table.Name, tableName);
+                foreach (var field in fields)
+                {
+                    var index = field.GetAttribute<IndexAttribute>();
+                    if (index != null)
+                    {
+                        switch (index.Index)
+                        {
+                            case EIndex.Primary:
+                                if (primary.Length > 1)
+                                    goto case EIndex.Group;
+                                else
+                                    goto case EIndex.Index;
 
-							case EIndex.Index:
-							case EIndex.Identity:
-								builder.AppendLine("private Dictionary<{0}, {3}> {1}{2} = new Dictionary<{0}, {3}>();", field.FieldType.CodeName(), table.Name, field.Name, tableName);
-								if (index.Index == EIndex.Identity)
-									builder.AppendLine("internal {0} Identity{1} = {2};", field.FieldType.CodeName(), field.Name, field.GetValue(obj));
-								break;
+                            case EIndex.Index:
+                            case EIndex.Identity:
+                                builder.AppendLine("private Dictionary<{0}, {3}> {1}{2} = new Dictionary<{0}, {3}>();", field.FieldType.CodeName(), table.Name, field.Name, tableName);
+                                if (index.Index == EIndex.Identity)
+                                    builder.AppendLine("internal {0} Identity{1} = {2};", field.FieldType.CodeName(), field.Name, field.GetValue(obj));
+                                break;
 
-							case EIndex.Group:
-								builder.AppendLine("private Dictionary<{0}, List<{3}>> {1}{2} = new Dictionary<{0}, List<{3}>>();", field.FieldType.CodeName(), table.Name, field.Name, tableName);
-								break;
-						}
-					}
-				}
-				builder.AppendLine();
-				// constructor
-				builder.AppendLine("internal Memory{0}({1} mdb, IEnumerable<{0}> _table)", table.Name, ns_dbname);
-				builder.AppendLine("{");
-				builder.AppendLine("this.MemoryDatabase = mdb;");
-				builder.AppendLine("var table = _table.Select(t => new _{0}(this, t));", table.Name);
-				// constrct all index key
-				builder.AppendLine("{0}.AddRange(table);", table.Name);
-				if (primary.Length > 1)
-					builder.AppendLine("{0}Primary = table.ToDictionary(t => t.Primary);", table.Name);
-				foreach (var field in fields)
-				{
-					var index = field.GetAttribute<IndexAttribute>();
-					if (index != null)
-					{
-						switch (index.Index)
-						{
-							case EIndex.Primary:
-								if (primary.Length > 1)
-									goto case EIndex.Group;
-								else
-									goto case EIndex.Index;
+                            case EIndex.Group:
+                                builder.AppendLine("private Dictionary<{0}, List<{3}>> {1}{2} = new Dictionary<{0}, List<{3}>>();", field.FieldType.CodeName(), table.Name, field.Name, tableName);
+                                break;
+                        }
+                    }
+                }
+                builder.AppendLine();
+                // constructor
+                builder.AppendLine("internal Memory{0}({1} mdb, IEnumerable<{0}> _table)", table.Name, ns_dbname);
+                builder.AppendLine("{");
+                builder.AppendLine("this.MemoryDatabase = mdb;");
+                builder.AppendLine("var table = _table.Select(t => new _{0}(this, t));", table.Name);
+                // constrct all index key
+                builder.AppendLine("{0}.AddRange(table);", table.Name);
+                if (primary.Length > 1)
+                    builder.AppendLine("{0}Primary = table.ToDictionary(t => t.Primary);", table.Name);
+                foreach (var field in fields)
+                {
+                    var index = field.GetAttribute<IndexAttribute>();
+                    if (index != null)
+                    {
+                        switch (index.Index)
+                        {
+                            case EIndex.Primary:
+                                if (primary.Length > 1)
+                                    goto case EIndex.Group;
+                                else
+                                    goto case EIndex.Index;
 
-							case EIndex.Index:
-							case EIndex.Identity:
-								builder.AppendLine("{0}{1} = table.ToDictionary(t => t.{1});", table.Name, field.Name);
-								// reset identity
-								if (index.Index == EIndex.Identity)
-									builder.AppendLine("if ({1}.Count > 0) Identity{0} = {1}.Max(t => t.{0}) + 1;", field.Name, table.Name);
-								break;
+                            case EIndex.Index:
+                            case EIndex.Identity:
+                                builder.AppendLine("{0}{1} = table.ToDictionary(t => t.{1});", table.Name, field.Name);
+                                // reset identity
+                                if (index.Index == EIndex.Identity)
+                                    builder.AppendLine("if ({1}.Count > 0) Identity{0} = {1}.Max(t => t.{0}) + 1;", field.Name, table.Name);
+                                break;
 
-							case EIndex.Group:
-								builder.AppendLine("{0}{1} = table.Group(t => t.{1});", table.Name, field.Name);
-								break;
-						}
-					}
-				}
-				builder.AppendLine("}");
-				builder.AppendLine();
-				// find by index
-				if (primary.Length > 1)
-				{
-					builder.AppendLine("public {1} FindByPrimary(Primary{0} primary)", table.Name, tableName);
-					builder.AppendLine("{");
-					builder.AppendLine("{0} result;", tableName);
-					builder.AppendLine("{0}Primary.TryGetValue(primary, out result);", table.Name);
-					builder.AppendLine("return result;");
-					builder.AppendLine("}");
-				}
-				foreach (var field in fields)
-				{
-					var index = field.GetAttribute<IndexAttribute>();
-					var foreign = tree.Find(f => f.Field == field);
-					bool enumerable = false;
-					EIndex key = EIndex.Index;
-					if (index == null)
-					{
-						if (foreign != null)
-						{
-							key = EIndex.Group;
-							enumerable = true;
-						}
-					}
-					else
-					{
-						key = index.Index;
-					}
-					if (index != null)
-					{
-						switch (key)
-						{
-							case EIndex.Primary:
-								if (primary.Length > 1)
-									goto case EIndex.Group;
-								else
-									goto case EIndex.Index;
+                            case EIndex.Group:
+                                builder.AppendLine("{0}{1} = table.Group(t => t.{1});", table.Name, field.Name);
+                                break;
+                        }
+                    }
+                }
+                builder.AppendLine("}");
+                builder.AppendLine();
+                // find by index
+                if (primary.Length > 1)
+                {
+                    builder.AppendLine("public {1} FindByPrimary(Primary{0} primary)", table.Name, tableName);
+                    builder.AppendLine("{");
+                    builder.AppendLine("{0} result;", tableName);
+                    builder.AppendLine("{0}Primary.TryGetValue(primary, out result);", table.Name);
+                    builder.AppendLine("return result;");
+                    builder.AppendLine("}");
+                }
+                foreach (var field in fields)
+                {
+                    var index = field.GetAttribute<IndexAttribute>();
+                    var foreign = tree.Find(f => f.Field == field);
+                    bool enumerable = false;
+                    EIndex key = EIndex.Index;
+                    if (index == null)
+                    {
+                        if (foreign != null)
+                        {
+                            key = EIndex.Group;
+                            enumerable = true;
+                        }
+                    }
+                    else
+                    {
+                        key = index.Index;
+                    }
+                    if (index != null)
+                    {
+                        switch (key)
+                        {
+                            case EIndex.Primary:
+                                if (primary.Length > 1)
+                                    goto case EIndex.Group;
+                                else
+                                    goto case EIndex.Index;
 
-							case EIndex.Index:
-							case EIndex.Identity:
-								builder.AppendLine("public {0} FindBy{1}({2} value)", tableName, field.Name, field.FieldType.CodeName());
-								break;
+                            case EIndex.Index:
+                            case EIndex.Identity:
+                                builder.AppendLine("public {0} FindBy{1}({2} value)", tableName, field.Name, field.FieldType.CodeName());
+                                break;
 
-							case EIndex.Group:
-								// change group
-								builder.AppendLine("internal void UpdateGroup{0}({1} table, {2} value)", field.Name, tableName, field.FieldType.CodeName());
-								builder.AppendLine("{");
+                            case EIndex.Group:
+                                // change group
+                                builder.AppendLine("internal void UpdateGroup{0}({1} table, {2} value)", field.Name, tableName, field.FieldType.CodeName());
+                                builder.AppendLine("{");
                                 builder.AppendLine("_LOG.Info(\"Update Group {0}.{1} {{0}} -> {{1}}\", table.{1}, value);", table.Name, field.Name);
-								builder.AppendLine("{0}{1}[table.{1}].Remove(table);", table.Name, field.Name);
-								builder.AppendLine("List<{0}> temp;", tableName);
-								builder.AppendLine("if ({0}{1}.TryGetValue(table.{1}, out temp)) temp.Add(table);", table.Name, field.Name);
-								builder.AppendLine("else {0}{1}.Add(table.{1}, new List<{2}>() {{ table }});", table.Name, field.Name, tableName);
-								builder.AppendLine("}");
-								builder.AppendLine("public IEnumerable<{0}> FindBy{1}({2} value)", tableName, field.Name, field.FieldType.CodeName());
-								enumerable = true;
-								break;
-						}
-						builder.AppendLine("{");
-						if (enumerable)
-							builder.AppendLine("List<{0}> result;", tableName);
-						else
-							builder.AppendLine("{0} result;", tableName);
-						builder.AppendLine("{0}{1}.TryGetValue(value, out result);", table.Name, field.Name);
-						if (enumerable)
-							builder.AppendLine("return result.Enumerable();");
-						else
-							builder.AppendLine("return result;", tableName);
-						builder.AppendLine("}");
-					}
-				}
-				// Add Delete Truncate UpdateGroup
-				builder.AppendLine("public _{0} Add({0} _table)", table.Name);
-				builder.AppendLine("{");
+                                builder.AppendLine("{0}{1}[table.{1}].Remove(table);", table.Name, field.Name);
+                                builder.AppendLine("List<{0}> temp;", tableName);
+                                builder.AppendLine("if ({0}{1}.TryGetValue(table.{1}, out temp)) temp.Add(table);", table.Name, field.Name);
+                                builder.AppendLine("else {0}{1}.Add(table.{1}, new List<{2}>() {{ table }});", table.Name, field.Name, tableName);
+                                builder.AppendLine("}");
+                                builder.AppendLine("public IEnumerable<{0}> FindBy{1}({2} value)", tableName, field.Name, field.FieldType.CodeName());
+                                enumerable = true;
+                                break;
+                        }
+                        builder.AppendLine("{");
+                        if (enumerable)
+                            builder.AppendLine("List<{0}> result;", tableName);
+                        else
+                            builder.AppendLine("{0} result;", tableName);
+                        builder.AppendLine("{0}{1}.TryGetValue(value, out result);", table.Name, field.Name);
+                        if (enumerable)
+                            builder.AppendLine("return result.Enumerable();");
+                        else
+                            builder.AppendLine("return result;", tableName);
+                        builder.AppendLine("}");
+                    }
+                }
+                // Add Delete Truncate UpdateGroup
+                builder.AppendLine("public _{0} Add({0} _table)", table.Name);
+                builder.AppendLine("{");
                 builder.AppendLine("_LOG.Info(\"Memory {0} Add {{0}}\", JsonWriter.Serialize(_table));", table.Name);
-				builder.AppendLine("{0} table = new {0}(this, _table);", tableName);
-				// check index key
-				builder.AppendLine("bool duplicate = true;");
-				if (primary.Length != 0)
-				{
-					foreach (var item in primary)
-						builder.AppendLine("duplicate &= {0}{1}.ContainsKey(table.{1});", table.Name, item.Name);
-					builder.Append("if (duplicate) ");
-					if (primary.Length > 1)
-						builder.AppendLine("throw new InvalidOperationException(string.Format(\"Add duplicate Primary = {0}\", table.Primary));");
-					else
-						builder.AppendLine("throw new InvalidOperationException(string.Format(\"Add duplicate Primary = {{0}}\", table.{0}));", primary[0].Name);
-				}
-				foreach (var field in fields)
-				{
-					var index = field.GetAttribute<IndexAttribute>();
-					if (index != null)
-					{
-						switch (index.Index)
-						{
-							case EIndex.Index:
-								builder.AppendLine("duplicate = {0}{1}.ContainsKey(table.{1});", table.Name, field.Name);
-								builder.AppendLine("if (duplicate) throw new InvalidOperationException(string.Format(\"Add duplicate {0} = {{0}}\", table.{0}));", field.Name);
-								break;
-						}
-					}
-				}
-				// check foreign key
-				foreach (var field in fields)
-				{
-					var foreign = tree.Find(f => f.Field == field);
-					if (foreign != null && foreign.Parent != null && foreign.Parent.Field != null)
-					{
-						builder.AppendLine("if (table.Foreign{1}{0} == null) throw new InvalidOperationException(string.Format(\"{0} must have required foreign key {1} = {{0}}.\", table.{2}));", foreign.Parent.Table.Name, foreign.Parent.Field.Name, field.Name);
-					}
-				}
-				builder.AppendLine("{0}.Add(table);", table.Name);
-				builder.AppendLine("List<{0}> temp;", tableName);
-				foreach (var field in fields)
-				{
-					var index = field.GetAttribute<IndexAttribute>();
-					if (index != null)
-					{
-						switch (index.Index)
-						{
-							case EIndex.Index:
-								builder.AppendLine("{0}{1}.Add(table.{1}, table);", table.Name, field.Name);
-								break;
+                builder.AppendLine("{0} table = new {0}(this, _table);", tableName);
+                // check index key
+                builder.AppendLine("bool duplicate = true;");
+                if (primary.Length != 0)
+                {
+                    foreach (var item in primary)
+                        builder.AppendLine("duplicate &= {0}{1}.ContainsKey(table.{1});", table.Name, item.Name);
+                    builder.Append("if (duplicate) ");
+                    if (primary.Length > 1)
+                        builder.AppendLine("throw new InvalidOperationException(string.Format(\"Add duplicate Primary = {0}\", table.Primary));");
+                    else
+                        builder.AppendLine("throw new InvalidOperationException(string.Format(\"Add duplicate Primary = {{0}}\", table.{0}));", primary[0].Name);
+                }
+                foreach (var field in fields)
+                {
+                    var index = field.GetAttribute<IndexAttribute>();
+                    if (index != null)
+                    {
+                        switch (index.Index)
+                        {
+                            case EIndex.Index:
+                                builder.AppendLine("duplicate = {0}{1}.ContainsKey(table.{1});", table.Name, field.Name);
+                                builder.AppendLine("if (duplicate) throw new InvalidOperationException(string.Format(\"Add duplicate {0} = {{0}}\", table.{0}));", field.Name);
+                                break;
+                        }
+                    }
+                }
+                // check foreign key
+                foreach (var field in fields)
+                {
+                    var foreign = tree.Find(f => f.Field == field);
+                    if (foreign != null && foreign.Parent != null && foreign.Parent.Field != null)
+                    {
+                        builder.AppendLine("if (table.Foreign{1}{0} == null) throw new InvalidOperationException(string.Format(\"{0} must have required foreign key {1} = {{0}}.\", table.{2}));", foreign.Parent.Table.Name, foreign.Parent.Field.Name, field.Name);
+                    }
+                }
+                builder.AppendLine("{0}.Add(table);", table.Name);
+                builder.AppendLine("List<{0}> temp;", tableName);
+                foreach (var field in fields)
+                {
+                    var index = field.GetAttribute<IndexAttribute>();
+                    if (index != null)
+                    {
+                        switch (index.Index)
+                        {
+                            case EIndex.Index:
+                                builder.AppendLine("{0}{1}.Add(table.{1}, table);", table.Name, field.Name);
+                                break;
 
-							case EIndex.Primary:
-								if (primary.Length == 1)
-									builder.AppendLine("{0}{1}.Add(table.{1}, table);", table.Name, field.Name);
-								else
-									goto case EIndex.Group;
-								break;
+                            case EIndex.Primary:
+                                if (primary.Length == 1)
+                                    builder.AppendLine("{0}{1}.Add(table.{1}, table);", table.Name, field.Name);
+                                else
+                                    goto case EIndex.Group;
+                                break;
 
-							case EIndex.Identity:
-								builder.AppendLine("(({0})table).{1} = Identity{1}++;", table.Name, field.Name);
-								builder.AppendLine("{0}{1}.Add(table.{1}, table);", table.Name, field.Name);
-								break;
+                            case EIndex.Identity:
+                                builder.AppendLine("(({0})table).{1} = Identity{1}++;", table.Name, field.Name);
+                                builder.AppendLine("{0}{1}.Add(table.{1}, table);", table.Name, field.Name);
+                                break;
 
-							case EIndex.Group:
-								builder.AppendLine("if ({0}{1}.TryGetValue(table.{1}, out temp)) temp.Add(table);", table.Name, field.Name);
-								builder.AppendLine("else {0}{1}.Add(table.{1}, new List<{2}>() {{ table }});", table.Name, field.Name, tableName);
-								break;
-						}
-					}
-				}
-				builder.AppendLine("if (OnAdd != null) OnAdd(table);");
-				builder.AppendLine("return table;");
-				builder.AppendLine("}");
-				// delete
-				builder.AppendLine("public int Delete(Func<{0}, bool> where)", tableName);
-				builder.AppendLine("{");
-				builder.AppendLine("int count;");
-				builder.AppendLine("if (where == null)");
-				builder.AppendLine("{");
-				builder.AppendLine("count = Count;");
-				builder.AppendLine("Truncate();");
-				builder.AppendLine("}");
-				builder.AppendLine("else");
-				builder.AppendLine("{");
-				builder.AppendLine("List<{0}> removed;", tableName);
-				builder.AppendLine("{0} = {0}.WhereAndRemove(where, out removed);", table.Name);
-				builder.AppendLine("count = removed.Count;");
-				builder.AppendLine("foreach (var remove in removed)");
-				builder.AppendLine("{");
-				foreach (var field in fields)
-				{
-					// delete foreign child
-					var foreign = tree.Find(f => f.Field == field);
-					if (foreign != null)
-					{
-						foreach (var child in foreign)
-						{
-							var childIndex = child.Field.GetAttribute<IndexAttribute>();
-							// null index has been checked by check foreign key
-							builder.AppendLine("var foreign{0}{1} = remove.Foreign{0}{1};", child.Field.Name, child.Table.Name);
-							builder.Append("if (foreign{0}{1} != null) ", child.Field.Name, child.Table.Name);
-							if (childIndex == null ||
-								childIndex.Index == EIndex.Group ||
-								child.Table.GetFields().Count(f =>
-								{
-									var tempIndex = f.GetAttribute<IndexAttribute>();
-									return tempIndex != null && tempIndex.Index == EIndex.Primary;
-								}) > 1)
-								builder.AppendLine("foreach (var child in foreign{1}{0}) MemoryDatabase.{0}.Delete(t => t.{1} == child.{1});", child.Table.Name, child.Field.Name);
-							else
-								builder.AppendLine("MemoryDatabase.{0}.Delete(t => t.{1} == remove.{2});", child.Table.Name, child.Field.Name, field.Name);
-						}
-					}
-					var index = field.GetAttribute<IndexAttribute>();
-					if (index != null)
-					{
-						switch (index.Index)
-						{
-							case EIndex.Index:
-							case EIndex.Identity:
-								builder.AppendLine("{0}{1}.Remove(remove.{1});", table.Name, field.Name);
-								break;
+                            case EIndex.Group:
+                                builder.AppendLine("if ({0}{1}.TryGetValue(table.{1}, out temp)) temp.Add(table);", table.Name, field.Name);
+                                builder.AppendLine("else {0}{1}.Add(table.{1}, new List<{2}>() {{ table }});", table.Name, field.Name, tableName);
+                                break;
+                        }
+                    }
+                }
+                builder.AppendLine("if (OnAdd != null) OnAdd(table);");
+                builder.AppendLine("return table;");
+                builder.AppendLine("}");
+                // delete
+                builder.AppendLine("public int Delete(Func<{0}, bool> where)", tableName);
+                builder.AppendLine("{");
+                builder.AppendLine("int count;");
+                builder.AppendLine("if (where == null)");
+                builder.AppendLine("{");
+                builder.AppendLine("count = Count;");
+                builder.AppendLine("Truncate();");
+                builder.AppendLine("}");
+                builder.AppendLine("else");
+                builder.AppendLine("{");
+                builder.AppendLine("List<{0}> removed;", tableName);
+                builder.AppendLine("{0} = {0}.WhereAndRemove(where, out removed);", table.Name);
+                builder.AppendLine("count = removed.Count;");
+                builder.AppendLine("foreach (var remove in removed)");
+                builder.AppendLine("{");
+                foreach (var field in fields)
+                {
+                    // delete foreign child
+                    var foreign = tree.Find(f => f.Field == field);
+                    if (foreign != null)
+                    {
+                        foreach (var child in foreign)
+                        {
+                            var childIndex = child.Field.GetAttribute<IndexAttribute>();
+                            // null index has been checked by check foreign key
+                            builder.AppendLine("var foreign{0}{1} = remove.Foreign{0}{1};", child.Field.Name, child.Table.Name);
+                            builder.Append("if (foreign{0}{1} != null) ", child.Field.Name, child.Table.Name);
+                            if (childIndex == null ||
+                                childIndex.Index == EIndex.Group ||
+                                child.Table.GetFields().Count(f =>
+                                {
+                                    var tempIndex = f.GetAttribute<IndexAttribute>();
+                                    return tempIndex != null && tempIndex.Index == EIndex.Primary;
+                                }) > 1)
+                                builder.AppendLine("foreach (var child in foreign{1}{0}) MemoryDatabase.{0}.Delete(t => t.{1} == child.{1});", child.Table.Name, child.Field.Name);
+                            else
+                                builder.AppendLine("MemoryDatabase.{0}.Delete(t => t.{1} == remove.{2});", child.Table.Name, child.Field.Name, field.Name);
+                        }
+                    }
+                    var index = field.GetAttribute<IndexAttribute>();
+                    if (index != null)
+                    {
+                        switch (index.Index)
+                        {
+                            case EIndex.Index:
+                            case EIndex.Identity:
+                                builder.AppendLine("{0}{1}.Remove(remove.{1});", table.Name, field.Name);
+                                break;
 
-							case EIndex.Primary:
-								if (primary.Length == 1)
-									builder.AppendLine("{0}{1}.Remove(remove.{1});", table.Name, field.Name);
-								else
-									goto case EIndex.Group;
-								break;
+                            case EIndex.Primary:
+                                if (primary.Length == 1)
+                                    builder.AppendLine("{0}{1}.Remove(remove.{1});", table.Name, field.Name);
+                                else
+                                    goto case EIndex.Group;
+                                break;
 
-							case EIndex.Group:
-								builder.AppendLine("{0}{1}[remove.{1}].Remove(remove);", table.Name, field.Name);
-								break;
-						}
-					}
-				}
-				builder.AppendLine("if (OnDelete != null) OnDelete(remove);");
+                            case EIndex.Group:
+                                builder.AppendLine("{0}{1}[remove.{1}].Remove(remove);", table.Name, field.Name);
+                                break;
+                        }
+                    }
+                }
+                builder.AppendLine("if (OnDelete != null) OnDelete(remove);");
                 builder.AppendLine("_LOG.Info(\"Memory {0} Delete {{0}}\", JsonWriter.Serialize(remove));", table.Name);
-				builder.AppendLine("}");// end of foreach
-				builder.AppendLine("}");// end of else
+                builder.AppendLine("}");// end of foreach
+                builder.AppendLine("}");// end of else
                 builder.AppendLine("_LOG.Info(\"Delete {0} {{0}} rows affected.\", count);", table.Name);
-				builder.AppendLine("return count;");
-				builder.AppendLine("}");
-				// truncate
-				builder.AppendLine("public void Truncate()");
-				builder.AppendLine("{");
-				builder.AppendLine("if (Count == 0) return;");
-				builder.AppendLine("_LOG.Info(\"Truncate {0} [{{0}}]...\", Count);", table.Name);
-				builder.AppendLine("if (OnTruncate != null) OnTruncate(this);");
-				builder.AppendLine("{0}.Clear();", table.Name);
-				if (primary.Length > 1)
-					builder.AppendLine("{0}Primary.Clear();", table.Name);
-				foreach (var field in fields)
-				{
-					// delete foreign key
-					var foreign = tree.Find(t => t.Field == field);
-					if (foreign != null)
-						foreach (var child in foreign)
-							builder.AppendLine("MemoryDatabase.{0}.Truncate();", child.Table.Name);
-					var index = field.GetAttribute<IndexAttribute>();
-					if (index != null)
-					{
-						builder.AppendLine("{0}{1}.Clear();", table.Name, field.Name);
-						if (index.Index == EIndex.Identity)
-						{
-							builder.AppendLine("Identity{0} = {1};", field.Name, field.GetValue(obj));
-						}
-					}
-				}
+                builder.AppendLine("return count;");
+                builder.AppendLine("}");
+                // truncate
+                builder.AppendLine("public void Truncate()");
+                builder.AppendLine("{");
+                builder.AppendLine("if (Count == 0) return;");
+                builder.AppendLine("_LOG.Info(\"Truncate {0} [{{0}}]...\", Count);", table.Name);
+                builder.AppendLine("if (OnTruncate != null) OnTruncate(this);");
+                builder.AppendLine("{0}.Clear();", table.Name);
+                if (primary.Length > 1)
+                    builder.AppendLine("{0}Primary.Clear();", table.Name);
+                foreach (var field in fields)
+                {
+                    // delete foreign key
+                    var foreign = tree.Find(t => t.Field == field);
+                    if (foreign != null)
+                        foreach (var child in foreign)
+                            builder.AppendLine("MemoryDatabase.{0}.Truncate();", child.Table.Name);
+                    var index = field.GetAttribute<IndexAttribute>();
+                    if (index != null)
+                    {
+                        builder.AppendLine("{0}{1}.Clear();", table.Name, field.Name);
+                        if (index.Index == EIndex.Identity)
+                        {
+                            builder.AppendLine("Identity{0} = {1};", field.Name, field.GetValue(obj));
+                        }
+                    }
+                }
                 builder.AppendLine("_LOG.Info(\"Memory {0} truncated!\");", table.Name);
-				builder.AppendLine("}");
-				// IEnumerable
-				builder.AppendLine("public IEnumerator<{1}> GetEnumerator() {{ return {0}.GetEnumerator(); }}", table.Name, tableName);
-				builder.AppendLine("IEnumerator IEnumerable.GetEnumerator() { return GetEnumerator(); }");
-				// end
-				builder.AppendLine("}");
-			}
+                builder.AppendLine("}");
+                // IEnumerable
+                builder.AppendLine("public IEnumerator<{1}> GetEnumerator() {{ return {0}.GetEnumerator(); }}", table.Name, tableName);
+                builder.AppendLine("IEnumerator IEnumerable.GetEnumerator() { return GetEnumerator(); }");
+                // end
+                builder.AppendLine("}");
+            }
 
-			// build database
-			builder.AppendLine("public class {0} : {1}", ns_dbname, typeof(MemoryDatabase).Name);
-			builder.AppendLine("{");
-			builder.AppendLine("public bool Loaded { get; private set; }");
-			// memory tables
-			foreach (var table in types)
-				builder.AppendLine("public Memory{0} {0} {{ get; private set; }}", table.Name);
-			builder.AppendLine();
-			// constructor
-			builder.AppendLine("public {0}(string name) : base(name) {{ }}", ns_dbname);
-			builder.AppendLine();
-			// save
-			builder.AppendLine("public override void Save()");
-			builder.AppendLine("{");
+            // build database
+            builder.AppendLine("public class {0} : {1}", ns_dbname, typeof(MemoryDatabase).Name);
+            builder.AppendLine("{");
+            builder.AppendLine("public bool Loaded { get; private set; }");
+            // memory tables
+            foreach (var table in types)
+                builder.AppendLine("public Memory{0} {0} {{ get; private set; }}", table.Name);
+            builder.AppendLine();
+            // constructor
+            builder.AppendLine("public {0}(string name) : base(name) {{ }}", ns_dbname);
+            builder.AppendLine();
+            // save
+            builder.AppendLine("public override void Save()");
+            builder.AppendLine("{");
             builder.AppendLine("_LOG.Info(\"Save {0}...\");", ns_dbname);
-			builder.AppendLine("if (!Loaded) throw new InvalidOperationException(\"Save operation requires {0} must have been loaded.\");", ns_dbname);
-			builder.AppendLine("Timer timer = Timer.StartNew();");
-			foreach (var table in types)
-				builder.AppendLine("if (Memory{0}.IsSaveLoad) InternalSave({0}.ToArray(), \"{0}\");", table.Name);
+            builder.AppendLine("if (!Loaded) throw new InvalidOperationException(\"Save operation requires {0} must have been loaded.\");", ns_dbname);
+            builder.AppendLine("Timer timer = Timer.StartNew();");
+            foreach (var table in types)
+                builder.AppendLine("if (Memory{0}.IsSaveLoad) InternalSave({0}.ToArray(), \"{0}\");", table.Name);
             builder.AppendLine("_LOG.Info(\"Save {0}.{{0}} completed! Time elapsed: {{1}}\", Name, timer.Stop());", ns_dbname);
-			builder.AppendLine("}");
-			// load
-			builder.AppendLine("public override void Load()");
-			builder.AppendLine("{");
+            builder.AppendLine("}");
+            // load
+            builder.AppendLine("public override void Load()");
+            builder.AppendLine("{");
             builder.AppendLine("_LOG.Info(\"Load {0}...\");", ns_dbname);
-			builder.AppendLine("if (Loaded) throw new InvalidOperationException(\"{0} has loaded memory tables.\");", ns_dbname);
-			builder.AppendLine("Timer timer = Timer.StartNew();");
-			foreach (var table in types)
-				builder.AppendLine("{0} = new Memory{0}(this, Memory{0}.IsSaveLoad ? InternalLoad<{0}>(\"{0}\") : new List<{0}>());", table.Name);
-			builder.AppendLine("Loaded = true;");
+            builder.AppendLine("if (Loaded) throw new InvalidOperationException(\"{0} has loaded memory tables.\");", ns_dbname);
+            builder.AppendLine("Timer timer = Timer.StartNew();");
+            foreach (var table in types)
+                builder.AppendLine("{0} = new Memory{0}(this, Memory{0}.IsSaveLoad ? InternalLoad<{0}>(\"{0}\") : new List<{0}>());", table.Name);
+            builder.AppendLine("Loaded = true;");
             builder.AppendLine("_LOG.Info(\"Load {0}.{{0}} completed! Time elapsed: {{1}}\", Name, timer.Stop());", ns_dbname);
-			builder.AppendLine("}");
-			// merge
-			foreach (var table in types)
-			{
-				builder.AppendLine("public void Merge{0}(IEnumerable<_{0}> merge)", table.Name);
-				builder.AppendLine("{");
+            builder.AppendLine("}");
+            // merge
+            foreach (var table in types)
+            {
+                builder.AppendLine("public void Merge{0}(IEnumerable<_{0}> merge)", table.Name);
+                builder.AppendLine("{");
                 builder.AppendLine("_LOG.Info(\"Merge {0}...\");");
-				builder.AppendLine("if (!Loaded) throw new InvalidOperationException(\"Merge {1} operation requires {0} must have been loaded.\");", ns_dbname, table.Name);
-				builder.AppendLine("int count = {0}.Count;", table.Name);
-				builder.AppendLine("{0} = new Memory{0}(this, (IEnumerable<{0}>){0}.Concat(merge));", table.Name);
+                builder.AppendLine("if (!Loaded) throw new InvalidOperationException(\"Merge {1} operation requires {0} must have been loaded.\");", ns_dbname, table.Name);
+                builder.AppendLine("int count = {0}.Count;", table.Name);
+                builder.AppendLine("{0} = new Memory{0}(this, (IEnumerable<{0}>){0}.Concat(merge));", table.Name);
                 builder.AppendLine("_LOG.Info(\"Merge {0}.{{0}} [{{1}}] completed.\", Name, {0}.Count - count);", table.Name);
-				builder.AppendLine("}");
-			}
-			// IDisposable
-			builder.AppendLine("public override void Dispose()");
-			builder.AppendLine("{");
+                builder.AppendLine("}");
+            }
+            // IDisposable
+            builder.AppendLine("public override void Dispose()");
+            builder.AppendLine("{");
             builder.AppendLine("_LOG.Info(\"Dispose {0}...\");", ns_dbname);
-			builder.AppendLine("if (!Loaded) return;", ns_dbname);
-			foreach (var table in types)
-			{
-				builder.AppendLine("{0}.Truncate();", table.Name);
-				builder.AppendLine("{0} = null;", table.Name);
-			}
-			builder.AppendLine("Loaded = false;");
+            builder.AppendLine("if (!Loaded) return;", ns_dbname);
+            foreach (var table in types)
+            {
+                builder.AppendLine("{0}.Truncate();", table.Name);
+                builder.AppendLine("{0} = null;", table.Name);
+            }
+            builder.AppendLine("Loaded = false;");
             builder.AppendLine("_LOG.Info(\"Dispose {0} completed!\");", ns_dbname);
-			builder.AppendLine("}");
-			// end
-			builder.AppendLine("}");// end of dbname class
-			builder.AppendLine("}");// end of namespace
+            builder.AppendLine("}");
+            // end
+            builder.AppendLine("}");// end of dbname class
+            builder.AppendLine("}");// end of namespace
 
-			if (!string.IsNullOrEmpty(outputCS))
-			{
+            if (!string.IsNullOrEmpty(outputCS))
+            {
                 File.WriteAllText(outputCS, _RH.Indent(builder.ToString()), Encoding.UTF8);
-				Console.WriteLine("Compile {0} to MemoryDatabase {1} succuss!", dll, outputCS);
-			}
-			if (!string.IsNullOrEmpty(outputDll))
-			{
-				var result = UtilityCode.Compile(outputDll, "3.5", "", "", Environment.CurrentDirectory, builder.ToString());
-				if (result.Errors.Count > 0)
-					for (int i = 0; i < result.Errors.Count; i++)
-						Console.WriteLine(result.Errors[i].ErrorText);
-				else
-					Console.WriteLine("Compile {0} to MemoryDatabase {1} succuss!", dll, outputDll);
-			}
-		}
+                Console.WriteLine("Compile {0} to MemoryDatabase {1} succuss!", dll, outputCS);
+            }
+            if (!string.IsNullOrEmpty(outputDll))
+            {
+                var result = UtilityCode.Compile(outputDll, "3.5", "", "", Environment.CurrentDirectory, builder.ToString());
+                if (result.Errors.Count > 0)
+                    for (int i = 0; i < result.Errors.Count; i++)
+                        Console.WriteLine(result.Errors[i].ErrorText);
+                else
+                    Console.WriteLine("Compile {0} to MemoryDatabase {1} succuss!", dll, outputDll);
+            }
+        }
         public static void BuildDatabaseMysqlMemory(string dll, string nsOrEmptyDotDBnameOrEmpty, string outputCS, string sharpIfBuild, string mysqlClassOrEmpty, bool isStatic)
         {
         }
@@ -8057,7 +8064,7 @@ declare module '@vue/runtime-core'
                         if (parentField == null)
                             throw new ArgumentNullException(string.Format("{0}.{1} required foreign key {2}.{3} is not exists.", table.Name, field.Name, foreign.ForeignTable.Name, foreignKey));
                         // 外键是内联表自身的某字段时，ForeignTable改为继承类型
-                        if (foreign.ForeignTable == parentField.DeclaringType 
+                        if (foreign.ForeignTable == parentField.DeclaringType
                             && foreign.ForeignTable == field.DeclaringType
                             && foreign.ForeignTable.IsAssignableFrom(table))
                             parentField = table.GetField(foreignKey);
@@ -8198,7 +8205,18 @@ declare module '@vue/runtime-core'
                 builder.AppendLine("public bool IsIndex { get { return COLUMN_KEY == \"MUL\"; } }");
                 builder.AppendLine("public bool IsUnique { get { return COLUMN_KEY == \"UNI\"; } }");
                 builder.AppendLine("public bool IsIdentity { get { return EXTRA == \"auto_increment\"; } }");
+                builder.AppendLine("public static HashSet<string> StringTypes = new HashSet<string>()");
+                builder.AppendBlockWithEnd(() =>
+                {
+                    builder.AppendLine("\"char\",");
+                    builder.AppendLine("\"varchar\",");
+                    builder.AppendLine("\"tinytext\",");
+                    builder.AppendLine("\"text\",");
+                    builder.AppendLine("\"mediumtext\",");
+                    builder.AppendLine("\"longtext\",");
+                });
             });
+
             builder.AppendLine("public class MASTER_STATUS");
             builder.AppendBlock(() =>
             {
@@ -8341,7 +8359,7 @@ declare module '@vue/runtime-core'
                         fields.ForeachExceptLast(
                         (field) =>
                         {
-                            builder.Append("`{0}` {1}", field.Name, GetMySqlType(field.FieldType));
+                            builder.Append("`{0}` {1}", field.Name, GetMySqlType(field.FieldType, field));
                             IndexAttribute index = field.GetAttribute<IndexAttribute>();
                             if (index != null && index.Index == EIndex.Identity)
                             {
@@ -8450,7 +8468,7 @@ declare module '@vue/runtime-core'
                             var field = fields[i];
                             // 修改表顺序将重构表结构，跟增加删除表字段一样，需要较多时间
                             //temp.Append("builder.AppendLine(\"ALTER TABLE `{1}` {{0}} `{0}` {2}{{1}} {3}", field.Name, table.Name, GetMySqlType(field.FieldType), (i == 0 ? "FIRST" : "AFTER `" + fields[i - 1].Name + "`"));
-                            temp.Append("builder.AppendLine(\"ALTER TABLE `{1}` {{0}} `{0}` {2}{{1}}", field.Name, table.Name, GetMySqlType(field.FieldType));
+                            temp.Append("builder.AppendLine(\"ALTER TABLE `{1}` {{0}} `{0}` {2}{{1}}", field.Name, table.Name, GetMySqlType(field.FieldType, field));
                             IndexAttribute index = field.GetAttribute<IndexAttribute>();
                             if (index != null && index.Index == EIndex.Identity)
                                 temp.Append(" AUTO_INCREMENT");
@@ -8462,9 +8480,9 @@ declare module '@vue/runtime-core'
                             {
                                 bool isHasIndex = index != null && (index.Index == EIndex.Index || index.Index == EIndex.Group);
                                 // 将字段类型从int改为字符串且之前是索引列时，由于索引没有key(10)，CHANGE COLUMN就会失败
-                                if (isHasIndex && GetMySqlType(field.FieldType) == "TEXT")
+                                if (isHasIndex && GetMySqlType(field.FieldType, null) == "VARCHAR(32)")
                                 {
-                                    builder.AppendLine("if (__value.DATA_TYPE != \"text\" && (__value.IsIndex || __value.IsUnique))");
+                                    builder.AppendLine("if (!MYSQL_TABLE_COLUMN.StringTypes.Contains(__value.DATA_TYPE) && (__value.IsIndex || __value.IsUnique))");
                                     builder.AppendBlock(() =>
                                     {
                                         // 将列置为非索引
@@ -8725,7 +8743,7 @@ declare module '@vue/runtime-core'
 
                     #endregion
                     builder.AppendLine("#endregion");
-                    
+
                     builder.AppendLine();
                     builder.AppendLine("_LOG.Info(\"Build all temp database completed.\");");
                     builder.AppendLine("#region import data in temp database to merge target");
@@ -8923,7 +8941,7 @@ declare module '@vue/runtime-core'
                     foreach (var field in fields)
                     {
                         bool special;
-                        string type = GetMySqlType(field.FieldType, out special);
+                        string type = GetMySqlType(field.FieldType, out special, null);
                         if (!special)
                             continue;
                         if (!hasSpecial)
@@ -9787,7 +9805,7 @@ declare module '@vue/runtime-core'
                             builderOP.AppendLine("return {2}.SelectPages<T>(_DAO, \"SELECT count(`{0}`.`{1}`) FROM `{0}`\", __where, selectSQL, conditionAfterWhere, page, pageSize, param);", table.Name, fields[0].Name, nsOrEmptyDotDBnameOrEmpty);
                         });
                     }
-                    
+
                     // ___类型结束
                     if (!isStatic)
                         builderOP.AppendLine("}");
@@ -9911,39 +9929,39 @@ declare module '@vue/runtime-core'
             Console.WriteLine("Build mysql completed.");
         }
         public static void BuildLinkStruct(string dllAndType, string className, string outputCS, byte modifierLevel)
-		{
-			Type type = GetDllType(dllAndType);
+        {
+            Type type = GetDllType(dllAndType);
 
-			StringBuilder builder = new StringBuilder();
-			// using ;
-			builder.AppendLine();
-			// namespace
-			if (!string.IsNullOrEmpty(type.Namespace))
-				builder.AppendLine("namespace {0}", type.Namespace);
-			builder.AppendBlock(() =>
-			{
-				BindingFlags flag = BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public;
-				IEnumerable<PropertyInfo> properties = type.GetAllProperties(flag).WithoutIndex().Where(p => p.CanOverride());
+            StringBuilder builder = new StringBuilder();
+            // using ;
+            builder.AppendLine();
+            // namespace
+            if (!string.IsNullOrEmpty(type.Namespace))
+                builder.AppendLine("namespace {0}", type.Namespace);
+            builder.AppendBlock(() =>
+            {
+                BindingFlags flag = BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public;
+                IEnumerable<PropertyInfo> properties = type.GetAllProperties(flag).WithoutIndex().Where(p => p.CanOverride());
                 IEnumerable<MethodInfo> methods = type.GetAllMethods(flag).MethodOnly().DeclareTypeNotObject().Where(m => m.CanOverride());
 
-				#region base
+                #region base
 
-				if (string.IsNullOrEmpty(className))
-				{
-					className = type.Name;
-					if (type.IsInterface && className.StartsWith("I"))
-						className = className.Substring(1);
-					className = className + "_Link";
-				}
+                if (string.IsNullOrEmpty(className))
+                {
+                    className = type.Name;
+                    if (type.IsInterface && className.StartsWith("I"))
+                        className = className.Substring(1);
+                    className = className + "_Link";
+                }
 
-				builder.AppendLine("{0} abstract class {1} : {2}", type.GetModifier(), className, type.CodeName());
-				builder.AppendBlock(() =>
-				{
-					// property
-					builder.AppendLine("public virtual {0} Base {{ get; set; }}", type.CodeName());
-					foreach (var item in properties)
-					{
-						string modifier = item.GetModifier();
+                builder.AppendLine("{0} abstract class {1} : {2}", type.GetModifier(), className, type.CodeName());
+                builder.AppendBlock(() =>
+                {
+                    // property
+                    builder.AppendLine("public virtual {0} Base {{ get; set; }}", type.CodeName());
+                    foreach (var item in properties)
+                    {
+                        string modifier = item.GetModifier();
                         if (_RH.Modifier.IndexOf(modifier) > 1)
                             continue;
                         string implement;
@@ -9952,32 +9970,32 @@ declare module '@vue/runtime-core'
                         else
                             implement = "override";
                         builder.AppendLine("{0} {3} {1} {2}", modifier, item.PropertyType.CodeName(), item.Name, implement);
-						builder.AppendBlock(() =>
-						{
-							if (item.CanRead)
-							{
-								string temp = item.GetGetMethod(true).GetModifier();
-								builder.AppendLine("{0} get {{ return Base.{1}; }}", (temp == modifier ? "" : temp), item.Name);
-							}
-							if (item.CanWrite)
-							{
-								string temp = item.GetSetMethod(true).GetModifier();
-								builder.AppendLine("{0} set {{ Base.{1} = value; }}", (temp == modifier ? "" : temp), item.Name);
-							}
-						});
-					}
-					builder.AppendLine();
+                        builder.AppendBlock(() =>
+                        {
+                            if (item.CanRead)
+                            {
+                                string temp = item.GetGetMethod(true).GetModifier();
+                                builder.AppendLine("{0} get {{ return Base.{1}; }}", (temp == modifier ? "" : temp), item.Name);
+                            }
+                            if (item.CanWrite)
+                            {
+                                string temp = item.GetSetMethod(true).GetModifier();
+                                builder.AppendLine("{0} set {{ Base.{1} = value; }}", (temp == modifier ? "" : temp), item.Name);
+                            }
+                        });
+                    }
+                    builder.AppendLine();
 
-					// constructor
-					builder.AppendLine("public {0}() {{ }}", className);
-					builder.AppendLine("public {0}({1} Base) {{ this.Base = Base; }}", className, type.CodeName());
-					builder.AppendLine();
+                    // constructor
+                    builder.AppendLine("public {0}() {{ }}", className);
+                    builder.AppendLine("public {0}({1} Base) {{ this.Base = Base; }}", className, type.CodeName());
+                    builder.AppendLine();
 
-					// methods
+                    // methods
                     if (modifierLevel > 2)
                         modifierLevel = 2;
-					foreach (var item in methods)
-					{
+                    foreach (var item in methods)
+                    {
                         if (_RH.Modifier.IndexOf(item.GetModifier()) > modifierLevel)
                             continue;
                         string implement;
@@ -9985,27 +10003,27 @@ declare module '@vue/runtime-core'
                             implement = "virtual";
                         else
                             implement = "override";
-						builder.AppendMethodDefine(item, implement);
-						builder.AppendBlock(() =>
-						{
-							builder.AppendMethodInvoke(item, "Base");
-						});
-					}
-				});
+                        builder.AppendMethodDefine(item, implement);
+                        builder.AppendBlock(() =>
+                        {
+                            builder.AppendMethodInvoke(item, "Base");
+                        });
+                    }
+                });
 
-				#endregion
-			});
+                #endregion
+            });
 
             File.WriteAllText(outputCS, _RH.Indent(builder.ToString()), Encoding.UTF8);
-		}
+        }
         /// <summary>1. 静态类里有多个接口，且接口方法属性等有重名时，需要生成类似于深度调用的实例名</summary>
         public static void BuildStaticInterface(string dllAndType, string outputCS, bool preCompile, string preCondition)
-		{
-			Type type = GetDllType(dllAndType);
-			//if (!type.IsStatic())
-			//    throw new InvalidOperationException("Type must be a static class.");
+        {
+            Type type = GetDllType(dllAndType);
+            //if (!type.IsStatic())
+            //    throw new InvalidOperationException("Type must be a static class.");
 
-			StringBuilder builder = new StringBuilder();
+            StringBuilder builder = new StringBuilder();
             builder.AppendSharpIfCompile(preCondition, () =>
             {
                 // using
@@ -10127,141 +10145,141 @@ declare module '@vue/runtime-core'
                 });
             });
 
-			SaveCode(outputCS, builder);
-		}
-		public static void BuildLinkShell(string inputDirOrFile, string dotnetCompilerVersion, byte depth, string outputFile, string x86, string overdueTime, bool showConsole, string iconFileOrEmpty)
-		{
-			object[] exe = null;
-			byte[] result = null;
-			byte[] bytes;
-			// shell off
-			StringBuilder builder = new StringBuilder();
-			builder.AppendLine("using System;");
-			builder.AppendLine("using System.Collections.Generic;");
-			builder.AppendLine("using System.Reflection;");
-			builder.AppendLine("using System.Linq;");
-			builder.AppendLine();
-			builder.AppendLine("public class Shell");
-			builder.AppendBlock(() =>
-			{
+            SaveCode(outputCS, builder);
+        }
+        public static void BuildLinkShell(string inputDirOrFile, string dotnetCompilerVersion, byte depth, string outputFile, string x86, string overdueTime, bool showConsole, string iconFileOrEmpty)
+        {
+            object[] exe = null;
+            byte[] result = null;
+            byte[] bytes;
+            // shell off
+            StringBuilder builder = new StringBuilder();
+            builder.AppendLine("using System;");
+            builder.AppendLine("using System.Collections.Generic;");
+            builder.AppendLine("using System.Reflection;");
+            builder.AppendLine("using System.Linq;");
+            builder.AppendLine();
+            builder.AppendLine("public class Shell");
+            builder.AppendBlock(() =>
+            {
                 if (!showConsole)
                 {
                     builder.AppendLine("[System.Runtime.InteropServices.DllImport(\"user32.dll\")]static extern bool ShowWindow(int hWnd, int nCmdShow);");
                 }
-				builder.AppendLine("public static void Next(byte[] bytes)");
-				builder.AppendBlock(() =>
-				{
+                builder.AppendLine("public static void Next(byte[] bytes)");
+                builder.AppendBlock(() =>
+                {
                     DestructSelf(overdueTime, builder);
 
-					string[] files = GetFiles(inputDirOrFile, "*.dll", SearchOption.TopDirectoryOnly).Concat(
-						GetFiles(inputDirOrFile, "*.exe", SearchOption.TopDirectoryOnly)).ToArray();
-					builder.AppendLine("byte[] raw, symbol;");
-					builder.AppendLine("Assembly[] asses = new Assembly[{0}];", files.Length);
-					int position = 0;
-					for (int i = 0; i < files.Length; i++)
-					{
-						string file = files[i];
-						bytes = File.ReadAllBytes(file);
-						builder.AppendLine("raw = new byte[{0}];", bytes.Length);
-						builder.AppendLine("Array.Copy(bytes, {0}, raw, 0, {1});", position, bytes.Length);
-						position += bytes.Length;
-						result = result.Add(bytes);
+                    string[] files = GetFiles(inputDirOrFile, "*.dll", SearchOption.TopDirectoryOnly).Concat(
+                        GetFiles(inputDirOrFile, "*.exe", SearchOption.TopDirectoryOnly)).ToArray();
+                    builder.AppendLine("byte[] raw, symbol;");
+                    builder.AppendLine("Assembly[] asses = new Assembly[{0}];", files.Length);
+                    int position = 0;
+                    for (int i = 0; i < files.Length; i++)
+                    {
+                        string file = files[i];
+                        bytes = File.ReadAllBytes(file);
+                        builder.AppendLine("raw = new byte[{0}];", bytes.Length);
+                        builder.AppendLine("Array.Copy(bytes, {0}, raw, 0, {1});", position, bytes.Length);
+                        position += bytes.Length;
+                        result = result.Add(bytes);
 
-						string pdb = Path.ChangeExtension(file, "pdb");
-						if (File.Exists(pdb))
-						{
-							byte[] pdbs = File.ReadAllBytes(pdb);
-							builder.AppendLine("symbol = new byte[{0}];", pdbs.Length);
-							builder.AppendLine("Array.Copy(bytes, {0}, symbol, 0, {1});", position, pdbs.Length);
-							position += pdbs.Length;
-							result = result.Add(pdbs);
-						}
-						else
-							builder.AppendLine("symbol = null;");
+                        string pdb = Path.ChangeExtension(file, "pdb");
+                        if (File.Exists(pdb))
+                        {
+                            byte[] pdbs = File.ReadAllBytes(pdb);
+                            builder.AppendLine("symbol = new byte[{0}];", pdbs.Length);
+                            builder.AppendLine("Array.Copy(bytes, {0}, symbol, 0, {1});", position, pdbs.Length);
+                            position += pdbs.Length;
+                            result = result.Add(pdbs);
+                        }
+                        else
+                            builder.AppendLine("symbol = null;");
 
-						builder.AppendLine("asses[{0}] = AppDomain.CurrentDomain.Load(raw, symbol);", i);
+                        builder.AppendLine("asses[{0}] = AppDomain.CurrentDomain.Load(raw, symbol);", i);
 
-						try
-						{
-							var load = Assembly.Load(bytes);
-							if (load.EntryPoint != null)
-							{
-								exe = load.EntryPoint.GetCustomAttributes(true);
-							}
-						}
-						catch (Exception)
-						{
+                        try
+                        {
+                            var load = Assembly.Load(bytes);
+                            if (load.EntryPoint != null)
+                            {
+                                exe = load.EntryPoint.GetCustomAttributes(true);
+                            }
+                        }
+                        catch (Exception)
+                        {
                             Console.WriteLine("加载入口Dll[{0}]异常，编译选项采用x86", file);
-							x86 = "x86";
-						}
-					}
-					builder.AppendLine("AppDomain.CurrentDomain.AssemblyResolve += (sender, e) => asses.FirstOrDefault(a => a.FullName == e.Name);");
+                            x86 = "x86";
+                        }
+                    }
+                    builder.AppendLine("AppDomain.CurrentDomain.AssemblyResolve += (sender, e) => asses.FirstOrDefault(a => a.FullName == e.Name);");
                     if (!showConsole)
                     {
                         builder.AppendLine("ShowWindow(System.Diagnostics.Process.GetCurrentProcess().MainWindowHandle.ToInt32(), 0);");
                     }
-					// if has EntryPoint will run the application
-					builder.AppendLine("foreach (var assembly in asses)");
-					builder.AppendBlock(() =>
-					{
-						builder.AppendLine("if (assembly.EntryPoint != null)");
+                    // if has EntryPoint will run the application
+                    builder.AppendLine("foreach (var assembly in asses)");
+                    builder.AppendBlock(() =>
+                    {
+                        builder.AppendLine("if (assembly.EntryPoint != null)");
                         // WinForm的默认Main方法不带参数
                         builder.AppendLine("if (assembly.EntryPoint.GetParameters().Length == 0) assembly.EntryPoint.Invoke(null, null);");
                         builder.AppendLine("else assembly.EntryPoint.Invoke(null, new object[1] { Environment.GetCommandLineArgs().Skip(1).ToArray() });");
-					});
-					/*
-					 * 增加使用验证
-					 * 1. 通过网络将此程序的启动通知服务器
-					 * 2. 若运行程序未被授权，服务器将通知程序自毁
-					 * 3. 自毁程序自定义
-					 */
-				});
-			});
-			var shells = Assembly.GetExecutingAssembly().GetTypes(typeof(CSharpShell.Shell)).
+                    });
+                    /*
+                     * 增加使用验证
+                     * 1. 通过网络将此程序的启动通知服务器
+                     * 2. 若运行程序未被授权，服务器将通知程序自毁
+                     * 3. 自毁程序自定义
+                     */
+                });
+            });
+            var shells = Assembly.GetExecutingAssembly().GetTypes(typeof(CSharpShell.Shell)).
                 Where(t => !t.IsAbstract).Select(t => (CSharpShell.Shell)(t.GetConstructor(new Type[0]).Invoke(new object[0]))).ToArray();
-			// shell on
-			ushort d = 0;
-			bytes = result;
-			while (true)
-			{
+            // shell on
+            ushort d = 0;
+            bytes = result;
+            while (true)
+            {
                 // 若加载同名dll，在mono里将使用最开始加载的dll
-				string temp = "Temp" + d + ".dll";
-				// build Entry
-				if (d == depth)
-				{
-					builder.AppendLine("public class Program");
-					builder.AppendBlock(() =>
-					{
-						if (exe != null)
-						{
-							foreach (Attribute item in exe)
-							{
-								Type type = item.GetType();
-								builder.AppendLine("[{0}]", type.FullName);
-							}
-							temp = Path.ChangeExtension(temp, "exe");
-						}
-						builder.AppendLine("public static void Main(string[] args)");
-						builder.AppendBlock(() =>
-						{
+                string temp = "Temp" + d + ".dll";
+                // build Entry
+                if (d == depth)
+                {
+                    builder.AppendLine("public class Program");
+                    builder.AppendBlock(() =>
+                    {
+                        if (exe != null)
+                        {
+                            foreach (Attribute item in exe)
+                            {
+                                Type type = item.GetType();
+                                builder.AppendLine("[{0}]", type.FullName);
+                            }
+                            temp = Path.ChangeExtension(temp, "exe");
+                        }
+                        builder.AppendLine("public static void Main(string[] args)");
+                        builder.AppendBlock(() =>
+                        {
                             DestructSelf(overdueTime, builder);
 
                             // 超出编译器限制: 行不能超过 16777214 个字符
                             builder.AppendLine("byte[] bytes = {{{0}}};", string.Join(",", result.Select(r => r.ToString()).ToArray()));
                             //builder.AppendLine("byte[] bytes = new byte[{0}];", result.Length);
                             //StringBuilder appendBytes = new StringBuilder(10000000);
-							result = null;
-							builder.AppendLine("Shell.Next(bytes);");
-							// exe == null: 加密的dll没有入口
-							// ext == .exe: 能运行和加载dll
-							// 此时需要加载额外的exe来运行
-							// exe != null: 已有入口
-							// ext != .exe: 单纯dll，由外部自己动态添加，例如
-							// Unity: 动态解析DLL，反射MonoBehaviour入口添加到Object上
-							if (exe == null && Path.GetExtension(outputFile) == ".exe")
-							{
-								builder.AppendLine("var self = System.Reflection.Assembly.GetEntryAssembly().Location;");
-								builder.AppendLine("var files = System.IO.Directory.GetFiles(Environment.CurrentDirectory, \"*.exe\", System.IO.SearchOption.AllDirectories);");
+                            result = null;
+                            builder.AppendLine("Shell.Next(bytes);");
+                            // exe == null: 加密的dll没有入口
+                            // ext == .exe: 能运行和加载dll
+                            // 此时需要加载额外的exe来运行
+                            // exe != null: 已有入口
+                            // ext != .exe: 单纯dll，由外部自己动态添加，例如
+                            // Unity: 动态解析DLL，反射MonoBehaviour入口添加到Object上
+                            if (exe == null && Path.GetExtension(outputFile) == ".exe")
+                            {
+                                builder.AppendLine("var self = System.Reflection.Assembly.GetEntryAssembly().Location;");
+                                builder.AppendLine("var files = System.IO.Directory.GetFiles(Environment.CurrentDirectory, \"*.exe\", System.IO.SearchOption.AllDirectories);");
                                 builder.AppendLine("int realExeCount = files.Length;");
                                 builder.AppendLine("for (int i = 0, n = realExeCount - 1; i <= n; i++)");
                                 builder.AppendBlock(() =>
@@ -10274,10 +10292,10 @@ declare module '@vue/runtime-core'
                                     });
                                 });
                                 builder.AppendLine("for (int i = 0; i < files.Length; i++)");
-								builder.AppendBlock(() =>
-								{
+                                builder.AppendBlock(() =>
+                                {
                                     builder.AppendLine("string file = files[i];");
-									builder.AppendLine("if (file == null) continue;");
+                                    builder.AppendLine("if (file == null) continue;");
                                     builder.AppendLine("string arg = null;");
                                     // 同一文件夹下有多个exe文件时，可以通过参数指定要运行的exe文件
                                     builder.AppendLine("if (realExeCount > 1 && args.Length > 0)");
@@ -10292,61 +10310,61 @@ declare module '@vue/runtime-core'
                                         });
                                         builder.AppendLine("else continue;");
                                     });
-									builder.AppendLine("byte[] raw = System.IO.File.ReadAllBytes(file);");
-									builder.AppendLine("byte[] symbol = null;");
-									builder.AppendLine("string pdb = System.IO.Path.ChangeExtension(file, \"pdb\");");
-									builder.AppendLine("if (System.IO.File.Exists(pdb))");
-									builder.AppendBlock(() =>
-									{
-										builder.AppendLine("symbol = System.IO.File.ReadAllBytes(pdb);");
-									});
-									builder.AppendLine("var assembly = AppDomain.CurrentDomain.Load(raw, symbol);");
+                                    builder.AppendLine("byte[] raw = System.IO.File.ReadAllBytes(file);");
+                                    builder.AppendLine("byte[] symbol = null;");
+                                    builder.AppendLine("string pdb = System.IO.Path.ChangeExtension(file, \"pdb\");");
+                                    builder.AppendLine("if (System.IO.File.Exists(pdb))");
+                                    builder.AppendBlock(() =>
+                                    {
+                                        builder.AppendLine("symbol = System.IO.File.ReadAllBytes(pdb);");
+                                    });
+                                    builder.AppendLine("var assembly = AppDomain.CurrentDomain.Load(raw, symbol);");
                                     builder.AppendLine("if (assembly.EntryPoint != null)");
                                     // WinForm的默认Main方法不带参数
                                     builder.AppendLine("if (assembly.EntryPoint.GetParameters().Length == 0) assembly.EntryPoint.Invoke(null, null);");
                                     builder.AppendLine("else assembly.EntryPoint.Invoke(null, new object[1] { args });");
-									builder.AppendLine("return;");
-								});
+                                    builder.AppendLine("return;");
+                                });
                                 builder.AppendLine("Console.WriteLine(\"运行目录下有多个exe文件，但没有找到\" + args[0]);");
-								temp = Path.ChangeExtension(temp, "exe");
-							}
-						});
-					});
-				}
-                CompilerResults compileResult = UtilityCode.Compile(temp, dotnetCompilerVersion, 
+                                temp = Path.ChangeExtension(temp, "exe");
+                            }
+                        });
+                    });
+                }
+                CompilerResults compileResult = UtilityCode.Compile(temp, dotnetCompilerVersion,
                     d == depth && !string.IsNullOrEmpty(x86) ? x86 : "",
                     d == depth ? iconFileOrEmpty : "", "", builder.ToString());
                 //CompilerResults compileResult = UtilityCode.Compile(temp, "", d == depth && !string.IsNullOrEmpty(x86) ? x86 : "", "", builder.ToString());
-				if (UtilityCode.CheckCompileError(compileResult))
-				{
-					File.Delete(temp);
-					return;
-				}
-				bytes = File.ReadAllBytes(temp);
-				File.Delete(temp);
-				result = result.Insert(0, bytes);
+                if (UtilityCode.CheckCompileError(compileResult))
+                {
+                    File.Delete(temp);
+                    return;
+                }
+                bytes = File.ReadAllBytes(temp);
+                File.Delete(temp);
+                result = result.Insert(0, bytes);
 
-				if (d++ == depth)
-					break;
+                if (d++ == depth)
+                    break;
 
-				// Protect之后result长度可能发生变化
-				int length = result.Length;
-				var shell = shells[_RANDOM.Next(shells.Length)];
-				shell.Protect(ref result);
-				//File.WriteAllText(string.Format("Temp{0}.txt", d), Utility.Indent(builder.ToString()));
+                // Protect之后result长度可能发生变化
+                int length = result.Length;
+                var shell = shells[_RANDOM.Next(shells.Length)];
+                shell.Protect(ref result);
+                //File.WriteAllText(string.Format("Temp{0}.txt", d), Utility.Indent(builder.ToString()));
 
-				builder = new StringBuilder();
-				builder.AppendLine("using System;");
-				builder.AppendLine("using System.Collections.Generic;");
-				builder.AppendLine("using System.Reflection;");
-				builder.AppendLine("using System.Linq;");
-				builder.AppendLine();
-				builder.AppendLine("public class Shell");
-				builder.AppendBlock(() =>
-				{
-					builder.AppendLine("public static void Next(byte[] bytes)");
-					builder.AppendBlock(() =>
-					{
+                builder = new StringBuilder();
+                builder.AppendLine("using System;");
+                builder.AppendLine("using System.Collections.Generic;");
+                builder.AppendLine("using System.Reflection;");
+                builder.AppendLine("using System.Linq;");
+                builder.AppendLine();
+                builder.AppendLine("public class Shell");
+                builder.AppendBlock(() =>
+                {
+                    builder.AppendLine("public static void Next(byte[] bytes)");
+                    builder.AppendBlock(() =>
+                    {
                         if (d % 50 == 0)
                         {
                             builder.AppendLine("GC.Collect();");
@@ -10359,18 +10377,18 @@ declare module '@vue/runtime-core'
                         builder.AppendLine("byte[] _continue = new byte[{0}];", length - bytes.Length);
                         builder.AppendLine("Array.Copy(bytes, {0}, _continue, 0, {1});", bytes.Length, length - bytes.Length);
                         builder.AppendLine("AppDomain.CurrentDomain.Load(next).GetType(\"Shell\").GetMethod(\"Next\").Invoke(null, new object[1] { _continue });");
-					});
-				});
-			}
-			if (exe != null)
-				outputFile = Path.ChangeExtension(outputFile, "exe");
-			File.WriteAllBytes(outputFile, result);
-		}
+                    });
+                });
+            }
+            if (exe != null)
+                outputFile = Path.ChangeExtension(outputFile, "exe");
+            File.WriteAllBytes(outputFile, result);
+        }
         public static void BuildDepthInvoke(string dllAndType, string instance, byte depth, string outputCS, string preCondition)
-		{
-			Type type = GetDllType(dllAndType);
+        {
+            Type type = GetDllType(dllAndType);
 
-			StringBuilder builder = new StringBuilder();
+            StringBuilder builder = new StringBuilder();
             builder.AppendSharpIfCompile(preCondition, () =>
             {
                 AppendDefaultNamespace(builder);
@@ -10393,38 +10411,38 @@ declare module '@vue/runtime-core'
                 });
             });
 
-			SaveCode(outputCS, builder);
-		}
-		public static void BuildSameDirectory(string inputDir, string outputDir, bool deleteFiles)
-		{
-			inputDir = GetFullPath(inputDir);
-			outputDir = GetFullPath(outputDir);
+            SaveCode(outputCS, builder);
+        }
+        public static void BuildSameDirectory(string inputDir, string outputDir, bool deleteFiles)
+        {
+            inputDir = GetFullPath(inputDir);
+            outputDir = GetFullPath(outputDir);
 
-			DirectoryInfo target = new DirectoryInfo(outputDir);
-			if (!target.Exists)
-				target.Create();
+            DirectoryInfo target = new DirectoryInfo(outputDir);
+            if (!target.Exists)
+                target.Create();
 
-			ForeachDirectory(inputDir,
-				directory =>
-				{
-					string temp = outputDir + directory.FullName.Substring(inputDir.Length);
-					target = new DirectoryInfo(temp);
-					if (!target.Exists)
-					{
-						target.Create();
-					}
-					else
-					{
-						if (deleteFiles)
-						{
-							foreach (var file in target.GetFiles())
-							{
-								file.Delete();
-							}
-						}
-					}
-				});
-		}
+            ForeachDirectory(inputDir,
+                directory =>
+                {
+                    string temp = outputDir + directory.FullName.Substring(inputDir.Length);
+                    target = new DirectoryInfo(temp);
+                    if (!target.Exists)
+                    {
+                        target.Create();
+                    }
+                    else
+                    {
+                        if (deleteFiles)
+                        {
+                            foreach (var file in target.GetFiles())
+                            {
+                                file.Delete();
+                            }
+                        }
+                    }
+                });
+        }
         public static void BuildMemberInvokeAvoidOptimize(string inputDirOrFile, string theNamespace, string outputCS)
         {
             string className = Path.GetFileNameWithoutExtension(outputCS);
@@ -10549,7 +10567,7 @@ declare module '@vue/runtime-core'
 
             var multiTex = (Bitmap)Bitmap.FromFile(multiPng);
             var multi = GetData(multiTex);
-           
+
             float btf = COLOR.BYTE_TO_FLOAT;
             var files = GetFiles(inputDirOrFile, SearchOption.AllDirectories, IMAGE_FORMATS);
             foreach (var file in files)
@@ -10636,100 +10654,100 @@ declare module '@vue/runtime-core'
                 Console.WriteLine("{0}处理完毕", filename);
             }
         }
-		public static void TexCut(string inputDirOrFile, bool normalize, ushort width, ushort height, string outputDir, bool isAll)
-		{
-			bool sizeAuto = width == 0 || height == 0;
-			if (width > _MATH.MaxSize || height > _MATH.MaxSize)
-			{
-				Console.WriteLine("Texture size should not larger than {0}.", _MATH.MaxSize);
-				return;
-			}
+        public static void TexCut(string inputDirOrFile, bool normalize, ushort width, ushort height, string outputDir, bool isAll)
+        {
+            bool sizeAuto = width == 0 || height == 0;
+            if (width > _MATH.MaxSize || height > _MATH.MaxSize)
+            {
+                Console.WriteLine("Texture size should not larger than {0}.", _MATH.MaxSize);
+                return;
+            }
 
-			if (!sizeAuto && !normalize)
-			{
-				Console.WriteLine("Set texture size will require normalize is true.");
-				return;
-			}
+            if (!sizeAuto && !normalize)
+            {
+                Console.WriteLine("Set texture size will require normalize is true.");
+                return;
+            }
 
-			BuildDir(ref outputDir);
+            BuildDir(ref outputDir);
 
-			bool allOrSplit = !normalize || !sizeAuto;
+            bool allOrSplit = !normalize || !sizeAuto;
             string[] files = GetFiles(inputDirOrFile, IMAGE_FORMAT, isAll ? SearchOption.AllDirectories : SearchOption.TopDirectoryOnly);
-			Console.WriteLine("Cut target mode: {0} count: {1}", allOrSplit ? "ALL" : "SPLIT", files.Length);
+            Console.WriteLine("Cut target mode: {0} count: {1}", allOrSplit ? "ALL" : "SPLIT", files.Length);
 
-			Point size = new Point(width, height);
+            Point size = new Point(width, height);
 
-			if (!normalize)
-			{
-				string output;
-				Bitmap[] textures = new Bitmap[1];
-				foreach (var file in files)
-				{
-					textures[0] = OpenBitmap(file);
-					Cut(textures, size);
-					output = SavePng(textures[0], outputDir + _IO.RelativeDirectory(file, inputDirOrFile), file);
-					Console.WriteLine("Save {0} completed.", output);
-					ClearMemory();
-				}
-				return;
-			}
+            if (!normalize)
+            {
+                string output;
+                Bitmap[] textures = new Bitmap[1];
+                foreach (var file in files)
+                {
+                    textures[0] = OpenBitmap(file);
+                    Cut(textures, size);
+                    output = SavePng(textures[0], outputDir + _IO.RelativeDirectory(file, inputDirOrFile), file);
+                    Console.WriteLine("Save {0} completed.", output);
+                    ClearMemory();
+                }
+                return;
+            }
 
-			Dictionary<string, List<string>> group = files.Group(file => _IO.RelativeDirectory(file, inputDirOrFile));
+            Dictionary<string, List<string>> group = files.Group(file => _IO.RelativeDirectory(file, inputDirOrFile));
 
-			if (allOrSplit)
-			{
-				List<Bitmap> all = new List<Bitmap>();
-				foreach (var item in group)
-					all.AddRange(item.Value.Select(file => OpenBitmap(file)));
+            if (allOrSplit)
+            {
+                List<Bitmap> all = new List<Bitmap>();
+                foreach (var item in group)
+                    all.AddRange(item.Value.Select(file => OpenBitmap(file)));
 
-				Cut(all, size);
+                Cut(all, size);
 
-				string output;
-				int index = 0;
-				foreach (var item in group)
-				{
-					for (int i = 0; i < item.Value.Count; i++)
-					{
-						using (all[index])
-						{
-							output = SavePng(all[index], outputDir + item.Key, item.Value[i]);
-							Console.WriteLine("Save {0} completed.", output);
-						}
-						all[index] = null;
-						index++;
-					}
-				}
-			}
-			else
-			{
-				foreach (var item in group)
-				{
-					int count = item.Value.Count;
-					Bitmap[] textures = new Bitmap[count];
-					for (int i = 0; i < count; i++)
-						textures[i] = OpenBitmap(item.Value[i]);
+                string output;
+                int index = 0;
+                foreach (var item in group)
+                {
+                    for (int i = 0; i < item.Value.Count; i++)
+                    {
+                        using (all[index])
+                        {
+                            output = SavePng(all[index], outputDir + item.Key, item.Value[i]);
+                            Console.WriteLine("Save {0} completed.", output);
+                        }
+                        all[index] = null;
+                        index++;
+                    }
+                }
+            }
+            else
+            {
+                foreach (var item in group)
+                {
+                    int count = item.Value.Count;
+                    Bitmap[] textures = new Bitmap[count];
+                    for (int i = 0; i < count; i++)
+                        textures[i] = OpenBitmap(item.Value[i]);
 
-					Cut(textures, size);
+                    Cut(textures, size);
 
-					string output;
-					for (int i = 0; i < count; i++)
-					{
-						using (textures[i])
-						{
-							output = SavePng(textures[i], outputDir + item.Key, item.Value[i]);
-							Console.WriteLine("Save {0} completed.", output);
-						}
+                    string output;
+                    for (int i = 0; i < count; i++)
+                    {
+                        using (textures[i])
+                        {
+                            output = SavePng(textures[i], outputDir + item.Key, item.Value[i]);
+                            Console.WriteLine("Save {0} completed.", output);
+                        }
 
-						textures[i] = null;
-					}
-					textures = null;
+                        textures[i] = null;
+                    }
+                    textures = null;
 
-					ClearMemory();
-				}
-			}
-		}
+                    ClearMemory();
+                }
+            }
+        }
         public static void TexPiece(string inputXLSX, string inputDir, string outputDir)
-		{
+        {
             CSVWriter writer = new CSVWriter();
             if (!File.Exists(inputXLSX))
             {
@@ -10872,7 +10890,7 @@ declare module '@vue/runtime-core'
                     BuildDir(ref onePiece.Root);
 
                 #endregion
-                
+
                 string[] directories = onePiece.Directories.Split(',');
                 var files = directories.SelectMany(d => GetFiles(Path.GetFullPath(inputDir + onePiece.Root + d), onePiece.All ? SearchOption.AllDirectories : SearchOption.TopDirectoryOnly, IMAGE_FORMATS))
                     .Where(f => !outputFiles.Contains(f)).ToArray();
@@ -10951,7 +10969,7 @@ declare module '@vue/runtime-core'
                 }
 
                 #endregion
-                
+
                 #region 计算总面积
 
                 // 矩形组的总面积
@@ -11083,7 +11101,7 @@ declare module '@vue/runtime-core'
 
                 #endregion
             } // end of all pieces
-            // 统一保存metadata
+              // 统一保存metadata
             foreach (var item in metadatas)
             {
                 writer = new CSVWriter();
@@ -11096,46 +11114,46 @@ declare module '@vue/runtime-core'
                 File.WriteAllText(saveFile + ".pcsv", writer.Result, Encoding.UTF8);
                 Console.WriteLine("保存metadata:{0}完毕", item.Key);
             }
-		}
-		public static void TexPatchFromExcel(string inputXLSX, string outputDir)
-		{
+        }
+        public static void TexPatchFromExcel(string inputXLSX, string outputDir)
+        {
             CSVWriter writer = new CSVWriter();
-			if (!File.Exists(inputXLSX))
-			{
-				Patch test = new Patch();
-				test.Left = 1;
-				test.Top = 1;
-				test.Right = 2;
-				test.Bottom = 2;
-				test.Source = "Source/Test.png";
-				test.ColorBody = "255,255,255,255";
-				test.ColorBorder = "0,0,0,0";
-				writer.WriteObject(test);
-				File.WriteAllText(Path.ChangeExtension(inputXLSX, "csv"), writer.Result, CSVWriter.CSVEncoding);
+            if (!File.Exists(inputXLSX))
+            {
+                Patch test = new Patch();
+                test.Left = 1;
+                test.Top = 1;
+                test.Right = 2;
+                test.Bottom = 2;
+                test.Source = "Source/Test.png";
+                test.ColorBody = "255,255,255,255";
+                test.ColorBorder = "0,0,0,0";
+                writer.WriteObject(test);
+                File.WriteAllText(Path.ChangeExtension(inputXLSX, "csv"), writer.Result, CSVWriter.CSVEncoding);
                 Console.WriteLine("已生成CSV文档，请新建Excel文档按照CSV表头格式填写数据后再试");
-				return;
-			}
+                return;
+            }
 
             BuildDir(ref outputDir);
 
             var table = LoadTableFromExcel(inputXLSX);
             writer.WriteTable(table);
             CSVReader reader = new CSVReader(writer.Result);
-			var patches = reader.ReadObject<Patch[]>();
-			var target = new PipelinePatch.Patch();
+            var patches = reader.ReadObject<Patch[]>();
+            var target = new PipelinePatch.Patch();
             //var root = Path.GetDirectoryName(Path.GetFullPath(inputXLSX));
-			var type = new PipelinePatch().FileType;
-			foreach (var item in patches)
-			{
-				target.Anchor.X = item.Left;
-				target.Anchor.Y = item.Top;
-				target.Anchor.Width = item.Right - item.Left;
-				target.Anchor.Height = item.Bottom - item.Top;
+            var type = new PipelinePatch().FileType;
+            foreach (var item in patches)
+            {
+                target.Anchor.X = item.Left;
+                target.Anchor.Y = item.Top;
+                target.Anchor.Width = item.Right - item.Left;
+                target.Anchor.Height = item.Bottom - item.Top;
                 if (item.Source.Contains('.'))
-				    target.Source = item.Source;
+                    target.Source = item.Source;
 
-				target.ColorBody = Patch.GetColor(item.ColorBody);
-				target.ColorBorder = Patch.GetColor(item.ColorBorder);
+                target.ColorBody = Patch.GetColor(item.ColorBody);
+                target.ColorBorder = Patch.GetColor(item.ColorBorder);
 
                 string result = Path.Combine(outputDir, item.Source);
                 //if (!File.Exists(result))
@@ -11144,84 +11162,84 @@ declare module '@vue/runtime-core'
                 //}
 
                 var xml = new XmlWriter();
-				xml.WriteObject(target);
-				File.WriteAllText(Path.ChangeExtension(result, type), xml.Result, Encoding.UTF8);
+                xml.WriteObject(target);
+                File.WriteAllText(Path.ChangeExtension(result, type), xml.Result, Encoding.UTF8);
                 Console.WriteLine("生成九宫格{0}", item.Source);
-			}
-			Console.WriteLine("生成九宫格完毕");
-		}
-		public static void TexAnimationFromExcel(string inputXLSX, string inputDir, string outputDir)
-		{
+            }
+            Console.WriteLine("生成九宫格完毕");
+        }
+        public static void TexAnimationFromExcel(string inputXLSX, string inputDir, string outputDir)
+        {
             CSVWriter writer = new CSVWriter();
-			if (!File.Exists(inputXLSX))
-			{
-				Animation test = new Animation();
-				test.Interval = 32;
-				writer.WriteObject(test);
-				File.WriteAllText(Path.ChangeExtension(inputXLSX, "csv"), writer.Result, CSVWriter.CSVEncoding);
-				Console.WriteLine("已生成CSV文档，请新建Excel文档按照CSV表头格式填写数据后再试");
-				return;
-			}
+            if (!File.Exists(inputXLSX))
+            {
+                Animation test = new Animation();
+                test.Interval = 32;
+                writer.WriteObject(test);
+                File.WriteAllText(Path.ChangeExtension(inputXLSX, "csv"), writer.Result, CSVWriter.CSVEncoding);
+                Console.WriteLine("已生成CSV文档，请新建Excel文档按照CSV表头格式填写数据后再试");
+                return;
+            }
 
             BuildDir(ref outputDir);
 
             var table = LoadTableFromExcel(inputXLSX);
             writer.WriteTable(table);
-			CSVReader reader = new CSVReader(writer.Result);
-			var animations = reader.ReadObject<Animation[]>();
-			var type = new PipelineAnimation().FileType;
+            CSVReader reader = new CSVReader(writer.Result);
+            var animations = reader.ReadObject<Animation[]>();
+            var type = new PipelineAnimation().FileType;
             foreach (var item in animations)
                 if (string.IsNullOrEmpty(item.Output))
                     item.Output = item.Directory;
-			foreach (var item in animations.Group(a => a.Output))
-			{
-				if (string.IsNullOrEmpty(item.Key))
-				{
-					Console.WriteLine("输出文件不能为空");
-					continue;
-				}
-				try
-				{
-					item.Value.ToDictionary(a => a.Name);
-				}
-				catch (Exception)
-				{
-					Console.WriteLine("{0}拥有重复的序列动画名", item.Key);
-					continue;
-				}
+            foreach (var item in animations.Group(a => a.Output))
+            {
+                if (string.IsNullOrEmpty(item.Key))
+                {
+                    Console.WriteLine("输出文件不能为空");
+                    continue;
+                }
+                try
+                {
+                    item.Value.ToDictionary(a => a.Name);
+                }
+                catch (Exception)
+                {
+                    Console.WriteLine("{0}拥有重复的序列动画名", item.Key);
+                    continue;
+                }
 
-				int count = item.Value.Count;
-				var sequence = new Sequence[count];
-				for (int i = 0; i < count; i++)
-				{
-					var anime = item.Value[i];
-					var target = new Sequence();
-					target.Name = anime.Name;
-					target.Next = anime.Next;
-					target.Loop = anime.Loop;
-					// frames
+                int count = item.Value.Count;
+                var sequence = new Sequence[count];
+                for (int i = 0; i < count; i++)
+                {
+                    var anime = item.Value[i];
+                    var target = new Sequence();
+                    target.Name = anime.Name;
+                    target.Next = anime.Next;
+                    target.Loop = anime.Loop;
+                    // frames
                     string dir = Path.Combine(inputDir, anime.Directory);
-					var frames = GetFiles(dir, SearchOption.TopDirectoryOnly, IMAGE_FORMATS).ToArray();
-					target.Frames = new Frame[frames.Length];
-					for (int j = 0; j < frames.Length; j++)
-					{
-						Frame frame = new Frame();
-						frame.Texture = ContentManager.FilePathUnify(Path.Combine(anime.Directory, Path.GetFileName(frames[j])));
-						frame.Interval = anime.Interval;
+                    var frames = GetFiles(dir, SearchOption.TopDirectoryOnly, IMAGE_FORMATS).ToArray();
+                    target.Frames = new Frame[frames.Length];
+                    for (int j = 0; j < frames.Length; j++)
+                    {
+                        Frame frame = new Frame();
+                        frame.Texture = ContentManager.FilePathUnify(Path.Combine(anime.Directory, Path.GetFileName(frames[j])));
+                        frame.Interval = anime.Interval;
                         frame.PivotX = anime.PivotX;
                         frame.PivotY = anime.PivotY;
-						target.Frames[j] = frame;
-					}
-					sequence[i] = target;
-				}
+                        target.Frames[j] = frame;
+                    }
+                    sequence[i] = target;
+                }
 
                 var xml = new XmlWriter();
-				xml.WriteObject(sequence);
-				File.WriteAllText(string.Format("{0}{1}.{2}", outputDir, item.Key, type), xml.Result, Encoding.UTF8);
+                xml.WriteObject(sequence);
+                File.WriteAllText(string.Format("{0}{1}.{2}", outputDir, item.Key, type), xml.Result, Encoding.UTF8);
                 Console.WriteLine("生成动画{0}", item.Key);
-			}
-			Console.WriteLine("生成动画完毕");
-		}
+            }
+            Console.WriteLine("生成动画完毕");
+        }
         public static void TexTileFromExcel(string inputXLSX, string outputDir)
         {
             CSVWriter writer = new CSVWriter();
@@ -11451,9 +11469,9 @@ declare module '@vue/runtime-core'
                                 height = 0;
                             }
 
-                            graphics.DrawImage(c.Value, 
-                                new Rectangle(width, y, c.Value.Width, c.Value.Height), 
-                                0, 0, c.Value.Width, c.Value.Height, 
+                            graphics.DrawImage(c.Value,
+                                new Rectangle(width, y, c.Value.Width, c.Value.Height),
+                                0, 0, c.Value.Width, c.Value.Height,
                                 GraphicsUnit.Pixel);
                             writer.Write(c.Key);
                             writer.Write((byte)0);
@@ -11662,256 +11680,256 @@ declare module '@vue/runtime-core'
             Console.WriteLine("字体生成完毕");
         }
         [Obsolete("To use TexPiece")]
-		public static void TexTiledMap(string inputDirOrFile, ushort frameWidth, ushort frameHeight, byte mapRow, byte mapCol, string outputFile)
-		{
-			string[] files = GetFiles(inputDirOrFile, IMAGE_FORMAT);
-			int count = files.Length;
-			if (frameWidth == 0 || frameHeight == 0)
-			{
-				using (Bitmap sample = OpenBitmap(files[0]))
-				{
-					if (frameWidth == 0)
-						frameWidth = (ushort)sample.Width;
-					if (frameHeight == 0)
-						frameHeight = (ushort)sample.Height;
-				}
-			}
+        public static void TexTiledMap(string inputDirOrFile, ushort frameWidth, ushort frameHeight, byte mapRow, byte mapCol, string outputFile)
+        {
+            string[] files = GetFiles(inputDirOrFile, IMAGE_FORMAT);
+            int count = files.Length;
+            if (frameWidth == 0 || frameHeight == 0)
+            {
+                using (Bitmap sample = OpenBitmap(files[0]))
+                {
+                    if (frameWidth == 0)
+                        frameWidth = (ushort)sample.Width;
+                    if (frameHeight == 0)
+                        frameHeight = (ushort)sample.Height;
+                }
+            }
 
-			if (mapRow == 0 || mapCol == 0)
-			{
-				bool repeat = false;
-				mapCol = (byte)(count < 8 ? count : 8);
-			COL:
-				mapRow = (byte)((count - 1) / mapCol + 1);
+            if (mapRow == 0 || mapCol == 0)
+            {
+                bool repeat = false;
+                mapCol = (byte)(count < 8 ? count : 8);
+            COL:
+                mapRow = (byte)((count - 1) / mapCol + 1);
 
-				if (repeat && mapRow * frameHeight > _MATH.MaxSize)
-				{
-					Console.WriteLine("图片尺寸已经超过了最大值" + _MATH.MaxSize);
-					return;
-				}
-				else if (mapCol * frameWidth > _MATH.MaxSize)
-				{
-					mapCol = (byte)(_MATH.MaxSize / frameWidth);
-					repeat = true;
-					goto COL;
-				}
-			}
+                if (repeat && mapRow * frameHeight > _MATH.MaxSize)
+                {
+                    Console.WriteLine("图片尺寸已经超过了最大值" + _MATH.MaxSize);
+                    return;
+                }
+                else if (mapCol * frameWidth > _MATH.MaxSize)
+                {
+                    mapCol = (byte)(_MATH.MaxSize / frameWidth);
+                    repeat = true;
+                    goto COL;
+                }
+            }
 
-			PixelFormat pixelFormat = PixelFormat.Format32bppArgb;
-			using (Bitmap map = new Bitmap(frameWidth * mapCol, frameHeight * mapRow, pixelFormat))
-			{
-				ImageDraw(map, graphics =>
-				{
-					for (int i = 0; i < count; i++)
-					{
-						using (Image image = Image.FromFile(files[i]))
-						{
-							graphics.DrawImage(image,
-								new Rectangle(
-									(i % mapCol) * frameWidth,
-									(i / mapCol) * frameHeight,
-									frameWidth,
-									frameHeight));
-						}
-					}
-				});
+            PixelFormat pixelFormat = PixelFormat.Format32bppArgb;
+            using (Bitmap map = new Bitmap(frameWidth * mapCol, frameHeight * mapRow, pixelFormat))
+            {
+                ImageDraw(map, graphics =>
+                {
+                    for (int i = 0; i < count; i++)
+                    {
+                        using (Image image = Image.FromFile(files[i]))
+                        {
+                            graphics.DrawImage(image,
+                                new Rectangle(
+                                    (i % mapCol) * frameWidth,
+                                    (i / mapCol) * frameHeight,
+                                    frameWidth,
+                                    frameHeight));
+                        }
+                    }
+                });
 
-				map.Save(outputFile, ImageFormat.Png);
-			}
-		}
-		[Obsolete]
-		public static void TexSplitTiledMap(string inputDirOrFile, ushort frameWidth, ushort frameHeight, string outputDir, string nameFormat)
-		{
-			if (!string.IsNullOrEmpty(nameFormat))
-			{
-				try
-				{
-					string format = string.Format(nameFormat, "name", 0);
-					_LOG.Debug("NameFormat test: {0}", format);
-				}
-				catch (Exception)
-				{
-					Console.WriteLine("Name format: {0} is name, {1} is index. Index like {1:000} to limit the digit.");
-					return;
-				}
-			}
+                map.Save(outputFile, ImageFormat.Png);
+            }
+        }
+        [Obsolete]
+        public static void TexSplitTiledMap(string inputDirOrFile, ushort frameWidth, ushort frameHeight, string outputDir, string nameFormat)
+        {
+            if (!string.IsNullOrEmpty(nameFormat))
+            {
+                try
+                {
+                    string format = string.Format(nameFormat, "name", 0);
+                    _LOG.Debug("NameFormat test: {0}", format);
+                }
+                catch (Exception)
+                {
+                    Console.WriteLine("Name format: {0} is name, {1} is index. Index like {1:000} to limit the digit.");
+                    return;
+                }
+            }
 
-			BuildDir(ref outputDir);
+            BuildDir(ref outputDir);
 
-			string[] files = GetFiles(inputDirOrFile, IMAGE_FORMAT, SearchOption.AllDirectories);
-			foreach (var file in files)
-			{
-				int width = frameWidth;
-				int height = frameHeight;
+            string[] files = GetFiles(inputDirOrFile, IMAGE_FORMAT, SearchOption.AllDirectories);
+            foreach (var file in files)
+            {
+                int width = frameWidth;
+                int height = frameHeight;
 
-				#region auto calc frame size
-				if (files.Length > 1 || frameWidth == 0 || frameHeight == 0)
-				{
-					using (Bitmap sample = OpenBitmap(file))
-					{
-						byte[] buffer = GetData(sample);
-						Rectangle rect = new Rectangle();
-						int i;
-						for (i = 0; i < sample.Height; i++)
-						{
-							for (int j = 0; j < sample.Width; j++)
-							{
-								int index = i * sample.Width * 4 + j * 4 + 3;
-								if (buffer[index] != 0)
-								{
-									rect.Y = i;
-									goto Left;
-								}
-							}
-						}
-					Left:
-						for (i = 0; i < sample.Width; i++)
-						{
-							for (int j = 0; j < sample.Height; j++)
-							{
-								int index = j * sample.Width * 4 + i * 4 + 3;
-								if (buffer[index] != 0)
-								{
-									rect.X = i;
-									goto Bottom;
-								}
-							}
-						}
-					Bottom:
-						bool has = true;
-						for (i = rect.Y; i < sample.Height; i++)
-						{
-							bool temp = has;
-							for (int j = 0; j < sample.Width; j++)
-							{
-								int index = i * sample.Width * 4 + j * 4 + 3;
-								if (buffer[index] != 0)
-								{
-									temp = !has;
-									break;
-								}
-							}
-							if (has == temp == has)
-							{
-								has = !has;
-								if (has)
-								{
-									rect.Width = i;
-									break;
-								}
-							}
-						}
-						if (i == sample.Height)
-						{
-							rect.Width = sample.Height;
-						}
-						has = true;
-						for (i = rect.X; i < sample.Width; i++)
-						{
-							bool temp = has;
-							for (int j = 0; j < sample.Height; j++)
-							{
-								int index = j * sample.Width * 4 + i * 4 + 3;
-								if (buffer[index] != 0)
-								{
-									temp = !has;
-									break;
-								}
-							}
-							if (has == temp == has)
-							{
-								has = !has;
-								if (has)
-								{
-									rect.Height = i;
-									break;
-								}
-							}
-						}
-						if (i == sample.Width)
-						{
-							rect.Height = i;
-						}
-						// try get bound
-						for (i = rect.Right; i >= rect.Width - rect.X; i--)
-							if (sample.Width % i == 0)
-							{
-								width = i;
-								break;
-							}
-						for (i = rect.Bottom; i >= rect.Height - rect.Y; i--)
-							if (sample.Height % i == 0)
-							{
-								height = i;
-								break;
-							}
-					}
+                #region auto calc frame size
+                if (files.Length > 1 || frameWidth == 0 || frameHeight == 0)
+                {
+                    using (Bitmap sample = OpenBitmap(file))
+                    {
+                        byte[] buffer = GetData(sample);
+                        Rectangle rect = new Rectangle();
+                        int i;
+                        for (i = 0; i < sample.Height; i++)
+                        {
+                            for (int j = 0; j < sample.Width; j++)
+                            {
+                                int index = i * sample.Width * 4 + j * 4 + 3;
+                                if (buffer[index] != 0)
+                                {
+                                    rect.Y = i;
+                                    goto Left;
+                                }
+                            }
+                        }
+                    Left:
+                        for (i = 0; i < sample.Width; i++)
+                        {
+                            for (int j = 0; j < sample.Height; j++)
+                            {
+                                int index = j * sample.Width * 4 + i * 4 + 3;
+                                if (buffer[index] != 0)
+                                {
+                                    rect.X = i;
+                                    goto Bottom;
+                                }
+                            }
+                        }
+                    Bottom:
+                        bool has = true;
+                        for (i = rect.Y; i < sample.Height; i++)
+                        {
+                            bool temp = has;
+                            for (int j = 0; j < sample.Width; j++)
+                            {
+                                int index = i * sample.Width * 4 + j * 4 + 3;
+                                if (buffer[index] != 0)
+                                {
+                                    temp = !has;
+                                    break;
+                                }
+                            }
+                            if (has == temp == has)
+                            {
+                                has = !has;
+                                if (has)
+                                {
+                                    rect.Width = i;
+                                    break;
+                                }
+                            }
+                        }
+                        if (i == sample.Height)
+                        {
+                            rect.Width = sample.Height;
+                        }
+                        has = true;
+                        for (i = rect.X; i < sample.Width; i++)
+                        {
+                            bool temp = has;
+                            for (int j = 0; j < sample.Height; j++)
+                            {
+                                int index = j * sample.Width * 4 + i * 4 + 3;
+                                if (buffer[index] != 0)
+                                {
+                                    temp = !has;
+                                    break;
+                                }
+                            }
+                            if (has == temp == has)
+                            {
+                                has = !has;
+                                if (has)
+                                {
+                                    rect.Height = i;
+                                    break;
+                                }
+                            }
+                        }
+                        if (i == sample.Width)
+                        {
+                            rect.Height = i;
+                        }
+                        // try get bound
+                        for (i = rect.Right; i >= rect.Width - rect.X; i--)
+                            if (sample.Width % i == 0)
+                            {
+                                width = i;
+                                break;
+                            }
+                        for (i = rect.Bottom; i >= rect.Height - rect.Y; i--)
+                            if (sample.Height % i == 0)
+                            {
+                                height = i;
+                                break;
+                            }
+                    }
 
-					if (width == 0 || height == 0)
-						continue;
-				}
-				#endregion
+                    if (width == 0 || height == 0)
+                        continue;
+                }
+                #endregion
 
-				using (Image sourceMap = Image.FromFile(file))
-				{
-					string dir = outputDir + _IO.RelativeDirectory(file, inputDirOrFile);
-					if (!Directory.Exists(dir))
-						Directory.CreateDirectory(dir);
+                using (Image sourceMap = Image.FromFile(file))
+                {
+                    string dir = outputDir + _IO.RelativeDirectory(file, inputDirOrFile);
+                    if (!Directory.Exists(dir))
+                        Directory.CreateDirectory(dir);
 
-					string name = Path.GetFileNameWithoutExtension(file);
-					int row = sourceMap.Height / height;
-					int col = sourceMap.Width / width;
-					Rectangle r = new Rectangle(0, 0, width, height);
+                    string name = Path.GetFileNameWithoutExtension(file);
+                    int row = sourceMap.Height / height;
+                    int col = sourceMap.Width / width;
+                    Rectangle r = new Rectangle(0, 0, width, height);
 
-					string format = nameFormat;
-					if (string.IsNullOrEmpty(format))
-					{
-						int len = (row * col).ToString().Length;
-						if (len > 1)
-						{
-							StringBuilder builder = new StringBuilder("{0}_{1:");
-							for (int i = 0; i < len; i++)
-								builder.Append("0");
-							builder.Append("}");
-							format = builder.ToString();
-						}
-						else
-						{
-							format = "{0}_{1}";
-						}
-					}
+                    string format = nameFormat;
+                    if (string.IsNullOrEmpty(format))
+                    {
+                        int len = (row * col).ToString().Length;
+                        if (len > 1)
+                        {
+                            StringBuilder builder = new StringBuilder("{0}_{1:");
+                            for (int i = 0; i < len; i++)
+                                builder.Append("0");
+                            builder.Append("}");
+                            format = builder.ToString();
+                        }
+                        else
+                        {
+                            format = "{0}_{1}";
+                        }
+                    }
 
-					for (int i = 0; i < row; i++)
-					{
-						for (int j = 0; j < col; j++)
-						{
-							using (Bitmap frame = new Bitmap(width, height))
-							{
-								ImageDraw(frame, g =>
-								{
-									g.DrawImage(
-										sourceMap,
-										r,
-										new Rectangle(
-											j * width,
-											i * height,
-											width,
-											height),
-										GraphicsUnit.Pixel);
-								});
+                    for (int i = 0; i < row; i++)
+                    {
+                        for (int j = 0; j < col; j++)
+                        {
+                            using (Bitmap frame = new Bitmap(width, height))
+                            {
+                                ImageDraw(frame, g =>
+                                {
+                                    g.DrawImage(
+                                        sourceMap,
+                                        r,
+                                        new Rectangle(
+                                            j * width,
+                                            i * height,
+                                            width,
+                                            height),
+                                        GraphicsUnit.Pixel);
+                                });
 
-								int order = i * col + j;
-								string output = string.Format("{0}{1}.png", dir, string.Format(format, name, order));
-								frame.Save(output, ImageFormat.Png);
-								Console.WriteLine("Save {0} completed.", output);
-							}
-						}
-					}
-				}
+                                int order = i * col + j;
+                                string output = string.Format("{0}{1}.png", dir, string.Format(format, name, order));
+                                frame.Save(output, ImageFormat.Png);
+                                Console.WriteLine("Save {0} completed.", output);
+                            }
+                        }
+                    }
+                }
 
-				ClearMemory();
-			}
-		}
+                ClearMemory();
+            }
+        }
         public static void TexSplit(string inputDirOrFile, bool isInOriginGraphics, int border, string outputDir)
         {
             BuildDir(ref outputDir);
@@ -11957,17 +11975,17 @@ declare module '@vue/runtime-core'
             watch.Stop();
             Console.WriteLine("拆分图片{0}张，总耗时:{1}ms", files.Length, watch.ElapsedMilliseconds);
         }
-		public static void TexThumbnail(string inputDirOrFile, ushort frameWidth, ushort frameHeight, string outputDir)
-		{
-			if (frameWidth > _MATH.MaxSize || frameHeight > _MATH.MaxSize)
-			{
-				Console.WriteLine("Texture size should not larger than {0}.", _MATH.MaxSize);
-				return;
-			}
+        public static void TexThumbnail(string inputDirOrFile, ushort frameWidth, ushort frameHeight, string outputDir)
+        {
+            if (frameWidth > _MATH.MaxSize || frameHeight > _MATH.MaxSize)
+            {
+                Console.WriteLine("Texture size should not larger than {0}.", _MATH.MaxSize);
+                return;
+            }
 
-			BuildDir(ref outputDir);
+            BuildDir(ref outputDir);
 
-			var textures = GetFiles(inputDirOrFile, SearchOption.AllDirectories, IMAGE_FORMATS);
+            var textures = GetFiles(inputDirOrFile, SearchOption.AllDirectories, IMAGE_FORMATS);
 
             if (frameWidth == 0 || frameHeight == 0)
             {
@@ -11990,32 +12008,32 @@ declare module '@vue/runtime-core'
                 }
             }
 
-			VECTOR2 offset;
-			float scale;
-			using (Bitmap graphics = new Bitmap(frameWidth, frameHeight))
-			{
-				using (Graphics g = Graphics.FromImage(graphics))
-				{
-					VECTOR2 gSize = new VECTOR2(frameWidth, frameHeight);
-					foreach (var image in textures)
-					{
-						g.Clear(Color.Transparent);
+            VECTOR2 offset;
+            float scale;
+            using (Bitmap graphics = new Bitmap(frameWidth, frameHeight))
+            {
+                using (Graphics g = Graphics.FromImage(graphics))
+                {
+                    VECTOR2 gSize = new VECTOR2(frameWidth, frameHeight);
+                    foreach (var image in textures)
+                    {
+                        g.Clear(Color.Transparent);
 
-						using (var bitmap = OpenBitmap(image))
-						{
-							__GRAPHICS.ViewAdapt(new VECTOR2(bitmap.Width, bitmap.Height), gSize, out scale, out offset);
-							g.DrawImage(bitmap,
-								new Rectangle((int)offset.X,
-									(int)offset.Y,
-									(int)(bitmap.Width * scale),
-									(int)(bitmap.Height * scale)));
-						}
+                        using (var bitmap = OpenBitmap(image))
+                        {
+                            __GRAPHICS.ViewAdapt(new VECTOR2(bitmap.Width, bitmap.Height), gSize, out scale, out offset);
+                            g.DrawImage(bitmap,
+                                new Rectangle((int)offset.X,
+                                    (int)offset.Y,
+                                    (int)(bitmap.Width * scale),
+                                    (int)(bitmap.Height * scale)));
+                        }
 
-						SavePng(graphics, outputDir, image, false);
-					}
-				}
-			}
-		}
+                        SavePng(graphics, outputDir, image, false);
+                    }
+                }
+            }
+        }
         //public static void Pack(string inputDir, string suffix, string outputFile)
         //{
 
@@ -12034,7 +12052,7 @@ declare module '@vue/runtime-core'
                 });
 
             StringBuilder builderRet = new StringBuilder();
-            foreach (var file in 
+            foreach (var file in
                 GetFiles(xnaDir, "*.dll")
                 .Concat(GetFiles(xnaDir, "*.pdb")
                 .Concat(GetFiles(xnaDir, "*.exe"))))
@@ -12278,7 +12296,7 @@ declare module '@vue/runtime-core'
             //        var shell = shells[_RANDOM.Next(0, shells.Length)];
             //        shell.Protect(ref bytes);
 
-                    
+
             //    }
 
             //    File.WriteAllBytes(Path.Combine(Path.GetDirectoryName(outputFile), "code.js"), bytes);
@@ -12396,8 +12414,8 @@ declare module '@vue/runtime-core'
              * 2. 滚动条导致内容被遮挡::-webkit-scrollbar { display: none; }
              * 3. 自动设置尺寸以适应窗口大小
              * function FixWindow() {
-	           document.getElementsByTagName('html')[0].style.fontSize = 
-		           (Math.max(window.innerHeight, 720) * 14 / 1334) + 'px';
+               document.getElementsByTagName('html')[0].style.fontSize = 
+                   (Math.max(window.innerHeight, 720) * 14 / 1334) + 'px';
                }
                FixWindow();
                window.onresize = FixWindow;
@@ -12472,7 +12490,7 @@ declare module '@vue/runtime-core'
                 if (id != 0)
                     dom.Attributes["id"] = id.ToString();
                 //if (exportTestResource)
-                    dom.Attributes["name"] = name;
+                dom.Attributes["name"] = name;
                 #endregion
 
                 double width, height;
@@ -12746,7 +12764,7 @@ declare module '@vue/runtime-core'
                         {
                             using (Graphics g = Graphics.FromImage(bitmap))
                             {
-                                g.Clear(Color.FromArgb(255, 
+                                g.Clear(Color.FromArgb(255,
                                     _RANDOM.Next(0, 256),
                                     _RANDOM.Next(0, 256),
                                     _RANDOM.Next(0, 256)));
@@ -12870,5 +12888,5 @@ declare module '@vue/runtime-core'
                 _LOG.Debug("删除文件：{0}", item);
             }
         }
-	}
+    }
 }

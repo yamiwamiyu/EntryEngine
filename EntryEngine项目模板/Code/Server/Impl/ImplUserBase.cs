@@ -236,7 +236,7 @@ namespace Server.Impl
         {
             user.RegisterTime = DateTime.Now;
             user.LastLoginTime = user.RegisterTime;
-            user.Token = Guid.NewGuid().ToString();
+            user.Token = Guid.NewGuid().ToString("n");
             user.ID = OnInsert(user);
 
             LoginFromDatabase(user);
@@ -405,5 +405,39 @@ SELECT LAST_INSERT_ID();", typeof(T).Name),
             }
             return User;
         }
+
+        /// <summary>导入数据</summary>
+        /// <typeparam name="T">数据类型</typeparam>
+        /// <typeparam name="E">数据库对应字段枚举类型</typeparam>
+        /// <param name="list">导入的数据列表</param>
+        /// <param name="isEquals">判断已存在的对象和导入的对象是否一致，并将一致的已存在的 ID 赋值给导入的对象</param>
+        /// <param name="db">数据库操作对象，例如 _DB._T_USER</param>
+        /// <param name="selectFields">查出已存在对象的字段值，也是最后更新到数据库的值</param>
+        /// <returns>插入的数据条数</returns>
+        public int Import<T, E>(List<T> list, List<T> exists, Func<T, T, List<T>, bool> isEquals, object db, E[] selectFields) where T : class
+{
+    var type = db.GetType();
+    var selectEixsts = type.GetMethod("SelectMultiple");
+    var insert = type.GetMethod("GetInsertSQL");
+    var update = type.GetMethod("GetUpdateSQL");
+
+    if (exists == null)
+        exists = (List<T>)selectEixsts.Invoke(db, new object[] { selectFields, null, new object[0] });
+
+    var count = 0;
+    foreach (var item in list)
+    {
+        var has = exists.FirstOrDefault(i => isEquals(i, item, exists));
+        if (has == null)
+        {
+            insert.Invoke(db, new object[] { item, SaveBuilder, SaveValues });
+            count++;
+        }
+        else
+            update.Invoke(db, new object[] { item, null, SaveBuilder, SaveValues, selectFields });
+    }
+    Save();
+    return count;
+}
     }
 }
