@@ -2039,17 +2039,26 @@ namespace EntryBuilder
                                     {
                                         //builder.AppendLine("{0} {1} = __temp == null ? default({0}) : ({0})Convert.ChangeType(__temp, typeof({0}));", param.ParameterType.CodeName(), param.Name);
                                         builder.Append("{0} {1} = string.IsNullOrEmpty(__temp) ? default({0}) : ", typeCodeName, param.Name);
-                                        if (param.ParameterType == typeof(byte)
-                                            || param.ParameterType == typeof(sbyte)
-                                            || param.ParameterType == typeof(ushort)
-                                            || param.ParameterType == typeof(short)
-                                            || param.ParameterType == typeof(char)
-                                            || param.ParameterType == typeof(uint)
-                                            || param.ParameterType == typeof(int)
-                                            || param.ParameterType == typeof(float)
-                                            || param.ParameterType == typeof(ulong)
-                                            || param.ParameterType == typeof(long)
-                                            || param.ParameterType == typeof(double))
+
+                                        var ptype = param.ParameterType;
+                                        Type nullable;
+                                        if (param.ParameterType.IsNullable(out nullable))
+                                        {
+                                            typeCodeName = nullable.CodeName();
+                                            ptype = nullable;
+                                        }
+
+                                        if (ptype == typeof(byte)
+                                            || ptype == typeof(sbyte)
+                                            || ptype == typeof(ushort)
+                                            || ptype == typeof(short)
+                                            || ptype == typeof(char)
+                                            || ptype == typeof(uint)
+                                            || ptype == typeof(int)
+                                            || ptype == typeof(float)
+                                            || ptype == typeof(ulong)
+                                            || ptype == typeof(long)
+                                            || ptype == typeof(double))
                                         {
                                             builder.AppendLine("{0}.Parse(__temp);", typeCodeName);
                                         }
@@ -2059,7 +2068,7 @@ namespace EntryBuilder
                                         //}
                                         else if (param.ParameterType.IsEnum)
                                         {
-                                            builder.AppendLine("({0}){1}.Parse(__temp);", typeCodeName, Enum.GetUnderlyingType(param.ParameterType).CodeName());
+                                            builder.AppendLine("({0}){1}.Parse(__temp);", typeCodeName, Enum.GetUnderlyingType(ptype).CodeName());
                                         }
                                         //else if (param.ParameterType == typeof(FileUpload))
                                         //{
