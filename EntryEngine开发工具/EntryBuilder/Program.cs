@@ -2511,6 +2511,12 @@ return result;"
                 return "Number";
             }
 
+            if (type.Is(typeof(Dictionary<,>)))
+            {
+                var args = type.GetGenericArguments();
+                return string.Format("Record<{0}, {1}>", TypeToTs(args[0]), TypeToTs(args[1]));
+            }
+
             bool isList = !type.IsArray && type.Is(typeof(IList));
             if (type.IsArray || isList)
             {
@@ -2583,12 +2589,15 @@ return result;"
                 });
             }
         }
-        static void BuildTypeToJsDoc(Type type, StringBuilder builder, CSharpXML members)
+        static void BuildTypeToJsDoc(HashSet<Type> types, Type type, StringBuilder builder, CSharpXML members)
         {
+            if (!types.Add(type))
+                return;
+
             Type nullable;
             if (type.IsValueType && type.IsNullable(out nullable))
             {
-                BuildTypeToJsDoc(nullable, builder, members);
+                BuildTypeToJsDoc(types, nullable, builder, members);
             }
 
             if (type.IsEnum)
@@ -2621,6 +2630,9 @@ return result;"
                 });
             }
 
+            if (type.Is(typeof(Dictionary<,>)))
+                BuildTypeToJsDoc(types, type.GetGenericArguments()[1], builder, members);
+
             bool isList = !type.IsArray && type.Is(typeof(IList));
             if (type.IsArray || isList)
             {
@@ -2629,11 +2641,13 @@ return result;"
                     elementType = type.GetGenericArguments()[0];
                 else
                     elementType = type.GetElementType();
-                BuildTypeToJsDoc(elementType, builder, members);
+                BuildTypeToJsDoc(types, elementType, builder, members);
             }
 
             if (type.IsCustomType())
             {
+                HashSet<Type> temp = new HashSet<Type>();
+
                 bool generic = type.IsGenericType;
                 if (generic)
                     type = type.GetGenericTypeDefinition();
@@ -2651,6 +2665,8 @@ return result;"
                 builder.AppendLine(" * @typedef {{Object}} {0}", generic ? type.Name.Substring(0, type.Name.IndexOf("`")) : type.Name);
                 foreach (var field in fields)
                 {
+                    temp.Add(field.FieldType);
+
                     builder.Append(" * @property {{{0}}} {1}", TypeToTs(field.FieldType), field.Name);
                     string s = members.Find("F:" + type.Name + "." + field.Name).GetSummary();
                     if (!string.IsNullOrEmpty(s))
@@ -2658,6 +2674,9 @@ return result;"
                     builder.AppendLine();
                 }
                 builder.AppendLine(" */");
+
+                foreach (var item in temp)
+                    BuildTypeToJsDoc(types, item, builder, members);
             }
         }
         /// <summary>生成JSDoc文档格式的注释</summary>
@@ -2720,6 +2739,8 @@ return result;"
             [Obsolete("统一模块化编码，要非模块化可以到JS层面转换")]
             public bool IsModule;
 
+            public StringBuilder TypeBuilder = new StringBuilder();
+
             protected string GetTypeShortName()
             {
                 string name = type.Name;
@@ -2765,12 +2786,8 @@ return result;"
                         var type = param.ParameterType;
                         if (hasAsync && param.ParameterType.IsDelegate())
                             type = param.ParameterType.GetGenericArguments()[0];
-
-                        if (types.Add(type))
-                        {
-                            // 生成类型
-                            BuildTypeToJsDoc(type, builder, doc);
-                        }
+                        // 生成类型
+                        BuildTypeToJsDoc(types, type, TypeBuilder, doc);
                     }
                 }
 
@@ -2916,8 +2933,8 @@ download(filename)
                         {
                             // 大于一个参数，第一个参数的类型允许是一个object
                             // 这里声明这个object类型
-                            builder.AppendLine("/**");
-                            builder.AppendLine(" * @typedef {0}", method.Name);
+                            TypeBuilder.AppendLine("/**");
+                            TypeBuilder.AppendLine(" * @typedef {0}", method.Name);
                             for (int j = 0, n = parameters.Length - 1; j <= n; j++)
                             {
                                 var param = parameters[j];
@@ -2931,13 +2948,13 @@ download(filename)
                                     }
                                     continue;
                                 }
-                                builder.Append(" * @property {{{0}}} {1}", TypeToTs(param.ParameterType), param.Name);
+                                TypeBuilder.Append(" * @property {{{0}}} {1}", TypeToTs(param.ParameterType), param.Name);
                                 string s;
                                 if (_params.TryGetValue(param.Name, out s))
-                                    builder.Append(" - {0}", s);
-                                builder.AppendLine();
+                                    TypeBuilder.Append(" - {0}", s);
+                                TypeBuilder.AppendLine();
                             }
-                            builder.AppendLine(" */");
+                            TypeBuilder.AppendLine(" */");
                         }
 
                         // 方法注释
@@ -2955,19 +2972,19 @@ download(filename)
                                 builder.Append(" - {0}", s);
                             builder.AppendLine();
                             // 生成第一个参数类型的example，方便复制到组件的data中
-                            if (j == 0 && pcount > 1)
-                            {
-                                builder.AppendLine(" * @example");
-                                builder.AppendLine(" * {");
-                                for (int k = 0; k <= n; k++)
-                                {
-                                    var param2 = parameters[k];
-                                    if (hasAsync && param2.ParameterType.IsDelegate())
-                                        continue;
-                                    builder.AppendLine(" *   {0}: undefined,", param2.Name);
-                                }
-                                builder.AppendLine(" * }");
-                            }
+                            //if (j == 0 && pcount > 1)
+                            //{
+                            //    builder.AppendLine(" * @example");
+                            //    builder.AppendLine(" * {");
+                            //    for (int k = 0; k <= n; k++)
+                            //    {
+                            //        var param2 = parameters[k];
+                            //        if (hasAsync && param2.ParameterType.IsDelegate())
+                            //            continue;
+                            //        builder.AppendLine(" *   {0}: undefined,", param2.Name);
+                            //    }
+                            //    builder.AppendLine(" * }");
+                            //}
                         }
                         builder.Append(" * @returns {{Promise<{0}>}}", returnType.FullName == "System.Void" ? "any" : TypeToTs(returnType));
                         if (!string.IsNullOrEmpty(_return))
@@ -3101,6 +3118,8 @@ declare module '@vue/runtime-core'
         {api}: typeof {api},
     }
 }".Replace("{api}", GetTypeShortName()).Replace("{api2}", type.Name));
+                builder.AppendLine(TypeBuilder.ToString());
+                TypeBuilder = null;
                 base.Save();
             }
         }

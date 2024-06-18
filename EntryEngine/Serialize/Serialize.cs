@@ -2104,6 +2104,8 @@ namespace EntryEngine.Serialize
         {
             if ((type == null && target != null) || (type != null && target == null))
                 return false;
+            if (type.IsGenericType && target.IsGenericTypeDefinition && type.GetGenericTypeDefinition() == target)
+                return true;
             return target.IsAssignableFrom(type);
         }
         public static bool IsDelegate(this Type type)
