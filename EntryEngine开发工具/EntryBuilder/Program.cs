@@ -2650,30 +2650,39 @@ return result;"
 
                 bool generic = type.IsGenericType;
                 if (generic)
+                {
+                    var gargs = type.GetGenericArguments();
+                    foreach (var item in gargs)
+                        temp.Add(item);
                     type = type.GetGenericTypeDefinition();
-                var fields = type.GetFields();
-                if (fields.Length == 0)
-                    return;
-                builder.AppendLine("/**");
-                if (generic)
-                {
-                    var generics = type.GetGenericArguments();
-                    foreach (var g in generics)
-                        builder.AppendLine(" * @template {0}", TypeToTs(g));
                 }
-                builder.Append(members.Find("T:" + type.Name).GetSummaryStar());
-                builder.AppendLine(" * @typedef {{Object}} {0}", generic ? type.Name.Substring(0, type.Name.IndexOf("`")) : type.Name);
-                foreach (var field in fields)
+                
+                if (!generic || types.Add(type))
                 {
-                    temp.Add(field.FieldType);
+                    var fields = type.GetFields();
+                    if (fields.Length == 0)
+                        return;
+                    builder.AppendLine("/**");
+                    if (generic)
+                    {
+                        var generics = type.GetGenericArguments();
+                        foreach (var g in generics)
+                            builder.AppendLine(" * @template {0}", TypeToTs(g));
+                    }
+                    builder.Append(members.Find("T:" + type.Name).GetSummaryStar());
+                    builder.AppendLine(" * @typedef {{Object}} {0}", generic ? type.Name.Substring(0, type.Name.IndexOf("`")) : type.Name);
+                    foreach (var field in fields)
+                    {
+                        temp.Add(field.FieldType);
 
-                    builder.Append(" * @property {{{0}}} {1}", TypeToTs(field.FieldType), field.Name);
-                    string s = members.Find("F:" + type.Name + "." + field.Name).GetSummary();
-                    if (!string.IsNullOrEmpty(s))
-                        builder.Append(" - {0}", s);
-                    builder.AppendLine();
+                        builder.Append(" * @property {{{0}}} {1}", TypeToTs(field.FieldType), field.Name);
+                        string s = members.Find("F:" + type.Name + "." + field.Name).GetSummary();
+                        if (!string.IsNullOrEmpty(s))
+                            builder.Append(" - {0}", s);
+                        builder.AppendLine();
+                    }
+                    builder.AppendLine(" */");
                 }
-                builder.AppendLine(" */");
 
                 foreach (var item in temp)
                     BuildTypeToJsDoc(types, item, builder, members);
