@@ -2656,7 +2656,7 @@ return result;"
                         temp.Add(item);
                     type = type.GetGenericTypeDefinition();
                 }
-                
+
                 if (!generic || types.Add(type))
                 {
                     var fields = type.GetFields();
@@ -9017,18 +9017,6 @@ declare module '@vue/runtime-core'
                             foreach (var field in fields)
                                 builder.AppendLine("base.{0} = __clone.{0};", field.Name);
                         });
-                        builder.AppendLine("public static {0} __TO({1} __base)", table.Name, tableMapperName);
-                        builder.AppendBlock(() =>
-                        {
-                            builder.AppendLine("if (__base == null) return null;");
-                            builder.AppendLine("{0} ___base = __base;", table.Name);
-                            builder.AppendLine("{0} __copy = new {0}();", table.Name);
-                            foreach (var field in fields)
-                                builder.AppendLine("__copy.{0} = ___base.{0};", field.Name);
-                            if (table.Is(typeof(IDBCopy<>).MakeGenericType(table)))
-                                builder.AppendLine("((IDBCopy<{0}>)___base).DBCopyTo(__copy);", table.Name);
-                            builder.AppendLine("return __copy;");
-                        });
                     }
                     else
                     {
@@ -9064,6 +9052,22 @@ declare module '@vue/runtime-core'
                         builderOP.AppendLine("private {0} _{0};", nsOrEmptyDotDBnameOrEmpty);
                         builderOP.AppendLine("public _DATABASE.Database _DAO {{ get {{ return _{0}._DAO; }} }}", nsOrEmptyDotDBnameOrEmpty);
                         builderOP.AppendLine("internal ___{0}({1} ___db) {{ this._{1} = ___db; }}", table.Name, nsOrEmptyDotDBnameOrEmpty);
+                    }
+
+                    if (hasSpecial)
+                    {
+                        builderOP.AppendLine("public{2} {0} __TO({1} __base)", table.Name, tableMapperName, isStatic ? " static" : "");
+                        builderOP.AppendBlock(() =>
+                        {
+                            builderOP.AppendLine("if (__base == null) return null;");
+                            builderOP.AppendLine("{0} ___base = __base;", table.Name);
+                            builderOP.AppendLine("{0} __copy = new {0}();", table.Name);
+                            foreach (var field in fields)
+                                builderOP.AppendLine("__copy.{0} = ___base.{0};", field.Name);
+                            if (table.Is(typeof(IDBCopy<>).MakeGenericType(table)))
+                                builderOP.AppendLine("((IDBCopy<{0}>)___base).DBCopyTo(__copy);", table.Name);
+                            builderOP.AppendLine("return __copy;");
+                        });
                     }
 
                     // 字段对应枚举
