@@ -114,7 +114,7 @@ namespace EntryEngine.Network
                 {
                     IDbDataParameter param = cmd.CreateParameter();
                     param.ParameterName = string.Format("p{0}", i);
-                    param.Value = parameters[i];
+                    param.Value = parameters[i] == null ? DBNull.Value : parameters[i];
                     cmd.Parameters.Add(param);
                 }
                 return cmd;

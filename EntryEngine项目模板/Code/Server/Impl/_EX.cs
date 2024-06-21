@@ -18,6 +18,11 @@ public static class _EX
         if (right) key = key + "%";
         return key;
     }
+    /// <summary>SQL语句IN后的参数(SQL 语句需要自带括号，例如 IN (@p0))，数组转换成1,2,3</summary>
+    public static string In<T>(this T[] key)
+    {
+        return string.Join(",", key);
+    }
 }
 /// <summary>上传/下载文件通用</summary>
 public static class _FILE

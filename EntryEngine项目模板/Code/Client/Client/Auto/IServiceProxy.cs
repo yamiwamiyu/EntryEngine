@@ -153,6 +153,14 @@ class IServiceProxy
         return send("1/ForgetPassword", parameters.ToString(), callback);
     }
     
+    /// <see cref="IService.LoginByWX(string, System.Action{T_USER})"></see>
+    public AsyncData<string> LoginByWX(string code, System.Action<T_USER> callback)
+    {
+        var parameters = new StringBuilder();
+        parameters.Append("code={0}", code);
+        return send("1/LoginByWX", parameters.ToString(), callback);
+    }
+    
     /// <see cref="IService.ClearUserCache(int, System.Action{bool})"></see>
     public AsyncData<string> ClearUserCache(int id, System.Action<bool> callback)
     {
@@ -200,6 +208,21 @@ class IServiceProxy
     {
         var parameters = new StringBuilder();
         send("1/WeChatPayCallback", parameters.ToString(), (Action<string>)null);
+    }
+    
+    /// <see cref="IService.WeChatRefundCallback()"></see>
+    public void WeChatRefundCallback()
+    {
+        var parameters = new StringBuilder();
+        send("1/WeChatRefundCallback", parameters.ToString(), (Action<string>)null);
+    }
+    
+    /// <see cref="IService.WXJSSDK(string, System.Action{WXJSSDK})"></see>
+    public AsyncData<string> WXJSSDK(string url, System.Action<WXJSSDK> callback)
+    {
+        var parameters = new StringBuilder();
+        parameters.Append("url={0}", url);
+        return send("1/WXJSSDK", parameters.ToString(), callback);
     }
     
     /// <see cref="IService.AlipayCallback(string, string, string, string, string, string, string, System.Action{string})"></see>

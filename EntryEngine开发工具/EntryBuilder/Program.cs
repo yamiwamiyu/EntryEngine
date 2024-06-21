@@ -904,6 +904,9 @@ namespace EntryBuilder
             }
             else
             {
+                Type nullable;
+                if (type.IsNullable(out nullable))
+                    return GetMySqlType(nullable, out special, member);
                 special = true;
                 //throw new ArgumentException("type");
                 return "JSON";
