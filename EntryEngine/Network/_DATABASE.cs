@@ -774,6 +774,11 @@ namespace EntryEngine.Network
             {
                 return Enum.ToObject(type, value);
             }
+            Type nullable;
+            if (type.IsNullable(out nullable))
+            {
+                type = nullable;
+            }
             return Convert.ChangeType(value, type);
         }
     }
